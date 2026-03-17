@@ -1,0 +1,107 @@
+{
+  "name": "Order",
+  "type": "object",
+  "properties": {
+    "buyer_email": {
+      "type": "string"
+    },
+    "buyer_name": {
+      "type": "string"
+    },
+    "vendor_email": {
+      "type": "string"
+    },
+    "store_id": {
+      "type": "string"
+    },
+    "store_name": {
+      "type": "string"
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "product_id": {
+            "type": "string"
+          },
+          "product_title": {
+            "type": "string"
+          },
+          "product_image": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "price": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "subtotal": {
+      "type": "number"
+    },
+    "shipping_fee": {
+      "type": "number",
+      "default": 0
+    },
+    "total": {
+      "type": "number"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "confirmed",
+        "processing",
+        "shipped",
+        "delivered",
+        "cancelled",
+        "refunded"
+      ],
+      "default": "pending"
+    },
+    "shipping_address": {
+      "type": "string"
+    },
+    "tracking_number": {
+      "type": "string"
+    },
+    "affiliate_email": {
+      "type": "string",
+      "description": "Affiliate who referred this order"
+    },
+    "affiliate_commission": {
+      "type": "number",
+      "default": 0
+    },
+    "payment_method": {
+      "type": "string",
+      "enum": [
+        "card",
+        "paypal",
+        "crypto",
+        "bank_transfer"
+      ],
+      "default": "card"
+    },
+    "payment_status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "paid",
+        "failed",
+        "refunded"
+      ],
+      "default": "pending"
+    }
+  },
+  "required": [
+    "buyer_email",
+    "vendor_email",
+    "items",
+    "total"
+  ]
+}

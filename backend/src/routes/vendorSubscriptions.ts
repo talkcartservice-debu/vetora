@@ -1,0 +1,423 @@
+import { FastifyInstance } from 'fastify';
+import { VendorSubscription, IVendorSubscription } from '../models/VendorSubscription';
+
+export async function vendorSubscriptionRoutes(fastify: FastifyInstance) {
+  // Get subscription for a vendor
+  fastify.get('/vendor/:vendorEmail', {
+    preHandler: fastify.authenticate
+  }, async (request, reply) => {
+    try {
+      const { vendorEmail } = request.params as { vendorEmail: string };
+      const user = request.user as any;
+
+      // Check if user owns the vendor account
+      if (user.email !== vendorEmail.toLowerCase()) {
+        return reply.code(403).send({ error: 'You can only view your own subscription' });
+      }
+
+      const subscription = await VendorSubscription.findOne({
+        vendor_email: vendorEmail.toLowerCase(),
+        status: 'active'
+      });
+
+      if (!subscription) {
+        return reply.code(404).send({ error: 'No active subscription found' });
+      }
+
+      reply.send(subscription);
+    } catch (error) {
+      fastify.log.error(error);
+      reply.code(500).send({ error: 'Internal server error' });
+    }
+  });
+
+  // Get subscription for a store
+  fastify.get('/store/:storeId', async (request, reply) => {
+    try {
+      const { storeId } = request.params as { storeId: string };
+
+      const subscription = await VendorSubscription.findOne({
+        store_id: storeId,
+        status: 'active'
+      });
+
+      if (!subscription) {
+        return reply.code(404).send({ error: 'No active subscription found for this store' });
+      }
+
+      reply.send(subscription);
+    } catch (error) {
+      fastify.log.error(error);
+      reply.code(500).send({ error: 'Internal server error' });
+    }
+  });
+
+  // List vendor subscriptions with filtering
+  fastify.get('/', async (request, reply) => {
+    try {
+      const query = request.query as any;
+      const {
+        vendor_email,
+        store_id,
+        plan,
+        status,
+        sort = '-created_at',
+        limit = 20,
+        skip = 0
+      } = query;
+
+      // Build filter object
+      const filter: any = {};
+
+      if (vendor_email) filter.vendor_email = vendor_email.toLowerCase();
+      if (store_id) filter.store_id = store_id;
+      if (plan) filter.plan = plan;
+      if (status) filter.status = status;
+
+      // Build sort object
+      const sortObj: any = {};
+      if (sort.startsWith('-')) {
+        sortObj[sort.substring(1)] = -1;
+      } else {
+        sortObj[sort] = 1;
+      }
+
+      const subscriptions = await VendorSubscription
+        .find(filter)
+        .sort(sortObj)
+        .limit(parseInt(limit))
+        .skip(parseInt(skip));
+
+      const total = await VendorSubscription.countDocuments(filter);
+
+      reply.send({
+        subscriptions,
+        pagination: {
+          total,
+          limit: parseInt(limit),
+          skip: parseInt(skip),
+          hasMore: total > parseInt(skip) + parseInt(limit)
+        }
+      });
+    } catch (error) {
+      fastify.log.error(error);
+      reply.code(500).send({ error: 'Internal server error' });
+    }
+  });
+
+  // Get subscription by ID
+  fastify.get('/:id', async (request, reply) => {
+    try {
+      const { id } = request.params as { id: string };
+
+      const subscription = await VendorSubscription.findById(id);
+
+      if (!subscription) {
+        return reply.code(404).send({ error: 'Vendor subscription not found' });
+      }
+
+      reply.send(subscription);
+    } catch (error) {
+      fastify.log.error(error);
+      reply.code(500).send({ error: 'Internal server error' });
+    }
+  });
+
+  // Create vendor subscription
+  fastify.post('/', {
+    preHandler: fastify.authenticate
+  }, async (request, reply) => {
+    try {
+      const body = request.body as Partial<IVendorSubscription>;
+      const user = request.user as any;
+
+      // Validate required fields
+      if (!body.plan) {
+        return reply.code(400).send({ error: 'Missing required field: plan' });
+      }
+
+      // Validate plan
+      const validPlans = ['free', 'pro', 'elite'];
+      if (!validPlans.includes(body.plan)) {
+        return reply.code(400).send({ error: 'Invalid plan. Must be free, pro, or elite' });
+      }
+
+      // Set vendor_email from authenticated user
+      body.vendor_email = user.email;
+
+      // Set default values
+      body.status = 'active';
+      body.started_at = new Date();
+
+      // Set expiration date based on billing cycle
+      if (body.billing_cycle === 'annual') {
+        body.expires_at = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000); // 1 year
+      } else {
+        body.expires_at = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
+      }
+
+      const subscription = new VendorSubscription(body);
+      await subscription.save();
+
+      reply.code(201).send(subscription);
+    } catch (error) {
+      if (error && typeof error === 'object' && 'code' in error && error.code === 11000) {
+        reply.code(409).send({ error: 'An active subscription already exists for this vendor' });
+      } else {
+        fastify.log.error(error);
+        reply.code(500).send({ error: 'Internal server error' });
+      }
+    }
+  });
+
+  // Update vendor subscription
+  fastify.put('/:id', {
+    preHandler: fastify.authenticate
+  }, async (request, reply) => {
+    try {
+      const { id } = request.params as { id: string };
+      const body = request.body as Partial<IVendorSubscription>;
+      const user = request.user as any;
+
+      const subscription = await VendorSubscription.findById(id);
+
+      if (!subscription) {
+        return reply.code(404).send({ error: 'Vendor subscription not found' });
+      }
+
+      // Check if user owns the subscription
+      if (subscription.vendor_email !== user.email) {
+        return reply.code(403).send({ error: 'You can only update your own subscription' });
+      }
+
+      // Update allowed fields
+      const allowedUpdates = [
+        'plan',
+        'billing_cycle',
+        'custom_domain',
+        'payment_method'
+      ];
+
+      allowedUpdates.forEach(field => {
+        const key = field as keyof IVendorSubscription;
+        if (body[key] !== undefined) {
+          (subscription as any)[key] = body[key];
+        }
+      });
+
+      // Validate plan if being updated
+      if (body.plan) {
+        const validPlans = ['free', 'pro', 'elite'];
+        if (!validPlans.includes(body.plan)) {
+          return reply.code(400).send({ error: 'Invalid plan. Must be free, pro, or elite' });
+        }
+      }
+
+      // Update expiration if billing cycle changed
+      if (body.billing_cycle) {
+        if (body.billing_cycle === 'annual') {
+          subscription.expires_at = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+        } else {
+          subscription.expires_at = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+        }
+      }
+
+      await subscription.save();
+
+      reply.send(subscription);
+    } catch (error) {
+      if (error && typeof error === 'object' && 'code' in error && error.code === 11000) {
+        reply.code(409).send({ error: 'Custom domain is already in use' });
+      } else {
+        fastify.log.error(error);
+        reply.code(500).send({ error: 'Internal server error' });
+      }
+    }
+  });
+
+  // Cancel subscription
+  fastify.post('/:id/cancel', {
+    preHandler: fastify.authenticate
+  }, async (request, reply) => {
+    try {
+      const { id } = request.params as { id: string };
+      const user = request.user as any;
+
+      const subscription = await VendorSubscription.findById(id);
+
+      if (!subscription) {
+        return reply.code(404).send({ error: 'Vendor subscription not found' });
+      }
+
+      // Check if user owns the subscription
+      if (subscription.vendor_email !== user.email) {
+        return reply.code(403).send({ error: 'You can only cancel your own subscription' });
+      }
+
+      subscription.status = 'cancelled';
+      await subscription.save();
+
+      reply.send(subscription);
+    } catch (error) {
+      fastify.log.error(error);
+      reply.code(500).send({ error: 'Internal server error' });
+    }
+  });
+
+  // Renew subscription
+  fastify.post('/:id/renew', {
+    preHandler: fastify.authenticate
+  }, async (request, reply) => {
+    try {
+      const { id } = request.params as { id: string };
+      const user = request.user as any;
+
+      const subscription = await VendorSubscription.findById(id);
+
+      if (!subscription) {
+        return reply.code(404).send({ error: 'Vendor subscription not found' });
+      }
+
+      // Check if user owns the subscription
+      if (subscription.vendor_email !== user.email) {
+        return reply.code(403).send({ error: 'You can only renew your own subscription' });
+      }
+
+      // Calculate new expiration date
+      const currentExpiry = subscription.expires_at || new Date();
+      let newExpiry: Date;
+
+      if (subscription.billing_cycle === 'annual') {
+        newExpiry = new Date(currentExpiry.getTime() + 365 * 24 * 60 * 60 * 1000);
+      } else {
+        newExpiry = new Date(currentExpiry.getTime() + 30 * 24 * 60 * 60 * 1000);
+      }
+
+      subscription.expires_at = newExpiry;
+      subscription.status = 'active';
+      await subscription.save();
+
+      reply.send(subscription);
+    } catch (error) {
+      fastify.log.error(error);
+      reply.code(500).send({ error: 'Internal server error' });
+    }
+  });
+
+  // Delete subscription
+  fastify.delete('/:id', {
+    preHandler: fastify.authenticate
+  }, async (request, reply) => {
+    try {
+      const { id } = request.params as { id: string };
+      const user = request.user as any;
+
+      const subscription = await VendorSubscription.findById(id);
+
+      if (!subscription) {
+        return reply.code(404).send({ error: 'Vendor subscription not found' });
+      }
+
+      // Check if user owns the subscription
+      if (subscription.vendor_email !== user.email) {
+        return reply.code(403).send({ error: 'You can only delete your own subscription' });
+      }
+
+      await VendorSubscription.findByIdAndDelete(id);
+
+      reply.send({ message: 'Vendor subscription deleted successfully' });
+    } catch (error) {
+      fastify.log.error(error);
+      reply.code(500).send({ error: 'Internal server error' });
+    }
+  });
+
+  // Check subscription status
+  fastify.get('/:id/status', async (request, reply) => {
+    try {
+      const { id } = request.params as { id: string };
+
+      const subscription = await VendorSubscription.findById(id);
+
+      if (!subscription) {
+        return reply.code(404).send({ error: 'Vendor subscription not found' });
+      }
+
+      const now = new Date();
+      let currentStatus = subscription.status;
+
+      // Check if subscription has expired
+      if (subscription.expires_at && subscription.expires_at < now && subscription.status === 'active') {
+        currentStatus = 'expired';
+        // Update the status in database
+        subscription.status = 'expired';
+        await subscription.save();
+      }
+
+      const daysUntilExpiry = subscription.expires_at
+        ? Math.ceil((subscription.expires_at.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+        : null;
+
+      reply.send({
+        subscription_id: id,
+        plan: subscription.plan,
+        status: currentStatus,
+        billing_cycle: subscription.billing_cycle,
+        expires_at: subscription.expires_at,
+        days_until_expiry: daysUntilExpiry,
+        is_expired: currentStatus === 'expired',
+        custom_domain: subscription.custom_domain
+      });
+    } catch (error) {
+      fastify.log.error(error);
+      reply.code(500).send({ error: 'Internal server error' });
+    }
+  });
+
+  // Get subscription plans and pricing (public endpoint)
+  fastify.get('/public/plans', async (request, reply) => {
+    try {
+      const plans = {
+        free: {
+          name: 'Free',
+          price_monthly: 0,
+          price_annual: 0,
+          features: [
+            'Up to 10 products',
+            'Basic analytics',
+            'Community support'
+          ]
+        },
+        pro: {
+          name: 'Pro',
+          price_monthly: 29,
+          price_annual: 290,
+          features: [
+            'Unlimited products',
+            'Advanced analytics',
+            'Priority support',
+            'Custom domain',
+            'AI-powered insights'
+          ]
+        },
+        elite: {
+          name: 'Elite',
+          price_monthly: 99,
+          price_annual: 990,
+          features: [
+            'All Pro features',
+            'White-label solution',
+            'Dedicated account manager',
+            'API access',
+            'Custom integrations'
+          ]
+        }
+      };
+
+      reply.send({ plans });
+    } catch (error) {
+      fastify.log.error(error);
+      reply.code(500).send({ error: 'Internal server error' });
+    }
+  });
+}

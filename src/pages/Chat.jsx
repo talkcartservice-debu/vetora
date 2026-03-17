@@ -1,0 +1,537 @@
+import React, { useState, useRef, useEffect, useMemo } from "react";
+
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  Search, Send, ArrowLeft, MoreVertical, X, Phone, Video,
+  ShoppingBag, Star, Package, Loader2, Reply
+} from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
+import MessageBubble from "@/components/chat/MessageBubble";
+import ChatImageUpload from "@/components/chat/ChatImageUpload";
+import { authAPI, productsAPI, messagesAPI, ordersAPI } from "@/api/apiClient";
+
+const EMOJI_QUICK = ["❤️", "😂", "🔥", "👍", "😍", "💯", "🎉", "😎"];
+
+function Avatar({ name, size = 10 }) {
+  return (
+    <div className={`w-${size} h-${size} rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white font-semibold text-sm shrink-0`}>
+      {name?.[0]?.toUpperCase() || "U"}
+    </div>
+  );
+}
+
+function ProductSharePicker({ onShare, onClose, currentUser }) {
+  const [search, setSearch] = useState("");
+  const [tab, setTab] = useState("all"); // "all" | "mine"
+
+  const { data: allProducts = [], isLoading } = useQuery({
+    queryKey: ["quickProducts"],
+    queryFn: () => productsAPI.list({ status: "active", sort: "-sales_count", limit: 30 }),
+  });
+
+  const { data: myProducts = [] } = useQuery({
+    queryKey: ["myQuickProducts", currentUser?.email],
+    queryFn: () => productsAPI.list({ vendor_email: currentUser.email, status: "active", sort: "-created_date", limit: 30 }),
+    enabled: !!currentUser?.email,
+  });
+
+  const source = tab === "mine" ? myProducts : allProducts;
+  const products = search ? source.filter(p => p.title?.toLowerCase().includes(search.toLowerCase())) : source.slice(0, 18);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 10 }}
+      className="absolute bottom-full mb-2 left-0 right-0 bg-white rounded-2xl border border-slate-200 shadow-xl p-3 z-20"
+    >
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-sm font-semibold text-slate-800">Share a Product</p>
+        <button onClick={onClose}><X className="w-4 h-4 text-slate-400" /></button>
+      </div>
+      <div className="flex gap-1 mb-2 p-1 bg-slate-100 rounded-xl">
+        <button onClick={() => setTab("all")} className={`flex-1 text-xs py-1 rounded-lg font-medium transition-colors ${tab === "all" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"}`}>All Products</button>
+        <button onClick={() => setTab("mine")} className={`flex-1 text-xs py-1 rounded-lg font-medium transition-colors ${tab === "mine" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"}`}>My Store</button>
+      </div>
+      <input
+        value={search}
+        onChange={e => setSearch(e.target.value)}
+        placeholder="Search..."
+        className="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 mb-2 outline-none focus:border-indigo-300"
+      />
+      {isLoading ? (
+        <div className="flex justify-center py-4"><Loader2 className="w-5 h-5 animate-spin text-slate-400" /></div>
+      ) : products.length === 0 ? (
+        <p className="text-center py-4 text-xs text-slate-400">No products found</p>
+      ) : (
+        <div className="grid grid-cols-3 gap-2 max-h-52 overflow-y-auto">
+          {products.map(p => (
+            <button key={p.id} onClick={() => onShare(p)} className="text-left hover:bg-indigo-50 rounded-xl p-1.5 transition-colors border border-transparent hover:border-indigo-100">
+              <div className="aspect-square rounded-xl overflow-hidden bg-slate-100 mb-1">
+                {p.images?.[0] ? <img src={p.images[0]} alt="" className="w-full h-full object-cover" /> : <Package className="w-5 h-5 text-slate-300 m-auto mt-2" />}
+              </div>
+              <p className="text-[10px] text-slate-700 line-clamp-2 font-medium">{p.title}</p>
+              <p className="text-[10px] font-bold text-indigo-600">${p.price}</p>
+            </button>
+          ))}
+        </div>
+      )}
+    </motion.div>
+  );
+}
+
+function OfferModal({ onSend, onClose }) {
+  const [amount, setAmount] = useState("");
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 10 }}
+      className="absolute bottom-full mb-2 left-0 right-0 bg-white rounded-2xl border border-slate-200 shadow-xl p-4 z-20"
+    >
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-sm font-semibold text-slate-800">💰 Make an Offer</p>
+        <button onClick={onClose}><X className="w-4 h-4 text-slate-400" /></button>
+      </div>
+      <p className="text-xs text-slate-500 mb-2">Enter your price offer</p>
+      <div className="flex gap-2">
+        <Input type="number" placeholder="$0.00" value={amount} onChange={e => setAmount(e.target.value)} className="rounded-xl" />
+        <Button onClick={() => { onSend(parseFloat(amount)); onClose(); }} disabled={!amount} className="bg-indigo-600 hover:bg-indigo-700 rounded-xl shrink-0">Send</Button>
+      </div>
+    </motion.div>
+  );
+}
+
+export default function Chat() {
+  const params = new URLSearchParams(window.location.search);
+  const toEmail = params.get("to");
+  const [selectedConvo, setSelectedConvo] = useState(toEmail || null);
+  const [newMessage, setNewMessage] = useState("");
+  const [search, setSearch] = useState("");
+  const [showProductPicker, setShowProductPicker] = useState(false);
+  const [showOfferModal, setShowOfferModal] = useState(false);
+  const [showActionMenu, setShowActionMenu] = useState(false);
+  const [replyingTo, setReplyingTo] = useState(null);
+  const [forwardMsg, setForwardMsg] = useState(null);
+  const [forwardToEmail, setForwardToEmail] = useState("");
+  const [pendingImageUrl, setPendingImageUrl] = useState(null);
+  const messagesEndRef = useRef(null);
+  const queryClient = useQueryClient();
+
+  const { data: currentUser } = useQuery({
+    queryKey: ["currentUser"],
+    queryFn: () => authAPI.me(),
+  });
+
+  const { data: allMessagesResponse = {} } = useQuery({
+    queryKey: ["allMessages", currentUser?.email],
+    queryFn: async () => {
+      const res = await messagesAPI.query({ sender_email: currentUser?.email, sort: "-created_date", limit: 200 });
+      return res;
+    },
+    enabled: !!currentUser?.email,
+    refetchInterval: 3000,
+  });
+
+  const { data: receivedMessagesResponse = {} } = useQuery({
+    queryKey: ["receivedMessages", currentUser?.email],
+    queryFn: async () => {
+      const res = await messagesAPI.query({ receiver_email: currentUser?.email, sort: "-created_date", limit: 200 });
+      return res;
+    },
+    enabled: !!currentUser?.email,
+    refetchInterval: 3000,
+  });
+  
+  const allMessages = Array.isArray(allMessagesResponse?.data) ? allMessagesResponse.data : [];
+  const receivedMessages = Array.isArray(receivedMessagesResponse?.data) ? receivedMessagesResponse.data : [];
+
+  // Real-time subscription replaced by refetchInterval
+
+  const conversations = useMemo(() => {
+    const allMsgs = [...allMessages, ...receivedMessages];
+    const convoMap = {};
+    allMsgs.forEach(msg => {
+      const otherEmail = msg.sender_email === currentUser?.email ? msg.receiver_email : msg.sender_email;
+      const otherName = msg.sender_email === currentUser?.email ? msg.receiver_email : msg.sender_name;
+      if (!convoMap[otherEmail] || new Date(msg.created_date) > new Date(convoMap[otherEmail].lastDate)) {
+        convoMap[otherEmail] = {
+          email: otherEmail,
+          name: otherName || otherEmail,
+          lastMessage: msg.content,
+          lastDate: msg.created_date,
+          unread: msg.receiver_email === currentUser?.email && !msg.is_read,
+          messageType: msg.message_type,
+        };
+      }
+    });
+    return Object.values(convoMap).sort((a, b) => new Date(b.lastDate) - new Date(a.lastDate));
+  }, [allMessages, receivedMessages, currentUser]);
+
+  const selectedMessages = useMemo(() => {
+    if (!selectedConvo) return [];
+    return [...allMessages, ...receivedMessages]
+      .filter(m =>
+        (m.sender_email === selectedConvo && m.receiver_email === currentUser?.email) ||
+        (m.sender_email === currentUser?.email && m.receiver_email === selectedConvo)
+      )
+      .sort((a, b) => new Date(a.created_date) - new Date(b.created_date));
+  }, [allMessages, receivedMessages, selectedConvo, currentUser]);
+
+  const sendMutation = useMutation({
+    mutationFn: async (msgData) => {
+      await messagesAPI.send({
+        conversation_id: [currentUser.email, selectedConvo].sort().join("_"),
+        sender_email: currentUser.email,
+        sender_name: currentUser.full_name,
+        receiver_email: selectedConvo,
+        ...msgData,
+      });
+    },
+    onSuccess: () => {
+      setNewMessage("");
+      queryClient.invalidateQueries({ queryKey: ["allMessages"] });
+      queryClient.invalidateQueries({ queryKey: ["receivedMessages"] });
+    },
+  });
+
+  const sendText = () => {
+    if (!newMessage.trim()) return;
+    const extra = replyingTo ? {
+      reply_to_content: replyingTo.content,
+      reply_to_name: replyingTo.sender_email === currentUser?.email ? "You" : selectedConvoName,
+    } : {};
+    if (pendingImageUrl) {
+      sendMutation.mutate({ content: newMessage || "📷 Image", message_type: "image", image_url: pendingImageUrl, ...extra });
+      setPendingImageUrl(null);
+    } else {
+      sendMutation.mutate({ content: newMessage, message_type: "text", ...extra });
+    }
+    setReplyingTo(null);
+  };
+
+  const handleForward = (msg) => {
+    setForwardMsg(msg);
+  };
+
+  const executeForward = async () => {
+    if (!forwardToEmail.trim() || !forwardMsg) return;
+    await messagesAPI.send({
+      conversation_id: [currentUser.email, forwardToEmail].sort().join("_"),
+      sender_email: currentUser.email,
+      sender_name: currentUser.full_name,
+      receiver_email: forwardToEmail,
+      content: `Forwarded: ${forwardMsg.content || ""}`,
+      message_type: forwardMsg.message_type,
+      product_id: forwardMsg.product_id,
+      product_data: forwardMsg.product_data,
+    });
+    toast.success("Message forwarded!");
+    setForwardMsg(null);
+    setForwardToEmail("");
+  };
+
+  const sendProduct = (product) => {
+    setShowProductPicker(false);
+    sendMutation.mutate({
+      content: `Check out this product: ${product.title}`,
+      message_type: "product_share",
+      product_id: product.id,
+      product_data: { title: product.title, price: product.price, image: product.images?.[0] },
+    });
+  };
+
+  const sendOffer = async (amount, productData) => {
+    // Create an order for this offer
+    let orderId = null;
+    if (productData) {
+      const order = await ordersAPI.create({
+        buyer_email: currentUser.email,
+        buyer_name: currentUser.full_name,
+        vendor_email: selectedConvo,
+        items: [{ product_id: productData.id, product_title: productData.title, product_image: productData.images?.[0], quantity: 1, price: amount }],
+        subtotal: amount,
+        total: amount,
+        status: "pending",
+        payment_status: "pending",
+      });
+      orderId = order.id;
+    }
+    sendMutation.mutate({
+      content: `💰 Offer: $${amount}${productData ? ` for "${productData.title}"` : ""}`,
+      message_type: "offer",
+      offer_amount: amount,
+      order_id: orderId,
+    });
+  };
+
+  const markAsRead = async () => {
+    if (!selectedConvo) return;
+    const unread = receivedMessages.filter(m => m.sender_email === selectedConvo && !m.is_read);
+    for (const m of unread) {
+      await messagesAPI.markAsRead(m.id);
+    }
+    queryClient.invalidateQueries({ queryKey: ["receivedMessages"] });
+  };
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (selectedConvo) markAsRead();
+  }, [selectedMessages, selectedConvo]);
+
+  const selectedConvoData = conversations.find(c => c.email === selectedConvo);
+  const selectedConvoName = selectedConvoData?.name || selectedConvo;
+  const unreadTotal = conversations.filter(c => c.unread).length;
+
+  return (
+    <div className="h-[calc(100vh-3.5rem)] lg:h-screen flex bg-white">
+      {/* Sidebar */}
+      <div className={`w-full lg:w-80 border-r border-slate-100 flex flex-col ${selectedConvo ? "hidden lg:flex" : "flex"}`}>
+        <div className="p-4 border-b border-slate-100">
+          <div className="flex items-center justify-between mb-3">
+            <h1 className="text-xl font-bold text-slate-900">
+              Messages
+              {unreadTotal > 0 && (
+                <span className="ml-2 text-xs bg-indigo-600 text-white rounded-full px-1.5 py-0.5">{unreadTotal}</span>
+              )}
+            </h1>
+          </div>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Input
+              placeholder="Search conversations..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="pl-9 h-9 rounded-xl text-sm"
+            />
+          </div>
+        </div>
+        <div className="flex-1 overflow-y-auto">
+          {conversations.length === 0 ? (
+            <div className="text-center py-16 px-4">
+              <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-3">
+                <Send className="w-6 h-6 text-slate-400" />
+              </div>
+              <p className="text-sm font-medium text-slate-600">No conversations yet</p>
+              <p className="text-xs text-slate-400 mt-1">Start chatting with vendors or buyers</p>
+            </div>
+          ) : (
+            conversations
+              .filter(c => !search || c.name?.toLowerCase().includes(search.toLowerCase()) || c.email?.toLowerCase().includes(search.toLowerCase()))
+              .map(convo => (
+                <button
+                  key={convo.email}
+                  onClick={() => setSelectedConvo(convo.email)}
+                  className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition-colors text-left border-b border-slate-50 ${selectedConvo === convo.email ? "bg-indigo-50" : ""}`}
+                >
+                  <div className="relative shrink-0">
+                    <Avatar name={convo.name} size={11} />
+                    <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-400 border-2 border-white rounded-full" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-center">
+                      <p className={`text-sm truncate ${convo.unread ? "font-bold text-slate-900" : "font-semibold text-slate-700"}`}>{convo.name}</p>
+                      <span className="text-[10px] text-slate-400 shrink-0 ml-1">
+                        {new Date(convo.lastDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                      </span>
+                    </div>
+                    <p className={`text-xs truncate ${convo.unread ? "text-slate-700 font-medium" : "text-slate-400"}`}>
+                      {convo.messageType === "product_share" ? "📦 Shared a product" : convo.messageType === "offer" ? "💰 Price offer" : convo.lastMessage}
+                    </p>
+                  </div>
+                  {convo.unread && <div className="w-2.5 h-2.5 rounded-full bg-indigo-500 shrink-0" />}
+                </button>
+              ))
+          )}
+        </div>
+      </div>
+
+      {/* Chat Area */}
+      <div className={`flex-1 flex flex-col ${!selectedConvo ? "hidden lg:flex" : "flex"}`}>
+        {selectedConvo ? (
+          <>
+            {/* Header */}
+            <div className="h-16 border-b border-slate-100 flex items-center justify-between px-4 bg-white shadow-sm">
+              <div className="flex items-center gap-3">
+                <button onClick={() => setSelectedConvo(null)} className="lg:hidden p-1 rounded-lg hover:bg-slate-100">
+                  <ArrowLeft className="w-5 h-5" />
+                </button>
+                <div className="relative">
+                  <Avatar name={selectedConvoName} size={9} />
+                  <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-400 border-2 border-white rounded-full" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-slate-900">{selectedConvoName}</p>
+                  <p className="text-xs text-green-500 font-medium">Online</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1">
+                <button className="p-2 hover:bg-slate-100 rounded-xl transition-colors" title="Voice call">
+                  <Phone className="w-4 h-4 text-slate-500" />
+                </button>
+                <button className="p-2 hover:bg-slate-100 rounded-xl transition-colors" title="Video call">
+                  <Video className="w-4 h-4 text-slate-500" />
+                </button>
+                <button className="p-2 hover:bg-slate-100 rounded-xl transition-colors" onClick={() => setShowActionMenu(v => !v)}>
+                  <MoreVertical className="w-5 h-5 text-slate-400" />
+                </button>
+              </div>
+            </div>
+
+            {/* Messages */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-2 bg-slate-50/60">
+              {selectedMessages.length === 0 && (
+                <div className="text-center py-12 text-slate-400 text-sm">
+                  <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                    <Send className="w-5 h-5 text-slate-300" />
+                  </div>
+                  Start a conversation with {selectedConvoName}
+                </div>
+              )}
+              {selectedMessages.map((msg, idx) => {
+                const isMine = msg.sender_email === currentUser?.email;
+                const prevMsg = selectedMessages[idx - 1];
+                const showAvatar = !prevMsg || prevMsg.sender_email !== msg.sender_email;
+                return (
+                  <MessageBubble
+                    key={msg.id}
+                    msg={msg}
+                    isMine={isMine}
+                    showAvatar={showAvatar}
+                    senderName={isMine ? currentUser?.full_name : selectedConvoName}
+                    currentUser={currentUser}
+                    onReply={(m) => setReplyingTo(m)}
+                    onForward={handleForward}
+                  />
+                );
+              })}
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Input Area */}
+            <div className="border-t border-slate-100 bg-white">
+              {/* Reply preview */}
+              <AnimatePresence>
+                {replyingTo && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="flex items-center gap-2 px-4 py-2 bg-indigo-50 border-b border-indigo-100"
+                  >
+                    <Reply className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[10px] text-indigo-500 font-semibold">Replying to</p>
+                      <p className="text-xs text-slate-600 truncate">{replyingTo.content}</p>
+                    </div>
+                    <button onClick={() => setReplyingTo(null)} className="w-5 h-5 rounded-full bg-slate-200 flex items-center justify-center">
+                      <X className="w-3 h-3 text-slate-500" />
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+              <div className="p-3 relative">
+                <AnimatePresence>
+                  {showProductPicker && <ProductSharePicker onShare={sendProduct} onClose={() => setShowProductPicker(false)} currentUser={currentUser} />}
+                  {showOfferModal && <OfferModal onSend={sendOffer} onClose={() => setShowOfferModal(false)} />}
+                </AnimatePresence>
+
+                <div className="flex items-center gap-2 bg-slate-100 rounded-2xl px-3 py-1.5">
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => { setShowProductPicker(v => !v); setShowOfferModal(false); }}
+                      className={`p-1.5 rounded-xl transition-colors ${showProductPicker ? "bg-indigo-100 text-indigo-600" : "hover:bg-slate-200 text-slate-500"}`}
+                      title="Share product"
+                    >
+                      <ShoppingBag className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => { setShowOfferModal(v => !v); setShowProductPicker(false); }}
+                      className={`p-1.5 rounded-xl transition-colors ${showOfferModal ? "bg-indigo-100 text-indigo-600" : "hover:bg-slate-200 text-slate-500"}`}
+                      title="Make an offer"
+                    >
+                      <Star className="w-4 h-4" />
+                    </button>
+                    <ChatImageUpload
+                      onImageReady={(url) => setPendingImageUrl(url)}
+                      onClear={() => setPendingImageUrl(null)}
+                      previewUrl={pendingImageUrl}
+                    />
+                  </div>
+
+                  <input
+                    value={newMessage}
+                    onChange={e => setNewMessage(e.target.value)}
+                    placeholder="Type a message..."
+                    className="flex-1 bg-transparent text-sm text-slate-700 placeholder:text-slate-400 outline-none py-1"
+                    onKeyDown={e => e.key === "Enter" && !e.shiftKey && sendText()}
+                  />
+
+                  <div className="flex items-center gap-1">
+                    {EMOJI_QUICK.slice(0, 3).map(e => (
+                      <button key={e} onClick={() => setNewMessage(p => p + e)} className="hover:scale-125 transition-transform text-base">
+                        {e}
+                      </button>
+                    ))}
+                    <button
+                      onClick={sendText}
+                      disabled={!newMessage.trim() || sendMutation.isPending}
+                      className="w-8 h-8 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 flex items-center justify-center ml-1 shrink-0 transition-colors"
+                    >
+                      <Send className="w-3.5 h-3.5 text-white" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Forward Modal */}
+            <AnimatePresence>
+              {forwardMsg && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4"
+                  onClick={e => e.target === e.currentTarget && setForwardMsg(null)}
+                >
+                  <motion.div
+                    initial={{ scale: 0.95 }}
+                    animate={{ scale: 1 }}
+                    className="bg-white rounded-2xl p-5 w-full max-w-xs shadow-2xl"
+                  >
+                    <h3 className="text-sm font-bold text-slate-900 mb-1">Forward Message</h3>
+                    <p className="text-xs text-slate-500 mb-3 bg-slate-50 rounded-xl px-3 py-2 line-clamp-2">{forwardMsg.content}</p>
+                    <input
+                      value={forwardToEmail}
+                      onChange={e => setForwardToEmail(e.target.value)}
+                      placeholder="Recipient email address..."
+                      className="w-full text-sm border border-slate-200 rounded-xl px-3 py-2.5 outline-none focus:border-indigo-300 mb-3"
+                    />
+                    <div className="flex gap-2">
+                      <Button onClick={() => setForwardMsg(null)} variant="outline" className="flex-1 rounded-xl" size="sm">Cancel</Button>
+                      <Button onClick={executeForward} disabled={!forwardToEmail.trim()} className="flex-1 bg-indigo-600 hover:bg-indigo-700 rounded-xl" size="sm">Forward</Button>
+                    </div>
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </>
+        ) : (
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center">
+              <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center mx-auto mb-4">
+                <Send className="w-9 h-9 text-indigo-400" />
+              </div>
+              <h3 className="text-lg font-bold text-slate-900 mb-1">Your Messages</h3>
+              <p className="text-sm text-slate-400">Select a conversation or start a new one</p>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

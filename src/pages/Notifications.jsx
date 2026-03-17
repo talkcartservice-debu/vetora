@@ -1,0 +1,118 @@
+import React from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import EmptyState from "@/components/shared/EmptyState";
+import {
+  Bell, Heart, MessageCircle, UserPlus, Package, Users, Megaphone, CheckCheck
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { motion } from "framer-motion";
+import { notificationsAPI } from "@/api/apiClient";
+import { useAuth } from "@/lib/AuthContext";
+
+const TYPE_ICONS = {
+  like: { icon: Heart, color: "bg-red-100 text-red-500" },
+  comment: { icon: MessageCircle, color: "bg-blue-100 text-blue-500" },
+  follow: { icon: UserPlus, color: "bg-purple-100 text-purple-500" },
+  order_update: { icon: Package, color: "bg-green-100 text-green-500" },
+  message: { icon: MessageCircle, color: "bg-indigo-100 text-indigo-500" },
+  mention: { icon: MessageCircle, color: "bg-amber-100 text-amber-500" },
+  community: { icon: Users, color: "bg-pink-100 text-pink-500" },
+  promotion: { icon: Megaphone, color: "bg-orange-100 text-orange-500" },
+};
+
+export default function Notifications() {
+  const queryClient = useQueryClient();
+  const { user: currentUser } = useAuth();
+
+  const { data: notifications = [], isLoading } = useQuery({
+    queryKey: ["notifications", currentUser?.email],
+    queryFn: () => notificationsAPI.list({ recipient_email: currentUser?.email, sort: "-created_date", limit: 50 }),
+    enabled: !!currentUser?.email,
+  });
+
+  const markAllRead = useMutation({
+    mutationFn: async () => {
+      await notificationsAPI.markAllAsRead();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      queryClient.invalidateQueries({ queryKey: ["unreadNotifs"] });
+    },
+  });
+
+  const unreadCount = notifications.filter(n => !n.is_read).length;
+
+  return (
+    <div className="max-w-2xl mx-auto px-4 py-6">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Notifications</h1>
+          {unreadCount > 0 && (
+            <p className="text-sm text-slate-500">{unreadCount} unread</p>
+          )}
+        </div>
+        {unreadCount > 0 && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => markAllRead.mutate()}
+            className="text-indigo-600 hover:text-indigo-700"
+          >
+            <CheckCheck className="w-4 h-4 mr-1.5" />
+            Mark all read
+          </Button>
+        )}
+      </div>
+
+      {isLoading ? (
+        <div className="space-y-2">
+          {Array(5).fill(0).map((_, i) => (
+            <div key={i} className="bg-white rounded-xl p-4 animate-pulse flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-slate-200" />
+              <div className="flex-1 space-y-1.5">
+                <div className="h-3 w-3/4 bg-slate-200 rounded" />
+                <div className="h-2.5 w-1/2 bg-slate-100 rounded" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : notifications.length === 0 ? (
+        <EmptyState
+          icon={Bell}
+          title="No notifications"
+          description="You're all caught up!"
+        />
+      ) : (
+        <div className="space-y-1">
+          {notifications.map((notif, i) => {
+            const typeConfig = TYPE_ICONS[notif.type] || TYPE_ICONS.like;
+            const Icon = typeConfig.icon;
+            return (
+              <motion.div
+                key={notif.id}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: i * 0.03 }}
+                className={`flex items-start gap-3 p-3 rounded-xl transition-colors ${
+                  notif.is_read ? "bg-white" : "bg-indigo-50/50"
+                }`}
+              >
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${typeConfig.color}`}>
+                  <Icon className="w-4 h-4" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-slate-900 font-medium">{notif.title}</p>
+                  {notif.body && <p className="text-xs text-slate-500 mt-0.5">{notif.body}</p>}
+                  <p className="text-xs text-slate-400 mt-1">
+                    {new Date(notif.created_date).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                  </p>
+                </div>
+                {!notif.is_read && <div className="w-2 h-2 rounded-full bg-indigo-500 mt-2 shrink-0" />}
+              </motion.div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}

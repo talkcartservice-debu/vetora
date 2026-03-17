@@ -1,0 +1,31 @@
+{
+  "name": "Follow",
+  "type": "object",
+  "properties": {
+    "follower_email": {
+      "type": "string",
+      "description": "User who is following"
+    },
+    "following_email": {
+      "type": "string",
+      "description": "User/creator being followed"
+    },
+    "follow_type": {
+      "type": "string",
+      "enum": [
+        "user",
+        "store",
+        "community"
+      ],
+      "default": "user"
+    },
+    "target_id": {
+      "type": "string",
+      "description": "ID of store or community if not a user follow"
+    }
+  },
+  "required": [
+    "follower_email",
+    "following_email"
+  ]
+}

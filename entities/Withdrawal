@@ -1,0 +1,51 @@
+{
+  "name": "Withdrawal",
+  "type": "object",
+  "properties": {
+    "vendor_email": {
+      "type": "string"
+    },
+    "store_id": {
+      "type": "string"
+    },
+    "store_name": {
+      "type": "string"
+    },
+    "amount": {
+      "type": "number"
+    },
+    "bank_account_name": {
+      "type": "string"
+    },
+    "bank_account_number": {
+      "type": "string"
+    },
+    "bank_name": {
+      "type": "string"
+    },
+    "routing_number": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "processing",
+        "completed",
+        "rejected"
+      ],
+      "default": "pending"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "processed_at": {
+      "type": "string",
+      "format": "date"
+    }
+  },
+  "required": [
+    "vendor_email",
+    "amount"
+  ]
+}

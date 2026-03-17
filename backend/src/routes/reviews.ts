@@ -1,0 +1,278 @@
+import { FastifyInstance } from 'fastify';
+import { Review, IReview } from '../models/Review';
+import { User } from '../models/User';
+
+export async function reviewRoutes(fastify: FastifyInstance) {
+  // List reviews with filtering, sorting, and pagination
+  fastify.get('/', async (request, reply) => {
+    try {
+      const query = request.query as any;
+      const {
+        product_id,
+        store_id,
+        reviewer_email,
+        rating,
+        is_verified_purchase,
+        sort = '-created_at',
+        limit = 20,
+        skip = 0
+      } = query;
+
+      // Build filter object
+      const filter: any = {};
+
+      if (product_id) filter.product_id = product_id;
+      if (store_id) filter.store_id = store_id;
+      if (reviewer_email) filter.reviewer_email = reviewer_email;
+      if (rating) filter.rating = parseInt(rating);
+      if (is_verified_purchase !== undefined) filter.is_verified_purchase = is_verified_purchase === 'true';
+
+      // Build sort object
+      const sortObj: any = {};
+      if (sort.startsWith('-')) {
+        sortObj[sort.substring(1)] = -1;
+      } else {
+        sortObj[sort] = 1;
+      }
+
+      const reviews = await Review
+        .find(filter)
+        .sort(sortObj)
+        .limit(parseInt(limit))
+        .skip(parseInt(skip))
+        .populate('product_id', 'title vendor_email')
+        .populate('store_id', 'name');
+
+      const total = await Review.countDocuments(filter);
+
+      reply.send({
+        data: reviews,
+        pagination: {
+          total,
+          limit: parseInt(limit),
+          skip: parseInt(skip),
+          hasMore: total > parseInt(skip) + parseInt(limit)
+        }
+      });
+    } catch (error) {
+      fastify.log.error(error);
+      reply.code(500).send({ error: 'Internal server error' });
+    }
+  });
+
+  // Get review by ID
+  fastify.get('/:id', async (request, reply) => {
+    try {
+      const { id } = request.params as { id: string };
+
+      const review = await Review.findById(id)
+        .populate('product_id', 'title vendor_email')
+        .populate('store_id', 'name');
+
+      if (!review) {
+        return reply.code(404).send({ error: 'Review not found' });
+      }
+
+      reply.send(review);
+    } catch (error) {
+      fastify.log.error(error);
+      reply.code(500).send({ error: 'Internal server error' });
+    }
+  });
+
+  // Create review
+  fastify.post('/', {
+    preHandler: fastify.authenticate
+  }, async (request, reply) => {
+    try {
+      const body = request.body as Partial<IReview>;
+      const user = request.user as any;
+
+      // Validate required fields
+      if (!body.product_id || !body.rating || !body.content) {
+        return reply.code(400).send({ error: 'Missing required fields: product_id, rating, content' });
+      }
+
+      if (body.rating < 1 || body.rating > 5) {
+        return reply.code(400).send({ error: 'Rating must be between 1 and 5' });
+      }
+
+      // Check if user already reviewed this product
+      const existingReview = await Review.findOne({
+        product_id: body.product_id,
+        reviewer_email: user.email
+      });
+
+      if (existingReview) {
+        return reply.code(409).send({ error: 'You have already reviewed this product' });
+      }
+
+      const review = new Review({
+        ...body,
+        reviewer_email: user.email,
+        reviewer_name: user.name || user.email,
+        is_verified_purchase: false // TODO: Implement purchase verification logic
+      });
+
+      await review.save();
+
+      // Emit real-time event
+      fastify.io?.emit('review:created', {
+        review: review.toObject(),
+        product_id: body.product_id
+      });
+
+      reply.code(201).send(review);
+    } catch (error) {
+      fastify.log.error(error);
+      reply.code(500).send({ error: 'Internal server error' });
+    }
+  });
+
+  // Update review
+  fastify.put('/:id', {
+    preHandler: fastify.authenticate
+  }, async (request, reply) => {
+    try {
+      const { id } = request.params as { id: string };
+      const body = request.body as Partial<IReview>;
+      const user = request.user as any;
+
+      const review = await Review.findById(id);
+
+      if (!review) {
+        return reply.code(404).send({ error: 'Review not found' });
+      }
+
+      // Check if user owns the review
+      if (review.reviewer_email !== user.email) {
+        return reply.code(403).send({ error: 'You can only update your own reviews' });
+      }
+
+      // Update allowed fields
+      const allowedUpdates = ['rating', 'title', 'content', 'media_urls'];
+      allowedUpdates.forEach(field => {
+        const key = field as keyof IReview;
+        if (body[key] !== undefined) {
+          (review as any)[key] = body[key];
+        }
+      });
+
+      if (body.rating && (body.rating < 1 || body.rating > 5)) {
+        return reply.code(400).send({ error: 'Rating must be between 1 and 5' });
+      }
+
+      await review.save();
+
+      // Emit real-time event
+      fastify.io?.emit('review:updated', {
+        review: review.toObject(),
+        product_id: review.product_id
+      });
+
+      reply.send(review);
+    } catch (error) {
+      fastify.log.error(error);
+      reply.code(500).send({ error: 'Internal server error' });
+    }
+  });
+
+  // Delete review
+  fastify.delete('/:id', {
+    preHandler: fastify.authenticate
+  }, async (request, reply) => {
+    try {
+      const { id } = request.params as { id: string };
+      const user = request.user as any;
+
+      const review = await Review.findById(id);
+
+      if (!review) {
+        return reply.code(404).send({ error: 'Review not found' });
+      }
+
+      // Check if user owns the review
+      if (review.reviewer_email !== user.email) {
+        return reply.code(403).send({ error: 'You can only delete your own reviews' });
+      }
+
+      await Review.findByIdAndDelete(id);
+
+      // Emit real-time event
+      fastify.io?.emit('review:deleted', {
+        review_id: id,
+        product_id: review.product_id
+      });
+
+      reply.send({ message: 'Review deleted successfully' });
+    } catch (error) {
+      fastify.log.error(error);
+      reply.code(500).send({ error: 'Internal server error' });
+    }
+  });
+
+  // Mark review as helpful
+  fastify.post('/:id/helpful', {
+    preHandler: fastify.authenticate
+  }, async (request, reply) => {
+    try {
+      const { id } = request.params as { id: string };
+      const user = request.user as any;
+
+      const review = await Review.findById(id);
+
+      if (!review) {
+        return reply.code(404).send({ error: 'Review not found' });
+      }
+
+      // TODO: Implement helpful votes tracking (could use a separate collection)
+      // For now, just increment the count
+      review.helpful_count += 1;
+      await review.save();
+
+      reply.send({ helpful_count: review.helpful_count });
+    } catch (error) {
+      fastify.log.error(error);
+      reply.code(500).send({ error: 'Internal server error' });
+    }
+  });
+
+  // Get product reviews summary
+  fastify.get('/product/:productId/summary', async (request, reply) => {
+    try {
+      const { productId } = request.params as { productId: string };
+
+      const reviews = await Review.find({ product_id: productId });
+
+      if (reviews.length === 0) {
+        return reply.send({
+          product_id: productId,
+          total_reviews: 0,
+          average_rating: 0,
+          rating_distribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+          verified_reviews: 0
+        });
+      }
+
+      const totalReviews = reviews.length;
+      const averageRating = reviews.reduce((sum, review) => sum + review.rating, 0) / totalReviews;
+      const verifiedReviews = reviews.filter(review => review.is_verified_purchase).length;
+
+      const ratingDistribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+      reviews.forEach(review => {
+        ratingDistribution[review.rating as keyof typeof ratingDistribution]++;
+      });
+
+      reply.send({
+        product_id: productId,
+        total_reviews: totalReviews,
+        average_rating: Math.round(averageRating * 10) / 10,
+        rating_distribution: ratingDistribution,
+        verified_reviews: verifiedReviews
+      });
+    } catch (error) {
+      fastify.log.error(error);
+      reply.code(500).send({ error: 'Internal server error' });
+    }
+  });
+}
