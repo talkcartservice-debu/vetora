@@ -117,8 +117,12 @@ export async function postRoutes(fastify: FastifyInstance) {
       return post;
     } catch (error) {
       if (error instanceof z.ZodError) {
-        fastify.log.error(`Validation error: ${JSON.stringify(error.errors)}`);
-        return reply.code(400).send({ error: 'Invalid request data', details: error.errors });
+        const errorMsg = error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ');
+        fastify.log.error(`Validation error: ${errorMsg}`);
+        return reply.code(400).send({ 
+          error: `Invalid request data: ${errorMsg}`, 
+          details: error.errors 
+        });
       }
       fastify.log.error(error);
       return reply.code(500).send({ error: 'Internal server error' });

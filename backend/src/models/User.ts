@@ -7,6 +7,7 @@ export interface IUser extends Document {
   display_name?: string;
   bio?: string;
   avatar_url?: string;
+  banner_url?: string;
   is_verified: boolean;
   created_at: Date;
   updated_at: Date;
@@ -35,6 +36,9 @@ const UserSchema = new Schema<IUser>({
     maxlength: 500,
   },
   avatar_url: {
+    type: String,
+  },
+  banner_url: {
     type: String,
   },
   is_verified: {

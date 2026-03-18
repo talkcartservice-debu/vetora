@@ -181,4 +181,102 @@ export async function messageRoutes(fastify: FastifyInstance) {
       return reply.code(500).send({ error: 'Internal server error' });
     }
   });
+
+  // Update message (e.g., mark as read)
+  fastify.patch('/:id', {
+    preHandler: [fastify.authenticate],
+  }, async (request, reply) => {
+    try {
+      const { id } = request.params as { id: string };
+      const user = request.user as any;
+      const updateData = request.body as any;
+
+      const message = await Message.findOneAndUpdate(
+        { _id: id, receiver_email: user.email },
+        { ...updateData, updated_at: new Date() },
+        { new: true }
+      );
+
+      if (!message) {
+        return reply.code(404).send({ error: 'Message not found or unauthorized' });
+      }
+
+      return message;
+    } catch (error) {
+      fastify.log.error(error);
+      return reply.code(500).send({ error: 'Internal server error' });
+    }
+  });
+
+  // Mark message as read
+  fastify.patch('/:id/read', {
+    preHandler: [fastify.authenticate],
+  }, async (request, reply) => {
+    try {
+      const { id } = request.params as { id: string };
+      const user = request.user as any;
+
+      const message = await Message.findOneAndUpdate(
+        { _id: id, receiver_email: user.email },
+        { is_read: true, read_at: new Date(), updated_at: new Date() },
+        { new: true }
+      );
+
+      if (!message) {
+        return reply.code(404).send({ error: 'Message not found or unauthorized' });
+      }
+
+      return message;
+    } catch (error) {
+      fastify.log.error(error);
+      return reply.code(500).send({ error: 'Internal server error' });
+    }
+  });
+
+  // Mark all messages in a conversation as read
+  fastify.patch('/conversation/:conversationId/read', {
+    preHandler: [fastify.authenticate],
+  }, async (request, reply) => {
+    try {
+      const { conversationId } = request.params as { conversationId: string };
+      const user = request.user as any;
+
+      await Message.updateMany(
+        { conversation_id: conversationId, receiver_email: user.email, is_read: false },
+        { is_read: true, read_at: new Date(), updated_at: new Date() }
+      );
+
+      return { success: true };
+    } catch (error) {
+      fastify.log.error(error);
+      return reply.code(500).send({ error: 'Internal server error' });
+    }
+  });
+
+  // Delete message
+  fastify.delete('/:id', {
+    preHandler: [fastify.authenticate],
+  }, async (request, reply) => {
+    try {
+      const { id } = request.params as { id: string };
+      const user = request.user as any;
+
+      const result = await Message.deleteOne({
+        _id: id,
+        $or: [
+          { sender_email: user.email },
+          { receiver_email: user.email }
+        ]
+      });
+
+      if (result.deletedCount === 0) {
+        return reply.code(404).send({ error: 'Message not found or unauthorized' });
+      }
+
+      return { success: true };
+    } catch (error) {
+      fastify.log.error(error);
+      return reply.code(500).send({ error: 'Internal server error' });
+    }
+  });
 }

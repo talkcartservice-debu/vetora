@@ -53,8 +53,10 @@ export default function ReviewForm({ productId, currentUser, onClose }) {
       let uploadedUrls = [];
       try {
         for (const file of mediaFiles) {
-          const { file_url } = await filesAPI.upload(file);
-          uploadedUrls.push(file_url);
+          const res = await filesAPI.upload(file);
+          if (res.url) {
+            uploadedUrls.push(res.url);
+          }
         }
       } catch (error) {
         toast.error("Failed to upload media");

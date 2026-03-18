@@ -20,6 +20,7 @@ export async function userRoutes(fastify: FastifyInstance) {
         display_name: user.display_name,
         bio: user.bio,
         avatar_url: user.avatar_url,
+        banner_url: user.banner_url,
         is_verified: user.is_verified,
         created_at: user.created_at,
       };

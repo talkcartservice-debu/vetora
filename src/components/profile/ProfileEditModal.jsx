@@ -11,7 +11,9 @@ export default function ProfileEditModal({ open, onClose, user }) {
   const [displayName, setDisplayName] = useState(user?.display_name || user?.full_name || "");
   const [bio, setBio] = useState(user?.bio || "");
   const [avatarUrl, setAvatarUrl] = useState(user?.avatar_url || "");
+  const [bannerUrl, setBannerUrl] = useState(user?.banner_url || "");
   const [uploading, setUploading] = useState(false);
+  const [uploadingBanner, setUploadingBanner] = useState(false);
   const queryClient = useQueryClient();
 
   const handleAvatarUpload = async (e) => {
@@ -19,7 +21,9 @@ export default function ProfileEditModal({ open, onClose, user }) {
     if (!file) return;
     setUploading(true);
     try {
-      const { file_url } = await filesAPI.upload(file);
+      const res = await filesAPI.upload(file);
+      const file_url = res.url;
+      if (!file_url) throw new Error("No URL returned from upload");
       setAvatarUrl(file_url);
     } catch (error) {
       toast.error("Failed to upload avatar");
@@ -28,8 +32,29 @@ export default function ProfileEditModal({ open, onClose, user }) {
     }
   };
 
+  const handleBannerUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingBanner(true);
+    try {
+      const res = await filesAPI.upload(file);
+      const file_url = res.url;
+      if (!file_url) throw new Error("No URL returned from upload");
+      setBannerUrl(file_url);
+    } catch (error) {
+      toast.error("Failed to upload banner");
+    } finally {
+      setUploadingBanner(false);
+    }
+  };
+
   const saveMutation = useMutation({
-    mutationFn: () => authAPI.updateProfile({ display_name: displayName, bio, avatar_url: avatarUrl }),
+    mutationFn: () => authAPI.updateProfile({ 
+      display_name: displayName, 
+      bio, 
+      avatar_url: avatarUrl,
+      banner_url: bannerUrl 
+    }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["currentUser"] });
       queryClient.invalidateQueries({ queryKey: ["profileUser"] });
@@ -45,8 +70,21 @@ export default function ProfileEditModal({ open, onClose, user }) {
           <DialogTitle>Edit Profile</DialogTitle>
         </DialogHeader>
 
+        {/* Banner */}
+        <div className="relative h-24 rounded-xl overflow-hidden mb-2 bg-slate-100 group">
+          {bannerUrl ? (
+            <img src={bannerUrl} alt="" className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500" />
+          )}
+          <label className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center cursor-pointer transition-opacity">
+            {uploadingBanner ? <Loader2 className="w-5 h-5 text-white animate-spin" /> : <Camera className="w-5 h-5 text-white" />}
+            <input type="file" accept="image/*" className="hidden" onChange={handleBannerUpload} disabled={uploadingBanner} />
+          </label>
+        </div>
+
         {/* Avatar */}
-        <div className="flex justify-center mb-2">
+        <div className="flex justify-center -mt-10 relative z-10 mb-2">
           <label className="relative cursor-pointer group">
             <div className="w-20 h-20 rounded-full overflow-hidden bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center ring-4 ring-white shadow-lg">
               {avatarUrl ? (

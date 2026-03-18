@@ -129,7 +129,13 @@ export async function storyRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     try {
       const body = request.body as Partial<IStory>;
-      const user = request.user as any;
+      const authUser = request.user as any;
+      
+      // Fetch full user data to get display_name and avatar_url
+      const user = await User.findOne({ email: authUser.email });
+      if (!user) {
+        return reply.code(404).send({ error: 'User not found' });
+      }
 
       // Validate required fields
       if (!body.media_type) {
@@ -150,7 +156,7 @@ export async function storyRoutes(fastify: FastifyInstance) {
       const story = new Story({
         ...body,
         author_email: user.email,
-        author_name: user.name || user.email,
+        author_name: user.display_name || user.email,
         author_avatar: user.avatar_url,
       });
 
@@ -266,6 +272,40 @@ export async function storyRoutes(fastify: FastifyInstance) {
       // For now, just increment the count
 
       reply.send({ views_count: story.views_count });
+    } catch (error) {
+      fastify.log.error(error);
+      reply.code(500).send({ error: 'Internal server error' });
+    }
+  });
+  
+  // Like a story
+  fastify.post('/:id/like', {
+    preHandler: fastify.authenticate
+  }, async (request, reply) => {
+    try {
+      const { id } = request.params as { id: string };
+      
+      const story = await Story.findById(id);
+      
+      if (!story) {
+        return reply.code(404).send({ error: 'Story not found' });
+      }
+      
+      if (!story.is_active || story.expires_at <= new Date()) {
+        return reply.code(400).send({ error: 'Story is no longer active' });
+      }
+      
+      // Increment likes count
+      story.likes_count += 1;
+      await story.save();
+      
+      // Emit real-time event
+      fastify.io?.emit('story:liked', {
+        story_id: id,
+        likes_count: story.likes_count
+      });
+      
+      reply.send({ likes_count: story.likes_count });
     } catch (error) {
       fastify.log.error(error);
       reply.code(500).send({ error: 'Internal server error' });

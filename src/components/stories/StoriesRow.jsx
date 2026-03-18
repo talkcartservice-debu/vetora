@@ -39,38 +39,120 @@ export default function StoriesRow({ currentUser }) {
     <>
       <div className="py-3 -mx-4 px-4 overflow-x-auto hide-scrollbar">
         <div className="flex gap-3">
-          {/* Add story button */}
+          {/* Add story button / View My Story */}
           <button
-            onClick={() => setShowCreate(true)}
+            onClick={() => {
+              if (myStory) {
+                setViewingGroup({ stories: myStory.stories, startIndex: 0 });
+              } else {
+                setShowCreate(true);
+              }
+            }}
             className="shrink-0 flex flex-col items-center gap-1.5"
           >
-            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 border-2 border-dashed border-indigo-300 flex items-center justify-center relative overflow-hidden">
-              {myStory ? (
-                <div className="w-full h-full rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg">
-                  {currentUser?.full_name?.[0]?.toUpperCase() || "U"}
+            <div className={`w-14 h-14 rounded-full flex items-center justify-center relative overflow-hidden ${myStory ? 'p-0.5 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 shadow-sm' : 'bg-indigo-50 border-2 border-dashed border-indigo-200'}`}>
+              <div className="w-full h-full rounded-full bg-white flex items-center justify-center relative overflow-hidden">
+                {myStory ? (
+                  // Show preview of the latest story
+                  (myStory.stories[0].media_type === "image" || myStory.stories[0].media_type === "video") && myStory.stories[0].media_url ? (
+                    myStory.stories[0].media_type === "video" ? (
+                      <video 
+                        src={myStory.stories[0].media_url} 
+                        className="w-full h-full object-cover rounded-full"
+                        muted
+                        playsInline
+                      />
+                    ) : (
+                      <img 
+                        src={myStory.stories[0].media_url} 
+                        alt="" 
+                        className="w-full h-full object-cover rounded-full" 
+                      />
+                    )
+                  ) : myStory.stories[0].media_type === "text" ? (
+                    <div className="w-full h-full rounded-full flex items-center justify-center p-2" style={{ backgroundColor: myStory.stories[0].bg_color || "#6366f1" }}>
+                      <span className="text-white text-[8px] font-bold text-center leading-tight truncate-multiline">
+                        {myStory.stories[0].caption?.substring(0, 30)}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-bold text-sm">
+                      {currentUser?.display_name?.[0]?.toUpperCase() || currentUser?.full_name?.[0]?.toUpperCase() || "U"}
+                    </div>
+                  )
+                ) : (
+                  // Empty state / Add button
+                  currentUser?.avatar_url ? (
+                    <img src={currentUser.avatar_url} alt="" className="w-full h-full object-cover rounded-full opacity-50" />
+                  ) : (
+                    <Plus className="w-5 h-5 text-indigo-400" />
+                  )
+                )}
+              </div>
+              
+              {/* User Avatar Badge (Small overlay) */}
+              {myStory && currentUser?.avatar_url && (
+                <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full border-2 border-white overflow-hidden shadow-sm">
+                  <img src={currentUser.avatar_url} alt="" className="w-full h-full object-cover" />
                 </div>
-              ) : (
-                <Plus className="w-6 h-6 text-indigo-500" />
+              )}
+
+              {!myStory && (
+                <div className="absolute bottom-0 right-0 w-5 h-5 bg-indigo-600 rounded-full border-2 border-white flex items-center justify-center shadow-sm">
+                  <Plus className="w-3 h-3 text-white" />
+                </div>
               )}
             </div>
             <span className="text-[10px] text-slate-500 font-medium">Your Story</span>
           </button>
 
           {/* Other stories */}
-          {groups.filter(g => g.email !== currentUser?.email).map(group => (
-            <button
-              key={group.email}
-              onClick={() => setViewingGroup({ stories: group.stories, startIndex: 0 })}
-              className="shrink-0 flex flex-col items-center gap-1.5"
-            >
-              <div className="w-14 h-14 rounded-full p-0.5 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500">
-                <div className="w-full h-full rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white font-bold border-2 border-white text-sm">
-                  {group.name?.[0]?.toUpperCase() || "U"}
+          {groups.filter(g => g.email !== currentUser?.email).map(group => {
+            const latestStory = group.stories[0];
+            return (
+              <button
+                key={group.email}
+                onClick={() => setViewingGroup({ stories: group.stories, startIndex: 0 })}
+                className="shrink-0 flex flex-col items-center gap-1.5"
+              >
+                <div className="w-14 h-14 rounded-full p-0.5 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 shadow-sm relative">
+                  <div className="w-full h-full rounded-full bg-white flex items-center justify-center relative overflow-hidden">
+                    {(latestStory.media_type === "image" || latestStory.media_type === "video") && latestStory.media_url ? (
+                      latestStory.media_type === "video" ? (
+                        <video 
+                          src={latestStory.media_url} 
+                          className="w-full h-full object-cover rounded-full" 
+                          muted
+                          playsInline
+                        />
+                      ) : (
+                        <img src={latestStory.media_url} alt="" className="w-full h-full object-cover rounded-full" />
+                      )
+                    ) : latestStory.media_type === "text" ? (
+                      <div className="w-full h-full rounded-full flex items-center justify-center p-2" style={{ backgroundColor: latestStory.bg_color || "#6366f1" }}>
+                        <span className="text-white text-[8px] font-bold text-center leading-tight overflow-hidden break-words">
+                          {latestStory.caption?.substring(0, 30) || "Story"}
+                        </span>
+                      </div>
+                    ) : latestStory.author_avatar ? (
+                      <img src={latestStory.author_avatar} alt="" className="w-full h-full object-cover rounded-full" />
+                    ) : (
+                      <div className="w-full h-full rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white font-bold text-sm">
+                        {group.name?.[0]?.toUpperCase() || group.email?.[0]?.toUpperCase() || "U"}
+                      </div>
+                    )}
+                  </div>
+                  {/* Small Avatar Overlay for other users */}
+                  {(latestStory.media_type === "image" || latestStory.media_type === "video" || latestStory.media_type === "text") && latestStory.author_avatar && (
+                    <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full border-2 border-white overflow-hidden shadow-sm">
+                      <img src={latestStory.author_avatar} alt="" className="w-full h-full object-cover" />
+                    </div>
+                  )}
                 </div>
-              </div>
-              <span className="text-[10px] text-slate-500 font-medium max-w-[56px] truncate">{group.name?.split(" ")[0]}</span>
-            </button>
-          ))}
+                <span className="text-[10px] text-slate-500 font-medium max-w-[56px] truncate">{group.name?.split(" ")[0] || group.email?.split("@")[0]}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 

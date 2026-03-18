@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Heart } from "lucide-react";
-import { storiesAPI } from "@/api/apiClient";
+import { X, Heart, Send } from "lucide-react";
+import { storiesAPI, messagesAPI } from "@/api/apiClient";
+import { toast } from "sonner";
 
 export default function StoryViewer({ stories, startIndex = 0, onClose }) {
   const [current, setCurrent] = useState(startIndex);
   const [progress, setProgress] = useState(0);
   const [liked, setLiked] = useState(false);
+  const [replyText, setReplyText] = useState("");
+  const [isPaused, setIsPaused] = useState(false);
 
   const story = stories[current];
 
@@ -17,23 +20,63 @@ export default function StoryViewer({ stories, startIndex = 0, onClose }) {
   }, [story?._id, story?.id]);
 
   useEffect(() => {
+    if (!story) {
+      const timer = setTimeout(() => {
+        onClose();
+      }, 100); // Small delay to avoid state-update warning
+      return () => clearTimeout(timer);
+    }
+  }, [story, onClose]);
+
+  useEffect(() => {
     setProgress(0);
     setLiked(false);
+    if (isPaused || !story) return;
+
     const timer = setInterval(() => {
-      setProgress(p => {
-        if (p >= 100) {
-          if (current < stories.length - 1) {
-            setCurrent(c => c + 1);
-          } else {
-            onClose();
-          }
-          return 0;
-        }
-        return p + 2;
-      });
-    }, 100);
+      setProgress(p => p + 1);
+    }, 50);
     return () => clearInterval(timer);
-  }, [current]);
+  }, [current, isPaused, story]);
+
+  useEffect(() => {
+    if (progress >= 100) {
+      if (current < stories.length - 1) {
+        setCurrent(c => c + 1);
+        setProgress(0);
+      } else {
+        onClose();
+      }
+    }
+  }, [progress, current, stories.length, onClose]);
+
+  const handleLike = async () => {
+    if (liked) return;
+    try {
+      setLiked(true);
+      await storiesAPI.like(story._id || story.id);
+    } catch (error) {
+      setLiked(false);
+    }
+  };
+
+  const handleReply = async (e) => {
+    e.preventDefault();
+    if (!replyText.trim()) return;
+
+    try {
+      await messagesAPI.send({
+        recipient_email: story.author_email,
+        content: `Replied to your story: "${replyText}"`,
+        message_type: 'text'
+      });
+      toast.success("Reply sent!");
+      setReplyText("");
+      setIsPaused(false);
+    } catch (error) {
+      toast.error("Failed to send reply");
+    }
+  };
 
   if (!story) return null;
 
@@ -53,11 +96,11 @@ export default function StoryViewer({ stories, startIndex = 0, onClose }) {
       exit={{ opacity: 0 }}
       className="fixed inset-0 z-[100] bg-black flex items-center justify-center"
     >
-      <div className="relative w-full max-w-sm h-full max-h-screen overflow-hidden">
+      <div className="relative w-full max-w-sm h-full max-h-screen overflow-hidden bg-black shadow-2xl">
         {/* Progress bars */}
-        <div className="absolute top-3 left-3 right-3 flex gap-1 z-10">
+        <div className="absolute top-3 left-3 right-3 flex gap-1 z-30">
           {stories.map((_, i) => (
-            <div key={i} className="flex-1 h-0.5 bg-white/30 rounded-full overflow-hidden">
+            <div key={i} className="flex-1 h-1 bg-white/20 rounded-full overflow-hidden">
               <div
                 className="h-full bg-white rounded-full transition-none"
                 style={{ width: i < current ? "100%" : i === current ? `${progress}%` : "0%" }}
@@ -67,64 +110,120 @@ export default function StoryViewer({ stories, startIndex = 0, onClose }) {
         </div>
 
         {/* Header */}
-        <div className="absolute top-8 left-0 right-0 px-4 flex items-center gap-3 z-10">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white text-xs font-bold ring-2 ring-white">
-            {story.author_name?.[0]?.toUpperCase() || "U"}
+        <div className="absolute top-8 left-0 right-0 px-4 flex items-center gap-3 z-30">
+          <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center relative overflow-hidden ring-2 ring-white/50 shadow-lg">
+            {story.author_avatar ? (
+              <img src={story.author_avatar} alt="" className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white text-[10px] font-bold">
+                {story.author_name?.[0]?.toUpperCase() || story.author_email?.[0]?.toUpperCase() || "U"}
+              </div>
+            )}
           </div>
           <div>
-            <p className="text-white text-xs font-semibold">{story.author_name}</p>
-            <p className="text-white/60 text-[10px]">{new Date(story.created_at || story.created_date).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}</p>
+            <p className="text-white text-sm font-bold drop-shadow-md">{story.author_name || story.author_email?.split('@')[0]}</p>
+            <p className="text-white/80 text-[10px] drop-shadow-md">{new Date(story.created_at || story.created_date).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}</p>
           </div>
-          <button onClick={onClose} className="ml-auto w-8 h-8 rounded-full bg-black/40 flex items-center justify-center">
-            <X className="w-4 h-4 text-white" />
+          <button onClick={onClose} className="ml-auto w-10 h-10 rounded-full bg-black/20 backdrop-blur-md flex items-center justify-center hover:bg-black/40 transition-colors">
+            <X className="w-5 h-5 text-white" />
           </button>
         </div>
 
         {/* Story Content */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={current}
-            initial={{ opacity: 0, scale: 1.05 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            className="w-full h-full"
-          >
-            {story.media_type === "image" && story.media_url ? (
-              <img src={story.media_url} alt="" className="w-full h-full object-cover" />
-            ) : (
-              <div className={`w-full h-full bg-gradient-to-br ${gradClass} flex items-center justify-center`}>
-                <p className="text-white text-2xl font-bold text-center px-8 leading-relaxed">{story.caption || "✨"}</p>
-              </div>
-            )}
-          </motion.div>
-        </AnimatePresence>
+        <div 
+          className="w-full h-full relative"
+          onMouseDown={() => setIsPaused(true)}
+          onMouseUp={() => setIsPaused(false)}
+          onTouchStart={() => setIsPaused(true)}
+          onTouchEnd={() => setIsPaused(false)}
+        >
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={current}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3 }}
+              className="w-full h-full"
+            >
+              {(story.media_type === "image" || story.media_type === "video") && story.media_url ? (
+                story.media_type === "video" ? (
+                  <video 
+                    src={story.media_url} 
+                    className="w-full h-full object-cover" 
+                    autoPlay 
+                    playsInline 
+                    muted={false}
+                    onPlay={() => setIsPaused(false)}
+                    onEnded={() => {
+                      if (current < stories.length - 1) {
+                        setCurrent(c => c + 1);
+                        setProgress(0);
+                      } else {
+                        onClose();
+                      }
+                    }}
+                  />
+                ) : (
+                  <img src={story.media_url} alt="" className="w-full h-full object-cover" />
+                )
+              ) : (
+                <div className={`w-full h-full bg-gradient-to-br ${gradClass} flex items-center justify-center`}>
+                  <p className="text-white text-3xl font-extrabold text-center px-8 leading-relaxed drop-shadow-xl">{story.caption || "✨"}</p>
+                </div>
+              )}
+            </motion.div>
+          </AnimatePresence>
+        </div>
 
         {/* Caption overlay */}
         {story.media_url && story.caption && (
-          <div className="absolute bottom-16 left-0 right-0 px-4">
-            <p className="text-white text-sm font-medium bg-black/40 rounded-xl px-3 py-2 backdrop-blur-sm">{story.caption}</p>
+          <div className="absolute bottom-20 left-0 right-0 px-6 z-20 pointer-events-none">
+            <p className="text-white text-base font-semibold bg-black/30 rounded-2xl px-4 py-3 backdrop-blur-md border border-white/10 shadow-lg">{story.caption}</p>
           </div>
         )}
 
         {/* Bottom actions */}
-        <div className="absolute bottom-4 left-4 right-4 flex items-center gap-3">
-          <div className="flex-1 bg-white/10 backdrop-blur-md border border-white/20 rounded-full h-10 px-4 flex items-center">
-            <span className="text-white/50 text-xs">Reply to story...</span>
-          </div>
-          <button onClick={() => setLiked(v => !v)} className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
-            <Heart className={`w-5 h-5 ${liked ? "fill-red-500 text-red-500" : "text-white"}`} />
-          </button>
+        <div className="absolute bottom-6 left-0 right-0 px-4 flex items-center gap-3 z-30">
+          <form onSubmit={handleReply} className="flex-1 flex items-center gap-2">
+            <input
+              type="text"
+              value={replyText}
+              onChange={(e) => setReplyText(e.target.value)}
+              onFocus={() => setIsPaused(true)}
+              onBlur={() => setIsPaused(false)}
+              placeholder="Send message..."
+              className="flex-1 bg-black/40 hover:bg-black/60 focus:bg-black/70 backdrop-blur-xl border border-white/20 rounded-full h-12 px-5 text-white text-sm outline-none transition-all placeholder:text-white/40 shadow-inner"
+            />
+            {replyText.trim() && (
+              <button type="submit" className="w-12 h-12 rounded-full bg-indigo-600 flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all">
+                <Send className="w-5 h-5 text-white" />
+              </button>
+            )}
+          </form>
+          {!replyText.trim() && (
+            <button 
+              onClick={handleLike} 
+              className={`w-12 h-12 rounded-full backdrop-blur-xl border border-white/20 flex items-center justify-center transition-all ${liked ? 'bg-red-500/20 border-red-500/50 scale-110 shadow-[0_0_20px_rgba(239,68,68,0.3)]' : 'bg-black/40 hover:bg-black/60 active:scale-90'}`}
+            >
+              <Heart className={`w-6 h-6 ${liked ? "fill-red-500 text-red-500 animate-bounce" : "text-white"}`} />
+            </button>
+          )}
         </div>
 
         {/* Nav zones */}
-        <button
-          onClick={() => current > 0 ? setCurrent(c => c - 1) : onClose()}
-          className="absolute left-0 top-0 w-1/3 h-full z-20 opacity-0"
-        />
-        <button
-          onClick={() => current < stories.length - 1 ? setCurrent(c => c + 1) : onClose()}
-          className="absolute right-0 top-0 w-1/3 h-full z-20 opacity-0"
-        />
+        {!isPaused && (
+          <>
+            <button
+              onClick={() => current > 0 ? setCurrent(c => c - 1) : onClose()}
+              className="absolute left-0 top-20 w-1/4 h-3/4 z-20 opacity-0 cursor-default"
+            />
+            <button
+              onClick={() => current < stories.length - 1 ? setCurrent(c => c + 1) : onClose()}
+              className="absolute right-0 top-20 w-1/4 h-3/4 z-20 opacity-0 cursor-default"
+            />
+          </>
+        )}
       </div>
     </motion.div>
   );

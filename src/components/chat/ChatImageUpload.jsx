@@ -13,7 +13,9 @@ export default function ChatImageUpload({ onImageReady, onClear, previewUrl }) {
     if (!file.type.startsWith("image/")) { toast.error("Only images allowed"); return; }
     setUploading(true);
     try {
-      const { file_url } = await filesAPI.upload(file);
+      const res = await filesAPI.upload(file);
+      const file_url = res.url;
+      if (!file_url) throw new Error("No URL returned from upload");
       onImageReady(file_url);
     } catch (error) {
       toast.error("Failed to upload image");

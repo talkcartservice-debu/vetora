@@ -47,6 +47,12 @@ class APIClient {
 
   // Generic fetch wrapper
   async request(endpoint, options = {}) {
+    // Prevent common bugs by checking for 'undefined' or 'null' in the URL
+    if (endpoint.includes('/undefined') || endpoint.includes('/null')) {
+      console.warn(`API Client: Blocked request to invalid endpoint: ${endpoint}`);
+      throw new Error(`Invalid API endpoint: ${endpoint}`);
+    }
+
     const url = `${this.baseURL}${endpoint}`;
     const {
       method = 'GET',
@@ -94,11 +100,13 @@ class APIClient {
 
       const error = new Error(data?.error || data?.message || `API Error: ${response.status}`);
       error.status = response.status;
+      error.details = data?.details; // Save validation details
       
       if (!response.ok) {
         // Don't log 404 errors - they're often expected (e.g., checking if resource exists)
         if (response.status !== 404) {
-          console.error(`API Error [${endpoint}]:`, error);
+          const detailMsg = data?.details ? `: ${JSON.stringify(data.details)}` : '';
+          console.error(`API Error [${endpoint}]: ${error.message}${detailMsg}`, error);
         }
         throw error;
       }
@@ -138,8 +146,8 @@ class APIClient {
   }
 
   // DELETE request
-  delete(endpoint, options = {}) {
-    return this.request(endpoint, { ...options, method: 'DELETE' });
+  delete(endpoint, body = null, options = {}) {
+    return this.request(endpoint, { ...options, method: 'DELETE', body });
   }
 
   // Build query string from object
@@ -201,9 +209,11 @@ export const productsAPI = {
   },
   get: (id) => apiClient.get(`/products/${id}`),
   create: (data) => apiClient.post('/products', data),
-  update: (id, data) => apiClient.put(`/products/${id}`, data),
+  update: (id, data) => apiClient.patch(`/products/${id}`, data),
   delete: (id) => apiClient.delete(`/products/${id}`),
-  search: (query) => apiClient.get(`/products?search=${encodeURIComponent(query)}`)
+  search: (query) => apiClient.get(`/products/search?q=${encodeURIComponent(query)}`),
+  getTopSelling: (limit = 10) => apiClient.get(`/products/top-selling?limit=${limit}`),
+  getRelated: (id, limit = 10) => apiClient.get(`/products/related/${id}?limit=${limit}`),
 };
 
 export const ordersAPI = {
@@ -213,8 +223,8 @@ export const ordersAPI = {
   },
   get: (id) => apiClient.get(`/orders/${id}`),
   create: (data) => apiClient.post('/orders', data),
-  update: (id, data) => apiClient.put(`/orders/${id}`, data),
-  cancelOrder: (id) => apiClient.post(`/orders/${id}/cancel`, {})
+  updateStatus: (id, status) => apiClient.patch(`/orders/${id}/status`, { status }),
+  cancelOrder: (id) => apiClient.patch(`/orders/${id}/status`, { status: 'cancelled' })
 };
 
 export const cartAPI = {
@@ -232,7 +242,7 @@ export const postsAPI = {
   },
   get: (id) => apiClient.get(`/posts/${id}`),
   create: (data) => apiClient.post('/posts', data),
-  update: (id, data) => apiClient.put(`/posts/${id}`, data),
+  update: (id, data) => apiClient.patch(`/posts/${id}`, data),
   delete: (id) => apiClient.delete(`/posts/${id}`),
   like: (id) => apiClient.post(`/posts/${id}/like`, {}),
   unlike: (id) => apiClient.delete(`/posts/${id}/like`)
@@ -243,11 +253,119 @@ export const commentsAPI = {
     const query = apiClient.buildQueryString({ ...filters, post_id: postId });
     return apiClient.get(`/comments?${query}`);
   },
+  get: (id) => apiClient.get(`/comments/${id}`),
+  getThread: (id) => apiClient.get(`/comments/${id}/thread`),
   create: (data) => apiClient.post('/comments', data),
   update: (id, data) => apiClient.put(`/comments/${id}`, data),
   delete: (id) => apiClient.delete(`/comments/${id}`),
   like: (id) => apiClient.post(`/comments/${id}/like`, {}),
-  unlike: (id) => apiClient.delete(`/comments/${id}/like`)
+};
+
+export const followsAPI = {
+  list: (filters) => {
+    const query = apiClient.buildQueryString(filters);
+    return apiClient.get(`/follows?${query}`);
+  },
+  follow: (followingEmail, followType = 'user', targetId = null) => 
+    apiClient.post('/follows', { following_email: followingEmail, follow_type: followType, target_id: targetId }),
+  unfollow: (params) => {
+    const query = apiClient.buildQueryString(params);
+    return apiClient.delete(`/follows?${query}`);
+  },
+  check: (params) => {
+    const query = apiClient.buildQueryString(params);
+    return apiClient.get(`/follows/check?${query}`);
+  },
+  getFollowers: (params) => {
+    const query = apiClient.buildQueryString(params);
+    return apiClient.get(`/follows/followers?${query}`);
+  },
+  getFollowing: (params) => {
+    const query = apiClient.buildQueryString(params);
+    return apiClient.get(`/follows/following?${query}`);
+  },
+  getCounts: (params) => {
+    const query = apiClient.buildQueryString(params);
+    return apiClient.get(`/follows/counts?${query}`);
+  },
+  getMyFollowing: (filters) => {
+    const query = apiClient.buildQueryString(filters);
+    return apiClient.get(`/follows/me/following?${query}`);
+  },
+  getMyFollowers: (filters) => {
+    const query = apiClient.buildQueryString(filters);
+    return apiClient.get(`/follows/me/followers?${query}`);
+  }
+};
+
+export const likesAPI = {
+  list: (filters) => {
+    const query = apiClient.buildQueryString(filters);
+    return apiClient.get(`/likes?${query}`);
+  },
+  check: (targetType, targetId) => apiClient.get(`/likes/check?target_type=${targetType}&target_id=${targetId}`),
+  like: (targetType, targetId) => apiClient.post('/likes', { target_type: targetType, target_id: targetId }),
+  unlike: (targetType, targetId) => apiClient.delete(`/likes?target_type=${targetType}&target_id=${targetId}`),
+  getCount: (targetType, targetId) => apiClient.get(`/likes/count?target_type=${targetType}&target_id=${targetId}`),
+  getUserLikes: (filters) => {
+    const query = apiClient.buildQueryString(filters);
+    return apiClient.get(`/likes/user?${query}`);
+  }
+};
+
+export const withdrawalsAPI = {
+  list: (filters) => {
+    const query = apiClient.buildQueryString(filters);
+    return apiClient.get(`/withdrawals?${query}`);
+  },
+  get: (id) => apiClient.get(`/withdrawals/${id}`),
+  getByVendor: (vendorEmail, filters) => {
+    const query = apiClient.buildQueryString(filters);
+    return apiClient.get(`/withdrawals/vendor/${vendorEmail}?${query}`);
+  },
+  create: (data) => apiClient.post('/withdrawals', data),
+  update: (id, data) => apiClient.put(`/withdrawals/${id}`, data),
+  updateStatus: (id, data) => apiClient.put(`/withdrawals/${id}/status`, data),
+  delete: (id) => apiClient.delete(`/withdrawals/${id}`),
+  getOverview: (filters) => {
+    const query = apiClient.buildQueryString(filters);
+    return apiClient.get(`/withdrawals/stats/overview?${query}`);
+  },
+};
+
+export const vendorSubscriptionsAPI = {
+  list: (filters) => {
+    const query = apiClient.buildQueryString(filters);
+    return apiClient.get(`/vendor-subscriptions?${query}`);
+  },
+  get: (id) => apiClient.get(`/vendor-subscriptions/${id}`),
+  getByVendor: (vendorEmail) => apiClient.get(`/vendor-subscriptions/vendor/${vendorEmail}`),
+  getByStore: (storeId) => apiClient.get(`/vendor-subscriptions/store/${storeId}`),
+  create: (data) => apiClient.post('/vendor-subscriptions', data),
+  update: (id, data) => apiClient.put(`/vendor-subscriptions/${id}`, data),
+  cancel: (id) => apiClient.post(`/vendor-subscriptions/${id}/cancel`, {}),
+  renew: (id) => apiClient.post(`/vendor-subscriptions/${id}/renew`, {}),
+  delete: (id) => apiClient.delete(`/vendor-subscriptions/${id}`),
+  getStatus: (id) => apiClient.get(`/vendor-subscriptions/${id}/status`),
+  getPlans: () => apiClient.get('/vendor-subscriptions/public/plans'),
+};
+
+export const shippingZonesAPI = {
+  list: (filters) => {
+    const query = apiClient.buildQueryString(filters);
+    return apiClient.get(`/shipping-zones?${query}`);
+  },
+  get: (id) => apiClient.get(`/shipping-zones/${id}`),
+  getByVendor: (vendorEmail) => apiClient.get(`/shipping-zones/vendor/${vendorEmail}`),
+  getByStore: (storeId) => apiClient.get(`/shipping-zones/store/${storeId}`),
+  create: (data) => apiClient.post('/shipping-zones', data),
+  update: (id, data) => apiClient.put(`/shipping-zones/${id}`, data),
+  delete: (id) => apiClient.delete(`/shipping-zones/${id}`),
+  calculate: (id, data) => apiClient.post(`/shipping-zones/${id}/calculate`, data),
+  getAvailable: (countryCode, filters) => {
+    const query = apiClient.buildQueryString(filters);
+    return apiClient.get(`/shipping-zones/available/${countryCode}?${query}`);
+  },
 };
 
 export const storesAPI = {
@@ -257,7 +375,7 @@ export const storesAPI = {
   },
   get: (id) => apiClient.get(`/stores/${id}`),
   create: (data) => apiClient.post('/stores', data),
-  update: (id, data) => apiClient.put(`/stores/${id}`, data),
+  update: (id, data) => apiClient.patch(`/stores/${id}`, data),
   getByOwner: (email) => apiClient.get(`/stores/owner/${email}`)
 };
 
@@ -272,8 +390,14 @@ export const communitiesAPI = {
     return apiClient.get(`/communities?${query}`);
   },
   get: (id) => apiClient.get(`/communities/${id}`),
+  getByName: (name) => apiClient.get(`/communities/name/${name}`),
   create: (data) => apiClient.post('/communities', data),
   update: (id, data) => apiClient.put(`/communities/${id}`, data),
+  delete: (id) => apiClient.delete(`/communities/${id}`),
+  listForMe: (filters) => {
+    const query = apiClient.buildQueryString(filters);
+    return apiClient.get(`/communities/user/me?${query}`);
+  },
   join: (id) => apiClient.post(`/communities/${id}/join`, {}),
   leave: (id) => apiClient.post(`/communities/${id}/leave`, {})
 };
@@ -283,8 +407,15 @@ export const communityMembersAPI = {
     const query = apiClient.buildQueryString(filters);
     return apiClient.get(`/community-members?${query}`);
   },
+  create: (data) => apiClient.post('/community-members', data),
   update: (id, data) => apiClient.put(`/community-members/${id}`, data),
   delete: (id) => apiClient.delete(`/community-members/${id}`),
+  check: (communityId) => apiClient.get(`/community-members/check?community_id=${communityId}`),
+  getMe: (filters) => {
+    const query = apiClient.buildQueryString(filters);
+    return apiClient.get(`/community-members/me?${query}`);
+  },
+  bulkAdd: (data) => apiClient.post('/community-members/bulk', data)
 };
 
 export const messagesAPI = {
@@ -318,8 +449,12 @@ export const wishlistAPI = {
   },
   check: (productId) => apiClient.get(`/wishlist/check/${productId}`),
   add: (data) => apiClient.post('/wishlist', data),
+  update: (productId, data) => apiClient.put(`/wishlist/${productId}`, data),
   remove: (productId) => apiClient.delete(`/wishlist/${productId}`),
-  getStats: () => apiClient.get('/wishlist/stats')
+  getStats: () => apiClient.get('/wishlist/stats'),
+  bulkAdd: (data) => apiClient.post('/wishlist/bulk', data),
+  clear: () => apiClient.delete('/wishlist'),
+  getPopular: (limit = 20) => apiClient.get(`/wishlist/popular/items?limit=${limit}`)
 };
 
 export const reviewsAPI = {
@@ -331,10 +466,8 @@ export const reviewsAPI = {
   create: (data) => apiClient.post('/reviews', data),
   update: (id, data) => apiClient.put(`/reviews/${id}`, data),
   delete: (id) => apiClient.delete(`/reviews/${id}`),
-  listByStore: (storeId, filters = {}) => {
-    const query = apiClient.buildQueryString({ ...filters, store_id: storeId });
-    return apiClient.get(`/reviews/store/${storeId}?${query}`);
-  },
+  markHelpful: (id) => apiClient.post(`/reviews/${id}/helpful`, {}),
+  getSummary: (productId) => apiClient.get(`/reviews/product/${productId}/summary`),
 };
 
 export const storeReviewsAPI = {
@@ -343,42 +476,17 @@ export const storeReviewsAPI = {
     return apiClient.get(`/store-reviews?${query}`);
   },
   get: (id) => apiClient.get(`/store-reviews/${id}`),
+  getByStore: (storeId, filters) => {
+    const query = apiClient.buildQueryString(filters);
+    return apiClient.get(`/store-reviews/store/${storeId}?${query}`);
+  },
+  getByReviewer: (reviewerEmail) => apiClient.get(`/store-reviews/reviewer/${reviewerEmail}`),
   create: (data) => apiClient.post('/store-reviews', data),
   update: (id, data) => apiClient.put(`/store-reviews/${id}`, data),
+  reply: (id, replyText) => apiClient.post(`/store-reviews/${id}/reply`, { reply: replyText }),
+  markHelpful: (id) => apiClient.post(`/store-reviews/${id}/helpful`, {}),
   delete: (id) => apiClient.delete(`/store-reviews/${id}`),
-};
-
-export const likesAPI = {
-  list: (filters) => {
-    const query = apiClient.buildQueryString(filters);
-    return apiClient.get(`/likes?${query}`);
-  },
-  create: (data) => apiClient.post('/likes', data),
-  delete: (id) => apiClient.delete(`/likes/${id}`),
-  check: (targetId, targetType) => {
-    const query = apiClient.buildQueryString({ target_id: targetId, target_type: targetType });
-    return apiClient.get(`/likes/check?${query}`);
-  }
-};
-
-export const followAPI = {
-  follow: (email, followType = 'user') => apiClient.post('/follows', { following_email: email, follow_type: followType }),
-  unfollow: (email, followType = 'user') => {
-    const query = apiClient.buildQueryString({ following_email: email, follow_type: followType });
-    return apiClient.delete(`/follows?${query}`);
-  },
-  getFollowing: (email) => {
-    const query = apiClient.buildQueryString({ follower_email: email });
-    return apiClient.get(`/follows/following?${query}`);
-  },
-  getFollowers: (email) => {
-    const query = apiClient.buildQueryString({ following_email: email });
-    return apiClient.get(`/follows/followers?${query}`);
-  },
-  check: (follower, following) => {
-    const query = apiClient.buildQueryString({ follower_email: follower, following_email: following });
-    return apiClient.get(`/follows/check?${query}`);
-  }
+  getStats: (storeId) => apiClient.get(`/store-reviews/stats/${storeId}`),
 };
 
 export const storiesAPI = {
@@ -386,11 +494,16 @@ export const storiesAPI = {
     const query = apiClient.buildQueryString(filters);
     return apiClient.get(`/stories?${query}`);
   },
+  get: (id) => apiClient.get(`/stories/${id}`),
   getByUser: (email) => apiClient.get(`/stories/user/${email}`),
+  getMe: () => apiClient.get('/stories/user/me'),
   getFeed: () => apiClient.get('/stories/feed'),
   create: (data) => apiClient.post('/stories', data),
+  update: (id, data) => apiClient.put(`/stories/${id}`, data),
   view: (id) => apiClient.post(`/stories/${id}/view`, {}),
-  delete: (id) => apiClient.delete(`/stories/${id}`)
+  like: (id) => apiClient.post(`/stories/${id}/like`, {}),
+  delete: (id) => apiClient.delete(`/stories/${id}`),
+  cleanup: () => apiClient.post('/stories/cleanup', {})
 };
 
 export const liveSessionsAPI = {
@@ -402,7 +515,14 @@ export const liveSessionsAPI = {
   create: (data) => apiClient.post('/live-sessions', data),
   update: (id, data) => apiClient.put(`/live-sessions/${id}`, data),
   start: (id) => apiClient.post(`/live-sessions/${id}/start`, {}),
-  end: (id) => apiClient.post(`/live-sessions/${id}/end`, {})
+  end: (id) => apiClient.post(`/live-sessions/${id}/end`, {}),
+  updateViewers: (id, count) => apiClient.post(`/live-sessions/${id}/viewers`, { count }),
+  like: (id) => apiClient.post(`/live-sessions/${id}/like`, {}),
+  delete: (id) => apiClient.delete(`/live-sessions/${id}`),
+  listForMe: (status = null) => {
+    const query = apiClient.buildQueryString({ status });
+    return apiClient.get(`/live-sessions/user/me?${query}`);
+  }
 };
 
 export const filesAPI = {
@@ -439,28 +559,6 @@ export const filesAPI = {
   },
   uploadDirect: (fileBase64) => apiClient.post('/files/upload', { file: fileBase64 }),
   delete: (publicId) => apiClient.delete(`/files/${publicId}`),
-  // Client-side Cloudinary upload helper
-  uploadToCloudinary: async (file, signatureData) => {
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('api_key', signatureData.api_key);
-    formData.append('timestamp', signatureData.timestamp);
-    formData.append('signature', signatureData.signature);
-    formData.append('folder', signatureData.folder);
-
-    const response = await fetch(
-      `https://api.cloudinary.com/v1_1/${signatureData.cloud_name}/image/upload`,
-      {
-        method: 'POST',
-        body: formData,
-      }
-    );
-    const data = await response.json();
-    if (!response.ok) {
-      throw new Error(data?.error?.message || 'Cloudinary upload failed');
-    }
-    return data;
-  }
 };
 
 export const paymentAPI = {
@@ -474,39 +572,20 @@ export const affiliateLinksAPI = {
     return apiClient.get(`/affiliate-links?${query}`);
   },
   get: (id) => apiClient.get(`/affiliate-links/${id}`),
+  getByRefCode: (refCode) => apiClient.get(`/affiliate-links/ref/${refCode}`),
   create: (data) => apiClient.post('/affiliate-links', data),
-  update: (id, data) => apiClient.patch(`/affiliate-links/${id}`, data),
-  delete: (id) => apiClient.delete(`/affiliate-links/${id}`)
-};
-
-export const withdrawalsAPI = {
-  list: (filters) => {
+  update: (id, data) => apiClient.put(`/affiliate-links/${id}`, data),
+  delete: (id) => apiClient.delete(`/affiliate-links/${id}`),
+  trackClick: (refCode) => apiClient.post(`/affiliate-links/ref/${refCode}/click`, {}),
+  trackConversion: (refCode, data) => apiClient.post(`/affiliate-links/ref/${refCode}/convert`, data),
+  listForMe: (filters = {}) => {
     const query = apiClient.buildQueryString(filters);
-    return apiClient.get(`/withdrawals?${query}`);
+    return apiClient.get(`/affiliate-links/influencer/me?${query}`);
   },
-  create: (data) => apiClient.post('/withdrawals', data),
-  get: (id) => apiClient.get(`/withdrawals/${id}`)
-};
-
-export const vendorSubscriptionsAPI = {
-  list: (filters) => {
+  listByProduct: (productId, filters = {}) => {
     const query = apiClient.buildQueryString(filters);
-    return apiClient.get(`/vendor-subscriptions?${query}`);
-  },
-  get: (id) => apiClient.get(`/vendor-subscriptions/${id}`),
-  create: (data) => apiClient.post('/vendor-subscriptions', data),
-  update: (id, data) => apiClient.put(`/vendor-subscriptions/${id}`, data),
-};
-
-export const shippingZonesAPI = {
-  list: (filters) => {
-    const query = apiClient.buildQueryString(filters);
-    return apiClient.get(`/shipping-zones?${query}`);
-  },
-  get: (id) => apiClient.get(`/shipping-zones/${id}`),
-  create: (data) => apiClient.post('/shipping-zones', data),
-  update: (id, data) => apiClient.put(`/shipping-zones/${id}`, data),
-  delete: (id) => apiClient.delete(`/shipping-zones/${id}`)
+    return apiClient.get(`/affiliate-links/product/${productId}?${query}`);
+  }
 };
 
 export const couponsAPI = {
@@ -515,33 +594,45 @@ export const couponsAPI = {
     return apiClient.get(`/coupons?${query}`);
   },
   get: (id) => apiClient.get(`/coupons/${id}`),
-  check: (code) => apiClient.get(`/coupons/check/${code}`),
+  getByCode: (code) => apiClient.get(`/coupons/code/${code}`),
+  create: (data) => apiClient.post('/coupons', data),
+  update: (id, data) => apiClient.put(`/coupons/${id}`, data),
+  delete: (id) => apiClient.delete(`/coupons/${id}`),
+  validate: (data) => apiClient.post('/coupons/validate', data),
+  apply: (id) => apiClient.post(`/coupons/${id}/apply`, {}),
+  listForVendor: (filters = {}) => {
+    const query = apiClient.buildQueryString(filters);
+    return apiClient.get(`/coupons/vendor/me?${query}`);
+  }
 };
 
 export const aiAPI = {
-  chat: (prompt) => apiClient.post('/ai/chat', { prompt }),
-  generateProductContent: (data) => apiClient.post('/ai/generate-product-content', data),
-  generateSentimentSummary: (data) => apiClient.post('/ai/generate-sentiment-summary', data),
-  translate: (data) => apiClient.post('/ai/translate', data),
+  invoke: (data) => apiClient.post('/ai/invoke', data),
+  generateProductDescription: (data) => apiClient.post('/ai/generate-product-description', data),
 };
 
 export const sentimentAPI = {
   list: (filters) => {
     const query = apiClient.buildQueryString(filters);
-    return apiClient.get(`/sentiment-summaries?${query}`);
+    return apiClient.get('/sentiment-summaries?' + query);
   },
   get: (id) => apiClient.get(`/sentiment-summaries/${id}`),
+  getByProduct: (productId) => apiClient.get(`/sentiment-summaries/product/${productId}`),
   create: (data) => apiClient.post('/sentiment-summaries', data),
   update: (id, data) => apiClient.put(`/sentiment-summaries/${id}`, data),
   delete: (id) => apiClient.delete(`/sentiment-summaries/${id}`),
+  getStats: () => apiClient.get('/sentiment-summaries/stats/overview'),
 };
 
 export const liveChatMessagesAPI = {
   list: (sessionId, filters) => {
-    const query = apiClient.buildQueryString(filters);
-    return apiClient.get(`/live-chat-messages?session_id=${sessionId}&${query}`);
+    const query = apiClient.buildQueryString({ ...filters, session_id: sessionId });
+    return apiClient.get(`/live-chat-messages?${query}`);
   },
-  create: (data) => apiClient.post('/live-chat-messages', data),
+  send: (data) => apiClient.post('/live-chat-messages', data),
+  sendSystem: (data) => apiClient.post('/live-chat-messages/system', data),
+  getStats: (sessionId) => apiClient.get(`/live-chat-messages/stats/${sessionId}`),
+  delete: (id) => apiClient.delete(`/live-chat-messages/${id}`),
 };
 
 export default apiClient;

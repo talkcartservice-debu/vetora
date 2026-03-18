@@ -9,21 +9,22 @@ import { useQueryClient } from "@tanstack/react-query";
 const BG_COLORS = ["#6366f1", "#ec4899", "#f59e0b", "#10b981", "#3b82f6", "#ef4444", "#8b5cf6", "#64748b"];
 
 export default function CreateStoryModal({ currentUser, onClose }) {
-  const [type, setType] = useState("text"); // "text" | "image"
+  const [type, setType] = useState("text"); // "text" | "image" | "video"
   const [caption, setCaption] = useState("");
   const [bgColor, setBgColor] = useState("#6366f1");
-  const [imageFile, setImageFile] = useState(null);
-  const [imagePreview, setImagePreview] = useState(null);
+  const [mediaFile, setMediaFile] = useState(null);
+  const [mediaPreview, setMediaPreview] = useState(null);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef();
   const queryClient = useQueryClient();
 
-  const handleImageSelect = (e) => {
+  const handleMediaSelect = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setImageFile(file);
-    setImagePreview(URL.createObjectURL(file));
-    setType("image");
+    setMediaFile(file);
+    setMediaPreview(URL.createObjectURL(file));
+    setType(file.type.startsWith("video/") ? "video" : "image");
+    e.target.value = ""; // Allow re-selecting the same file
   };
 
   const handlePublish = async () => {
@@ -31,30 +32,53 @@ export default function CreateStoryModal({ currentUser, onClose }) {
       toast.error("Add some text to your story");
       return;
     }
+    
+    if (type !== "text" && !mediaFile) {
+      toast.error("Please select a media file");
+      return;
+    }
+
     setUploading(true);
     try {
       let media_url = null;
-      if (imageFile) {
-        const res = await filesAPI.upload(imageFile);
-        media_url = res.file_url;
+      if (mediaFile) {
+        console.log(`Uploading story media: ${mediaFile.name}`);
+        const res = await filesAPI.upload(mediaFile);
+        console.log('Upload response:', res);
+        media_url = res.url;
+        if (!media_url) {
+          throw new Error("Failed to get media URL from upload");
+        }
       }
+
+      if (type !== "text" && !media_url) {
+        throw new Error("Media URL is missing for image/video story");
+      }
+
       const expires = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-      await storiesAPI.create({
-        author_email: currentUser.email,
-        author_name: currentUser.full_name,
+      const storyData = {
+        author_email: currentUser?.email,
+        author_name: currentUser?.display_name || currentUser?.full_name,
+        author_avatar: currentUser?.avatar_url,
         media_url,
-        media_type: imageFile ? "image" : "text",
-        caption,
+        media_type: type,
+        caption: caption?.trim(),
         bg_color: bgColor,
         expires_at: expires,
         is_active: true,
         views_count: 0,
-      });
+      };
+
+      console.log('Publishing story with data:', storyData);
+      await storiesAPI.create(storyData);
+      
       queryClient.invalidateQueries({ queryKey: ["stories"] });
       toast.success("Story published! 🎉");
       onClose();
     } catch (e) {
-      toast.error("Failed to publish story");
+      console.error('Story publish failed:', e);
+      const detailMsg = e.details ? `: ${JSON.stringify(e.details)}` : '';
+      toast.error(`Failed to publish story${detailMsg}`);
     } finally {
       setUploading(false);
     }
@@ -83,8 +107,12 @@ export default function CreateStoryModal({ currentUser, onClose }) {
 
         {/* Preview */}
         <div className="mx-4 mt-4 rounded-2xl overflow-hidden aspect-[9/16] max-h-64 relative">
-          {imagePreview ? (
-            <img src={imagePreview} alt="" className="w-full h-full object-cover" />
+          {mediaPreview ? (
+            type === "video" ? (
+              <video src={mediaPreview} className="w-full h-full object-cover" autoPlay muted loop playsInline />
+            ) : (
+              <img src={mediaPreview} alt="" className="w-full h-full object-cover" />
+            )
           ) : (
             <div className="w-full h-full flex items-center justify-center" style={{ backgroundColor: bgColor }}>
               <p className="text-white text-lg font-bold text-center px-6 break-words">{caption || "Your story text here..."}</p>
@@ -96,19 +124,19 @@ export default function CreateStoryModal({ currentUser, onClose }) {
           {/* Type tabs */}
           <div className="flex gap-2 p-1 bg-slate-100 rounded-xl">
             <button
-              onClick={() => { setType("text"); setImageFile(null); setImagePreview(null); }}
+              onClick={() => { setType("text"); setMediaFile(null); setMediaPreview(null); }}
               className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${type === "text" ? "bg-white shadow-sm text-slate-900" : "text-slate-500"}`}
             >
               <Type className="w-3.5 h-3.5" /> Text
             </button>
             <button
               onClick={() => fileRef.current?.click()}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${type === "image" ? "bg-white shadow-sm text-slate-900" : "text-slate-500"}`}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${type !== "text" ? "bg-white shadow-sm text-slate-900" : "text-slate-500"}`}
             >
-              <Image className="w-3.5 h-3.5" /> Photo
+              <Image className="w-3.5 h-3.5" /> Media
             </button>
           </div>
-          <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleImageSelect} />
+          <input ref={fileRef} type="file" accept="image/*,video/*" className="hidden" onChange={handleMediaSelect} />
 
           {/* Caption */}
           <textarea

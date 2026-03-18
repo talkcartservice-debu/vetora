@@ -17,23 +17,40 @@ export default function StoreDetail() {
   const storeId = params.get("id");
   const { user: currentUser } = useAuth();
 
-  // Early return if no storeId
-  if (!storeId) {
-    return (
-      <div className="flex items-center justify-center h-64 text-slate-400">
-        No store ID provided
-      </div>
-    );
-  }
+  const isValidId = !!storeId && storeId !== "undefined";
 
   const { data: store, error: storeError } = useQuery({
     queryKey: ["storeDetail", storeId],
     queryFn: async () => {
+      if (!isValidId) throw new Error("Invalid Store ID");
       return storesAPI.get(storeId);
     },
-    enabled: !!storeId,
+    enabled: isValidId,
     retry: false,
   });
+
+  const { data: products = [], isLoading } = useQuery({
+    queryKey: ["storeProducts", storeId],
+    queryFn: () => productsAPI.list({ store_id: storeId, status: "active", sort: "-created_date", limit: 50 }),
+    enabled: isValidId,
+    retry: false,
+  });
+
+  const { data: storeReviews = [] } = useQuery({
+    queryKey: ["storeReviews", storeId],
+    queryFn: () => reviewsAPI.list({ store_id: storeId, sort: "-created_date", limit: 100 }),
+    enabled: isValidId,
+    retry: false,
+  });
+
+  // Early return if no storeId
+  if (!isValidId) {
+    return (
+      <div className="flex items-center justify-center h-64 text-slate-400">
+        No valid store ID provided
+      </div>
+    );
+  }
 
   // Handle 404 or other errors
   if (storeError) {
@@ -43,20 +60,6 @@ export default function StoreDetail() {
       </div>
     );
   }
-
-  const { data: products = [], isLoading } = useQuery({
-    queryKey: ["storeProducts", storeId],
-    queryFn: () => productsAPI.list({ store_id: storeId, status: "active", sort: "-created_date", limit: 50 }),
-    enabled: !!storeId,
-    retry: false,
-  });
-
-  const { data: storeReviews = [] } = useQuery({
-    queryKey: ["storeReviews", storeId],
-    queryFn: () => reviewsAPI.list({ store_id: storeId, sort: "-created_date", limit: 100 }),
-    enabled: !!storeId,
-    retry: false,
-  });
 
   const avgRating = storeReviews.length > 0
     ? storeReviews.reduce((sum, r) => sum + (r.rating || 0), 0) / storeReviews.length

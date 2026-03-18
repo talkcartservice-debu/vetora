@@ -67,7 +67,9 @@ export default function CreatePost() {
         
         try {
           console.log(`Uploading file ${i + 1}/${mediaFiles.length}:`, file.name);
-          const { file_url } = await filesAPI.upload(file);
+          const res = await filesAPI.upload(file);
+          const file_url = res.url;
+          if (!file_url) throw new Error("No URL returned from upload");
           uploadedUrls.push(file_url);
           setUploadProgress(Math.round(((i + 1) / mediaFiles.length) * 100));
         } catch (error) {
@@ -80,25 +82,45 @@ export default function CreatePost() {
       const mediaType = mediaFiles.length === 0 ? "text" : hasVideo ? "video" : "image";
 
       const postData = {
-        author_email: currentUser.email,
-        author_name: currentUser.full_name,
-        content,
-        media_urls: uploadedUrls,
-        media_type: mediaType,
-        tagged_products: taggedProducts.map(p => p.id),
-        visibility,
-        likes_count: 0,
-        comments_count: 0,
-        shares_count: 0,
+        content: content?.trim() || "",
+        media_urls: uploadedUrls || [],
+        media_type: mediaType || "text",
+        tagged_products: (taggedProducts || [])
+          .map(p => {
+            const id = p.id || p._id || (typeof p === 'string' ? p : null);
+            return id ? String(id) : null;
+          })
+          .filter(id => !!id && id !== "undefined" && id !== "[object Object]"),
+        visibility: visibility || "public",
+        author_email: currentUser?.email,
+        author_name: currentUser?.full_name || currentUser?.display_name,
       };
 
       console.log('Creating post with data:', postData);
       
-      await postsAPI.create(postData);
+      try {
+        const response = await postsAPI.create(postData);
+        return response;
+      } catch (err) {
+        // Detailed error for debugging
+        if (err.details) {
+          const detailMsg = Array.isArray(err.details) 
+            ? err.details.map(d => `${d.path.join('.')}: ${d.message}`).join(', ')
+            : JSON.stringify(err.details);
+          throw new Error(`Validation failed: ${detailMsg}`);
+        }
+        throw err;
+      }
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast.success("Post created!");
       queryClient.invalidateQueries({ queryKey: ["posts"] });
+      // Clear local state
+      setContent("");
+      setMediaFiles([]);
+      setMediaPreviewUrls([]);
+      setTaggedProducts([]);
+      
       navigate(createPageUrl("Home"));
     },
     onError: (error) => {

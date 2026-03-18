@@ -8,7 +8,7 @@ import { PostSkeleton, ProductSkeleton } from "@/components/shared/LoadingSkelet
 import ProfileEditModal from "@/components/profile/ProfileEditModal";
 import {
   usersAPI, postsAPI, productsAPI, ordersAPI, reviewsAPI,
-  followAPI, likesAPI, storesAPI
+  followsAPI, likesAPI, storesAPI
 } from "@/api/apiClient";
 import { useAuth } from "@/lib/AuthContext";
 import {
@@ -89,7 +89,7 @@ export default function Profile() {
   const { data: followersCount = 0 } = useQuery({
     queryKey: ["followers", targetEmail],
     queryFn: async () => {
-      const res = await followAPI.getFollowers(targetEmail);
+      const res = await followsAPI.getFollowers({ following_email: targetEmail });
       const followers = Array.isArray(res) ? res : (res.data || []);
       return followers.length;
     },
@@ -99,7 +99,7 @@ export default function Profile() {
   const { data: followingCount = 0 } = useQuery({
     queryKey: ["following", targetEmail],
     queryFn: async () => {
-      const res = await followAPI.getFollowing(targetEmail);
+      const res = await followsAPI.getFollowing({ follower_email: targetEmail });
       const following = Array.isArray(res) ? res : (res.data || []);
       return following.length;
     },
@@ -109,9 +109,9 @@ export default function Profile() {
   const { data: isFollowing = false } = useQuery({
     queryKey: ["isFollowing", currentUser?.email, targetEmail],
     queryFn: async () => {
-      const res = await followAPI.getFollowing(currentUser.email);
-      const following = Array.isArray(res) ? res : (res.data || []);
-      return following.some(f => f.following_email === targetEmail);
+      if (!currentUser?.email) return false;
+      const res = await followsAPI.check({ follower_email: currentUser.email, following_email: targetEmail });
+      return !!res.is_following || !!res.following;
     },
     enabled: !!currentUser?.email && !isOwnProfile,
   });
@@ -151,9 +151,9 @@ export default function Profile() {
   const followMutation = useMutation({
     mutationFn: async () => {
       if (isFollowing) {
-        await followAPI.unfollow(targetEmail);
+        await followsAPI.unfollow({ follower_email: currentUser.email, following_email: targetEmail });
       } else {
-        await followAPI.follow(targetEmail);
+        await followsAPI.follow(targetEmail);
       }
     },
     onSuccess: () => {
@@ -165,6 +165,7 @@ export default function Profile() {
 
   const displayName = profileUser?.display_name || profileUser?.full_name || "User";
   const avatarUrl = profileUser?.avatar_url;
+  const bannerUrl = profileUser?.banner_url;
   const bio = profileUser?.bio;
   const completedOrders = buyerOrders.filter(o => o.status === "delivered").length;
   const totalSpent = buyerOrders.filter(o => o.status === "delivered").reduce((s, o) => s + (o.total || 0), 0);
@@ -178,7 +179,13 @@ export default function Profile() {
         className="bg-white rounded-2xl border border-slate-100 overflow-hidden mb-5 shadow-sm"
       >
         {/* Banner */}
-        <div className="h-24 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500" />
+        <div className="h-32 relative overflow-hidden bg-slate-100">
+          {bannerUrl ? (
+            <img src={bannerUrl} alt="" className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500" />
+          )}
+        </div>
 
         <div className="px-5 pb-5">
           <div className="flex items-end justify-between -mt-10 mb-3">
