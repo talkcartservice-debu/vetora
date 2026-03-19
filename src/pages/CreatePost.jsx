@@ -87,22 +87,23 @@ export default function CreatePost() {
         media_type: mediaType || "text",
         tagged_products: (taggedProducts || [])
           .map(p => {
-            const id = p.id || p._id || (typeof p === 'string' ? p : null);
-            return id ? String(id) : null;
+            const rawId = p.id || p._id || (typeof p === 'string' ? p : null);
+            if (!rawId || rawId === "undefined" || rawId === "null" || typeof rawId === "object") return null;
+            return String(rawId);
           })
-          .filter(id => !!id && id !== "undefined" && id !== "[object Object]"),
+          .filter(id => !!id && id !== "[object Object]"),
         visibility: visibility || "public",
-        author_email: currentUser?.email,
-        author_name: currentUser?.full_name || currentUser?.display_name,
+        author_email: currentUser?.email || undefined,
+        author_name: (currentUser?.full_name || currentUser?.display_name) || undefined,
       };
 
-      console.log('Creating post with data:', postData);
+      console.log('Creating post with final data:', JSON.stringify(postData, null, 2));
       
       try {
         const response = await postsAPI.create(postData);
         return response;
       } catch (err) {
-        // Detailed error for debugging
+        console.error('API Error during post creation:', err);
         if (err.details) {
           const detailMsg = Array.isArray(err.details) 
             ? err.details.map(d => `${d.path.join('.')}: ${d.message}`).join(', ')

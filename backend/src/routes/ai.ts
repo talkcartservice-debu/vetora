@@ -68,4 +68,40 @@ export async function aiRoutes(fastify: FastifyInstance) {
       return reply.code(500).send({ error: 'Internal server error' });
     }
   });
+
+  // Translate texts
+  fastify.post('/translate', {
+    // preHandler: [fastify.authenticate], // Allow public translation for better UX? Or keep it private?
+  }, async (request, reply) => {
+    try {
+      const { texts, targetLang } = request.body as { texts: string[], targetLang: string };
+      
+      if (!texts || !Array.isArray(texts) || texts.length === 0) {
+        return reply.code(400).send({ error: 'Missing or invalid texts array' });
+      }
+
+      const prompt = `Translate the following array of strings into ${targetLang}. Return ONLY a JSON array of translated strings in the same order. Do not include any other text or explanations.\n\nStrings to translate: ${JSON.stringify(texts)}`;
+
+      const message = await anthropic.messages.create({
+        model: "claude-3-haiku-20240307", // Use a cheaper model for translation
+        max_tokens: 2000,
+        system: "You are a professional translator. Return ONLY a valid JSON array of strings.",
+        messages: [
+          { role: "user", content: prompt }
+        ],
+      });
+
+      const responseText = (message.content[0] as any).text;
+      try {
+        const translations = JSON.parse(responseText.trim());
+        return { translations };
+      } catch (e) {
+        fastify.log.error('Failed to parse translation JSON', responseText);
+        return { translations: texts }; // Fallback to original
+      }
+    } catch (error) {
+      fastify.log.error(error);
+      return reply.code(500).send({ error: 'Internal server error' });
+    }
+  });
 }

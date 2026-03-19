@@ -58,18 +58,19 @@ export default function CreateStoryModal({ currentUser, onClose }) {
       const expires = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
       const storyData = {
         author_email: currentUser?.email,
-        author_name: currentUser?.display_name || currentUser?.full_name,
+        author_name: currentUser?.display_name || currentUser?.full_name || currentUser?.email?.split('@')[0],
         author_avatar: currentUser?.avatar_url,
-        media_url,
+        media_url: media_url || "", // Always provide a string
         media_type: type,
-        caption: caption?.trim(),
+        caption: caption?.trim() || "",
         bg_color: bgColor,
         expires_at: expires,
         is_active: true,
         views_count: 0,
+        likes_count: 0,
       };
 
-      console.log('Publishing story with data:', storyData);
+      console.log('Publishing story with final data:', JSON.stringify(storyData, null, 2));
       await storiesAPI.create(storyData);
       
       queryClient.invalidateQueries({ queryKey: ["stories"] });

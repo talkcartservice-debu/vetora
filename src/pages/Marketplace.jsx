@@ -69,10 +69,10 @@ export default function Marketplace() {
           <h2 className="text-lg font-bold text-slate-900 mb-3">Featured Stores</h2>
           <div className="overflow-x-auto -mx-4 px-4 hide-scrollbar">
             <div className="flex gap-3" style={{ width: "max-content" }}>
-              {stores.map((store) => (
+              {stores.map((store, idx) => (
                 <Link
-                  key={store.id}
-                  to={createPageUrl("StoreDetail") + `?id=${store.id}`}
+                  key={store.id || store._id || `store-${idx}`}
+                  to={createPageUrl("StoreDetail") + `?id=${store.id || store._id}`}
                   className="w-40 shrink-0 bg-white rounded-2xl border border-slate-100 p-4 text-center hover:shadow-lg transition-shadow"
                 >
                   <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center mx-auto mb-2 text-2xl overflow-hidden">
@@ -136,8 +136,8 @@ export default function Marketplace() {
       {/* Products Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 lg:gap-4">
         {isLoading
-          ? Array(12).fill(0).map((_, i) => <ProductSkeleton key={i} />)
-          : filtered.map((product) => <ProductCard key={product.id} product={product} />)}
+          ? Array(12).fill(0).map((_, i) => <ProductSkeleton key={`skeleton-${i}`} />)
+          : filtered.map((product, idx) => <ProductCard key={product.id || product._id || `product-${idx}`} product={product} />)}
       </div>
       {!isLoading && filtered.length === 0 && (
         <div className="text-center py-16 text-slate-400">No products found</div>

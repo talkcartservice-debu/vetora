@@ -1,8 +1,57 @@
 import { FastifyInstance } from 'fastify';
 import { Product, IProduct } from '../models/Product';
 import { User } from '../models/User';
+import { Like } from '../models/Like';
+import { WishlistItem } from '../models/WishlistItem';
+import { Order } from '../models/Order';
 
 export async function productRoutes(fastify: FastifyInstance) {
+  // Get recommended products for the current user
+  fastify.get('/recommendations', {
+    preHandler: [fastify.authenticate],
+  }, async (request, reply) => {
+    try {
+      const user = request.user as any;
+      const { limit = 10 } = request.query as any;
+
+      // 1. Fetch user signals
+      const [likes, wishlist, orders] = await Promise.all([
+        Like.find({ user_email: user.email, target_type: 'product' }).select('target_id'),
+        WishlistItem.find({ user_email: user.email }).select('product_id'),
+        Order.find({ buyer_email: user.email }).select('items.product_id')
+      ]);
+
+      const likedIds = likes.map(l => l.target_id);
+      const wishlistIds = wishlist.map(w => w.product_id);
+      const purchasedIds = orders.flatMap(o => o.items.map(i => i.product_id));
+
+      // 2. Combine all interacted IDs to exclude them from "fresh" recommendations if needed
+      // or use them to find similar products.
+      const allInteractedIds = [...new Set([...likedIds, ...wishlistIds, ...purchasedIds])];
+
+      // 3. Simple recommendation logic:
+      // - Get products that are top-selling and NOT already purchased
+      // - If we have liked/wishlisted products, we could find more from those categories (TBD)
+      
+      const recommendations = await Product.find({
+        status: 'active',
+        _id: { $nin: purchasedIds } // Exclude already bought products
+      })
+      .sort({ sales_count: -1, created_at: -1 })
+      .limit(parseInt(limit))
+      .lean({ virtuals: true });
+
+      // 4. Boost logic: if a product is in wishlist or liked, it should probably be higher
+      // but here we already have them. The client side was doing scoring.
+      // For a "Recommended for you" we usually want NEW things.
+      
+      return { data: recommendations };
+    } catch (error) {
+      fastify.log.error(error);
+      return reply.code(500).send({ error: 'Internal server error' });
+    }
+  });
+
   // List products with filtering, sorting, and pagination
   fastify.get('/', async (request, reply) => {
     try {

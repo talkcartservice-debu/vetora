@@ -48,7 +48,9 @@ class APIClient {
   // Generic fetch wrapper
   async request(endpoint, options = {}) {
     // Prevent common bugs by checking for 'undefined' or 'null' in the URL
-    if (endpoint.includes('/undefined') || endpoint.includes('/null')) {
+    // We check if it's strictly /undefined or /null as a path segment
+    const segments = endpoint.split('/');
+    if (segments.some(s => s === 'undefined' || s === 'null')) {
       console.warn(`API Client: Blocked request to invalid endpoint: ${endpoint}`);
       throw new Error(`Invalid API endpoint: ${endpoint}`);
     }
@@ -103,10 +105,12 @@ class APIClient {
       error.details = data?.details; // Save validation details
       
       if (!response.ok) {
-        // Don't log 404 errors - they're often expected (e.g., checking if resource exists)
-        if (response.status !== 404) {
-          const detailMsg = data?.details ? `: ${JSON.stringify(data.details)}` : '';
-          console.error(`API Error [${endpoint}]: ${error.message}${detailMsg}`, error);
+        // Detailed validation error logging
+        if (data?.details && Array.isArray(data.details)) {
+          const detailStr = data.details.map(d => `${d.path.join('.')}: ${d.message}`).join(', ');
+          console.error(`API Validation Error [${endpoint}]: ${detailStr}`, data.details);
+        } else if (response.status !== 404) {
+          console.error(`API Error [${endpoint}]: ${error.message}`, error);
         }
         throw error;
       }
@@ -202,6 +206,45 @@ export const authAPI = {
   }
 };
 
+export const followAPI = {
+  list: (filters) => {
+    const query = apiClient.buildQueryString(filters);
+    return apiClient.get(`/follows?${query}`);
+  },
+  follow: (followingEmail, followType = 'user', targetId = null) => 
+    apiClient.post('/follows', { following_email: followingEmail, follow_type: followType, target_id: targetId }),
+  unfollow: (params) => {
+    const query = apiClient.buildQueryString(params);
+    return apiClient.delete(`/follows?${query}`);
+  },
+  check: (params) => {
+    const query = apiClient.buildQueryString(params);
+    return apiClient.get(`/follows/check?${query}`);
+  },
+  getFollowers: (params) => {
+    const query = apiClient.buildQueryString(params);
+    return apiClient.get(`/follows/followers?${query}`);
+  },
+  getFollowing: (params) => {
+    const query = apiClient.buildQueryString(params);
+    return apiClient.get(`/follows/following?${query}`);
+  },
+  getCounts: (params) => {
+    const query = apiClient.buildQueryString(params);
+    return apiClient.get(`/follows/counts?${query}`);
+  },
+  getMyFollowing: (filters) => {
+    const query = apiClient.buildQueryString(filters);
+    return apiClient.get(`/follows/me/following?${query}`);
+  },
+  getMyFollowers: (filters) => {
+    const query = apiClient.buildQueryString(filters);
+    return apiClient.get(`/follows/me/followers?${query}`);
+  }
+};
+
+export const followsAPI = followAPI;
+
 export const productsAPI = {
   list: (filters) => {
     const query = apiClient.buildQueryString(filters);
@@ -214,6 +257,7 @@ export const productsAPI = {
   search: (query) => apiClient.get(`/products/search?q=${encodeURIComponent(query)}`),
   getTopSelling: (limit = 10) => apiClient.get(`/products/top-selling?limit=${limit}`),
   getRelated: (id, limit = 10) => apiClient.get(`/products/related/${id}?limit=${limit}`),
+  getRecommendations: (limit = 10) => apiClient.get(`/products/recommendations?limit=${limit}`),
 };
 
 export const ordersAPI = {
@@ -259,43 +303,6 @@ export const commentsAPI = {
   update: (id, data) => apiClient.put(`/comments/${id}`, data),
   delete: (id) => apiClient.delete(`/comments/${id}`),
   like: (id) => apiClient.post(`/comments/${id}/like`, {}),
-};
-
-export const followsAPI = {
-  list: (filters) => {
-    const query = apiClient.buildQueryString(filters);
-    return apiClient.get(`/follows?${query}`);
-  },
-  follow: (followingEmail, followType = 'user', targetId = null) => 
-    apiClient.post('/follows', { following_email: followingEmail, follow_type: followType, target_id: targetId }),
-  unfollow: (params) => {
-    const query = apiClient.buildQueryString(params);
-    return apiClient.delete(`/follows?${query}`);
-  },
-  check: (params) => {
-    const query = apiClient.buildQueryString(params);
-    return apiClient.get(`/follows/check?${query}`);
-  },
-  getFollowers: (params) => {
-    const query = apiClient.buildQueryString(params);
-    return apiClient.get(`/follows/followers?${query}`);
-  },
-  getFollowing: (params) => {
-    const query = apiClient.buildQueryString(params);
-    return apiClient.get(`/follows/following?${query}`);
-  },
-  getCounts: (params) => {
-    const query = apiClient.buildQueryString(params);
-    return apiClient.get(`/follows/counts?${query}`);
-  },
-  getMyFollowing: (filters) => {
-    const query = apiClient.buildQueryString(filters);
-    return apiClient.get(`/follows/me/following?${query}`);
-  },
-  getMyFollowers: (filters) => {
-    const query = apiClient.buildQueryString(filters);
-    return apiClient.get(`/follows/me/followers?${query}`);
-  }
 };
 
 export const likesAPI = {
@@ -502,6 +509,7 @@ export const storiesAPI = {
   update: (id, data) => apiClient.put(`/stories/${id}`, data),
   view: (id) => apiClient.post(`/stories/${id}/view`, {}),
   like: (id) => apiClient.post(`/stories/${id}/like`, {}),
+  reply: (id, text) => apiClient.post(`/stories/${id}/reply`, { text }),
   delete: (id) => apiClient.delete(`/stories/${id}`),
   cleanup: () => apiClient.post('/stories/cleanup', {})
 };
@@ -609,6 +617,7 @@ export const couponsAPI = {
 export const aiAPI = {
   invoke: (data) => apiClient.post('/ai/invoke', data),
   generateProductDescription: (data) => apiClient.post('/ai/generate-product-description', data),
+  translate: (data) => apiClient.post('/ai/translate', data),
 };
 
 export const sentimentAPI = {

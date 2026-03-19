@@ -99,7 +99,7 @@ export default function Home() {
       {/* Posts Feed */}
       <div className="space-y-4">
         {postsLoading ? (
-          Array(3).fill(0).map((_, i) => <PostSkeleton key={i} />)
+          Array(3).fill(0).map((_, i) => <PostSkeleton key={`post-skeleton-${i}`} />)
         ) : posts.length === 0 ? (
           <EmptyState
             icon={PenSquare}
@@ -117,8 +117,8 @@ export default function Home() {
             }
           />
         ) : (
-          posts.map((post) => (
-            <PostCard key={post._id || post.id} post={post} currentUser={currentUser} userLikes={userLikes} />
+          posts.map((post, idx) => (
+            <PostCard key={post.id || post._id || `post-${idx}`} post={post} currentUser={currentUser} userLikes={userLikes} />
           ))
         )}
       </div>

@@ -75,12 +75,27 @@ export default function PostCard({ post, currentUser, userLikes = [] }) {
       {post.media_urls?.length > 0 && (
         <div className="mt-1">
           {post.media_urls.length === 1 ? (
-            <img src={post.media_urls[0]} alt="" className="w-full aspect-square object-cover" />
+            post.media_type === "video" ? (
+              <video 
+                src={post.media_urls[0]} 
+                className="w-full aspect-square object-cover" 
+                controls
+                muted
+                loop
+                playsInline
+              />
+            ) : (
+              <img src={post.media_urls[0]} alt="" className="w-full aspect-square object-cover" />
+            )
           ) : (
             <div className="grid grid-cols-2 gap-0.5">
               {post.media_urls.slice(0, 4).map((url, i) => (
                 <div key={`${url}-${i}`} className="relative aspect-square">
-                  <img src={url} alt="" className="w-full h-full object-cover" />
+                  {post.media_type === "video" ? (
+                    <video src={url} className="w-full h-full object-cover" controls muted loop playsInline />
+                  ) : (
+                    <img src={url} alt="" className="w-full h-full object-cover" />
+                  )}
                   {i === 3 && post.media_urls.length > 4 && (
                     <div className="absolute inset-0 bg-black/40 flex items-center justify-center text-white font-bold text-xl">
                       +{post.media_urls.length - 4}

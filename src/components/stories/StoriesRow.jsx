@@ -109,6 +109,10 @@ export default function StoriesRow({ currentUser }) {
           {/* Other stories */}
           {groups.filter(g => g.email !== currentUser?.email).map(group => {
             const latestStory = group.stories[0];
+            const hasMedia = latestStory.media_url;
+            const isVideo = latestStory.media_type === "video";
+            const isText = latestStory.media_type === "text";
+
             return (
               <button
                 key={group.email}
@@ -117,8 +121,8 @@ export default function StoriesRow({ currentUser }) {
               >
                 <div className="w-14 h-14 rounded-full p-0.5 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 shadow-sm relative">
                   <div className="w-full h-full rounded-full bg-white flex items-center justify-center relative overflow-hidden">
-                    {(latestStory.media_type === "image" || latestStory.media_type === "video") && latestStory.media_url ? (
-                      latestStory.media_type === "video" ? (
+                    {hasMedia ? (
+                      isVideo ? (
                         <video 
                           src={latestStory.media_url} 
                           className="w-full h-full object-cover rounded-full" 
@@ -128,14 +132,14 @@ export default function StoriesRow({ currentUser }) {
                       ) : (
                         <img src={latestStory.media_url} alt="" className="w-full h-full object-cover rounded-full" />
                       )
-                    ) : latestStory.media_type === "text" ? (
+                    ) : isText ? (
                       <div className="w-full h-full rounded-full flex items-center justify-center p-2" style={{ backgroundColor: latestStory.bg_color || "#6366f1" }}>
-                        <span className="text-white text-[8px] font-bold text-center leading-tight overflow-hidden break-words">
-                          {latestStory.caption?.substring(0, 30) || "Story"}
+                        <span className="text-white text-[8px] font-bold text-center leading-tight overflow-hidden break-words line-clamp-2">
+                          {latestStory.caption || "Story"}
                         </span>
                       </div>
-                    ) : latestStory.author_avatar ? (
-                      <img src={latestStory.author_avatar} alt="" className="w-full h-full object-cover rounded-full" />
+                    ) : group.avatar || latestStory.author_avatar ? (
+                      <img src={group.avatar || latestStory.author_avatar} alt="" className="w-full h-full object-cover rounded-full" />
                     ) : (
                       <div className="w-full h-full rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white font-bold text-sm">
                         {group.name?.[0]?.toUpperCase() || group.email?.[0]?.toUpperCase() || "U"}
@@ -143,9 +147,9 @@ export default function StoriesRow({ currentUser }) {
                     )}
                   </div>
                   {/* Small Avatar Overlay for other users */}
-                  {(latestStory.media_type === "image" || latestStory.media_type === "video" || latestStory.media_type === "text") && latestStory.author_avatar && (
+                  {(hasMedia || isText) && (group.avatar || latestStory.author_avatar) && (
                     <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full border-2 border-white overflow-hidden shadow-sm">
-                      <img src={latestStory.author_avatar} alt="" className="w-full h-full object-cover" />
+                      <img src={group.avatar || latestStory.author_avatar} alt="" className="w-full h-full object-cover" />
                     </div>
                   )}
                 </div>

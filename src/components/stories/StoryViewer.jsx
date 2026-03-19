@@ -4,12 +4,18 @@ import { X, Heart, Send } from "lucide-react";
 import { storiesAPI, messagesAPI } from "@/api/apiClient";
 import { toast } from "sonner";
 
-export default function StoryViewer({ stories, startIndex = 0, onClose }) {
-  const [current, setCurrent] = useState(startIndex);
+export default function StoryViewer({ stories = [], startIndex = 0, onClose }) {
+  const [current, setCurrent] = useState(startIndex >= stories.length ? 0 : startIndex);
   const [progress, setProgress] = useState(0);
   const [liked, setLiked] = useState(false);
   const [replyText, setReplyText] = useState("");
   const [isPaused, setIsPaused] = useState(false);
+
+  useEffect(() => {
+    if (!stories || stories.length === 0) {
+      onClose();
+    }
+  }, [stories, onClose]);
 
   const story = stories[current];
 
@@ -18,15 +24,6 @@ export default function StoryViewer({ stories, startIndex = 0, onClose }) {
       storiesAPI.view(story._id || story.id).catch(() => {});
     }
   }, [story?._id, story?.id]);
-
-  useEffect(() => {
-    if (!story) {
-      const timer = setTimeout(() => {
-        onClose();
-      }, 100); // Small delay to avoid state-update warning
-      return () => clearTimeout(timer);
-    }
-  }, [story, onClose]);
 
   useEffect(() => {
     setProgress(0);

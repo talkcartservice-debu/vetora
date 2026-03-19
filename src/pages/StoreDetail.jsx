@@ -17,9 +17,9 @@ export default function StoreDetail() {
   const storeId = params.get("id");
   const { user: currentUser } = useAuth();
 
-  const isValidId = !!storeId && storeId !== "undefined";
+  const isValidId = !!storeId && storeId !== "undefined" && storeId !== "null" && storeId.length > 5;
 
-  const { data: store, error: storeError } = useQuery({
+  const { data: store, error: storeError, isLoading: storeLoading } = useQuery({
     queryKey: ["storeDetail", storeId],
     queryFn: async () => {
       if (!isValidId) throw new Error("Invalid Store ID");
@@ -29,25 +29,40 @@ export default function StoreDetail() {
     retry: false,
   });
 
-  const { data: products = [], isLoading } = useQuery({
+  const { data: products = [], isLoading: productsLoading } = useQuery({
     queryKey: ["storeProducts", storeId],
-    queryFn: () => productsAPI.list({ store_id: storeId, status: "active", sort: "-created_date", limit: 50 }),
+    queryFn: async () => {
+      if (!isValidId) return [];
+      const res = await productsAPI.list({ store_id: storeId, status: "active", sort: "-created_date", limit: 50 });
+      return res.data || res || [];
+    },
     enabled: isValidId,
     retry: false,
   });
 
   const { data: storeReviews = [] } = useQuery({
     queryKey: ["storeReviews", storeId],
-    queryFn: () => reviewsAPI.list({ store_id: storeId, sort: "-created_date", limit: 100 }),
+    queryFn: async () => {
+      if (!isValidId) return [];
+      const res = await reviewsAPI.list({ store_id: storeId, sort: "-created_date", limit: 100 });
+      return res.data || res || [];
+    },
     enabled: isValidId,
     retry: false,
   });
 
-  // Early return if no storeId
+  const isLoading = storeLoading || productsLoading;
+
+  // Early return if no storeId - MUST BE AFTER ALL HOOKS
   if (!isValidId) {
     return (
-      <div className="flex items-center justify-center h-64 text-slate-400">
-        No valid store ID provided
+      <div className="max-w-5xl mx-auto px-4 py-16 flex flex-col items-center justify-center text-center">
+        <ArrowLeft className="w-12 h-12 text-slate-200 mb-4" />
+        <h2 className="text-xl font-bold text-slate-900 mb-2">Invalid Store</h2>
+        <p className="text-slate-500 mb-6">We couldn't find the store you're looking for.</p>
+        <Link to={createPageUrl("Marketplace")}>
+          <Button className="bg-indigo-600 hover:bg-indigo-700 rounded-xl">Back to Marketplace</Button>
+        </Link>
       </div>
     );
   }
@@ -55,17 +70,29 @@ export default function StoreDetail() {
   // Handle 404 or other errors
   if (storeError) {
     return (
-      <div className="flex items-center justify-center h-64 text-slate-400">
-        {storeError.status === 404 ? "Store not found" : "Error loading store"}
+      <div className="max-w-5xl mx-auto px-4 py-16 flex flex-col items-center justify-center text-center">
+        <h2 className="text-xl font-bold text-slate-900 mb-2">Store Not Found</h2>
+        <p className="text-slate-500 mb-6">{storeError.status === 404 ? "This store may have been moved or deleted." : "There was an error loading this store."}</p>
+        <Link to={createPageUrl("Marketplace")}>
+          <Button className="bg-indigo-600 hover:bg-indigo-700 rounded-xl">Back to Marketplace</Button>
+        </Link>
       </div>
     );
   }
+
+  if (storeLoading && !store) return <div className="flex items-center justify-center h-64 text-slate-400">Loading...</div>;
 
   const avgRating = storeReviews.length > 0
     ? storeReviews.reduce((sum, r) => sum + (r.rating || 0), 0) / storeReviews.length
     : (store?.rating_avg || 0);
 
-  if (!store) return <div className="flex items-center justify-center h-64 text-slate-400">Loading...</div>;
+  if (!store && !storeLoading) {
+    return (
+      <div className="max-w-5xl mx-auto px-4 py-16 text-center">
+        <p className="text-slate-500">Store not found</p>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-4 lg:py-6">
