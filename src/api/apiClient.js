@@ -48,9 +48,8 @@ class APIClient {
   // Generic fetch wrapper
   async request(endpoint, options = {}) {
     // Prevent common bugs by checking for 'undefined' or 'null' in the URL
-    // We check if it's strictly /undefined or /null as a path segment
-    const segments = endpoint.split('/');
-    if (segments.some(s => s === 'undefined' || s === 'null')) {
+    // We check for both string and actual values
+    if (typeof endpoint !== 'string' || endpoint.includes('undefined') || endpoint.includes('null')) {
       console.warn(`API Client: Blocked request to invalid endpoint: ${endpoint}`);
       throw new Error(`Invalid API endpoint: ${endpoint}`);
     }
@@ -206,7 +205,7 @@ export const authAPI = {
   }
 };
 
-export const followAPI = {
+export const followsAPI = {
   list: (filters) => {
     const query = apiClient.buildQueryString(filters);
     return apiClient.get(`/follows?${query}`);
@@ -243,7 +242,7 @@ export const followAPI = {
   }
 };
 
-export const followsAPI = followAPI;
+export const followAPI = followsAPI;
 
 export const productsAPI = {
   list: (filters) => {

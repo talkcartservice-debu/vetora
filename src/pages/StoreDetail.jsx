@@ -29,7 +29,7 @@ export default function StoreDetail() {
     retry: false,
   });
 
-  const { data: products = [], isLoading: productsLoading } = useQuery({
+  const { data: productsData, isLoading: productsLoading } = useQuery({
     queryKey: ["storeProducts", storeId],
     queryFn: async () => {
       if (!isValidId) return [];
@@ -40,7 +40,9 @@ export default function StoreDetail() {
     retry: false,
   });
 
-  const { data: storeReviews = [] } = useQuery({
+  const products = Array.isArray(productsData) ? productsData : (productsData?.data || []);
+
+  const { data: storeReviewsData } = useQuery({
     queryKey: ["storeReviews", storeId],
     queryFn: async () => {
       if (!isValidId) return [];
@@ -50,6 +52,8 @@ export default function StoreDetail() {
     enabled: isValidId,
     retry: false,
   });
+
+  const storeReviews = Array.isArray(storeReviewsData) ? storeReviewsData : (storeReviewsData?.data || []);
 
   const isLoading = storeLoading || productsLoading;
 
@@ -151,8 +155,8 @@ export default function StoreDetail() {
       <h2 className="text-lg font-bold text-slate-900 mb-4">All Products</h2>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 lg:gap-4">
         {isLoading
-          ? Array(8).fill(0).map((_, i) => <ProductSkeleton key={i} />)
-          : products.map((p) => <ProductCard key={p.id} product={p} />)}
+          ? Array(8).fill(0).map((_, i) => <ProductSkeleton key={`p-skeleton-${i}`} />)
+          : products.map((p, idx) => <ProductCard key={p.id || p._id || `p-${idx}`} product={p} />)}
       </div>
       {!isLoading && products.length === 0 && (
         <div className="text-center py-16 text-slate-400">No products in this store yet</div>

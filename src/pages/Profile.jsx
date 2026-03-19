@@ -506,7 +506,14 @@ export default function Profile() {
         <div className="space-y-4">
           {postsLoading
             ? Array(3).fill(0).map((_, i) => <PostSkeleton key={`post-skeleton-${i}`} />)
-            : posts.map((post, idx) => <PostCard key={post.id || post._id || `post-${idx}`} post={post} currentUser={currentUser} userLikes={userLikes} />)}
+            : posts.map((post, idx) => (
+                <PostCard 
+                  key={post.id || post._id || `profile-post-${idx}`} 
+                  post={post} 
+                  currentUser={currentUser} 
+                  userLikes={userLikes} 
+                />
+              ))}
           {!postsLoading && posts.length === 0 && (
             <div className="text-center py-16 text-slate-400 text-sm">No posts yet</div>
           )}
@@ -593,7 +600,14 @@ export default function Profile() {
         <div className="space-y-4">
           {likedPostsLoading
             ? Array(3).fill(0).map((_, i) => <PostSkeleton key={`liked-skeleton-${i}`} />)
-            : likedPosts.map((post, idx) => <PostCard key={post.id || post._id || `liked-${idx}`} post={post} currentUser={currentUser} userLikes={userLikes} />)}
+            : likedPosts.map((post, idx) => (
+                <PostCard 
+                  key={post.id || post._id || `liked-post-${idx}`} 
+                  post={post} 
+                  currentUser={currentUser} 
+                  userLikes={userLikes} 
+                />
+              ))}
           {!likedPostsLoading && likedPosts.length === 0 && (
             <div className="text-center py-16">
               <Heart className="w-10 h-10 text-slate-200 mx-auto mb-2" />

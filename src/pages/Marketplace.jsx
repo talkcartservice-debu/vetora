@@ -71,7 +71,7 @@ export default function Marketplace() {
             <div className="flex gap-3" style={{ width: "max-content" }}>
               {stores.map((store, idx) => (
                 <Link
-                  key={store.id || store._id || `store-${idx}`}
+                  key={store.id || store._id || `featured-store-${idx}`}
                   to={createPageUrl("StoreDetail") + `?id=${store.id || store._id}`}
                   className="w-40 shrink-0 bg-white rounded-2xl border border-slate-100 p-4 text-center hover:shadow-lg transition-shadow"
                 >
@@ -136,8 +136,8 @@ export default function Marketplace() {
       {/* Products Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 lg:gap-4">
         {isLoading
-          ? Array(12).fill(0).map((_, i) => <ProductSkeleton key={`skeleton-${i}`} />)
-          : filtered.map((product, idx) => <ProductCard key={product.id || product._id || `product-${idx}`} product={product} />)}
+          ? Array(12).fill(0).map((_, i) => <ProductSkeleton key={`m-skeleton-${i}`} />)
+          : filtered.map((product, idx) => <ProductCard key={product.id || product._id || `m-prod-${idx}`} product={product} />)}
       </div>
       {!isLoading && filtered.length === 0 && (
         <div className="text-center py-16 text-slate-400">No products found</div>

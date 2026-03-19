@@ -8,12 +8,12 @@ const createPostSchema = z.object({
   content: z.string().default(''),
   media_urls: z.array(z.string()).default([]),
   media_type: z.enum(['image', 'video', 'text', 'product_review']).default('text'),
-  tagged_products: z.array(z.string()).default([]),
-  community_id: z.string().optional(),
+  tagged_products: z.array(z.string().nullable()).transform(arr => (arr || []).filter(item => typeof item === 'string')).default([]),
+  community_id: z.string().optional().nullable(),
   visibility: z.enum(['public', 'followers', 'community']).default('public'),
   // Optional fields that can be provided but are not required
-  author_email: z.string().optional(),
-  author_name: z.string().optional(),
+  author_email: z.string().optional().nullable(),
+  author_name: z.string().optional().nullable(),
   likes_count: z.number().default(0),
   comments_count: z.number().default(0),
   shares_count: z.number().default(0),
@@ -174,14 +174,18 @@ export async function postRoutes(fastify: FastifyInstance) {
       const { id } = request.params as { id: string };
       const user = request.user as any;
 
+      fastify.log.info(`User ${user.email} unliking post ${id}`);
+
       const result = await Like.deleteOne({
-        user_email: user.email,
+        user_email: user.email.toLowerCase().trim(),
         target_id: id,
         target_type: 'post'
       });
 
       if (result.deletedCount === 0) {
-        return reply.code(400).send({ error: 'Post not liked' });
+        fastify.log.warn(`Like not found for user ${user.email} on post ${id}`);
+        // Return 200 anyway to keep frontend in sync if it thinks it's liked
+        return { status: 'unliked', message: 'Like already removed or not found' };
       }
 
       // Decrement likes count on post

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { likesAPI, postsAPI, bookmarksAPI } from "@/api/apiClient";
+import { postsAPI, bookmarksAPI } from "@/api/apiClient";
 import { Heart, MessageCircle, Share2, ShoppingBag, MoreHorizontal, Bookmark } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
@@ -9,24 +9,26 @@ import { toast } from "sonner";
 
 export default function PostCard({ post, currentUser, userLikes = [] }) {
   const queryClient = useQueryClient();
-  const isLiked = userLikes.some(l => l.target_id === post.id && l.target_type === "post");
+  if (!post) return null;
+  const postId = post.id || post._id;
+  const isLiked = userLikes.some(l => l.target_id === postId && l.target_type === "post");
   const [optimisticLiked, setOptimisticLiked] = useState(isLiked);
   const [optimisticCount, setOptimisticCount] = useState(post.likes_count || 0);
 
   // Bookmark state
   const { data: bookmarkData } = useQuery({
-    queryKey: ["isBookmarked", post.id, currentUser?.email],
-    queryFn: () => bookmarksAPI.check("post", post.id),
-    enabled: !!currentUser?.email,
+    queryKey: ["isBookmarked", postId, currentUser?.email],
+    queryFn: () => bookmarksAPI.check("post", postId),
+    enabled: !!currentUser?.email && !!postId,
   });
   const isBookmarked = !!bookmarkData?.is_bookmarked;
 
   const likeMutation = useMutation({
     mutationFn: async () => {
       if (optimisticLiked) {
-        await postsAPI.unlike(post.id);
+        await postsAPI.unlike(postId);
       } else {
-        await postsAPI.like(post.id);
+        await postsAPI.like(postId);
       }
     },
     onMutate: () => {
@@ -42,22 +44,22 @@ export default function PostCard({ post, currentUser, userLikes = [] }) {
   const saveMutation = useMutation({
     mutationFn: async () => {
       if (isBookmarked) {
-        await bookmarksAPI.remove("post", post.id);
+        await bookmarksAPI.remove("post", postId);
       } else {
-        await bookmarksAPI.add({ target_type: "post", target_id: post.id });
+        await bookmarksAPI.add({ target_type: "post", target_id: postId });
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["isBookmarked", post.id] });
+      queryClient.invalidateQueries({ queryKey: ["isBookmarked", postId] });
       toast.success(isBookmarked ? "Removed from saved" : "Post saved!");
     },
   });
 
   const shareMutation = useMutation({
     mutationFn: async () => {
-      await postsAPI.share(post.id);
+      await postsAPI.share(postId);
       // Copy to clipboard
-      const url = window.location.origin + createPageUrl("PostDetail") + `?id=${post.id}`;
+      const url = window.location.origin + createPageUrl("PostDetail") + `?id=${postId}`;
       await navigator.clipboard.writeText(url);
     },
     onSuccess: () => {
@@ -65,6 +67,12 @@ export default function PostCard({ post, currentUser, userLikes = [] }) {
       toast.success("Link copied to clipboard!");
     },
   });
+
+  const isVideoUrl = (url) => {
+    if (!url) return false;
+    const videoExtensions = [".mp4", ".webm", ".ogg", ".mov", ".m4v"];
+    return videoExtensions.some(ext => url.toLowerCase().includes(ext)) || url.includes("video/upload");
+  };
 
   return (
     <motion.div
@@ -108,7 +116,7 @@ export default function PostCard({ post, currentUser, userLikes = [] }) {
       {post.media_urls?.length > 0 && (
         <div className="mt-1">
           {post.media_urls.length === 1 ? (
-            post.media_type === "video" ? (
+            (post.media_type === "video" || isVideoUrl(post.media_urls[0])) ? (
               <video 
                 src={post.media_urls[0]} 
                 className="w-full aspect-square object-cover" 
@@ -122,20 +130,23 @@ export default function PostCard({ post, currentUser, userLikes = [] }) {
             )
           ) : (
             <div className="grid grid-cols-2 gap-0.5">
-              {post.media_urls.slice(0, 4).map((url, i) => (
-                <div key={`${url}-${i}`} className="relative aspect-square">
-                  {post.media_type === "video" ? (
-                    <video src={url} className="w-full h-full object-cover" controls muted loop playsInline />
-                  ) : (
-                    <img src={url} alt="" className="w-full h-full object-cover" />
-                  )}
-                  {i === 3 && post.media_urls.length > 4 && (
-                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center text-white font-bold text-xl">
-                      +{post.media_urls.length - 4}
-                    </div>
-                  )}
-                </div>
-              ))}
+              {post.media_urls.slice(0, 4).map((url, i) => {
+                const isVid = post.media_type === "video" || isVideoUrl(url);
+                return (
+                  <div key={`${url}-${i}`} className="relative aspect-square">
+                    {isVid ? (
+                      <video src={url} className="w-full h-full object-cover" controls muted loop playsInline />
+                    ) : (
+                      <img src={url} alt="" className="w-full h-full object-cover" />
+                    )}
+                    {i === 3 && post.media_urls.length > 4 && (
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center text-white font-bold text-xl">
+                        +{post.media_urls.length - 4}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
@@ -173,7 +184,7 @@ export default function PostCard({ post, currentUser, userLikes = [] }) {
             </span>
           </button>
 
-          <Link to={createPageUrl("PostDetail") + `?id=${post.id || post._id}`} className="flex items-center gap-1.5 group">
+          <Link to={createPageUrl("PostDetail") + `?id=${postId}`} className="flex items-center gap-1.5 group">
             <MessageCircle className="w-5 h-5 text-slate-400 group-hover:text-indigo-500 transition-colors" />
             <span className="text-xs font-medium text-slate-400">{post.comments_count || ""}</span>
           </Link>

@@ -73,6 +73,11 @@ export async function bookmarkRoutes(fastify: FastifyInstance) {
         return reply.code(400).send({ error: 'Missing target_type or target_id' });
       }
 
+      // Validate target_type
+      if (!['post', 'product'].includes(target_type)) {
+        return reply.code(400).send({ error: 'Invalid target_type. Must be post or product.' });
+      }
+
       // Check if already bookmarked
       const existing = await Bookmark.findOne({
         user_email: user.email,

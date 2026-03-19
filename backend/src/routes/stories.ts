@@ -134,6 +134,9 @@ export async function storyRoutes(fastify: FastifyInstance) {
         return reply.code(404).send({ error: 'User not found' });
       }
 
+      // Log incoming story for debugging
+      fastify.log.info(`Creating story for ${user.email}: ${JSON.stringify(body)}`);
+
       // Validate required fields
       if (!body.media_type) {
         return reply.code(400).send({ error: 'Missing required field: media_type' });
@@ -142,16 +145,18 @@ export async function storyRoutes(fastify: FastifyInstance) {
       // Validate media_type
       const validTypes = ['image', 'video', 'text'];
       if (!validTypes.includes(body.media_type)) {
-        return reply.code(400).send({ error: 'Invalid media_type. Must be image, video, or text' });
+        return reply.code(400).send({ error: `Invalid media_type: ${body.media_type}. Must be image, video, or text` });
       }
 
       // For non-text stories, media_url is required
-      if (body.media_type !== 'text' && !body.media_url) {
-        return reply.code(400).send({ error: 'media_url is required for image and video stories' });
+      if (body.media_type !== 'text' && !body.media_url?.trim()) {
+        fastify.log.warn(`Rejected story for ${user.email}: missing media_url for ${body.media_type}`);
+        return reply.code(400).send({ error: `media_url is required for ${body.media_type} stories` });
       }
 
       const story = new Story({
         ...body,
+        media_url: body.media_url?.trim() || "",
         author_email: user.email,
         author_name: user.display_name || user.email,
         author_avatar: user.avatar_url,

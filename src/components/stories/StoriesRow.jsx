@@ -54,32 +54,34 @@ export default function StoriesRow({ currentUser }) {
               <div className="w-full h-full rounded-full bg-white flex items-center justify-center relative overflow-hidden">
                 {myStory ? (
                   // Show preview of the latest story
-                  (myStory.stories[0].media_type === "image" || myStory.stories[0].media_type === "video") && myStory.stories[0].media_url ? (
-                    myStory.stories[0].media_type === "video" ? (
-                      <video 
-                        src={myStory.stories[0].media_url} 
-                        className="w-full h-full object-cover rounded-full"
-                        muted
-                        playsInline
-                      />
-                    ) : (
-                      <img 
-                        src={myStory.stories[0].media_url} 
-                        alt="" 
-                        className="w-full h-full object-cover rounded-full" 
-                      />
-                    )
-                  ) : myStory.stories[0].media_type === "text" ? (
-                    <div className="w-full h-full rounded-full flex items-center justify-center p-2" style={{ backgroundColor: myStory.stories[0].bg_color || "#6366f1" }}>
-                      <span className="text-white text-[8px] font-bold text-center leading-tight truncate-multiline">
-                        {myStory.stories[0].caption?.substring(0, 30)}
-                      </span>
-                    </div>
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-bold text-sm">
-                      {currentUser?.display_name?.[0]?.toUpperCase() || currentUser?.full_name?.[0]?.toUpperCase() || "U"}
-                    </div>
-                  )
+                  (() => {
+                    const latest = myStory.stories[0];
+                    const hasMedia = !!latest.media_url?.trim();
+                    const isVideo = latest.media_type === "video";
+                    const isText = latest.media_type === "text" || (!hasMedia && !!latest.caption);
+
+                    if (hasMedia) {
+                      return isVideo ? (
+                        <video src={latest.media_url} className="w-full h-full object-cover rounded-full" muted playsInline />
+                      ) : (
+                        <img src={latest.media_url} alt="" className="w-full h-full object-cover rounded-full" />
+                      );
+                    }
+                    if (isText) {
+                      return (
+                        <div className="w-full h-full rounded-full flex items-center justify-center p-2" style={{ backgroundColor: latest.bg_color || "#6366f1" }}>
+                          <span className="text-white text-[8px] font-bold text-center leading-tight truncate-multiline line-clamp-3">
+                            {latest.caption || "Story"}
+                          </span>
+                        </div>
+                      );
+                    }
+                    return (
+                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-bold text-sm">
+                        {currentUser?.display_name?.[0]?.toUpperCase() || currentUser?.full_name?.[0]?.toUpperCase() || "U"}
+                      </div>
+                    );
+                  })()
                 ) : (
                   // Empty state / Add button
                   currentUser?.avatar_url ? (
@@ -109,9 +111,9 @@ export default function StoriesRow({ currentUser }) {
           {/* Other stories */}
           {groups.filter(g => g.email !== currentUser?.email).map(group => {
             const latestStory = group.stories[0];
-            const hasMedia = latestStory.media_url;
+            const hasMedia = !!latestStory.media_url?.trim();
             const isVideo = latestStory.media_type === "video";
-            const isText = latestStory.media_type === "text";
+            const isText = latestStory.media_type === "text" || (!hasMedia && !!latestStory.caption);
 
             return (
               <button
@@ -134,12 +136,10 @@ export default function StoriesRow({ currentUser }) {
                       )
                     ) : isText ? (
                       <div className="w-full h-full rounded-full flex items-center justify-center p-2" style={{ backgroundColor: latestStory.bg_color || "#6366f1" }}>
-                        <span className="text-white text-[8px] font-bold text-center leading-tight overflow-hidden break-words line-clamp-2">
+                        <span className="text-white text-[8px] font-bold text-center leading-tight overflow-hidden break-words line-clamp-3">
                           {latestStory.caption || "Story"}
                         </span>
                       </div>
-                    ) : group.avatar || latestStory.author_avatar ? (
-                      <img src={group.avatar || latestStory.author_avatar} alt="" className="w-full h-full object-cover rounded-full" />
                     ) : (
                       <div className="w-full h-full rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white font-bold text-sm">
                         {group.name?.[0]?.toUpperCase() || group.email?.[0]?.toUpperCase() || "U"}

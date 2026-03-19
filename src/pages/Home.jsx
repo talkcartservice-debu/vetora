@@ -84,10 +84,10 @@ export default function Home() {
             <div className="flex gap-3" style={{ width: "max-content" }}>
               {productsLoading
                 ? Array(4).fill(0).map((_, i) => (
-                    <div key={i} className="w-40 shrink-0"><ProductSkeleton /></div>
+                    <div key={`trending-skeleton-${i}`} className="w-40 shrink-0"><ProductSkeleton /></div>
                   ))
-                : trendingProducts.slice(0, 6).map((product) => (
-                    <div key={product._id || product.id} className="w-40 shrink-0">
+                : trendingProducts.slice(0, 6).map((product, idx) => (
+                    <div key={product._id || product.id || `trending-${idx}`} className="w-40 shrink-0">
                       <ProductCard product={product} compact />
                     </div>
                   ))}
@@ -118,7 +118,12 @@ export default function Home() {
           />
         ) : (
           posts.map((post, idx) => (
-            <PostCard key={post.id || post._id || `post-${idx}`} post={post} currentUser={currentUser} userLikes={userLikes} />
+            <PostCard 
+              key={post.id || post._id || `home-post-${idx}`} 
+              post={post} 
+              currentUser={currentUser} 
+              userLikes={userLikes} 
+            />
           ))
         )}
       </div>
