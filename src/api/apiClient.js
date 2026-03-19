@@ -289,7 +289,18 @@ export const postsAPI = {
   update: (id, data) => apiClient.patch(`/posts/${id}`, data),
   delete: (id) => apiClient.delete(`/posts/${id}`),
   like: (id) => apiClient.post(`/posts/${id}/like`, {}),
-  unlike: (id) => apiClient.delete(`/posts/${id}/like`)
+  unlike: (id) => apiClient.delete(`/posts/${id}/like`),
+  share: (id) => apiClient.patch(`/posts/${id}`, { $inc: { shares_count: 1 } }), // Direct increment for simplicity
+};
+
+export const bookmarksAPI = {
+  list: (filters) => {
+    const query = apiClient.buildQueryString(filters);
+    return apiClient.get(`/bookmarks?${query}`);
+  },
+  check: (targetType, targetId) => apiClient.get(`/bookmarks/check?target_type=${targetType}&target_id=${targetId}`),
+  add: (data) => apiClient.post('/bookmarks', data),
+  remove: (targetType, targetId) => apiClient.delete(`/bookmarks?target_type=${targetType}&target_id=${targetId}`),
 };
 
 export const commentsAPI = {

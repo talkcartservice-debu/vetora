@@ -218,4 +218,24 @@ export async function postRoutes(fastify: FastifyInstance) {
       return reply.code(500).send({ error: 'Internal server error' });
     }
   });
+
+  // Update post (for share increment, etc.)
+  fastify.patch('/:id', {
+    preHandler: [fastify.authenticate],
+  }, async (request, reply) => {
+    try {
+      const { id } = request.params as { id: string };
+      const body = request.body as any;
+
+      const post = await Post.findByIdAndUpdate(id, body, { new: true });
+      if (!post) {
+        return reply.code(404).send({ error: 'Post not found' });
+      }
+
+      return post;
+    } catch (error) {
+      fastify.log.error(error);
+      return reply.code(500).send({ error: 'Internal server error' });
+    }
+  });
 }

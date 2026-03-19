@@ -1,10 +1,11 @@
 import React, { useState } from "react";
-import { likesAPI, postsAPI } from "@/api/apiClient";
+import { likesAPI, postsAPI, bookmarksAPI } from "@/api/apiClient";
 import { Heart, MessageCircle, Share2, ShoppingBag, MoreHorizontal, Bookmark } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/lib/utils";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 export default function PostCard({ post, currentUser, userLikes = [] }) {
   const queryClient = useQueryClient();
@@ -12,15 +13,20 @@ export default function PostCard({ post, currentUser, userLikes = [] }) {
   const [optimisticLiked, setOptimisticLiked] = useState(isLiked);
   const [optimisticCount, setOptimisticCount] = useState(post.likes_count || 0);
 
+  // Bookmark state
+  const { data: bookmarkData } = useQuery({
+    queryKey: ["isBookmarked", post.id, currentUser?.email],
+    queryFn: () => bookmarksAPI.check("post", post.id),
+    enabled: !!currentUser?.email,
+  });
+  const isBookmarked = !!bookmarkData?.is_bookmarked;
+
   const likeMutation = useMutation({
     mutationFn: async () => {
       if (optimisticLiked) {
-        const existing = userLikes.find(l => l.target_id === post.id && l.target_type === "post");
-        if (existing) await likesAPI.delete(existing.id);
-        await postsAPI.update(post.id, { likes_count: Math.max(0, (post.likes_count || 0) - 1) });
+        await postsAPI.unlike(post.id);
       } else {
-        await likesAPI.create({ user_email: currentUser?.email, target_type: "post", target_id: post.id });
-        await postsAPI.update(post.id, { likes_count: (post.likes_count || 0) + 1 });
+        await postsAPI.like(post.id);
       }
     },
     onMutate: () => {
@@ -30,6 +36,33 @@ export default function PostCard({ post, currentUser, userLikes = [] }) {
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["posts"] });
       queryClient.invalidateQueries({ queryKey: ["userLikes"] });
+    },
+  });
+
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      if (isBookmarked) {
+        await bookmarksAPI.remove("post", post.id);
+      } else {
+        await bookmarksAPI.add({ target_type: "post", target_id: post.id });
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["isBookmarked", post.id] });
+      toast.success(isBookmarked ? "Removed from saved" : "Post saved!");
+    },
+  });
+
+  const shareMutation = useMutation({
+    mutationFn: async () => {
+      await postsAPI.share(post.id);
+      // Copy to clipboard
+      const url = window.location.origin + createPageUrl("PostDetail") + `?id=${post.id}`;
+      await navigator.clipboard.writeText(url);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["posts"] });
+      toast.success("Link copied to clipboard!");
     },
   });
 
@@ -145,14 +178,20 @@ export default function PostCard({ post, currentUser, userLikes = [] }) {
             <span className="text-xs font-medium text-slate-400">{post.comments_count || ""}</span>
           </Link>
 
-          <button className="flex items-center gap-1.5 group">
+          <button 
+            onClick={() => currentUser && shareMutation.mutate()}
+            className="flex items-center gap-1.5 group"
+          >
             <Share2 className="w-5 h-5 text-slate-400 group-hover:text-indigo-500 transition-colors" />
             <span className="text-xs font-medium text-slate-400">{post.shares_count || ""}</span>
           </button>
         </div>
 
-        <button className="text-slate-400 hover:text-indigo-500 transition-colors">
-          <Bookmark className="w-5 h-5" />
+        <button 
+          onClick={() => currentUser && saveMutation.mutate()}
+          className={`transition-colors ${isBookmarked ? "text-indigo-600" : "text-slate-400 hover:text-indigo-500"}`}
+        >
+          <Bookmark className={`w-5 h-5 ${isBookmarked ? "fill-current" : ""}`} />
         </button>
       </div>
     </motion.div>
