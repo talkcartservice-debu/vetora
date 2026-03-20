@@ -106,7 +106,11 @@ fastify.io = io;
 
 // Health check
 fastify.get('/api/health', async () => {
-  return { status: 'ok', timestamp: new Date().toISOString() };
+  return { 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    restart_sync: "2026-03-20T18:30:00Z" // Force tsx watch to reload .env
+  };
 });
 
 // Start server

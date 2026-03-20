@@ -205,12 +205,13 @@ Instructions:
       const aiMsg = {
         id: Date.now() + 1,
         role: "assistant",
-        content: data.reply || data.response,
+        content: data.reply || data.response || "I received an empty response from the AI.",
         products: relevantProducts,
         timestamp: new Date(),
       };
       setMessages(prev => [...prev, aiMsg]);
     } catch (e) {
+      console.error("Vetora AI Chat Error:", e);
       const errorMsg = {
         id: Date.now() + 1,
         role: "assistant",

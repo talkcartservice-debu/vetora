@@ -49,6 +49,7 @@ const SIDEBAR_ITEMS = [
   { name: "Finance", icon: DollarSign, page: "VendorFinance" },
   { name: "Affiliate", icon: Link2, page: "Affiliate" },
   { name: "Notifications", icon: Bell, page: "Notifications" },
+  { name: "Profile", icon: User, page: "Profile" },
 ];
 
 const HIDE_LAYOUT_PAGES = [];

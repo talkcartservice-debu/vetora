@@ -201,14 +201,18 @@ export default function OrderTracking() {
   const [notFound, setNotFound] = useState(false);
   const { user: currentUser } = useAuth();
 
-  const { data: myOrders = [], isLoading } = useQuery({
+  const { data: myOrdersData, isLoading } = useQuery({
     queryKey: ["myOrders", currentUser?.email],
     queryFn: async () => {
       const res = await ordersAPI.list({ buyer_email: currentUser?.email, sort: "-created_date", limit: 20 });
-      return res.data || [];
+      return res;
     },
     enabled: !!currentUser?.email,
   });
+
+  const myOrders = Array.isArray(myOrdersData) 
+    ? myOrdersData 
+    : (Array.isArray(myOrdersData?.data) ? myOrdersData.data : []);
 
   const handleSearch = async () => {
     if (!searchId.trim()) return;
@@ -225,7 +229,8 @@ export default function OrderTracking() {
         }
       } catch (e) {
         // Fallback to searching in list if ID is short
-        const all = await ordersAPI.list({ limit: 200 });
+        const res = await ordersAPI.list({ limit: 200 });
+        const all = Array.isArray(res) ? res : (res?.data || []);
         const found = all.find(o => o.id === searchId.trim() || o.id?.slice(-8) === searchId.trim());
         if (found) setSearchedOrder(found);
         else setNotFound(true);

@@ -625,6 +625,7 @@ export const couponsAPI = {
 };
 
 export const aiAPI = {
+  health: () => apiClient.get('/ai/health'),
   invoke: (data) => apiClient.post('/ai/invoke', data),
   chat: (prompt, messages = [], system_prompt) => apiClient.post('/ai/chat', { prompt, messages, system_prompt }),
   generateProductDescription: (data) => apiClient.post('/ai/generate-product-description', data),
