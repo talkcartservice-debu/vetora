@@ -181,12 +181,10 @@ export default function AIAssistant() {
       `- ${p.title} ($${p.price}, ${p.category}, ${p.store_name}, rating: ${p.rating_avg || "N/A"}, stock: ${p.inventory_count || 0})`
     ).join("\n");
 
-    const prompt = `You are Vetora AI, a friendly and knowledgeable shopping assistant for Vetora — a social commerce platform.
+    const systemPrompt = `You are Vetora AI, a friendly and knowledgeable shopping assistant for Vetora — a social commerce platform.
 
 Available products on Vetora right now:
 ${productContext}
-
-User's question: "${userMessage}"
 
 Instructions:
 - If asking about products, recommend specific ones from the list above by name.
@@ -197,8 +195,12 @@ Instructions:
 - If recommending products, mention them by name but keep the response brief since product cards will be shown separately.
 - Format with markdown for readability.`;
 
+    const history = messages
+      .filter(m => m.id !== "welcome")
+      .map(m => ({ role: m.role, content: m.content }));
+
     try {
-      const res = await aiAPI.chat(prompt);
+      const res = await aiAPI.chat(userMessage, history, systemPrompt);
       const data = res.data || res;
       const aiMsg = {
         id: Date.now() + 1,

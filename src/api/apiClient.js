@@ -626,7 +626,10 @@ export const couponsAPI = {
 
 export const aiAPI = {
   invoke: (data) => apiClient.post('/ai/invoke', data),
+  chat: (prompt, messages = [], system_prompt) => apiClient.post('/ai/chat', { prompt, messages, system_prompt }),
   generateProductDescription: (data) => apiClient.post('/ai/generate-product-description', data),
+  generateProductContent: (data) => apiClient.post('/ai/generate-product-content', data),
+  generateSentimentSummary: (data) => apiClient.post('/ai/generate-sentiment-summary', data),
   translate: (data) => apiClient.post('/ai/translate', data),
 };
 

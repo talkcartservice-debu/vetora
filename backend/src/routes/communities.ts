@@ -1,5 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { Community, ICommunity } from '../models/Community';
+import { CommunityMember } from '../models/CommunityMember';
 import { User } from '../models/User';
 
 export async function communityRoutes(fastify: FastifyInstance) {
@@ -10,7 +11,7 @@ export async function communityRoutes(fastify: FastifyInstance) {
       const {
         category,
         owner_email,
-        is_public = true,
+        is_public,
         search,
         sort = '-member_count',
         limit = 20,
@@ -22,7 +23,13 @@ export async function communityRoutes(fastify: FastifyInstance) {
 
       if (category) filter.category = category;
       if (owner_email) filter.owner_email = owner_email;
-      if (is_public !== undefined) filter.is_public = is_public === 'true';
+      
+      // Default to public if not specified, otherwise filter by provided value
+      if (is_public !== undefined) {
+        filter.is_public = is_public === 'true';
+      } else {
+        filter.is_public = true;
+      }
 
       // Text search
       if (search) {
@@ -44,8 +51,7 @@ export async function communityRoutes(fastify: FastifyInstance) {
         .find(filter)
         .sort(sortObj)
         .limit(parseInt(limit))
-        .skip(parseInt(skip))
-        .populate('owner_email', 'display_name avatar_url');
+        .skip(parseInt(skip));
 
       const total = await Community.countDocuments(filter);
 
@@ -69,8 +75,7 @@ export async function communityRoutes(fastify: FastifyInstance) {
     try {
       const { id } = request.params as { id: string };
 
-      const community = await Community.findById(id)
-        .populate('owner_email', 'display_name avatar_url');
+      const community = await Community.findById(id);
 
       if (!community) {
         return reply.code(404).send({ error: 'Community not found' });
@@ -88,8 +93,7 @@ export async function communityRoutes(fastify: FastifyInstance) {
     try {
       const { name } = request.params as { name: string };
 
-      const community = await Community.findOne({ name: name.toLowerCase() })
-        .populate('owner_email', 'display_name avatar_url');
+      const community = await Community.findOne({ name: name.toLowerCase() });
 
       if (!community) {
         return reply.code(404).send({ error: 'Community not found' });
@@ -133,7 +137,13 @@ export async function communityRoutes(fastify: FastifyInstance) {
 
       await community.save();
 
-      // TODO: Add owner as first member in CommunityMember collection
+      // Add owner as first member in CommunityMember collection
+      const ownerMember = new CommunityMember({
+        community_id: community._id,
+        member_email: user.email,
+        role: 'admin'
+      });
+      await ownerMember.save();
 
       // Emit real-time event
       fastify.io?.emit('community:created', {

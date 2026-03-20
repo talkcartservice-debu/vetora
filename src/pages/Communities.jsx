@@ -38,11 +38,12 @@ import React, { useState } from "react";
     queryKey: ["communities"], 
     queryFn: async () => {
       const res = await communitiesAPI.list({ limit: 50 });
-      return res.data || res.communities || res || [];
+      // The API returns { communities: [...], pagination: {...} }
+      return res.communities || res.data || res || [];
     },
   }); 
 
-  const communities = Array.isArray(communitiesData) ? communitiesData : [];
+  const communities = Array.isArray(communitiesData) ? communitiesData : (communitiesData?.communities || []);
  
    // Note: current backend doesn't have a specific membership filter endpoint yet
    // We'll treat communities where the user is the owner as 'joined' for now
@@ -184,7 +185,7 @@ import React, { useState } from "react";
    const catEmoji = COMMUNITY_CATEGORIES.find(c => c.id === community.category)?.emoji || "👥"; 
  
    return ( 
-     <Link to={`/community-detail?id=${community._id}`}> 
+     <Link to={`/CommunityDetail?id=${community._id}`}> 
        <motion.div 
          whileHover={{ y: -4 }} 
          className="bg-white rounded-2xl border border-slate-100 overflow-hidden hover:shadow-xl transition-all h-full shadow-sm" 

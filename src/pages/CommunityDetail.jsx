@@ -100,7 +100,7 @@ const COMMUNITY_CATEGORIES = [
 
    return ( 
      <div className="max-w-2xl mx-auto px-4 py-4 lg:py-6"> 
-       <Link to="/communities" className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 mb-4"> 
+       <Link to="/Communities" className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 mb-4"> 
          <ArrowLeft className="w-4 h-4" /> Communities 
        </Link> 
 
@@ -145,7 +145,7 @@ const COMMUNITY_CATEGORIES = [
 
        {/* Create Post CTA */} 
        {isMember && ( 
-         <Link to={`/create-post?community_id=${communityId}`}> 
+         <Link to={`/CreatePost?community_id=${communityId}`}> 
            <div className="bg-white border border-slate-200 rounded-2xl p-3 flex items-center gap-3 mb-5 hover:border-indigo-300 transition-colors cursor-pointer shadow-sm"> 
              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white font-semibold text-sm shrink-0"> 
                {currentUser?.display_name?.[0]?.toUpperCase() || "U"} 
@@ -180,7 +180,7 @@ const COMMUNITY_CATEGORIES = [
                    <MessageSquare className="w-8 h-8 text-slate-300 mx-auto mb-2" /> 
                    <p className="text-sm text-slate-400">No posts in this community yet</p> 
                    {isMember && ( 
-                     <Link to={`/create-post?community_id=${communityId}`}> 
+                     <Link to={`/CreatePost?community_id=${communityId}`}> 
                        <Button className="mt-4 bg-indigo-600 hover:bg-indigo-700 rounded-xl" size="sm">Be the first to post</Button> 
                      </Link> 
                    )} 
