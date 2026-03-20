@@ -66,7 +66,7 @@ export default function Layout({ children, currentPageName }) {
 
   const { data: unreadMessages = [] } = useQuery({
     queryKey: ["unreadMessages", currentUser?.email],
-    queryFn: () => messagesAPI.listConversations(),
+    queryFn: () => messagesAPI.listConversations().then(res => res.data || res || []),
     enabled: !!currentUser?.email,
     refetchInterval: 10000,
   });

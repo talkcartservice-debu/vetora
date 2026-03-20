@@ -26,7 +26,7 @@ export default function MessageBubble({ msg, isMine, showAvatar, senderName, onR
   const queryClient = useQueryClient();
 
   const deleteMutation = useMutation({
-    mutationFn: () => messagesAPI.delete(msg.id),
+    mutationFn: () => messagesAPI.delete(msg._id || msg.id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["allMessages"] });
       queryClient.invalidateQueries({ queryKey: ["receivedMessages"] });
@@ -35,7 +35,7 @@ export default function MessageBubble({ msg, isMine, showAvatar, senderName, onR
   });
 
   const editMutation = useMutation({
-    mutationFn: (content) => messagesAPI.update(msg.id, { content, is_edited: true }),
+    mutationFn: (content) => messagesAPI.update(msg._id || msg.id, { content, is_edited: true }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["allMessages"] });
       queryClient.invalidateQueries({ queryKey: ["receivedMessages"] });
@@ -45,7 +45,7 @@ export default function MessageBubble({ msg, isMine, showAvatar, senderName, onR
   });
 
   const pinMutation = useMutation({
-    mutationFn: () => messagesAPI.update(msg.id, { is_pinned: !msg.is_pinned }),
+    mutationFn: () => messagesAPI.update(msg._id || msg.id, { is_pinned: !msg.is_pinned }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["allMessages"] });
       queryClient.invalidateQueries({ queryKey: ["receivedMessages"] });
@@ -54,7 +54,7 @@ export default function MessageBubble({ msg, isMine, showAvatar, senderName, onR
   });
 
   const acceptOfferMutation = useMutation({
-    mutationFn: () => messagesAPI.update(msg.id, { 
+    mutationFn: () => messagesAPI.update(msg._id || msg.id, { 
       content: `Accepted offer of $${msg.offer_amount}`, 
       message_type: 'text' 
     }),
@@ -65,7 +65,7 @@ export default function MessageBubble({ msg, isMine, showAvatar, senderName, onR
   });
 
   const declineOfferMutation = useMutation({
-    mutationFn: () => messagesAPI.update(msg.id, { 
+    mutationFn: () => messagesAPI.update(msg._id || msg.id, { 
       content: `Declined offer of $${msg.offer_amount}`, 
       message_type: 'text' 
     }),

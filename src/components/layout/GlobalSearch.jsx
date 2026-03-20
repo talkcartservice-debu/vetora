@@ -33,7 +33,10 @@ export default function GlobalSearch() {
 
   const { data: products = [], isFetching: loadingProducts } = useQuery({
     queryKey: ["search_products", debouncedQuery],
-    queryFn: () => productsAPI.list({ sort: "-sales_count", limit: 100 }),
+    queryFn: async () => {
+      const res = await productsAPI.list({ sort: "-sales_count", limit: 100 });
+      return res.data || [];
+    },
     enabled,
     select: (data) => data
       .filter(p => p.title?.toLowerCase().includes(debouncedQuery.toLowerCase()) || p.description?.toLowerCase().includes(debouncedQuery.toLowerCase()))
@@ -42,7 +45,10 @@ export default function GlobalSearch() {
 
   const { data: stores = [], isFetching: loadingStores } = useQuery({
     queryKey: ["search_stores", debouncedQuery],
-    queryFn: () => storesAPI.list({ sort: "-follower_count", limit: 100 }),
+    queryFn: async () => {
+      const res = await storesAPI.list({ sort: "-follower_count", limit: 100 });
+      return res.data || [];
+    },
     enabled,
     select: (data) => data
       .filter(s => s.name?.toLowerCase().includes(debouncedQuery.toLowerCase()) || s.description?.toLowerCase().includes(debouncedQuery.toLowerCase()))
@@ -51,9 +57,12 @@ export default function GlobalSearch() {
 
   const { data: users = [], isFetching: loadingUsers } = useQuery({
     queryKey: ["search_users", debouncedQuery],
-    queryFn: () => usersAPI.search(debouncedQuery),
+    queryFn: async () => {
+      const res = await usersAPI.search(debouncedQuery);
+      return res.data || res || [];
+    },
     enabled,
-    select: (data) => data.slice(0, 4),
+    select: (data) => (Array.isArray(data) ? data : data?.data || []).slice(0, 4),
   });
 
   const isLoading = loadingProducts || loadingStores || loadingUsers;

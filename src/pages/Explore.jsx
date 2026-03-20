@@ -37,9 +37,12 @@ export default function Explore() {
 
   const { data: communitiesResponse } = useQuery({
     queryKey: ["exploreCommunities"],
-    queryFn: () => communitiesAPI.list({ sort: "-member_count", limit: 6 }),
+    queryFn: async () => {
+      const res = await communitiesAPI.list({ sort: "-member_count", limit: 6 });
+      return res.data || res.communities || res || [];
+    },
   });
-  const communities = communitiesResponse?.communities || [];
+  const communities = Array.isArray(communitiesResponse) ? communitiesResponse : [];
 
   const filtered = search
     ? products.filter(p => p.title?.toLowerCase().includes(search.toLowerCase()))

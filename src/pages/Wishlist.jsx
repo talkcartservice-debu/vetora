@@ -16,7 +16,10 @@ export default function Wishlist() {
 
   const { data: wishlistItems = [], isLoading } = useQuery({
     queryKey: ["wishlist", currentUser?.email],
-    queryFn: () => wishlistAPI.list({ user_email: currentUser?.email, sort: "-created_date", limit: 100 }),
+    queryFn: async () => {
+      const res = await wishlistAPI.list({ user_email: currentUser?.email, sort: "-created_date", limit: 100 });
+      return res.data || [];
+    },
     enabled: !!currentUser?.email,
   });
 

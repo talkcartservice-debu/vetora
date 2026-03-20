@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Search, Send, ArrowLeft, MoreVertical, X, Phone, Video,
-  ShoppingBag, Star, Package, Loader2, Reply
+  ShoppingBag, Star, Package, Loader2, Reply, Smile
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,21 @@ import MessageBubble from "@/components/chat/MessageBubble";
 import ChatImageUpload from "@/components/chat/ChatImageUpload";
 import { authAPI, productsAPI, messagesAPI, ordersAPI } from "@/api/apiClient";
 
-const EMOJI_QUICK = ["❤️", "😂", "🔥", "👍", "😍", "💯", "🎉", "😎"];
+const EMOJI_QUICK = ["❤️", "😂", "🔥", "👍", "😍", "💯", "🎉", "😎", "✨", "🙌", "🤔", "👏", "🚀", "💡", "✅", "❌"];
+
+const EMOJI_PACK = [
+  "😀", "😃", "😄", "😁", "😆", "😅", "😂", "🤣", "😊", "😇", "🙂", "🙃", "😉", "😌", "😍", "🥰",
+  "😘", "😗", "😙", "😚", "😋", "😛", "😝", "😜", "🤪", "🤨", "🧐", "🤓", "😎", "🤩", "🥳", "😏",
+  "😒", "😞", "😔", "😟", "😕", "🙁", "☹️", "😣", "😖", "😫", "😩", "🥺", "😢", "😭", "😤", "😠",
+  "😡", "🤬", "🤯", "😳", "🥵", "🥶", "😱", "😨", "😰", "😥", "😓", "🤗", "🤔", "🤭", "🤫", "🤥",
+  "😶", "😐", "😑", "😬", "🙄", "😯", "😦", "😧", "😮", "😲", "🥱", "😴", "🤤", "😪", "😵", "🤐",
+  "🥴", "🤢", "🤮", "🤧", "😷", "🤒", "🤕", "🤑", "🤠", "😈", "👿", "👹", "👺", "🤡", "💩", "👻",
+  "💀", "☠️", "👽", "👾", "🤖", "🎃", "😺", "😸", "😹", "😻", "😼", "😽", "🙀", "😿", "😾",
+  "👋", "🤚", "🖐️", "✋", "🖖", "👌", "🤌", "🤏", "✌️", "🤞", "🤟", "🤘", "🤙", "👈", "👉", "👆",
+  "🖕", "👇", "☝️", "👍", "👎", "✊", "👊", "🤛", "🤜", "👏", "🙌", "👐", "🤲", "🤝", "🙏", "✍️",
+  "💅", "🤳", "💪", "🦾", "🦵", "🦿", "🦶", "👣", "👂", "🦻", "👃", "🧠", "🫀", "🫁", "🦷", "🦴",
+  "👀", "👁️", "👅", "👄", "💋", "🩸"
+];
 
 function Avatar({ name, size = 10 }) {
   return (
@@ -29,12 +43,18 @@ function ProductSharePicker({ onShare, onClose, currentUser }) {
 
   const { data: allProducts = [], isLoading } = useQuery({
     queryKey: ["quickProducts"],
-    queryFn: () => productsAPI.list({ status: "active", sort: "-sales_count", limit: 30 }),
+    queryFn: async () => {
+      const res = await productsAPI.list({ status: "active", sort: "-sales_count", limit: 30 });
+      return res.data || [];
+    },
   });
 
   const { data: myProducts = [] } = useQuery({
     queryKey: ["myQuickProducts", currentUser?.email],
-    queryFn: () => productsAPI.list({ vendor_email: currentUser.email, status: "active", sort: "-created_date", limit: 30 }),
+    queryFn: async () => {
+      const res = await productsAPI.list({ vendor_email: currentUser.email, status: "active", sort: "-created_date", limit: 30 });
+      return res.data || [];
+    },
     enabled: !!currentUser?.email,
   });
 
@@ -112,6 +132,7 @@ export default function Chat() {
   const [newMessage, setNewMessage] = useState("");
   const [search, setSearch] = useState("");
   const [showProductPicker, setShowProductPicker] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showOfferModal, setShowOfferModal] = useState(false);
   const [showActionMenu, setShowActionMenu] = useState(false);
   const [replyingTo, setReplyingTo] = useState(null);
@@ -173,21 +194,40 @@ export default function Chat() {
 
   const selectedMessages = useMemo(() => {
     if (!selectedConvo) return [];
-    return [...allMessages, ...receivedMessages]
+    const msgs = [...allMessages, ...receivedMessages]
       .filter(m =>
         (m.sender_email === selectedConvo && m.receiver_email === currentUser?.email) ||
         (m.sender_email === currentUser?.email && m.receiver_email === selectedConvo)
       )
       .sort((a, b) => new Date(a.created_date) - new Date(b.created_date));
+    
+    // Deduplicate by ID
+    const seen = new Set();
+    return msgs.filter(m => {
+      const id = m._id || m.id;
+      if (seen.has(id)) return false;
+      seen.add(id);
+      return true;
+    });
   }, [allMessages, receivedMessages, selectedConvo, currentUser]);
 
   const sendMutation = useMutation({
     mutationFn: async (msgData) => {
+      const recipient = msgData.recipient_email || selectedConvo;
+      if (!recipient) {
+        toast.error("No recipient selected");
+        throw new Error("recipient_email is required");
+      }
+      if (!currentUser?.email) {
+        toast.error("You must be logged in");
+        throw new Error("sender_email is required");
+      }
+      
       await messagesAPI.send({
-        conversation_id: [currentUser.email, selectedConvo].sort().join("_"),
+        conversation_id: [currentUser.email, recipient].sort().join("_"),
         sender_email: currentUser.email,
         sender_name: currentUser.full_name,
-        receiver_email: selectedConvo,
+        recipient_email: recipient,
         ...msgData,
       });
     },
@@ -199,18 +239,22 @@ export default function Chat() {
   });
 
   const sendText = () => {
-    if (!newMessage.trim()) return;
+    if (!newMessage.trim() || !selectedConvo) return;
     const extra = replyingTo ? {
       reply_to_content: replyingTo.content,
       reply_to_name: replyingTo.sender_email === currentUser?.email ? "You" : selectedConvoName,
     } : {};
+    
+    const baseMsg = { recipient_email: selectedConvo, ...extra };
+    
     if (pendingImageUrl) {
-      sendMutation.mutate({ content: newMessage || "📷 Image", message_type: "image", image_url: pendingImageUrl, ...extra });
+      sendMutation.mutate({ ...baseMsg, content: newMessage || "📷 Image", message_type: "image", image_url: pendingImageUrl });
       setPendingImageUrl(null);
     } else {
-      sendMutation.mutate({ content: newMessage, message_type: "text", ...extra });
+      sendMutation.mutate({ ...baseMsg, content: newMessage, message_type: "text" });
     }
     setReplyingTo(null);
+    setShowEmojiPicker(false);
   };
 
   const handleForward = (msg) => {
@@ -218,25 +262,31 @@ export default function Chat() {
   };
 
   const executeForward = async () => {
-    if (!forwardToEmail.trim() || !forwardMsg) return;
-    await messagesAPI.send({
-      conversation_id: [currentUser.email, forwardToEmail].sort().join("_"),
-      sender_email: currentUser.email,
-      sender_name: currentUser.full_name,
-      receiver_email: forwardToEmail,
-      content: `Forwarded: ${forwardMsg.content || ""}`,
-      message_type: forwardMsg.message_type,
-      product_id: forwardMsg.product_id,
-      product_data: forwardMsg.product_data,
-    });
-    toast.success("Message forwarded!");
-    setForwardMsg(null);
-    setForwardToEmail("");
+    if (!forwardToEmail.trim() || !forwardMsg || !currentUser?.email) return;
+    try {
+      await messagesAPI.send({
+        conversation_id: [currentUser.email, forwardToEmail].sort().join("_"),
+        sender_email: currentUser.email,
+        sender_name: currentUser.full_name,
+        recipient_email: forwardToEmail.trim(),
+        content: `Forwarded: ${forwardMsg.content || ""}`,
+        message_type: forwardMsg.message_type,
+        product_id: forwardMsg.product_id,
+        product_data: forwardMsg.product_data,
+      });
+      toast.success("Message forwarded!");
+      setForwardMsg(null);
+      setForwardToEmail("");
+    } catch (error) {
+      toast.error("Failed to forward message");
+    }
   };
 
   const sendProduct = (product) => {
+    if (!selectedConvo) return;
     setShowProductPicker(false);
     sendMutation.mutate({
+      recipient_email: selectedConvo,
       content: `Check out this product: ${product.title}`,
       message_type: "product_share",
       product_id: product.id,
@@ -245,34 +295,43 @@ export default function Chat() {
   };
 
   const sendOffer = async (amount, productData) => {
+    if (!selectedConvo || !currentUser?.email) return;
     // Create an order for this offer
     let orderId = null;
-    if (productData) {
-      const order = await ordersAPI.create({
-        buyer_email: currentUser.email,
-        buyer_name: currentUser.full_name,
-        vendor_email: selectedConvo,
-        items: [{ product_id: productData.id, product_title: productData.title, product_image: productData.images?.[0], quantity: 1, price: amount }],
-        subtotal: amount,
-        total: amount,
-        status: "pending",
-        payment_status: "pending",
+    try {
+      if (productData) {
+        const order = await ordersAPI.create({
+          buyer_email: currentUser.email,
+          buyer_name: currentUser.full_name,
+          vendor_email: selectedConvo,
+          items: [{ product_id: productData.id, product_title: productData.title, product_image: productData.images?.[0], quantity: 1, price: amount }],
+          subtotal: amount,
+          total: amount,
+          status: "pending",
+          payment_status: "pending",
+        });
+        orderId = order.id;
+      }
+      sendMutation.mutate({
+        recipient_email: selectedConvo,
+        content: `💰 Offer: $${amount}${productData ? ` for "${productData.title}"` : ""}`,
+        message_type: "offer",
+        offer_amount: amount,
+        order_id: orderId,
       });
-      orderId = order.id;
+    } catch (error) {
+      toast.error("Failed to create offer");
     }
-    sendMutation.mutate({
-      content: `💰 Offer: $${amount}${productData ? ` for "${productData.title}"` : ""}`,
-      message_type: "offer",
-      offer_amount: amount,
-      order_id: orderId,
-    });
   };
 
   const markAsRead = async () => {
     if (!selectedConvo) return;
     const unread = receivedMessages.filter(m => m.sender_email === selectedConvo && !m.is_read);
     for (const m of unread) {
-      await messagesAPI.markAsRead(m.id);
+      const messageId = m._id || m.id;
+      if (messageId) {
+        await messagesAPI.markAsRead(messageId);
+      }
     }
     queryClient.invalidateQueries({ queryKey: ["receivedMessages"] });
   };
@@ -397,7 +456,7 @@ export default function Chat() {
                 const showAvatar = !prevMsg || prevMsg.sender_email !== msg.sender_email;
                 return (
                   <MessageBubble
-                    key={msg.id}
+                    key={msg._id || msg.id || `msg-${idx}`}
                     msg={msg}
                     isMine={isMine}
                     showAvatar={showAvatar}
@@ -437,19 +496,43 @@ export default function Chat() {
                 <AnimatePresence>
                   {showProductPicker && <ProductSharePicker onShare={sendProduct} onClose={() => setShowProductPicker(false)} currentUser={currentUser} />}
                   {showOfferModal && <OfferModal onSend={sendOffer} onClose={() => setShowOfferModal(false)} />}
+                  {showEmojiPicker && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 10 }}
+                      className="absolute bottom-full mb-2 left-0 right-0 bg-white rounded-2xl border border-slate-200 shadow-xl p-3 z-20"
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-sm font-semibold text-slate-800">Emojis</p>
+                        <button onClick={() => setShowEmojiPicker(false)}><X className="w-4 h-4 text-slate-400" /></button>
+                      </div>
+                      <div className="grid grid-cols-8 gap-2 max-h-48 overflow-y-auto p-1">
+                        {EMOJI_PACK.map(e => (
+                          <button
+                            key={e}
+                            onClick={() => { setNewMessage(prev => prev + e); setShowEmojiPicker(false); }}
+                            className="text-xl hover:scale-125 transition-transform"
+                          >
+                            {e}
+                          </button>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
                 </AnimatePresence>
 
                 <div className="flex items-center gap-2 bg-slate-100 rounded-2xl px-3 py-1.5">
                   <div className="flex items-center gap-1">
                     <button
-                      onClick={() => { setShowProductPicker(v => !v); setShowOfferModal(false); }}
+                      onClick={() => { setShowProductPicker(v => !v); setShowOfferModal(false); setShowEmojiPicker(false); }}
                       className={`p-1.5 rounded-xl transition-colors ${showProductPicker ? "bg-indigo-100 text-indigo-600" : "hover:bg-slate-200 text-slate-500"}`}
                       title="Share product"
                     >
                       <ShoppingBag className="w-4 h-4" />
                     </button>
                     <button
-                      onClick={() => { setShowOfferModal(v => !v); setShowProductPicker(false); }}
+                      onClick={() => { setShowOfferModal(v => !v); setShowProductPicker(false); setShowEmojiPicker(false); }}
                       className={`p-1.5 rounded-xl transition-colors ${showOfferModal ? "bg-indigo-100 text-indigo-600" : "hover:bg-slate-200 text-slate-500"}`}
                       title="Make an offer"
                     >
@@ -471,11 +554,13 @@ export default function Chat() {
                   />
 
                   <div className="flex items-center gap-1">
-                    {EMOJI_QUICK.slice(0, 3).map(e => (
-                      <button key={e} onClick={() => setNewMessage(p => p + e)} className="hover:scale-125 transition-transform text-base">
-                        {e}
-                      </button>
-                    ))}
+                    <button
+                      onClick={() => { setShowEmojiPicker(v => !v); setShowProductPicker(false); setShowOfferModal(false); }}
+                      className={`p-1.5 rounded-xl transition-colors ${showEmojiPicker ? "bg-indigo-100 text-indigo-600" : "hover:bg-slate-200 text-slate-500"}`}
+                      title="Emoji picker"
+                    >
+                      <Smile className="w-4 h-4" />
+                    </button>
                     <button
                       onClick={sendText}
                       disabled={!newMessage.trim() || sendMutation.isPending}

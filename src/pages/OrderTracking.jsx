@@ -203,7 +203,10 @@ export default function OrderTracking() {
 
   const { data: myOrders = [], isLoading } = useQuery({
     queryKey: ["myOrders", currentUser?.email],
-    queryFn: () => ordersAPI.list({ buyer_email: currentUser?.email, sort: "-created_date", limit: 20 }),
+    queryFn: async () => {
+      const res = await ordersAPI.list({ buyer_email: currentUser?.email, sort: "-created_date", limit: 20 });
+      return res.data || [];
+    },
     enabled: !!currentUser?.email,
   });
 

@@ -34,17 +34,20 @@ import React, { useState } from "react";
      queryFn: () => authAPI.me(), 
    }); 
  
-   const { data: communitiesData, isLoading } = useQuery({ 
-     queryKey: ["communities"], 
-     queryFn: () => communitiesAPI.list({ limit: 50 }), 
-   }); 
+  const { data: communitiesData, isLoading } = useQuery({ 
+    queryKey: ["communities"], 
+    queryFn: async () => {
+      const res = await communitiesAPI.list({ limit: 50 });
+      return res.data || res.communities || res || [];
+    },
+  }); 
 
-   const communities = communitiesData?.communities || [];
+  const communities = Array.isArray(communitiesData) ? communitiesData : [];
  
    // Note: current backend doesn't have a specific membership filter endpoint yet
    // We'll treat communities where the user is the owner as 'joined' for now
    // This will need adjustment if membership status is tracked separately in backend
-   const joinedIds = new Set(communities.filter(c => c.owner_email === currentUser?.email).map(c => c._id)); 
+   const joinedIds = new Set(communities.filter(c => c.owner_email === currentUser?.email).map(c => c._id || c.id)); 
  
    const createMutation = useMutation({ 
      mutationFn: async () => { 
@@ -65,8 +68,8 @@ import React, { useState } from "react";
      ? communities.filter(c => c.name?.toLowerCase().includes(search.toLowerCase())) 
      : communities; 
  
-   const myCommunities = communities.filter(c => joinedIds.has(c._id) || c.owner_email === currentUser?.email); 
-   const discoverCommunities = filtered.filter(c => !joinedIds.has(c._id) && c.owner_email !== currentUser?.email); 
+   const myCommunities = communities.filter(c => joinedIds.has(c._id || c.id) || c.owner_email === currentUser?.email); 
+   const discoverCommunities = filtered.filter(c => !joinedIds.has(c._id || c.id) && c.owner_email !== currentUser?.email); 
  
    return ( 
      <div className="max-w-4xl mx-auto px-4 py-6"> 
@@ -143,7 +146,7 @@ import React, { useState } from "react";
            </h2> 
            <div className="grid sm:grid-cols-2 gap-4"> 
              {myCommunities.map((c) => ( 
-               <CommunityCard key={c._id} community={c} joined /> 
+               <CommunityCard key={c._id || c.id} community={c} joined /> 
              ))} 
            </div> 
          </div> 
@@ -168,7 +171,7 @@ import React, { useState } from "react";
          ) : ( 
            <div className="grid sm:grid-cols-2 gap-4"> 
              {discoverCommunities.map((c) => ( 
-               <CommunityCard key={c._id} community={c} /> 
+               <CommunityCard key={c._id || c.id} community={c} /> 
              ))} 
            </div> 
          )} 

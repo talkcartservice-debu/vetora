@@ -49,7 +49,10 @@ export default function ProductDetail() {
 
   const { data: product, isLoading, error: productError } = useQuery({
     queryKey: ["product", productId],
-    queryFn: () => productsAPI.get(productId),
+    queryFn: async () => {
+      const res = await productsAPI.get(productId);
+      return res.data || res || null;
+    },
     enabled: !!productId,
     retry: false,
   });
@@ -65,7 +68,10 @@ export default function ProductDetail() {
 
   const { data: reviews = [] } = useQuery({
     queryKey: ["productReviews", productId],
-    queryFn: () => reviewsAPI.list({ product_id: productId, sort: "-created_date", limit: 50 }),
+    queryFn: async () => {
+      const res = await reviewsAPI.list({ product_id: productId, sort: "-created_date", limit: 50 });
+      return res.data || [];
+    },
     enabled: !!productId,
     retry: false,
   });

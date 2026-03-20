@@ -445,8 +445,8 @@ export const messagesAPI = {
   send: (data) => apiClient.post('/messages', data),
   update: (id, data) => apiClient.patch(`/messages/${id}`, data),
   delete: (id) => apiClient.delete(`/messages/${id}`),
-  markAsRead: (id) => apiClient.patch(`/messages/${id}/read`),
-  markConversationAsRead: (conversationId) => apiClient.patch(`/messages/conversation/${conversationId}/read`),
+  markAsRead: (id) => apiClient.patch(`/messages/${id}/read`, {}),
+  markConversationAsRead: (conversationId) => apiClient.patch(`/messages/conversation/${conversationId}/read`, {}),
 };
 
 export const notificationsAPI = {

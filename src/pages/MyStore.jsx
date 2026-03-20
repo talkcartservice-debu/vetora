@@ -43,7 +43,10 @@ export default function MyStore() {
 
   const { data: products = [] } = useQuery({
     queryKey: ["myProducts", store?.id],
-    queryFn: () => productsAPI.list({ store_id: store?.id, sort: "-created_date", limit: 100 }),
+    queryFn: async () => {
+      const res = await productsAPI.list({ store_id: store?.id, sort: "-created_date", limit: 100 });
+      return res.data || [];
+    },
     enabled: !!store?.id,
   });
 
