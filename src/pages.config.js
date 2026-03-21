@@ -49,6 +49,12 @@
  */
 import AIAssistant from './pages/AIAssistant';
 import Cart from './pages/Cart';
+import Checkout from './pages/Checkout';
+import Bookmarks from './pages/Bookmarks';
+import Settings from './pages/Settings';
+import Affiliate from './pages/Affiliate';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import Chat from './pages/Chat';
 import Communities from './pages/Communities';
 import CommunityDetail from './pages/CommunityDetail';
@@ -75,6 +81,12 @@ import __Layout from './Layout.jsx';
 export const PAGES = {
     "AIAssistant": AIAssistant,
     "Cart": Cart,
+    "Checkout": Checkout,
+    "Bookmarks": Bookmarks,
+    "Settings": Settings,
+    "Affiliate": Affiliate,
+    "ForgotPassword": ForgotPassword,
+    "ResetPassword": ResetPassword,
     "Chat": Chat,
     "Communities": Communities,
     "CommunityDetail": CommunityDetail,

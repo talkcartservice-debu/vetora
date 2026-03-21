@@ -271,15 +271,11 @@ export default function Cart() {
               />
 
               <Button
-                onClick={() => placeOrderMutation.mutate()}
-                disabled={placing || cartItems.length === 0}
+                onClick={() => navigate(createPageUrl("Checkout"))}
+                disabled={cartItems.length === 0}
                 className="w-full h-12 bg-indigo-600 hover:bg-indigo-700 rounded-xl text-base font-semibold"
               >
-                {placing ? (
-                  <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Processing...</>
-                ) : (
-                  <><CreditCard className="w-5 h-5 mr-2" /> Place Order</>
-                )}
+                <CreditCard className="w-5 h-5 mr-2" /> Checkout
               </Button>
 
               {subtotal < 50 && (

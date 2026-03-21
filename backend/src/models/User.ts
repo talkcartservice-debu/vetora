@@ -9,6 +9,8 @@ export interface IUser extends Document {
   avatar_url?: string;
   banner_url?: string;
   is_verified: boolean;
+  reset_token?: string;
+  reset_token_expiry?: Date;
   created_at: Date;
   updated_at: Date;
 }
@@ -44,6 +46,14 @@ const UserSchema = new Schema<IUser>({
   is_verified: {
     type: Boolean,
     default: false,
+  },
+  reset_token: {
+    type: String,
+    select: false,
+  },
+  reset_token_expiry: {
+    type: Date,
+    select: false,
   },
 }, {
   timestamps: {

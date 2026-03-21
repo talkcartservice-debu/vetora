@@ -17,6 +17,8 @@ import {
   Radio,
   Sparkles,
   Heart,
+  Bookmark,
+  Settings as SettingsIcon,
   MapPin,
   DollarSign,
   Link2,
@@ -25,11 +27,12 @@ import {
 import LanguagePicker from "@/components/layout/LanguagePicker";
 import NotificationBell from "@/components/layout/NotificationBell";
 import GlobalSearch from "@/components/layout/GlobalSearch";
+import CreateActionModal from "@/components/layout/CreateActionModal";
 
 const NAV_ITEMS = [
   { name: "Home", icon: Home, page: "Home" },
   { name: "Explore", icon: Search, page: "Explore" },
-  { name: "Create", icon: Plus, page: "CreatePost", accent: true },
+  { name: "Create", icon: Plus, action: "create", accent: true },
   { name: "Live", icon: Radio, page: "Live" },
   { name: "Profile", icon: User, page: "Profile" },
 ];
@@ -44,18 +47,21 @@ const SIDEBAR_ITEMS = [
   { name: "Messages", icon: MessageCircle, page: "Chat" },
   { name: "AI Assistant", icon: Sparkles, page: "AIAssistant" },
   { name: "Wishlist", icon: Heart, page: "Wishlist" },
+  { name: "Bookmarks", icon: Bookmark, page: "Bookmarks" },
   { name: "Orders", icon: Package, page: "Orders" },
   { name: "Track Order", icon: MapPin, page: "OrderTracking" },
   { name: "My Store", icon: Store, page: "MyStore" },
   { name: "Finance", icon: DollarSign, page: "VendorFinance" },
   { name: "Affiliate", icon: Link2, page: "Affiliate" },
   { name: "Notifications", icon: Bell, page: "Notifications" },
+  { name: "Settings", icon: SettingsIcon, page: "Settings" },
 ];
 
 const HIDE_LAYOUT_PAGES = [];
 
 export default function Layout({ children, currentPageName }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showCreate, setShowCreate] = useState(false);
   const navigate = useNavigate();
   const { user: currentUser } = useAuth();
 
@@ -124,13 +130,13 @@ export default function Layout({ children, currentPageName }) {
         </nav>
 
         <div className="p-4 border-t border-slate-100 space-y-2">
-          <Link
-            to={createPageUrl("CreatePost")}
+          <button
+            onClick={() => setShowCreate(true)}
             className="flex items-center justify-center gap-2 w-full py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-medium text-sm hover:shadow-lg hover:shadow-indigo-200 transition-all"
           >
             <Plus className="w-4 h-4" />
-            Create Post
-          </Link>
+            Create
+          </button>
           <div className="flex justify-center">
             <LanguagePicker />
           </div>
@@ -174,13 +180,13 @@ export default function Layout({ children, currentPageName }) {
             const isActive = currentPageName === item.page;
             if (item.accent) {
               return (
-                <Link
+                <button
                   key={item.name}
-                  to={createPageUrl(item.page)}
+                  onClick={() => setShowCreate(true)}
                   className="w-11 h-11 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-200 -mt-4"
                 >
                   <Plus className="w-5 h-5 text-white" />
-                </Link>
+                </button>
               );
             }
             return (
@@ -206,6 +212,12 @@ export default function Layout({ children, currentPageName }) {
           })}
         </div>
       </nav>
+
+      <CreateActionModal
+        open={showCreate}
+        onClose={() => setShowCreate(false)}
+        currentUser={currentUser}
+      />
     </div>
   );
 }

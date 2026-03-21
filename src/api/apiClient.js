@@ -192,6 +192,8 @@ export const authAPI = {
   },
   me: () => apiClient.get('/auth/me'),
   updateProfile: (data) => apiClient.patch('/auth/me', data),
+  forgotPassword: (email) => apiClient.post('/auth/forgot-password', { email }),
+  resetPassword: (token, newPassword) => apiClient.post('/auth/reset-password', { token, newPassword }),
   logout: () => {
     apiClient.clearToken();
     localStorage.removeItem('vetora_token');

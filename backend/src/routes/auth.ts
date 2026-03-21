@@ -149,6 +149,66 @@ export async function authRoutes(fastify: FastifyInstance) {
     }
   });
 
+  // Forgot Password
+  fastify.post('/forgot-password', async (request, reply) => {
+    try {
+      const { email } = z.object({ email: z.string().email() }).parse(request.body);
+      const user = await User.findOne({ email });
+
+      if (!user) {
+        // Return success even if user not found for security
+        return { success: true, message: 'If an account exists, a reset link has been sent.' };
+      }
+
+      // Generate a simple reset token (in real app, use something more secure + expiry)
+      const resetToken = Math.random().toString(36).slice(-8).toUpperCase();
+      user.reset_token = resetToken;
+      user.reset_token_expiry = new Date(Date.now() + 3600000); // 1 hour
+      await user.save();
+
+      // Mock email sending
+      fastify.log.info(`Reset token for ${email}: ${resetToken}`);
+
+      return { 
+        success: true, 
+        message: 'If an account exists, a reset link has been sent.',
+        // For development, we return the token
+        ...(process.env.NODE_ENV === 'development' ? { dev_token: resetToken } : {})
+      };
+    } catch (error) {
+      return reply.code(400).send({ error: 'Invalid request' });
+    }
+  });
+
+  // Reset Password
+  fastify.post('/reset-password', async (request, reply) => {
+    try {
+      const { token, newPassword } = z.object({ 
+        token: z.string(), 
+        newPassword: z.string().min(6) 
+      }).parse(request.body);
+
+      const user = await User.findOne({ 
+        reset_token: token,
+        reset_token_expiry: { $gt: new Date() }
+      });
+
+      if (!user) {
+        return reply.code(400).send({ error: 'Invalid or expired token' });
+      }
+
+      const hashedPassword = await bcrypt.hash(newPassword, 12);
+      user.password = hashedPassword;
+      user.reset_token = undefined;
+      user.reset_token_expiry = undefined;
+      await user.save();
+
+      return { success: true, message: 'Password has been reset successfully.' };
+    } catch (error) {
+      return reply.code(400).send({ error: 'Invalid request' });
+    }
+  });
+
   // Get current user (me)
   fastify.get('/me', {
     preHandler: [fastify.authenticate],
