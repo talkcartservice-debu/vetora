@@ -28,7 +28,7 @@ export default function MyStore() {
   const [activeTab, setActiveTab] = useState("products");
   const [showCreateStore, setShowCreateStore] = useState(false);
   const [showAddProduct, setShowAddProduct] = useState(false);
-  const [storeForm, setStoreForm] = useState({ name: "", description: "", category: "other" });
+  const [storeForm, setStoreForm] = useState({ name: "", description: "", category: "other", logo_url: "", banner_url: "" });
   const [productForm, setProductForm] = useState({ title: "", description: "", price: "", compare_at_price: "", category: "other", inventory_count: "" });
   const queryClient = useQueryClient();
   const { user: currentUser } = useAuth();
@@ -129,6 +129,10 @@ export default function MyStore() {
             <div className="space-y-4">
               <Input placeholder="Store name" value={storeForm.name} onChange={(e) => setStoreForm(p => ({ ...p, name: e.target.value }))} />
               <Textarea placeholder="Describe your store..." value={storeForm.description} onChange={(e) => setStoreForm(p => ({ ...p, description: e.target.value }))} />
+              <div className="grid grid-cols-2 gap-3">
+                <Input placeholder="Logo URL (optional)" value={storeForm.logo_url} onChange={(e) => setStoreForm(p => ({ ...p, logo_url: e.target.value }))} />
+                <Input placeholder="Banner URL (optional)" value={storeForm.banner_url} onChange={(e) => setStoreForm(p => ({ ...p, banner_url: e.target.value }))} />
+              </div>
               <Select value={storeForm.category} onValueChange={(v) => setStoreForm(p => ({ ...p, category: v }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -160,7 +164,7 @@ export default function MyStore() {
               <p className="text-sm text-slate-500">{store.description || "No description"}</p>
             </div>
           </div>
-          <Link to={createPageUrl("StoreDetail") + `?id=${store.id}`}>
+          <Link to={createPageUrl("StoreDetail") + `?id=${store.id || store._id}`}>
             <Button variant="outline" size="sm" className="rounded-xl">
               <Eye className="w-4 h-4 mr-1.5" /> View Store
             </Button>

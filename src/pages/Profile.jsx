@@ -361,7 +361,7 @@ export default function Profile() {
             <div className="mt-3 flex flex-wrap items-center gap-3">
               {store && (
                 <Link 
-                  to={createPageUrl("StoreDetail") + `?id=${store.id}`} 
+                  to={createPageUrl("StoreDetail") + `?id=${store.id || store._id}`} 
                   className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-indigo-50 rounded-lg text-xs text-indigo-700 font-bold hover:bg-indigo-100 transition-colors"
                 >
                   <Store className="w-3.5 h-3.5" /> {store.name}

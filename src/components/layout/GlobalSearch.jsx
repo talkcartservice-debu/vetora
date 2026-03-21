@@ -172,8 +172,8 @@ export default function GlobalSearch() {
                   <p className="px-3 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-50 border-t border-slate-100">Stores</p>
                   {stores.map(s => (
                     <Link
-                      key={s.id}
-                      to={createPageUrl("StoreDetail") + `?id=${s.id}`}
+                      key={s.id || s._id}
+                      to={createPageUrl("StoreDetail") + `?id=${s.id || s._id}`}
                       onClick={handleResultClick}
                       className="flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 transition-colors"
                     >

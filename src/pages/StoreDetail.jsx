@@ -17,7 +17,7 @@ export default function StoreDetail() {
   const storeId = params.get("id");
   const { user: currentUser } = useAuth();
 
-  const isValidId = !!storeId && storeId !== "undefined" && storeId !== "null" && storeId.length > 5;
+  const isValidId = !!storeId && storeId !== "undefined" && storeId !== "null" && storeId.length >= 8;
 
   const { data: store, error: storeError, isLoading: storeLoading } = useQuery({
     queryKey: ["storeDetail", storeId],
