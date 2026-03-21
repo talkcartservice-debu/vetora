@@ -37,8 +37,7 @@ export async function liveSessionRoutes(fastify: FastifyInstance) {
         .find(filter)
         .sort(sortObj)
         .limit(parseInt(limit))
-        .skip(parseInt(skip))
-        .populate('host_email', 'display_name avatar_url');
+        .skip(parseInt(skip));
 
       const total = await LiveSession.countDocuments(filter);
 
@@ -73,8 +72,7 @@ export async function liveSessionRoutes(fastify: FastifyInstance) {
         return reply.code(400).send({ error: 'Invalid session ID' });
       }
 
-      const session = await LiveSession.findById(id)
-        .populate('host_email', 'display_name avatar_url');
+      const session = await LiveSession.findById(id);
 
       if (!session) {
         return reply.code(404).send({ error: 'Live session not found' });
@@ -298,7 +296,11 @@ export async function liveSessionRoutes(fastify: FastifyInstance) {
       const { id } = request.params as { id: string };
       const user = request.user as any;
 
-      const session = await LiveSession.findById(id);
+      const session = await LiveSession.findByIdAndUpdate(
+        id,
+        { $inc: { likes: 1 } },
+        { new: true }
+      );
 
       if (!session) {
         return reply.code(404).send({ error: 'Live session not found' });
@@ -307,9 +309,6 @@ export async function liveSessionRoutes(fastify: FastifyInstance) {
       if (session.status !== 'active') {
         return reply.code(400).send({ error: 'Can only like active live sessions' });
       }
-
-      session.likes += 1;
-      await session.save();
 
       // Emit real-time event
       fastify.io?.to(`live-session-${id}`).emit('live-session-liked', {

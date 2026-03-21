@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { liveSessionsAPI, liveChatMessagesAPI, productsAPI, cartAPI, authAPI, storesAPI } from "@/api/apiClient";
+import { liveSessionsAPI, liveChatMessagesAPI, productsAPI, cartAPI, authAPI, storesAPI, followsAPI } from "@/api/apiClient";
 import { useAuth } from "@/lib/AuthContext";
 
 const MessageCircleIcon = (props) => (
@@ -18,43 +18,6 @@ const MessageCircleIcon = (props) => (
     <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>
   </svg>
 );
-
-const DEMO_SESSIONS = [
-  {
-    id: "live_1", host_name: "Sarah Chen", host_email: "sarah@urbanthreads.co",
-    title: "Spring Drop 🌿 Exclusive First Look!", store_name: "Urban Threads",
-    viewer_count: 1240, likes: 4890, thumbnail: "https://images.unsplash.com/photo-1445205170230-053b83016050?w=800",
-    is_live: true, category: "fashion",
-    pinned_products: [
-      { id: "p1", title: "Oversized Vintage Hoodie", price: 89.99, image: "https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=400" },
-      { id: "p2", title: "Canvas Sneakers", price: 64.99, image: "https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77?w=400" }
-    ]
-  },
-  {
-    id: "live_2", host_name: "Mia Johnson", host_email: "mia@glowstudio.com",
-    title: "Skincare Routine Reveal + Q&A ✨", store_name: "Glow Studio",
-    viewer_count: 3400, likes: 12000, thumbnail: "https://images.unsplash.com/photo-1556228578-0d85b1a4d571?w=800",
-    is_live: true, category: "beauty",
-    pinned_products: [
-      { id: "p5", title: "Vitamin C Glow Serum", price: 38.99, image: "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=400" },
-    ]
-  },
-  {
-    id: "live_3", host_name: "Alex Rivera", host_email: "alex@techvault.io",
-    title: "Best Gadgets Under $200 – Live Review", store_name: "TechVault",
-    viewer_count: 890, likes: 2340, thumbnail: "https://images.unsplash.com/photo-1593642632559-0c6d3fc62b89?w=800",
-    is_live: false, category: "electronics",
-    pinned_products: [{ id: "p3", title: "Wireless Earbuds", price: 149.99, image: "https://images.unsplash.com/photo-1590658268037-6bf12f032f55?w=400" }]
-  },
-];
-
-const DEMO_CHAT = [
-  { id: 1, user_name: "Emma W.", content: "Omg this hoodie looks amazing!! 😍", message_type: "chat" },
-  { id: 2, user_name: "Marcus T.", content: "What sizes are available?", message_type: "chat" },
-  { id: 3, user_name: "Lily K.", content: "Adding to cart rn 🛒", message_type: "purchase" },
-  { id: 4, user_name: "Jay P.", content: "Love the color!", message_type: "chat" },
-  { id: 5, user_name: "Nia S.", content: "Is there a discount code?", message_type: "chat" },
-];
 
 function ChatMsg({ msg, isNew }) {
   const isBuy = msg.message_type === "purchase";
@@ -72,16 +35,12 @@ function ChatMsg({ msg, isNew }) {
   );
 }
 
-function ProductPill({ product, onAdd, currentUser }) {
+function ProductPill({ product, currentUser }) {
   const [added, setAdded] = useState(false);
   const queryClient = useQueryClient();
   const addMutation = useMutation({
     mutationFn: () => cartAPI.add({
-      user_email: currentUser?.email,
       product_id: product.id,
-      product_title: product.title,
-      product_image: product.image,
-      product_price: product.price,
       quantity: 1,
     }),
     onSuccess: () => {
@@ -111,131 +70,228 @@ function ProductPill({ product, onAdd, currentUser }) {
 }
 
 // ========== VIEWER ==========
-function LiveStreamViewer({ session, onBack }) {
-  const [chatMessages, setChatMessages] = useState(DEMO_CHAT);
+function LiveStreamViewer({ session: initialSession, onBack }) {
   const [chatInput, setChatInput] = useState("");
   const [liked, setLiked] = useState(false);
-  const [likeCount, setLikeCount] = useState(session.likes || 0);
   const [floatingHearts, setFloatingHearts] = useState([]);
-  const [viewerCount, setViewerCount] = useState(session.viewer_count || 0);
   const chatEndRef = useRef(null);
   const queryClient = useQueryClient();
   const { user: currentUser } = useAuth();
 
+  // Real-time session data
+  const { data: session = initialSession } = useQuery({
+    queryKey: ["liveSession", initialSession?.id],
+    queryFn: async () => {
+      const res = await liveSessionsAPI.get(initialSession.id);
+      return res.data || res;
+    },
+    initialData: initialSession,
+    enabled: !!initialSession?.id,
+    refetchInterval: 5000,
+  });
+
+  const [viewerCount, setViewerCount] = useState(session.viewer_count || 0);
+  const [likeCount, setLikeCount] = useState(session.likes || 0);
+
+  // Sync state with polled data and handle end of session
+  useEffect(() => {
+    if (session) {
+      setViewerCount(session.viewer_count || 0);
+      setLikeCount(session.likes || 0);
+      
+      if (session.status === 'ended' || session.status === 'completed') {
+        toast.info("This live stream has ended.");
+        onBack();
+      }
+    }
+  }, [session, session.viewer_count, session.likes]);
+
+  // Follow Status
+  const { data: followStatus } = useQuery({
+    queryKey: ["followStatus", session.host_email],
+    queryFn: async () => {
+      if (!currentUser?.email || !session.host_email) return null;
+      try {
+        const res = await followsAPI.check({ 
+          follower_email: currentUser.email, 
+          following_email: session.host_email 
+        });
+        return res.is_following;
+      } catch (e) {
+        return false;
+      }
+    },
+    enabled: !!currentUser?.email && !!session.host_email,
+  });
+
+  const followMutation = useMutation({
+    mutationFn: () => {
+      if (!currentUser?.email) throw new Error("Not authenticated");
+      return followsAPI.follow(session.host_email);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["followStatus", session.host_email] });
+      toast.success(`Following ${session.host_name}`);
+    }
+  });
+
+  const unfollowMutation = useMutation({
+    mutationFn: () => {
+      if (!currentUser?.email) throw new Error("Not authenticated");
+      return followsAPI.unfollow({ 
+        follower_email: currentUser.email, 
+        following_email: session.host_email 
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["followStatus", session.host_email] });
+      toast.info(`Unfollowed ${session.host_name}`);
+    }
+  });
+
   // Live chat subscription
-  const { data: liveChatMsgs = [] } = useQuery({
+  const { data: liveChatResponse = {} } = useQuery({
     queryKey: ["liveChat", session.id],
     queryFn: async () => {
       const res = await liveChatMessagesAPI.list(session.id, { sort: "created_date", limit: 50 });
-      return res.data || [];
+      return res;
     },
     refetchInterval: 2000,
-    enabled: !!session.id && !session.id.startsWith("live_"),
+    enabled: !!session.id,
   });
 
-  // Simulate live chat activity for demo sessions
-  useEffect(() => {
-    if (!session.id.startsWith("live_")) return;
-    const bots = ["Alex M.", "Chloe R.", "Dante V.", "Fiona K.", "George T.", "Hannah L."];
-    const msgs = ["🔥 This is fire!", "Just bought it!", "Love this!", "Can you show it again?", "Shipping to Canada?", "Adding to wishlist 💜", "What's the discount code?", "👏👏👏"];
-    const types = ["chat", "chat", "chat", "purchase", "chat", "chat"];
-    const interval = setInterval(() => {
-      const t = types[Math.floor(Math.random() * types.length)];
-      const user = bots[Math.floor(Math.random() * bots.length)];
-      setChatMessages(prev => [...prev.slice(-25), {
-        id: Date.now(), user_name: user,
-        content: t === "purchase" ? `just purchased ${session.pinned_products?.[0]?.title || "an item"}! 🛒` : msgs[Math.floor(Math.random() * msgs.length)],
-        message_type: t, isNew: true,
-      }]);
-      setViewerCount(v => v + Math.floor(Math.random() * 3 - 1));
-    }, 2500);
-    return () => clearInterval(interval);
-  }, [session.id]);
+  const liveChatMsgs = Array.isArray(liveChatResponse?.messages) ? liveChatResponse.messages : [];
 
-  useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [chatMessages, liveChatMsgs]);
+  useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [liveChatMsgs]);
 
   const sendChatMutation = useMutation({
-    mutationFn: () => liveChatMessagesAPI.create({
-      session_id: session.id,
+    mutationFn: () => liveChatMessagesAPI.send({
+      session_id: session?.id,
       user_email: currentUser?.email || "guest",
       user_name: currentUser?.full_name || "Guest",
       content: chatInput,
       message_type: "chat",
     }),
-    onSuccess: () => { setChatInput(""); queryClient.invalidateQueries({ queryKey: ["liveChat"] }); },
+    onSuccess: () => { 
+      setChatInput(""); 
+      queryClient.invalidateQueries({ queryKey: ["liveChat", session?.id] }); 
+    },
+  });
+
+  const likeMutation = useMutation({
+    mutationFn: () => liveSessionsAPI.like(session?.id),
+    onSuccess: (data) => {
+      if (data?.likes !== undefined) setLikeCount(data.likes);
+    },
+    onError: () => {
+      setLiked(false);
+      toast.error("Failed to like — please try again");
+    }
   });
 
   const sendMessage = () => {
     if (!chatInput.trim()) return;
-    if (!session.id.startsWith("live_")) {
+    if (session?.id) {
       sendChatMutation.mutate();
-    } else {
-      setChatMessages(prev => [...prev, { id: Date.now(), user_name: currentUser?.full_name?.split(" ")[0] || "You", content: chatInput, message_type: "chat", isNew: true }]);
-      setChatInput("");
     }
   };
 
   const handleLike = () => {
+    if (liked) return;
     setLiked(true);
-    setLikeCount(v => v + 1);
     const heart = { id: Date.now(), x: Math.random() * 60 + 20 };
     setFloatingHearts(prev => [...prev, heart]);
+    
+    if (session?.id) {
+      likeMutation.mutate();
+    }
+    
     setTimeout(() => setFloatingHearts(prev => prev.filter(h => h.id !== heart.id)), 2000);
   };
 
-  const allChat = session.id.startsWith("live_") ? chatMessages : [...DEMO_CHAT, ...liveChatMsgs.map(m => ({ ...m, user_name: m.user_name || m.user_email }))];
+  const allChat = liveChatMsgs.map(m => ({ ...m, user_name: m.user_name || m.user_email }));
 
   return (
     <div className="fixed inset-0 bg-black z-50 flex flex-col lg:flex-row">
       {/* Video Area */}
-      <div className="relative flex-1 bg-slate-900 min-h-0">
-        <img src={session.thumbnail} alt="" className="w-full h-full object-cover opacity-80" />
+      <div className="relative flex-1 bg-black min-h-0 overflow-hidden">
+        <img src={session.thumbnail} alt="" className="w-full h-full object-cover opacity-60" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-black/40" />
 
         {/* Top Bar */}
-        <div className="absolute top-0 left-0 right-0 p-4 flex items-center justify-between">
-          <button onClick={onBack} className="w-9 h-9 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center">
+        <div className="absolute top-0 left-0 right-0 p-4 flex items-center justify-between z-10">
+          <button onClick={onBack} className="w-10 h-10 rounded-full bg-black/60 backdrop-blur-md flex items-center justify-center border border-white/10 hover:bg-black/80 transition-colors">
             <X className="w-5 h-5 text-white" />
           </button>
           <div className="flex items-center gap-2">
             {session.is_live && (
-              <span className="flex items-center gap-1.5 bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full animate-pulse">
+              <span className="flex items-center gap-1.5 bg-red-500 text-white text-[10px] font-bold px-3 py-1 rounded-full animate-pulse tracking-wider">
                 <span className="w-1.5 h-1.5 rounded-full bg-white" /> LIVE
               </span>
             )}
-            <span className="flex items-center gap-1 bg-black/50 backdrop-blur-sm text-white text-xs px-2.5 py-1 rounded-full">
+            <span className="flex items-center gap-1 bg-black/60 backdrop-blur-md text-white text-[10px] px-2.5 py-1 rounded-full border border-white/10">
               <Eye className="w-3 h-3" /> {Math.max(0, viewerCount).toLocaleString()}
             </span>
           </div>
         </div>
 
         {/* Host info */}
-        <div className="absolute bottom-0 left-0 right-0 p-4">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold shrink-0">
+        <div className="absolute bottom-0 left-0 right-0 p-4 pb-8 lg:pb-6 z-10">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-11 h-11 rounded-full bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center text-white font-bold shrink-0 ring-2 ring-white/20">
               {session.host_name?.[0]}
             </div>
             <div>
-              <p className="text-white font-semibold text-sm">{session.host_name}</p>
-              <p className="text-white/70 text-xs">{session.store_name}</p>
+              <p className="text-white font-semibold text-sm drop-shadow-md">{session.host_name}</p>
+              <p className="text-white/70 text-xs drop-shadow-md">{session.store_name}</p>
             </div>
-            <button className="ml-auto px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-full transition-colors">Follow</button>
+            {currentUser?.email !== session.host_email && (
+              <button 
+                onClick={() => {
+                  if (!currentUser) return toast.error("Sign in to follow");
+                  if (followStatus) unfollowMutation.mutate();
+                  else followMutation.mutate();
+                }}
+                disabled={followMutation.isPending || unfollowMutation.isPending}
+                className={`ml-auto px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
+                  followStatus 
+                    ? "bg-white/20 text-white hover:bg-white/30 backdrop-blur-sm" 
+                    : "bg-indigo-600 text-white hover:bg-indigo-500 shadow-lg shadow-indigo-600/20"
+                }`}
+              >
+                {followMutation.isPending || unfollowMutation.isPending 
+                  ? "..." 
+                  : followStatus ? "Following" : "Follow"}
+              </button>
+            )}
           </div>
-          <p className="text-white font-semibold text-sm mb-3 leading-tight">{session.title}</p>
+          <p className="text-white font-semibold text-base mb-4 leading-tight drop-shadow-lg">{session.title}</p>
 
           {/* Pinned Products — Buy Now overlay */}
-          <div className="space-y-2">
+          <div className="space-y-2 max-w-sm">
             {(session.pinned_products || []).map(product => (
               <ProductPill key={product.id} product={product} currentUser={currentUser} />
             ))}
           </div>
         </div>
 
-        {/* Like Button */}
-        <button onClick={handleLike} className="absolute right-4 bottom-60 lg:bottom-40 w-12 h-12 rounded-full bg-black/40 backdrop-blur-sm flex flex-col items-center justify-center gap-0.5">
-          <Heart className={`w-6 h-6 transition-all ${liked ? "fill-red-500 text-red-500 scale-110" : "text-white"}`} />
-          <span className="text-white text-[9px]">{likeCount.toLocaleString()}</span>
-        </button>
+        {/* Right Actions */}
+        <div className="absolute right-4 bottom-60 lg:bottom-40 flex flex-col gap-4 z-20">
+          <button onClick={handleLike} className="w-12 h-12 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex flex-col items-center justify-center gap-0.5 hover:bg-black/60 transition-colors">
+            <Heart className={`w-6 h-6 transition-all ${liked ? "fill-red-500 text-red-500 scale-110" : "text-white"}`} />
+            <span className="text-white text-[9px] font-bold">{likeCount.toLocaleString()}</span>
+          </button>
+          
+          <button 
+            onClick={() => {
+              navigator.clipboard.writeText(window.location.href);
+              toast.success("Link copied to clipboard!");
+            }}
+            className="w-12 h-12 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center hover:bg-black/60 transition-colors"
+          >
+            <Send className="w-5 h-5 text-white -rotate-45" />
+          </button>
+        </div>
 
         <AnimatePresence>
           {floatingHearts.map(heart => (
@@ -278,6 +334,8 @@ function LiveStreamViewer({ session, onBack }) {
 function VendorBroadcast({ onClose, currentUser, store }) {
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("fashion");
+  const [isScheduled, setIsScheduled] = useState(false);
+  const [scheduledDate, setScheduledDate] = useState("");
   const [isLive, setIsLive] = useState(false);
   const [session, setSession] = useState(null);
   const [pinnedProducts, setPinnedProducts] = useState([]);
@@ -298,22 +356,53 @@ function VendorBroadcast({ onClose, currentUser, store }) {
     enabled: !!store?.id,
   });
 
-  const { data: liveChat = [] } = useQuery({
+  const { data: liveChatResponse = {} } = useQuery({
     queryKey: ["liveChat", session?.id],
     queryFn: async () => {
       const res = await liveChatMessagesAPI.list(session.id, { sort: "created_date", limit: 60 });
-      return res.data || [];
+      return res;
     },
     enabled: !!session?.id,
     refetchInterval: 3000,
   });
+
+  const liveChat = Array.isArray(liveChatResponse?.messages) ? liveChatResponse.messages : [];
+
+  // Poll session for real-time likes/status updates
+  const { data: polledSession } = useQuery({
+    queryKey: ["liveSession", session?.id],
+    queryFn: async () => {
+      const res = await liveSessionsAPI.get(session.id);
+      return res.data || res;
+    },
+    enabled: !!session?.id && isLive,
+    refetchInterval: 5000,
+  });
+
+  // Sync likes from server
+  useEffect(() => {
+    if (polledSession?.likes !== undefined) {
+      setLikeCount(polledSession.likes);
+    }
+  }, [polledSession?.likes]);
+
+  // Periodic viewer count update for real sessions
+  useEffect(() => {
+    if (!session?.id || session.id.startsWith("live_") || !isLive) return;
+    
+    const interval = setInterval(() => {
+      // Host is the authority on viewer count in this simulation
+      liveSessionsAPI.updateViewers(session.id, viewerCount);
+    }, 10000); // Every 10 seconds
+    
+    return () => clearInterval(interval);
+  }, [session?.id, isLive, viewerCount]);
 
   useEffect(() => {
     if (!isLive) return;
     // Simulate viewer count growth
     const iv = setInterval(() => {
       setViewerCount(v => v + Math.floor(Math.random() * 4));
-      setLikeCount(v => v + Math.floor(Math.random() * 6));
     }, 4000);
     return () => clearInterval(iv);
   }, [isLive]);
@@ -322,82 +411,167 @@ function VendorBroadcast({ onClose, currentUser, store }) {
 
   const startLiveMutation = useMutation({
     mutationFn: async () => {
-      const res = await liveSessionsAPI.create({
+      const payload = {
         host_email: currentUser.email,
         host_name: currentUser.full_name,
         store_id: store?.id,
         store_name: store?.name,
         title,
         category,
-        is_live: true,
+        is_live: !isScheduled,
+        status: isScheduled ? 'scheduled' : 'active',
         viewer_count: 0,
         likes: 0,
         pinned_products: [],
         thumbnail: "https://images.unsplash.com/photo-1601924994987-69e26d50dc26?w=800",
-      });
-      return res.data || res;
+      };
+
+      if (isScheduled && scheduledDate) {
+        payload.scheduled_at = new Date(scheduledDate).toISOString();
+      }
+
+      const res = await liveSessionsAPI.create(payload);
+      const sess = res.data || res;
+      
+      // Only start immediately if not scheduled
+      if (sess.id && !isScheduled) {
+        await liveSessionsAPI.start(sess.id);
+      }
+      return sess;
     },
     onSuccess: (sess) => {
-      setSession(sess);
-      setIsLive(true);
-      toast.success("You are live! 🔴");
+      if (isScheduled) {
+        toast.success("Stream scheduled successfully!");
+        onClose();
+      } else {
+        setSession(sess);
+        setIsLive(true);
+        toast.success("You are live! 🔴");
+      }
       queryClient.invalidateQueries({ queryKey: ["liveSessions"] });
     },
+    onError: () => {
+      toast.error("Failed to create live session — please try again");
+    }
   });
 
   const endLiveMutation = useMutation({
-    mutationFn: () => liveSessionsAPI.update(session.id, { is_live: false, ended_at: new Date().toISOString(), viewer_count: viewerCount }),
+    mutationFn: () => liveSessionsAPI.end(session.id),
     onSuccess: () => {
       setIsLive(false);
       toast.success("Stream ended");
       onClose();
       queryClient.invalidateQueries({ queryKey: ["liveSessions"] });
     },
+    onError: () => {
+      toast.error("Failed to end stream — please try again");
+    }
   });
 
   const pinProductMutation = useMutation({
     mutationFn: async (product) => {
       const newPinned = [...pinnedProducts, { id: product.id, title: product.title, price: product.price, image: product.images?.[0] }];
-      setPinnedProducts(newPinned);
       if (session) await liveSessionsAPI.update(session.id, { pinned_products: newPinned });
+      return newPinned;
     },
+    onSuccess: (newPinned) => {
+      setPinnedProducts(newPinned);
+      toast.success("Product pinned!");
+    },
+    onError: () => {
+      toast.error("Failed to pin product");
+    }
   });
 
   const unpinProduct = async (productId) => {
     const newPinned = pinnedProducts.filter(p => p.id !== productId);
-    setPinnedProducts(newPinned);
-    if (session) await liveSessionsAPI.update(session.id, { pinned_products: newPinned });
+    try {
+      if (session) await liveSessionsAPI.update(session.id, { pinned_products: newPinned });
+      setPinnedProducts(newPinned);
+    } catch (e) {
+      toast.error("Failed to unpin product");
+    }
   };
 
   const sendHostMessage = useMutation({
-    mutationFn: () => liveChatMessagesAPI.create({
+    mutationFn: () => liveChatMessagesAPI.send({
       session_id: session.id,
       user_email: currentUser.email,
       user_name: `${currentUser.full_name} (host)`,
       content: chatInput,
       message_type: "chat",
     }),
-    onSuccess: () => { setChatInput(""); queryClient.invalidateQueries({ queryKey: ["liveChat"] }); },
+    onSuccess: () => { 
+      setChatInput(""); 
+      queryClient.invalidateQueries({ queryKey: ["liveChat", session?.id] }); 
+    },
   });
+
+  useEffect(() => {
+    if (isLive && videoRef.current) {
+      navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+        .then(stream => {
+          if (videoRef.current) {
+            videoRef.current.srcObject = stream;
+          }
+        })
+        .catch(err => {
+          console.error("Error accessing camera:", err);
+          toast.error("Could not access camera for streaming");
+        });
+    }
+    return () => {
+      if (videoRef.current?.srcObject) {
+        const tracks = videoRef.current.srcObject.getTracks();
+        tracks.forEach(track => track.stop());
+      }
+    };
+  }, [isLive]);
 
   return (
     <div className="fixed inset-0 bg-black z-50 flex flex-col lg:flex-row">
       {/* Preview area */}
       <div className="relative flex-1 bg-slate-900 flex items-center justify-center min-h-0">
-        <div className="w-full h-full bg-gradient-to-br from-indigo-900 via-purple-900 to-slate-900 flex items-center justify-center relative">
-          <div className="text-center">
-            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-4xl font-bold mx-auto mb-4">
-              {currentUser?.full_name?.[0]}
+        <div className="w-full h-full bg-black flex items-center justify-center relative overflow-hidden">
+          {isLive ? (
+            <video 
+              ref={videoRef} 
+              autoPlay 
+              muted 
+              playsInline 
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-indigo-900 via-purple-900 to-slate-900 flex items-center justify-center">
+              <div className="text-center">
+                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-4xl font-bold mx-auto mb-4">
+                  {currentUser?.full_name?.[0]}
+                </div>
+                <p className="text-white font-bold text-lg">{currentUser?.full_name}</p>
+                <p className="text-white/60 text-sm">{store?.name}</p>
+              </div>
             </div>
-            <p className="text-white font-bold text-lg">{currentUser?.full_name}</p>
-            <p className="text-white/60 text-sm">{store?.name}</p>
-            {isLive && (
-              <div className="mt-3 flex items-center justify-center gap-3 text-white/80 text-sm">
+          )}
+          
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/30 pointer-events-none" />
+
+          {isLive && (
+            <div className="absolute bottom-24 left-4 z-10 text-white">
+               <div className="flex items-center gap-3 mb-2">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold shrink-0 ring-2 ring-white/20">
+                  {currentUser?.full_name?.[0]}
+                </div>
+                <div>
+                  <p className="text-white font-semibold text-sm drop-shadow-md">{currentUser?.full_name}</p>
+                  <p className="text-white/70 text-xs drop-shadow-md">{store?.name}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 text-white/90 text-xs font-bold drop-shadow-md">
                 <span className="flex items-center gap-1"><Eye className="w-4 h-4" />{viewerCount}</span>
                 <span className="flex items-center gap-1"><Heart className="w-4 h-4 text-red-400" />{likeCount}</span>
               </div>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* Top Controls */}
           <div className="absolute top-4 left-4 right-4 flex items-center justify-between">
@@ -461,13 +635,44 @@ function VendorBroadcast({ onClose, currentUser, store }) {
                 </SelectContent>
               </Select>
             </div>
+
+            <div className="flex flex-col gap-2 p-3 bg-white/5 rounded-2xl border border-white/10">
+              <div className="flex items-center justify-between">
+                <label className="text-white text-xs font-semibold">Schedule for later</label>
+                <input 
+                  type="checkbox" 
+                  checked={isScheduled} 
+                  onChange={e => setIsScheduled(e.target.checked)}
+                  className="w-4 h-4 rounded bg-indigo-600"
+                />
+              </div>
+              {isScheduled && (
+                <div className="mt-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                  <label className="text-slate-400 text-[10px] mb-1 block uppercase font-bold tracking-wider">Date & Time</label>
+                  <Input 
+                    type="datetime-local" 
+                    value={scheduledDate} 
+                    onChange={e => setScheduledDate(e.target.value)} 
+                    className="bg-white/10 border-white/20 text-white text-xs rounded-xl h-9"
+                    min={new Date().toISOString().slice(0, 16)}
+                  />
+                </div>
+              )}
+            </div>
+
             <Button
               onClick={() => startLiveMutation.mutate()}
-              disabled={!title.trim() || startLiveMutation.isPending}
-              className="bg-red-500 hover:bg-red-600 w-full rounded-xl h-12 text-base font-bold"
+              disabled={!title.trim() || (isScheduled && !scheduledDate) || startLiveMutation.isPending}
+              className={`${isScheduled ? "bg-indigo-600 hover:bg-indigo-700" : "bg-red-500 hover:bg-red-600"} w-full rounded-xl h-12 text-base font-bold transition-all shadow-lg`}
             >
-              {startLiveMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <Radio className="w-5 h-5 mr-2" />}
-              Go Live Now
+              {startLiveMutation.isPending ? (
+                <Loader2 className="w-5 h-5 animate-spin mr-2" />
+              ) : isScheduled ? (
+                <Radio className="w-5 h-5 mr-2" />
+              ) : (
+                <Radio className="w-5 h-5 mr-2" />
+              )}
+              {isScheduled ? "Schedule Stream" : "Go Live Now"}
             </Button>
           </div>
         ) : (
@@ -505,10 +710,7 @@ function VendorBroadcast({ onClose, currentUser, store }) {
             </div>
             <div className="flex-1 overflow-y-auto p-2.5 space-y-1.5 min-h-0">
               {liveChat.map((msg, i) => (
-                <div key={i} className="text-xs">
-                  <span className="text-indigo-300 font-semibold">{msg.user_name}: </span>
-                  <span className="text-white/80">{msg.content}</span>
-                </div>
+                <ChatMsg key={msg.id || i} msg={msg} />
               ))}
               {liveChat.length === 0 && <p className="text-slate-500 text-xs text-center py-4">Waiting for viewers...</p>}
               <div ref={chatEndRef} />
@@ -555,23 +757,36 @@ export default function Live() {
     enabled: !!currentUser?.email,
   });
 
-  const { data: dbSessionsResponse = {} } = useQuery({
-    queryKey: ["liveSessions"],
+  const { data: activeSessionsRes = {} } = useQuery({
+    queryKey: ["liveSessions", "active"],
     queryFn: async () => {
       const res = await liveSessionsAPI.list({ status: 'active', sort: "-started_at", limit: 20 });
       return res;
     },
     refetchInterval: 15000,
   });
-  
-  const dbSessions = Array.isArray(dbSessionsResponse?.sessions) ? dbSessionsResponse.sessions : [];
 
-  // Merge DB sessions with demo fallback
-  const allSessions = dbSessions.length > 0 ? dbSessions.map(s => ({ ...s, pinned_products: s.pinned_products || [] })) : DEMO_SESSIONS;
+  const { data: upcomingSessionsRes = {} } = useQuery({
+    queryKey: ["liveSessions", "scheduled"],
+    queryFn: async () => {
+      const res = await liveSessionsAPI.list({ status: 'scheduled', sort: "scheduled_at", limit: 10 });
+      return res;
+    },
+    refetchInterval: 30000,
+  });
+  
+  const liveSessionsRaw = Array.isArray(activeSessionsRes?.sessions) ? activeSessionsRes.sessions : [];
+  const upcomingSessionsRaw = Array.isArray(upcomingSessionsRes?.sessions) ? upcomingSessionsRes.sessions : [];
+
   const categories = ["all", "fashion", "beauty", "electronics", "home", "food"];
-  const filtered = filter === "all" ? allSessions : allSessions.filter(s => s.category === filter);
-  const liveSessions = filtered.filter(s => s.is_live !== false);
-  const upcomingSessions = DEMO_SESSIONS.filter(s => !s.is_live && (filter === "all" || s.category === filter));
+  
+  const liveSessions = filter === "all" 
+    ? liveSessionsRaw 
+    : liveSessionsRaw.filter(s => s.category === filter);
+    
+  const upcomingSessions = filter === "all" 
+    ? upcomingSessionsRaw 
+    : upcomingSessionsRaw.filter(s => s.category === filter);
 
   if (activeSession) return <LiveStreamViewer session={activeSession} onBack={() => setActiveSession(null)} />;
   if (showBroadcast) return <VendorBroadcast onClose={() => setShowBroadcast(false)} currentUser={currentUser} store={store} />;
@@ -601,7 +816,7 @@ export default function Live() {
         ))}
       </div>
 
-      {liveSessions.length > 0 && (
+      {liveSessions.length > 0 ? (
         <section className="mb-8">
           <h2 className="text-lg font-bold text-slate-900 mb-3 flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" /> Live Now
@@ -609,20 +824,20 @@ export default function Live() {
           <div className="space-y-4">
             {liveSessions.map(session => (
               <motion.button key={session.id} whileHover={{ scale: 1.01 }} onClick={() => setActiveSession(session)} className="w-full text-left">
-                <div className="relative rounded-2xl overflow-hidden group">
+                <div className="relative rounded-2xl overflow-hidden group shadow-md hover:shadow-xl transition-shadow">
                   <img src={session.thumbnail} alt={session.title} className="w-full aspect-video object-cover group-hover:scale-105 transition-transform duration-500" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
                   <div className="absolute top-3 left-3 flex items-center gap-2">
-                    <span className="flex items-center gap-1.5 bg-red-500 text-white text-xs font-bold px-2.5 py-1 rounded-full">
+                    <span className="flex items-center gap-1.5 bg-red-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-full">
                       <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> LIVE
                     </span>
-                    <span className="flex items-center gap-1 bg-black/50 text-white text-xs px-2 py-1 rounded-full">
+                    <span className="flex items-center gap-1 bg-black/50 text-white text-[10px] px-2 py-1 rounded-full backdrop-blur-sm">
                       <Eye className="w-3 h-3" />{(session.viewer_count || 0).toLocaleString()}
                     </span>
                   </div>
                   <div className="absolute bottom-0 left-0 right-0 p-4">
                     <div className="flex items-center gap-2 mb-1.5">
-                      <div className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white text-xs font-bold ring-2 ring-white">
+                      <div className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white text-[10px] font-bold ring-2 ring-white">
                         {session.host_name?.[0]}
                       </div>
                       <span className="text-white text-xs font-medium">{session.host_name}</span>
@@ -630,8 +845,8 @@ export default function Live() {
                     </div>
                     <p className="text-white font-semibold text-sm leading-tight">{session.title}</p>
                     <div className="flex items-center gap-3 mt-2">
-                      <span className="flex items-center gap-1 text-white/70 text-xs"><Heart className="w-3 h-3" />{(session.likes || 0).toLocaleString()}</span>
-                      <span className="flex items-center gap-1 text-white/70 text-xs"><ShoppingBag className="w-3 h-3" />{(session.pinned_products || []).length} products</span>
+                      <span className="flex items-center gap-1 text-white/70 text-[10px] font-medium"><Heart className="w-3 h-3" />{(session.likes || 0).toLocaleString()}</span>
+                      <span className="flex items-center gap-1 text-white/70 text-[10px] font-medium"><ShoppingBag className="w-3 h-3" />{(session.pinned_products || []).length} products</span>
                     </div>
                   </div>
                 </div>
@@ -639,24 +854,48 @@ export default function Live() {
             ))}
           </div>
         </section>
+      ) : (
+        <div className="text-center py-12 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200 mb-8">
+          <div className="w-12 h-12 bg-slate-200 rounded-full flex items-center justify-center mx-auto mb-3">
+            <Radio className="w-6 h-6 text-slate-400" />
+          </div>
+          <p className="text-slate-500 font-medium">No live sessions in this category</p>
+          <p className="text-slate-400 text-xs mt-1">Check back later or explore other categories</p>
+        </div>
       )}
 
       {upcomingSessions.length > 0 && (
         <section>
-          <h2 className="text-lg font-bold text-slate-900 mb-3">Upcoming</h2>
+          <h2 className="text-lg font-bold text-slate-900 mb-3">Upcoming Streams</h2>
           <div className="space-y-3">
             {upcomingSessions.map(session => (
-              <div key={session.id} className="bg-white rounded-2xl border border-slate-100 p-4 flex gap-3">
-                <img src={session.thumbnail} alt="" className="w-20 h-16 rounded-xl object-cover" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-slate-900 font-semibold text-sm line-clamp-1">{session.title}</p>
-                  <p className="text-slate-500 text-xs mt-0.5">{session.host_name} · {session.store_name}</p>
-                  <div className="flex items-center gap-2 mt-2">
-                    <Badge variant="secondary" className="text-[10px]">{session.category}</Badge>
-                    <span className="text-xs text-slate-400">{(session.pinned_products || session.products || []).length} products</span>
+              <div key={session.id} className="bg-white rounded-2xl border border-slate-100 p-4 flex gap-3 shadow-sm">
+                <div className="relative w-24 h-20 rounded-xl overflow-hidden shrink-0 bg-slate-100">
+                  <img src={session.thumbnail} alt="" className="w-full h-full object-cover" />
+                  <div className="absolute top-1 left-1">
+                    <Badge className="bg-black/60 backdrop-blur-md border-none text-[8px] px-1.5 py-0">
+                      {session.category}
+                    </Badge>
                   </div>
                 </div>
-                <button className="shrink-0 px-3 py-1.5 bg-indigo-50 text-indigo-700 text-xs font-semibold rounded-xl hover:bg-indigo-100 self-center transition-colors">Remind</button>
+                <div className="flex-1 min-w-0 flex flex-col justify-center">
+                  <p className="text-slate-900 font-bold text-sm line-clamp-1 leading-tight">{session.title}</p>
+                  <p className="text-slate-500 text-[11px] mt-1 font-medium">{session.host_name} · {session.store_name}</p>
+                  
+                  <div className="flex items-center gap-2.5 mt-2">
+                    <span className="text-[10px] text-indigo-600 font-bold bg-indigo-50 px-2 py-0.5 rounded-md flex items-center gap-1">
+                      <Radio className="w-2.5 h-2.5" />
+                      {session.scheduled_at ? new Date(session.scheduled_at).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Soon'}
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-medium">{(session.pinned_products || []).length} products</span>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => toast.success(`Reminder set for ${session.title}!`)}
+                  className="shrink-0 w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-100 flex items-center justify-center transition-colors self-center"
+                >
+                  <Heart className="w-5 h-5" />
+                </button>
               </div>
             ))}
           </div>
