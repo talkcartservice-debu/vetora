@@ -1,7 +1,7 @@
 import React, { useState } from "react"; 
  import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"; 
  import { Link } from "react-router-dom"; 
- import { communitiesAPI, authAPI } from "@/api/apiClient"; 
+ import { communitiesAPI, authAPI, communityMembersAPI } from "@/api/apiClient"; 
  import { Users, Plus, Search, TrendingUp, Loader2 } from "lucide-react"; 
  import { Input } from "@/components/ui/input"; 
  import { Button } from "@/components/ui/button"; 
@@ -10,6 +10,7 @@ import React, { useState } from "react";
  import { Textarea } from "@/components/ui/textarea"; 
  import { toast } from "sonner"; 
  import { motion } from "framer-motion"; 
+ import { useAuth } from "@/lib/AuthContext"; 
  
  const COMMUNITY_CATEGORIES = [ 
    { id: "fashion", label: "Fashion", emoji: "👗" }, 
@@ -28,11 +29,17 @@ import React, { useState } from "react";
    const [createOpen, setCreateOpen] = useState(false); 
    const [newCommunity, setNewCommunity] = useState({ name: "", description: "", category: "tech" }); 
    const queryClient = useQueryClient(); 
- 
-   const { data: currentUser } = useQuery({ 
-     queryKey: ["currentUser"], 
-     queryFn: () => authAPI.me(), 
-   }); 
+   const { user: currentUser } = useAuth(); 
+
+   const { data: myMemberships = [] } = useQuery({
+     queryKey: ["myCommunityMemberships", currentUser?.email],
+     queryFn: async () => {
+       if (!currentUser?.email) return [];
+       const res = await communityMembersAPI.list({ member_email: currentUser.email, limit: 100 });
+       return res.data || [];
+     },
+     enabled: !!currentUser?.email,
+   });
  
   const { data: communitiesData, isLoading } = useQuery({ 
     queryKey: ["communities"], 
@@ -45,10 +52,7 @@ import React, { useState } from "react";
 
   const communities = Array.isArray(communitiesData) ? communitiesData : (communitiesData?.communities || []);
  
-   // Note: current backend doesn't have a specific membership filter endpoint yet
-   // We'll treat communities where the user is the owner as 'joined' for now
-   // This will need adjustment if membership status is tracked separately in backend
-   const joinedIds = new Set(communities.filter(c => c.owner_email === currentUser?.email).map(c => c._id || c.id)); 
+   const joinedIds = new Set(myMemberships.map(m => m.community_id)); 
  
    const createMutation = useMutation({ 
      mutationFn: async () => { 

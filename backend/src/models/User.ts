@@ -9,6 +9,24 @@ export interface IUser extends Document {
   avatar_url?: string;
   banner_url?: string;
   is_verified: boolean;
+  notifications?: {
+    notif_sales: boolean;
+    notif_msg: boolean;
+    notif_follow: boolean;
+    notif_live: boolean;
+  };
+  preferences?: {
+    theme: 'light' | 'dark';
+    language: string;
+  };
+  is_2fa_enabled: boolean;
+  two_factor_secret?: string;
+  email_verification_code?: string;
+  email_verification_expiry?: Date;
+  phone_number?: string;
+  is_phone_verified: boolean;
+  phone_verification_code?: string;
+  phone_verification_expiry?: Date;
   reset_token?: string;
   reset_token_expiry?: Date;
   created_at: Date;
@@ -46,6 +64,48 @@ const UserSchema = new Schema<IUser>({
   is_verified: {
     type: Boolean,
     default: false,
+  },
+  notifications: {
+    notif_sales: { type: Boolean, default: true },
+    notif_msg: { type: Boolean, default: true },
+    notif_follow: { type: Boolean, default: true },
+    notif_live: { type: Boolean, default: false },
+  },
+  preferences: {
+    theme: { type: String, enum: ['light', 'dark'], default: 'light' },
+    language: { type: String, default: 'en' },
+  },
+  is_2fa_enabled: {
+    type: Boolean,
+    default: false,
+  },
+  two_factor_secret: {
+    type: String,
+    select: false,
+  },
+  email_verification_code: {
+    type: String,
+    select: false,
+  },
+  email_verification_expiry: {
+    type: Date,
+    select: false,
+  },
+  phone_number: {
+    type: String,
+    trim: true,
+  },
+  is_phone_verified: {
+    type: Boolean,
+    default: false,
+  },
+  phone_verification_code: {
+    type: String,
+    select: false,
+  },
+  phone_verification_expiry: {
+    type: Date,
+    select: false,
   },
   reset_token: {
     type: String,

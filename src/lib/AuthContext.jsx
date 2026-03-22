@@ -57,6 +57,26 @@ export const AuthProvider = ({ children }) => {
     try {
       setIsLoadingAuth(true);
       const data = await authAPI.login(email, password);
+      
+      if (data.two_factor_required) {
+        setIsLoadingAuth(false);
+        return data; // Return to handle in UI
+      }
+
+      setUser(data.user);
+      setIsAuthenticated(true);
+      setIsLoadingAuth(false);
+      return data;
+    } catch (error) {
+      setIsLoadingAuth(false);
+      throw error;
+    }
+  };
+
+  const verify2FA = async (twoFactorToken, token) => {
+    try {
+      setIsLoadingAuth(true);
+      const data = await authAPI.verify2FALogin(twoFactorToken, token);
       setUser(data.user);
       setIsAuthenticated(true);
       setIsLoadingAuth(false);
@@ -99,6 +119,7 @@ export const AuthProvider = ({ children }) => {
       isLoadingAuth,
       authError,
       login,
+      verify2FA,
       register,
       logout,
       navigateToLogin,

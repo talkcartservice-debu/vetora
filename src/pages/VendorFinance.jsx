@@ -51,7 +51,7 @@ export default function VendorFinance() {
   const { data: ordersResponse = {} } = useQuery({
     queryKey: ["storeOrders", currentUser?.email],
     queryFn: async () => {
-      const res = await ordersAPI.list({ vendor_email: currentUser?.email, sort: "-created_date", limit: 200 });
+      const res = await ordersAPI.list({ vendor_email: currentUser?.email, sort: "-created_at", limit: 200 });
       return res;
     },
     enabled: !!currentUser?.email,
@@ -62,13 +62,13 @@ export default function VendorFinance() {
   const { data: withdrawalsResponse = {} } = useQuery({
     queryKey: ["withdrawals", currentUser?.email],
     queryFn: async () => {
-      const res = await withdrawalsAPI.list({ vendor_email: currentUser?.email, sort: "-created_date", limit: 50 });
+      const res = await withdrawalsAPI.list({ vendor_email: currentUser?.email, sort: "-created_at", limit: 50 });
       return res;
     },
     enabled: !!currentUser?.email,
   });
   
-  const withdrawals = Array.isArray(withdrawalsResponse?.withdrawals) ? withdrawalsResponse.withdrawals : [];
+  const withdrawals = Array.isArray(withdrawalsResponse?.data) ? withdrawalsResponse.data : [];
 
   const withdrawMutation = useMutation({
     mutationFn: () => withdrawalsAPI.create({
@@ -102,7 +102,7 @@ export default function VendorFinance() {
 
   // Group orders by month for chart
   const monthlyData = orders.reduce((acc, o) => {
-    const month = new Date(o.created_date).toLocaleString("default", { month: "short", year: "2-digit" });
+    const month = new Date(o.created_at || o.created_date).toLocaleString("default", { month: "short", year: "2-digit" });
     acc[month] = (acc[month] || 0) + (o.total || 0) * PAYOUT_RATE;
     return acc;
   }, {});
@@ -112,7 +112,7 @@ export default function VendorFinance() {
   const downloadTaxInvoice = (order) => {
     const doc = new jsPDF();
     const invoiceId = `INV-${order.id?.slice(-8).toUpperCase()}`;
-    const date = new Date(order.created_date).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+    const date = new Date(order.created_at || order.created_date).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
 
     // Header gradient strip
     doc.setFillColor(99, 102, 241);
@@ -358,7 +358,7 @@ export default function VendorFinance() {
                         {order.buyer_name || order.buyer_email}
                       </p>
                       <p className="text-[10px] text-slate-400">
-                        {new Date(order.created_date).toLocaleDateString()} · #{order.id?.slice(-8)}
+                        {new Date(order.created_at || order.created_date).toLocaleDateString()} · #{order.id?.slice(-8)}
                       </p>
                     </div>
                     <div className="text-right shrink-0">
@@ -432,7 +432,7 @@ export default function VendorFinance() {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-slate-900">${w.amount?.toFixed(2)}</p>
                     <p className="text-xs text-slate-400">
-                      {w.bank_name} · {new Date(w.created_date).toLocaleDateString()}
+                      {w.bank_name} · {new Date(w.created_at || w.created_date).toLocaleDateString()}
                     </p>
                   </div>
                   <Badge className={`${statusColors[w.status]} border-0 text-xs capitalize`}>

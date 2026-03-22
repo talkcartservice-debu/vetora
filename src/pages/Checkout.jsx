@@ -42,6 +42,7 @@ const CheckoutStep = ({ number, title, active, completed, children }) => (
 export default function Checkout() {
   const [step, setStep] = useState(1);
   const [address, setAddress] = useState({ street: "", city: "", state: "", zip: "" });
+  const [cardData, setCardData] = useState({ number: "", expiry: "", cvc: "" });
   const [paymentMethod, setPaymentMethod] = useState("card");
   const [placing, setPlacing] = useState(false);
   
@@ -184,18 +185,33 @@ export default function Checkout() {
                   <div>
                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">Card Number</label>
                     <div className="relative">
-                      <Input placeholder="0000 0000 0000 0000" className="rounded-xl h-11 pl-11 border-slate-200" />
+                      <Input 
+                        value={cardData.number}
+                        onChange={e => setCardData({...cardData, number: e.target.value})}
+                        placeholder="0000 0000 0000 0000" 
+                        className="rounded-xl h-11 pl-11 border-slate-200" 
+                      />
                       <CreditCard className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">Expiry Date</label>
-                      <Input placeholder="MM/YY" className="rounded-xl h-11 border-slate-200" />
+                      <Input 
+                        value={cardData.expiry}
+                        onChange={e => setCardData({...cardData, expiry: e.target.value})}
+                        placeholder="MM/YY" 
+                        className="rounded-xl h-11 border-slate-200" 
+                      />
                     </div>
                     <div>
                       <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">CVC</label>
-                      <Input placeholder="123" className="rounded-xl h-11 border-slate-200" />
+                      <Input 
+                        value={cardData.cvc}
+                        onChange={e => setCardData({...cardData, cvc: e.target.value})}
+                        placeholder="123" 
+                        className="rounded-xl h-11 border-slate-200" 
+                      />
                     </div>
                   </div>
                 </div>

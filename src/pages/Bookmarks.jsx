@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { bookmarksAPI, postsAPI, productsAPI } from "@/api/apiClient";
+import { bookmarksAPI, postsAPI, productsAPI, wishlistAPI } from "@/api/apiClient";
 import { useAuth } from "@/lib/AuthContext";
 import PostCard from "@/components/shared/PostCard";
 import ProductCard from "@/components/shared/ProductCard";
@@ -15,52 +15,51 @@ export default function Bookmarks() {
   const [activeTab, setActiveTab] = useState("posts");
   const { user: currentUser } = useAuth();
 
-  const { data: bookmarksResponse = {}, isLoading: bookmarksLoading, refetch } = useQuery({
+  const { data: itemsResponse = {}, isLoading: itemsLoading, refetch } = useQuery({
     queryKey: ["bookmarks", currentUser?.email, activeTab],
     queryFn: async () => {
-      const res = await bookmarksAPI.list({ target_type: activeTab === "posts" ? "post" : "product" });
-      return res;
+      if (activeTab === "posts") {
+        const res = await bookmarksAPI.list({ target_type: "post" });
+        // Fetch full post details
+        if (res.data?.length > 0) {
+          const promises = res.data.slice(0, 20).map(b => postsAPI.get(b.target_id).catch(() => null));
+          const results = await Promise.all(promises);
+          return { data: results.filter(i => !!i) };
+        }
+        return { data: [] };
+      } else {
+        const res = await wishlistAPI.list({ user_email: currentUser?.email, limit: 50 });
+        // Fetch full product details for each wishlist item if needed, 
+        // but wishlist usually already contains enough info. 
+        // Let's ensure we have full product objects for ProductCard.
+        if (res.data?.length > 0) {
+          const promises = res.data.map(w => productsAPI.get(w.product_id).catch(() => null));
+          const results = await Promise.all(promises);
+          return { data: results.filter(i => !!i) };
+        }
+        return { data: [] };
+      }
     },
     enabled: !!currentUser?.email,
   });
 
-  const bookmarks = Array.isArray(bookmarksResponse?.data) ? bookmarksResponse.data : [];
+  const items = Array.isArray(itemsResponse?.data) ? itemsResponse.data : [];
 
-  // Fetch full details for bookmarked items
-  const { data: items = [], isLoading: itemsLoading } = useQuery({
-    queryKey: ["bookmarkDetails", activeTab, bookmarks.map(b => b.target_id).join(',')],
-    queryFn: async () => {
-      if (bookmarks.length === 0) return [];
-      
-      const promises = bookmarks.slice(0, 20).map(async (bookmark) => {
-        try {
-          if (activeTab === "posts") {
-            return await postsAPI.get(bookmark.target_id);
-          } else {
-            return await productsAPI.get(bookmark.target_id);
-          }
-        } catch (e) {
-          return null; // Item might be deleted
-        }
-      });
-      
-      const results = await Promise.all(promises);
-      return results.filter(i => !!i);
-    },
-    enabled: bookmarks.length > 0,
-  });
-
-  const handleRemoveBookmark = async (id) => {
+  const handleRemove = async (id) => {
     try {
-      await bookmarksAPI.remove(activeTab === "posts" ? "post" : "product", id);
-      toast.success("Removed from bookmarks");
+      if (activeTab === "posts") {
+        await bookmarksAPI.remove("post", id);
+      } else {
+        await wishlistAPI.remove(id);
+      }
+      toast.success(`Removed from ${activeTab === "posts" ? "bookmarks" : "wishlist"}`);
       refetch();
     } catch (e) {
-      toast.error("Failed to remove bookmark");
+      toast.error("Failed to remove");
     }
   };
 
-  const isLoading = bookmarksLoading || (bookmarks.length > 0 && itemsLoading);
+  const isLoading = itemsLoading;
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
@@ -115,9 +114,9 @@ export default function Bookmarks() {
                   )}
                   
                   <button
-                    onClick={() => handleRemoveBookmark(item.id || item._id)}
+                    onClick={() => handleRemove(item.id || item._id)}
                     className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm border border-slate-100 flex items-center justify-center text-red-500 shadow-sm opacity-0 group-hover:opacity-100 transition-all hover:bg-red-50 z-10"
-                    title="Remove Bookmark"
+                    title={`Remove from ${activeTab === "posts" ? "Bookmarks" : "Wishlist"}`}
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>

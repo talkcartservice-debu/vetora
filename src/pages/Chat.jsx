@@ -150,7 +150,7 @@ export default function Chat() {
   const { data: allMessagesResponse = {} } = useQuery({
     queryKey: ["allMessages", currentUser?.email],
     queryFn: async () => {
-      const res = await messagesAPI.query({ sender_email: currentUser?.email, sort: "-created_date", limit: 200 });
+      const res = await messagesAPI.query({ sender_email: currentUser?.email, sort: "-created_at", limit: 200 });
       return res;
     },
     enabled: !!currentUser?.email,
@@ -160,7 +160,7 @@ export default function Chat() {
   const { data: receivedMessagesResponse = {} } = useQuery({
     queryKey: ["receivedMessages", currentUser?.email],
     queryFn: async () => {
-      const res = await messagesAPI.query({ receiver_email: currentUser?.email, sort: "-created_date", limit: 200 });
+      const res = await messagesAPI.query({ receiver_email: currentUser?.email, sort: "-created_at", limit: 200 });
       return res;
     },
     enabled: !!currentUser?.email,
@@ -178,12 +178,13 @@ export default function Chat() {
     allMsgs.forEach(msg => {
       const otherEmail = msg.sender_email === currentUser?.email ? msg.receiver_email : msg.sender_email;
       const otherName = msg.sender_email === currentUser?.email ? msg.receiver_email : msg.sender_name;
-      if (!convoMap[otherEmail] || new Date(msg.created_date) > new Date(convoMap[otherEmail].lastDate)) {
+      const msgDate = msg.created_at || msg.created_date;
+      if (!convoMap[otherEmail] || new Date(msgDate) > new Date(convoMap[otherEmail].lastDate)) {
         convoMap[otherEmail] = {
           email: otherEmail,
           name: otherName || otherEmail,
           lastMessage: msg.content,
-          lastDate: msg.created_date,
+          lastDate: msgDate,
           unread: msg.receiver_email === currentUser?.email && !msg.is_read,
           messageType: msg.message_type,
         };
@@ -199,7 +200,7 @@ export default function Chat() {
         (m.sender_email === selectedConvo && m.receiver_email === currentUser?.email) ||
         (m.sender_email === currentUser?.email && m.receiver_email === selectedConvo)
       )
-      .sort((a, b) => new Date(a.created_date) - new Date(b.created_date));
+      .sort((a, b) => new Date(a.created_at || a.created_date) - new Date(b.created_at || b.created_date));
     
     // Deduplicate by ID
     const seen = new Set();

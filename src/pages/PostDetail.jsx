@@ -77,7 +77,24 @@ export default function PostDetail() {
     },
   });
 
-  if (!post) return <div className="flex items-center justify-center h-64 text-slate-400">Loading...</div>;
+  if (!post) {
+    return (
+      <div className="max-w-2xl mx-auto px-4 py-8 animate-pulse">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-10 h-10 rounded-full bg-slate-200" />
+          <div className="space-y-2">
+            <div className="h-3 w-24 bg-slate-200 rounded" />
+            <div className="h-2 w-16 bg-slate-100 rounded" />
+          </div>
+        </div>
+        <div className="aspect-square bg-slate-100 rounded-3xl mb-4" />
+        <div className="space-y-2">
+          <div className="h-3 w-full bg-slate-200 rounded" />
+          <div className="h-3 w-3/4 bg-slate-100 rounded" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-4 lg:py-6">
@@ -89,76 +106,102 @@ export default function PostDetail() {
 
       {/* Comments */}
       <div className="mt-6">
-        <h3 className="text-lg font-bold text-slate-900 mb-4">Comments ({comments.length})</h3>
+        <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+          Comments 
+          <span className="text-sm font-normal text-slate-400">({comments.length})</span>
+        </h3>
 
         {/* Show comments error if any */}
         {commentsError && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
-            Failed to load comments
+          <div className="mb-4 p-4 bg-red-50 border border-red-100 rounded-2xl text-red-600 text-sm flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+            Failed to load comments. Please refresh.
           </div>
         )}
 
         {/* Add Comment */}
-        {currentUser && (
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white font-semibold text-sm shrink-0">
-              {currentUser.full_name?.[0]?.toUpperCase() || "U"}
-            </div>
-            <div className="flex-1 flex gap-2">
-              <Input
-                value={commentText}
-                onChange={(e) => setCommentText(e.target.value)}
-                placeholder="Add a comment..."
-                className="rounded-xl"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && commentText.trim()) {
-                    e.preventDefault();
-                    addCommentMutation.mutate();
-                  }
-                }}
-              />
-              <Button
-                onClick={() => {
-                  if (commentText.trim()) {
-                    addCommentMutation.mutate();
-                  }
-                }}
-                disabled={!commentText.trim() || addCommentMutation.isPending}
-                size="icon"
-                className="rounded-xl bg-indigo-600 hover:bg-indigo-700 shrink-0"
-              >
-                {addCommentMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* Comment List */}
-        <div className="space-y-3">
-          {comments.map((comment, i) => (
-            <motion.div
-              key={comment.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.05 }}
-              className="flex gap-3"
-            >
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-slate-300 to-slate-400 flex items-center justify-center text-white text-xs font-semibold shrink-0">
-                {comment.author_name?.[0]?.toUpperCase() || "U"}
+        <AnimatePresence>
+          {currentUser && (
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-3 mb-8">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white font-bold text-sm shrink-0 border-2 border-white shadow-sm">
+                {currentUser.full_name?.[0]?.toUpperCase() || "U"}
               </div>
-              <div className="flex-1 bg-slate-50 rounded-2xl rounded-tl-sm p-3">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-sm font-semibold text-slate-900">{comment.author_name || "User"}</span>
-                  <span className="text-[10px] text-slate-400">
-                    {new Date(comment.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                  </span>
-                </div>
-                <p className="text-sm text-slate-600">{comment.content}</p>
+              <div className="flex-1 flex gap-2">
+                <Input
+                  value={commentText}
+                  onChange={(e) => setCommentText(e.target.value)}
+                  placeholder="Write a comment..."
+                  className="rounded-2xl border-slate-200 bg-white h-11 focus:ring-indigo-100"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && commentText.trim()) {
+                      e.preventDefault();
+                      addCommentMutation.mutate();
+                    }
+                  }}
+                />
+                <Button
+                  onClick={() => {
+                    if (commentText.trim()) {
+                      addCommentMutation.mutate();
+                    }
+                  }}
+                  disabled={!commentText.trim() || addCommentMutation.isPending}
+                  size="icon"
+                  className="rounded-2xl bg-indigo-600 hover:bg-indigo-700 w-11 h-11 shrink-0 shadow-lg shadow-indigo-100 transition-all active:scale-95"
+                >
+                  {addCommentMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                </Button>
               </div>
             </motion.div>
-          ))}
-          {comments.length === 0 && !commentsLoading && (
-            <div className="text-center py-8 text-slate-400 text-sm">No comments yet. Be the first!</div>
+          )}
+        </AnimatePresence>
+
+        {/* Comment List */}
+        <div className="space-y-5">
+          {commentsLoading ? (
+            Array(3).fill(0).map((_, i) => (
+              <div key={i} className="flex gap-3 animate-pulse">
+                <div className="w-9 h-9 rounded-full bg-slate-100" />
+                <div className="flex-1 bg-slate-50/50 rounded-2xl p-4 space-y-2">
+                  <div className="h-2.5 w-24 bg-slate-100 rounded" />
+                  <div className="h-2 w-full bg-slate-50 rounded" />
+                </div>
+              </div>
+            ))
+          ) : comments.length === 0 ? (
+            <div className="text-center py-12 bg-slate-50/50 rounded-3xl border border-dashed border-slate-200">
+              <MessageCircle className="w-10 h-10 text-slate-200 mx-auto mb-3" />
+              <p className="text-slate-400 text-sm font-medium">No comments yet. Be the first!</p>
+            </div>
+          ) : (
+            comments.map((comment, i) => (
+              <motion.div
+                key={comment.id || comment._id || i}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.05 }}
+                className="flex gap-3 group"
+              >
+                <div className="w-9 h-9 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 text-xs font-bold shrink-0 border border-white shadow-sm">
+                  {comment.author_avatar ? (
+                    <img src={comment.author_avatar} alt="" className="w-full h-full rounded-full object-cover" />
+                  ) : (
+                    comment.author_name?.[0]?.toUpperCase() || "U"
+                  )}
+                </div>
+                <div className="flex-1">
+                  <div className="bg-white border border-slate-100 rounded-2xl rounded-tl-sm p-4 hover:shadow-md hover:shadow-slate-100 transition-all">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-sm font-bold text-slate-900">{comment.author_name || "User"}</span>
+                      <span className="text-[10px] font-medium text-slate-400">
+                        {new Date(comment.created_at || comment.created_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                      </span>
+                    </div>
+                    <p className="text-sm text-slate-600 leading-relaxed">{comment.content}</p>
+                  </div>
+                </div>
+              </motion.div>
+            ))
           )}
         </div>
       </div>

@@ -6,7 +6,7 @@ import ReviewGallery from "@/components/reviews/ReviewGallery";
 import ReviewForm from "@/components/reviews/ReviewForm";
 import SimilarProducts from "@/components/product/SimilarProducts";
 import SentimentSummary from "@/components/product/SentimentSummary";
-import { productsAPI, reviewsAPI, cartAPI } from "@/api/apiClient";
+import { productsAPI, reviewsAPI, cartAPI, wishlistAPI } from "@/api/apiClient";
 import { useAuth } from "@/lib/AuthContext";
 import {
   Star, Heart, ShoppingCart, Share2, Truck, Shield, ArrowLeft,
@@ -97,6 +97,52 @@ export default function ProductDetail() {
       setTimeout(() => setAddedToCart(false), 2000);
     },
   });
+
+  const { data: wishlistItems = [] } = useQuery({
+    queryKey: ["wishlist", currentUser?.email],
+    queryFn: async () => {
+      const res = await wishlistAPI.list({ user_email: currentUser?.email, sort: "-created_date", limit: 200 });
+      return res.data || [];
+    },
+    enabled: !!currentUser?.email,
+  });
+
+  const isWishlisted = wishlistItems.some(w => w.product_id === productId);
+
+  const wishlistMutation = useMutation({
+    mutationFn: async () => {
+      if (!currentUser) {
+        toast.error("Sign in to save items");
+        return;
+      }
+      if (isWishlisted) {
+        await wishlistAPI.remove(productId);
+      } else {
+        await wishlistAPI.add({
+          user_email: currentUser.email,
+          product_id: productId,
+          product_title: product.title,
+          product_image: product.images?.[0],
+          product_price: product.price,
+          compare_at_price: product.compare_at_price,
+          store_id: product.store_id,
+          store_name: product.store_name,
+        });
+        toast.success("Saved to wishlist!");
+      }
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["wishlist"] }),
+  });
+
+  const handleShare = async () => {
+    try {
+      const url = window.location.href;
+      await navigator.clipboard.writeText(url);
+      toast.success("Link copied to clipboard!");
+    } catch (e) {
+      toast.error("Failed to copy link");
+    }
+  };
 
   if (isLoading) {
     return (
@@ -246,10 +292,20 @@ export default function ProductDetail() {
             >
               {addedToCart ? <><Check className="w-5 h-5 mr-2" /> Added!</> : <><ShoppingCart className="w-5 h-5 mr-2" /> Add to Cart</>}
             </Button>
-            <Button variant="outline" size="icon" className="h-12 w-12 rounded-xl">
-              <Heart className="w-5 h-5" />
+            <Button
+              onClick={() => wishlistMutation.mutate()}
+              variant="outline"
+              size="icon"
+              className={`h-12 w-12 rounded-xl transition-colors ${isWishlisted ? "bg-red-50 border-red-200 text-red-500" : ""}`}
+            >
+              <Heart className={`w-5 h-5 ${isWishlisted ? "fill-current" : ""}`} />
             </Button>
-            <Button variant="outline" size="icon" className="h-12 w-12 rounded-xl">
+            <Button
+              onClick={handleShare}
+              variant="outline"
+              size="icon"
+              className="h-12 w-12 rounded-xl"
+            >
               <Share2 className="w-5 h-5" />
             </Button>
           </div>
@@ -353,7 +409,7 @@ export default function ProductDetail() {
                         <StarRow rating={review.rating} />
                       </div>
                     </div>
-                    <span className="text-xs text-slate-400">{new Date(review.created_date).toLocaleDateString()}</span>
+                    <span className="text-xs text-slate-400">{new Date(review.created_at || review.created_date).toLocaleDateString()}</span>
                   </div>
 
                   {review.title && (

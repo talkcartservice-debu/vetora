@@ -86,15 +86,15 @@ export default function Layout({ children, currentPageName }) {
   const unreadMsgCount = unreadMessages.length;
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
       {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex fixed left-0 top-0 bottom-0 w-64 bg-white border-r border-slate-200 flex-col z-40">
+      <aside className="hidden lg:flex fixed left-0 top-0 bottom-0 w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex-col z-40">
         <div className="p-6">
           <Link to={createPageUrl("Home")} className="flex items-center gap-2 mb-4">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center">
               <span className="text-white font-bold text-lg">V</span>
             </div>
-            <span className="text-xl font-bold text-slate-900 tracking-tight">Vetora</span>
+            <span className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">Vetora</span>
           </Link>
           <GlobalSearch />
         </div>
@@ -108,11 +108,11 @@ export default function Layout({ children, currentPageName }) {
                 to={createPageUrl(item.page)}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
                   isActive
-                    ? "bg-indigo-50 text-indigo-700"
-                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                    ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400"
+                    : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white"
                 }`}
               >
-                <item.icon className={`w-5 h-5 ${isActive ? "text-indigo-600" : ""}`} />
+                <item.icon className={`w-5 h-5 ${isActive ? "text-indigo-600 dark:text-indigo-400" : ""}`} />
                 {item.name}
                 {item.name === "Notifications" && unreadCount > 0 && (
                   <span className="ml-auto bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[18px] text-center">
@@ -129,10 +129,10 @@ export default function Layout({ children, currentPageName }) {
           })}
         </nav>
 
-        <div className="p-4 border-t border-slate-100 space-y-2">
+        <div className="p-4 border-t border-slate-100 dark:border-slate-800 space-y-2">
           <button
             onClick={() => setShowCreate(true)}
-            className="flex items-center justify-center gap-2 w-full py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-medium text-sm hover:shadow-lg hover:shadow-indigo-200 transition-all"
+            className="flex items-center justify-center gap-2 w-full py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-medium text-sm hover:shadow-lg hover:shadow-indigo-200 dark:hover:shadow-indigo-900/40 transition-all"
           >
             <Plus className="w-4 h-4" />
             Create
@@ -144,17 +144,17 @@ export default function Layout({ children, currentPageName }) {
       </aside>
 
       {/* Mobile Top Bar */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-white/90 backdrop-blur-xl border-b border-slate-200/60 flex items-center justify-between px-4 z-40">
+      <header className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-b border-slate-200/60 dark:border-slate-800/60 flex items-center justify-between px-4 z-40">
         <Link to={createPageUrl("Home")} className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center">
             <span className="text-white font-bold text-sm">V</span>
           </div>
-          <span className="text-lg font-bold text-slate-900">Vetora</span>
+          <span className="text-lg font-bold text-slate-900 dark:text-white">Vetora</span>
         </Link>
         <div className="flex items-center gap-1">
           <LanguagePicker />
           <Link to={createPageUrl("Chat")} className="relative p-2">
-            <MessageCircle className="w-5 h-5 text-slate-600" />
+            <MessageCircle className="w-5 h-5 text-slate-600 dark:text-slate-400" />
             {unreadMsgCount > 0 && (
               <span className="absolute top-1 right-1 w-4 h-4 bg-indigo-500 text-white text-[10px] rounded-full flex items-center justify-center">
                 {unreadMsgCount > 9 ? "9+" : unreadMsgCount}
@@ -163,7 +163,7 @@ export default function Layout({ children, currentPageName }) {
           </Link>
           <NotificationBell userEmail={currentUser?.email} />
           <Link to={createPageUrl("Cart")} className="p-2">
-            <ShoppingBag className="w-5 h-5 text-slate-600" />
+            <ShoppingBag className="w-5 h-5 text-slate-600 dark:text-slate-400" />
           </Link>
         </div>
       </header>
@@ -174,7 +174,7 @@ export default function Layout({ children, currentPageName }) {
       </main>
 
       {/* Mobile Bottom Nav */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-t border-slate-200/60 z-40">
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-t border-slate-200/60 dark:border-slate-800/60 z-40">
         <div className="flex items-center justify-around h-16 px-2">
           {NAV_ITEMS.map((item) => {
             const isActive = currentPageName === item.page;
@@ -183,7 +183,7 @@ export default function Layout({ children, currentPageName }) {
                 <button
                   key={item.name}
                   onClick={() => setShowCreate(true)}
-                  className="w-11 h-11 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-200 -mt-4"
+                  className="w-11 h-11 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-200 dark:shadow-indigo-900/40 -mt-4"
                 >
                   <Plus className="w-5 h-5 text-white" />
                 </button>
@@ -197,12 +197,12 @@ export default function Layout({ children, currentPageName }) {
               >
                 <item.icon
                   className={`w-5 h-5 transition-colors ${
-                    isActive ? "text-indigo-600" : "text-slate-400"
+                    isActive ? "text-indigo-600 dark:text-indigo-400" : "text-slate-400 dark:text-slate-500"
                   }`}
                 />
                 <span
                   className={`text-[10px] font-medium ${
-                    isActive ? "text-indigo-600" : "text-slate-400"
+                    isActive ? "text-indigo-600 dark:text-indigo-400" : "text-slate-400 dark:text-slate-500"
                   }`}
                 >
                   {item.name}

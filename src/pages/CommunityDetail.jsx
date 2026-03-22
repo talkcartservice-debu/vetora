@@ -84,6 +84,7 @@ const COMMUNITY_CATEGORIES = [
      }, 
      onSuccess: () => { 
        queryClient.invalidateQueries({ queryKey: ["communityMembership", communityId] }); 
+       queryClient.invalidateQueries({ queryKey: ["myCommunityMemberships"] }); 
        queryClient.invalidateQueries({ queryKey: ["community", communityId] }); 
        queryClient.invalidateQueries({ queryKey: ["communityMembers", communityId] });
        toast.success(isMember ? "Left community" : "Joined community!"); 
