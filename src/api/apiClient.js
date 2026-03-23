@@ -34,10 +34,6 @@ class APIClient {
       ...additionalHeaders
     };
 
-    if (!isFormData) {
-      headers['Content-Type'] = 'application/json';
-    }
-
     if (this.token) {
       headers['Authorization'] = `Bearer ${this.token}`;
     }
@@ -63,16 +59,23 @@ class APIClient {
     } = options;
 
     const isFormData = body instanceof FormData;
+    const headers = this.getHeaders(additionalHeaders, isFormData);
 
     const config = {
       method,
-      headers: this.getHeaders(additionalHeaders, isFormData),
+      headers,
       body: undefined,
       ...otherOptions
     };
 
-    if (body && !['GET', 'HEAD'].includes(method)) {
-      config.body = isFormData ? body : JSON.stringify(body);
+    // Only set Content-Type and body if we have a body and it's not a GET/HEAD request
+    if (body != null && !['GET', 'HEAD'].includes(method)) {
+      if (isFormData) {
+        config.body = body;
+      } else {
+        headers['Content-Type'] = 'application/json';
+        config.body = JSON.stringify(body);
+      }
     }
 
     try {
@@ -106,7 +109,13 @@ class APIClient {
       if (!response.ok) {
         // Detailed validation error logging
         if (data?.details && Array.isArray(data.details)) {
-          const detailStr = data.details.map(d => `${d.path.join('.')}: ${d.message}`).join(', ');
+          const detailStr = data.details.map(d => {
+            if (typeof d === 'string') return d;
+            if (d?.path && Array.isArray(d.path)) {
+              return `${d.path.join('.')}: ${d.message || 'Validation error'}`;
+            }
+            return d?.message || JSON.stringify(d);
+          }).join(', ');
           console.error(`API Validation Error [${endpoint}]: ${detailStr}`, data.details);
         } else if (response.status !== 404) {
           console.error(`API Error [${endpoint}]: ${error.message}`, error);

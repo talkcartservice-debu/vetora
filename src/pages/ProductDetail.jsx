@@ -6,6 +6,7 @@ import ReviewGallery from "@/components/reviews/ReviewGallery";
 import ReviewForm from "@/components/reviews/ReviewForm";
 import SimilarProducts from "@/components/product/SimilarProducts";
 import SentimentSummary from "@/components/product/SentimentSummary";
+import ShareModal from "@/components/shared/ShareModal";
 import { productsAPI, reviewsAPI, cartAPI, wishlistAPI } from "@/api/apiClient";
 import { useAuth } from "@/lib/AuthContext";
 import {
@@ -35,36 +36,21 @@ export default function ProductDetail() {
   const [quantity, setQuantity] = useState(1);
   const [addedToCart, setAddedToCart] = useState(false);
   const [showReviewForm, setShowReviewForm] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const queryClient = useQueryClient();
   const { user: currentUser } = useAuth();
 
-  // Early return if no productId
-  if (!productId) {
-    return (
-      <div className="flex items-center justify-center h-64 text-slate-400">
-        No product ID provided
-      </div>
-    );
-  }
-
-  const { data: product, isLoading, error: productError } = useQuery({
+  const { data: productResponse, isLoading, error: productError } = useQuery({
     queryKey: ["product", productId],
     queryFn: async () => {
       const res = await productsAPI.get(productId);
-      return res.data || res || null;
+      return res;
     },
     enabled: !!productId,
     retry: false,
   });
 
-  // Handle 404 or other errors
-  if (productError) {
-    return (
-      <div className="flex items-center justify-center h-64 text-slate-400">
-        {productError.status === 404 ? "Product not found" : "Error loading product"}
-      </div>
-    );
-  }
+  const product = productResponse?.data || productResponse;
 
   const { data: reviews = [] } = useQuery({
     queryKey: ["productReviews", productId],
@@ -102,12 +88,12 @@ export default function ProductDetail() {
     queryKey: ["wishlist", currentUser?.email],
     queryFn: async () => {
       const res = await wishlistAPI.list({ user_email: currentUser?.email, sort: "-created_date", limit: 200 });
-      return res.data || [];
+      return res.items || res.data || (Array.isArray(res) ? res : []);
     },
     enabled: !!currentUser?.email,
   });
 
-  const isWishlisted = wishlistItems.some(w => w.product_id === productId);
+  const isWishlisted = wishlistItems.some(w => (w.product_id === productId || w.product_id === product?.id || w.product_id === product?._id));
 
   const wishlistMutation = useMutation({
     mutationFn: async () => {
@@ -115,9 +101,19 @@ export default function ProductDetail() {
         toast.error("Sign in to save items");
         return;
       }
+      
+      // Double check state to avoid race conditions
       if (isWishlisted) {
         await wishlistAPI.remove(productId);
       } else {
+        const vendorEmail = product.vendor_email || product.store_email || productResponse?.vendor_email || "";
+        
+        if (!vendorEmail) {
+          console.error("Missing vendor email for product", product);
+          // If vendor_email is truly missing, try fetching it if possible or show error
+          // For now, if it's missing, the API will fail anyway with 400.
+        }
+
         await wishlistAPI.add({
           user_email: currentUser.email,
           product_id: productId,
@@ -127,12 +123,31 @@ export default function ProductDetail() {
           compare_at_price: product.compare_at_price,
           store_id: product.store_id,
           store_name: product.store_name,
+          vendor_email: vendorEmail,
         });
         toast.success("Saved to wishlist!");
       }
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["wishlist"] }),
   });
+
+  // Early return if no productId (moved after all hooks)
+  if (!productId) {
+    return (
+      <div className="flex items-center justify-center h-64 text-slate-400">
+        No product ID provided
+      </div>
+    );
+  }
+
+  // Handle 404 or other errors
+  if (productError) {
+    return (
+      <div className="flex items-center justify-center h-64 text-slate-400">
+        {productError.status === 404 ? "Product not found" : "Error loading product"}
+      </div>
+    );
+  }
 
   const handleShare = async () => {
     try {
@@ -176,6 +191,12 @@ export default function ProductDetail() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 lg:px-6 py-4 lg:py-6">
+      <ShareModal 
+        isOpen={isShareModalOpen} 
+        onOpenChange={setIsShareModalOpen} 
+        product={product} 
+        currentUser={currentUser} 
+      />
       <Link to={createPageUrl("Marketplace")} className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 mb-4">
         <ArrowLeft className="w-4 h-4" /> Back to Marketplace
       </Link>
@@ -221,7 +242,7 @@ export default function ProductDetail() {
             <div className="flex gap-2 overflow-x-auto hide-scrollbar">
               {images.map((img, i) => (
                 <button
-                  key={i}
+                  key={`thumb-${i}-${img}`}
                   onClick={() => setSelectedImage(i)}
                   className={`w-16 h-16 rounded-xl overflow-hidden border-2 shrink-0 transition-all ${
                     selectedImage === i ? "border-indigo-500 ring-2 ring-indigo-100" : "border-transparent opacity-60 hover:opacity-100"
@@ -301,7 +322,7 @@ export default function ProductDetail() {
               <Heart className={`w-5 h-5 ${isWishlisted ? "fill-current" : ""}`} />
             </Button>
             <Button
-              onClick={handleShare}
+              onClick={() => setIsShareModalOpen(true)}
               variant="outline"
               size="icon"
               className="h-12 w-12 rounded-xl"
@@ -353,6 +374,7 @@ export default function ProductDetail() {
           <div className="mb-6">
             <ReviewForm
               productId={productId}
+              storeId={product?.store_id}
               currentUser={currentUser}
               onClose={() => setShowReviewForm(false)}
             />
@@ -370,7 +392,7 @@ export default function ProductDetail() {
               </div>
               <div className="flex-1 w-full space-y-1.5">
                 {ratingCounts.map(({ star, count, pct }) => (
-                  <div key={star} className="flex items-center gap-2">
+                  <div key={`rating-stat-${star}`} className="flex items-center gap-2">
                     <span className="text-xs w-4 text-slate-500">{star}</span>
                     <Star className="w-3 h-3 fill-amber-400 text-amber-400 shrink-0" />
                     <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
@@ -387,13 +409,15 @@ export default function ProductDetail() {
 
             {/* Review List */}
             <div className="mt-6 space-y-4">
-              {reviews.map(review => (
-                <motion.div
-                  key={review.id}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="bg-white rounded-2xl border border-slate-100 p-5"
-                >
+              {reviews.map((review, i) => {
+                const reviewId = review.id || review._id || `review-${i}-${review.reviewer_name || "anon"}`;
+                return (
+                  <motion.div
+                    key={reviewId}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-white rounded-2xl border border-slate-100 p-5"
+                  >
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-3">
                       <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white font-semibold text-sm shrink-0">
@@ -419,15 +443,16 @@ export default function ProductDetail() {
 
                   {review.media_urls?.length > 0 && (
                     <div className="flex gap-2 mt-3 overflow-x-auto hide-scrollbar">
-                      {review.media_urls.map((url, i) => (
-                        <div key={i} className="w-20 h-20 rounded-xl overflow-hidden shrink-0 border border-slate-100">
+                      {review.media_urls.map((url, j) => (
+                        <div key={`review-media-${review.id || review._id}-${j}`} className="w-20 h-20 rounded-xl overflow-hidden shrink-0 border border-slate-100">
                           <img src={url} alt="" className="w-full h-full object-cover" />
                         </div>
                       ))}
                     </div>
                   )}
                 </motion.div>
-              ))}
+              );
+            })}
             </div>
           </>
         )}

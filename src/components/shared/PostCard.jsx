@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { postsAPI, bookmarksAPI } from "@/api/apiClient";
 import { Heart, MessageCircle, Share2, ShoppingBag, MoreHorizontal, Bookmark } from "lucide-react";
 import { motion } from "framer-motion";
@@ -6,14 +6,25 @@ import { Link } from "react-router-dom";
 import { createPageUrl } from "@/lib/utils";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import ShareModal from "./ShareModal";
 
 export default function PostCard({ post, currentUser, userLikes = [] }) {
   const queryClient = useQueryClient();
-  if (!post) return null;
-  const postId = post.id || post._id;
-  const isLiked = userLikes.some(l => l.target_id === postId && l.target_type === "post");
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  
+  const postId = (post?.id || post?._id)?.toString();
+  const isLiked = userLikes.some(l => String(l.target_id) === String(postId) && l.target_type === "post");
   const [optimisticLiked, setOptimisticLiked] = useState(isLiked);
-  const [optimisticCount, setOptimisticCount] = useState(post.likes_count || 0);
+  const [optimisticCount, setOptimisticCount] = useState(post?.likes_count || 0);
+
+  // Keep optimistic state in sync with props
+  useEffect(() => {
+    setOptimisticLiked(isLiked);
+  }, [isLiked]);
+
+  useEffect(() => {
+    setOptimisticCount(post?.likes_count || 0);
+  }, [post?.likes_count]);
 
   // Bookmark state
   const { data: bookmarkData } = useQuery({
@@ -55,18 +66,7 @@ export default function PostCard({ post, currentUser, userLikes = [] }) {
     },
   });
 
-  const shareMutation = useMutation({
-    mutationFn: async () => {
-      await postsAPI.share(postId);
-      // Copy to clipboard
-      const url = window.location.origin + createPageUrl("PostDetail") + `?id=${postId}`;
-      await navigator.clipboard.writeText(url);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["posts"] });
-      toast.success("Link copied to clipboard!");
-    },
-  });
+  if (!post) return null;
 
   const isVideoUrl = (url) => {
     if (!url) return false;
@@ -80,6 +80,13 @@ export default function PostCard({ post, currentUser, userLikes = [] }) {
       animate={{ opacity: 1, y: 0 }}
       className="bg-white rounded-2xl border border-slate-100 overflow-hidden hover:shadow-lg hover:shadow-slate-100 transition-all duration-300"
     >
+      <ShareModal 
+        isOpen={isShareModalOpen} 
+        onOpenChange={setIsShareModalOpen} 
+        post={post} 
+        currentUser={currentUser} 
+      />
+
       {/* Header */}
       <div className="flex items-center justify-between p-4 pb-2">
         <Link to={createPageUrl("Profile") + `?email=${post.author_email}`} className="flex items-center gap-3">
@@ -190,7 +197,7 @@ export default function PostCard({ post, currentUser, userLikes = [] }) {
           </Link>
 
           <button 
-            onClick={() => currentUser && shareMutation.mutate()}
+            onClick={() => currentUser && setIsShareModalOpen(true)}
             className="flex items-center gap-1.5 group"
           >
             <Share2 className="w-5 h-5 text-slate-400 group-hover:text-indigo-500 transition-colors" />

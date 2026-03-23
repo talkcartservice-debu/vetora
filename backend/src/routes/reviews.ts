@@ -123,9 +123,20 @@ export async function reviewRoutes(fastify: FastifyInstance) {
       });
 
       reply.code(201).send(review);
-    } catch (error) {
+    } catch (error: any) {
       fastify.log.error(error);
-      reply.code(500).send({ error: 'Internal server error' });
+      
+      if (error.name === 'ValidationError') {
+        return reply.code(400).send({ 
+          error: 'Validation Error', 
+          details: Object.entries(error.errors).map(([path, e]: [string, any]) => ({
+            path: [path],
+            message: e.message
+          }))
+        });
+      }
+
+      reply.code(500).send({ error: 'Internal server error', message: error.message });
     }
   });
 

@@ -14,7 +14,7 @@ export default function SimilarProducts({ product }) {
     },
     enabled: !!product?.category,
     staleTime: 120000,
-    select: (data) => data.filter(p => p.id !== product?.id).slice(0, 6),
+    select: (data) => data.filter(p => (p.id || p._id) !== (product?.id || product?._id)).slice(0, 6),
   });
 
   const { data: sameStore = [] } = useQuery({
@@ -25,14 +25,15 @@ export default function SimilarProducts({ product }) {
     },
     enabled: !!product?.store_id,
     staleTime: 120000,
-    select: (data) => data.filter(p => p.id !== product?.id).slice(0, 4),
+    select: (data) => data.filter(p => (p.id || p._id) !== (product?.id || product?._id)).slice(0, 4),
   });
 
   const combined = React.useMemo(() => {
     const seen = new Set();
     return [...similar, ...sameStore].filter(p => {
-      if (seen.has(p.id)) return false;
-      seen.add(p.id);
+      const pid = p.id || p._id;
+      if (!pid || seen.has(pid)) return false;
+      seen.add(pid);
       return true;
     }).slice(0, 6);
   }, [similar, sameStore]);
@@ -47,8 +48,8 @@ export default function SimilarProducts({ product }) {
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         {isLoading
-          ? Array(6).fill(0).map((_, i) => <ProductSkeleton key={i} />)
-          : combined.map(p => <ProductCard key={p.id} product={p} compact />)
+          ? Array(6).fill(0).map((_, i) => <ProductSkeleton key={`skeleton-${i}`} />)
+          : combined.map(p => <ProductCard key={p.id || p._id} product={p} compact />)
         }
       </div>
     </div>

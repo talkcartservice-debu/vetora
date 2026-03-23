@@ -1,7 +1,7 @@
 import React, { useState } from "react"; 
  import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"; 
  import { Link } from "react-router-dom"; 
- import { communitiesAPI, authAPI, communityMembersAPI } from "@/api/apiClient"; 
+ import { communitiesAPI, communityMembersAPI } from "@/api/apiClient"; 
  import { Users, Plus, Search, TrendingUp, Loader2 } from "lucide-react"; 
  import { Input } from "@/components/ui/input"; 
  import { Button } from "@/components/ui/button"; 

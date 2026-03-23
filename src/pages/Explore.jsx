@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import ProductCard from "@/components/shared/ProductCard";
 import { ProductSkeleton } from "@/components/shared/LoadingSkeleton";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/lib/utils";
-import { Search, TrendingUp, Sparkles, X, Users, User } from "lucide-react";
+import { Search, TrendingUp, Sparkles, X, User } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { productsAPI, communitiesAPI, usersAPI } from "@/api/apiClient";
 import { useDebounce } from "@/hooks/useDebounce";

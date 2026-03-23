@@ -6,7 +6,7 @@ import PostCard from "@/components/shared/PostCard";
 import ProductCard from "@/components/shared/ProductCard";
 import { PostSkeleton, ProductSkeleton } from "@/components/shared/LoadingSkeleton";
 import EmptyState from "@/components/shared/EmptyState";
-import { Bookmark, ShoppingBag, LayoutGrid, Trash2, Loader2 } from "lucide-react";
+import { Bookmark, ShoppingBag, LayoutGrid, Trash2 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";

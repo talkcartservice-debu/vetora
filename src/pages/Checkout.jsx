@@ -4,14 +4,14 @@ import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/lib/utils";
 import { 
   ArrowLeft, CreditCard, Shield, Truck, 
-  MapPin, Package, CheckCircle2, Loader2,
+  MapPin, CheckCircle2, Loader2,
   Lock, Zap, Info, Wallet
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
-import { authAPI, cartAPI, ordersAPI, paymentAPI } from "@/api/apiClient";
+import { cartAPI, ordersAPI } from "@/api/apiClient";
 import { useAuth } from "@/lib/AuthContext";
 
 const CheckoutStep = ({ number, title, active, completed, children }) => (

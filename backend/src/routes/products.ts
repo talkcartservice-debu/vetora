@@ -136,10 +136,21 @@ export async function productRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     try {
       const productData = request.body as Partial<IProduct>;
-      const { userId } = request.user as { userId: string };
+      const userPayload = request.user as { userId?: string; email?: string };
 
-      // Get user to set vendor_email
-      const user = await User.findById(userId);
+      if (!userPayload.userId && !userPayload.email) {
+        return reply.code(401).send({ error: 'Invalid user session' });
+      }
+
+      // Get user to set vendor_email - try by ID or email
+      let user = null;
+      if (userPayload.userId) {
+        user = await User.findById(userPayload.userId);
+      }
+      if (!user && userPayload.email) {
+        user = await User.findOne({ email: userPayload.email });
+      }
+
       if (!user) {
         return reply.code(404).send({ error: 'User not found' });
       }
@@ -155,9 +166,22 @@ export async function productRoutes(fastify: FastifyInstance) {
       fastify.io?.emit('product:created', savedProduct);
 
       return reply.code(201).send(savedProduct);
-    } catch (error) {
+    } catch (error: any) {
       fastify.log.error(error);
-      return reply.code(500).send({ error: 'Internal server error' });
+      
+      // Handle Mongoose validation errors
+      if (error.name === 'ValidationError') {
+        const details = Object.entries(error.errors).map(([path, e]: [string, any]) => ({
+          path: [path],
+          message: e.message
+        }));
+        return reply.code(400).send({ 
+          error: 'Validation Error', 
+          details 
+        });
+      }
+
+      return reply.code(500).send({ error: 'Internal server error', message: error.message });
     }
   });
 

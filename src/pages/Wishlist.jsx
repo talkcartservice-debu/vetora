@@ -154,7 +154,7 @@ export default function Wishlist() {
                         <ShoppingCart className="w-3 h-3" /> Add to Cart
                       </button>
                       <button
-                        onClick={() => removeMutation.mutate(item.id)}
+                        onClick={() => removeMutation.mutate(item.product_id)}
                         className="w-8 h-8 flex items-center justify-center rounded-xl bg-red-50 hover:bg-red-100 text-red-400 hover:text-red-500 transition-colors"
                       >
                         <Trash2 className="w-3.5 h-3.5" />

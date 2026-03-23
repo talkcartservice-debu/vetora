@@ -27,7 +27,7 @@ export default function ReviewGallery({ reviews }) {
       <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
         {allMedia.slice(0, 10).map((media, i) => (
           <motion.button
-            key={i}
+            key={`media-${media.url}-${i}`}
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
             onClick={() => setLightboxIndex(i)}
@@ -106,7 +106,7 @@ export default function ReviewGallery({ reviews }) {
               <div className="flex justify-center gap-1.5 mt-3">
                 {allMedia.map((_, i) => (
                   <button
-                    key={i}
+                    key={`dot-${i}`}
                     onClick={() => setLightboxIndex(i)}
                     className={`w-1.5 h-1.5 rounded-full transition-colors ${i === lightboxIndex ? "bg-white" : "bg-white/30"}`}
                   />

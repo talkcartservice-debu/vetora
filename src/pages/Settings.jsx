@@ -1,9 +1,9 @@
 import React, { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { authAPI, filesAPI } from "@/api/apiClient";
 import { useAuth } from "@/lib/AuthContext";
 import { 
-  User, Lock, Bell, MapPin, Camera, Loader2, 
+  User, Lock, Bell, Camera, Loader2, 
   ChevronRight, LogOut, Shield, Smartphone,
   Globe, Moon, Mail, CreditCard
 } from "lucide-react";

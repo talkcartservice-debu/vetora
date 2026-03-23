@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { createPageUrl } from "@/lib/utils";
 import {
   Store, Plus, Package, DollarSign, ShoppingCart, Trash2, Loader2, BarChart3, Eye,
-  Image as ImageIcon, X, Upload, Camera
+  X, Upload, Camera
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import AdvancedAnalytics from "@/components/mystore/AdvancedAnalytics";
 import CouponManager from "@/components/mystore/CouponManager";
 import SubscriptionManager from "@/components/mystore/SubscriptionManager";
@@ -68,12 +68,13 @@ export default function MyStore() {
   });
 
   const { data: products = [] } = useQuery({
-    queryKey: ["myProducts", store?.id],
+    queryKey: ["myProducts", store?.id || store?._id],
     queryFn: async () => {
-      const res = await productsAPI.list({ store_id: store?.id, sort: "-created_at", limit: 100 });
+      const storeId = store?.id || store?._id;
+      const res = await productsAPI.list({ store_id: storeId, sort: "-created_at", limit: 100 });
       return res.data || [];
     },
-    enabled: !!store?.id,
+    enabled: !!(store?.id || store?._id),
   });
 
   const { data: ordersResponse = {} } = useQuery({
@@ -126,13 +127,15 @@ export default function MyStore() {
         setUploading(false);
       }
 
+      const storeId = store?.id || store?._id;
+
       return productsAPI.create({
         ...productForm,
         images: imageUrls,
         price: parseFloat(productForm.price),
         compare_at_price: productForm.compare_at_price ? parseFloat(productForm.compare_at_price) : undefined,
         inventory_count: parseInt(productForm.inventory_count) || 0,
-        store_id: store.id,
+        store_id: storeId,
         store_name: store.name,
         vendor_email: currentUser.email,
         status: "active",
@@ -325,7 +328,7 @@ export default function MyStore() {
                   </label>
                   <div className="flex flex-wrap gap-2">
                     {imagePreviews.map((url, i) => (
-                      <div key={i} className="relative w-20 h-20 rounded-xl overflow-hidden border border-slate-100 bg-slate-50 group">
+                      <div key={`preview-${i}-${url}`} className="relative w-20 h-20 rounded-xl overflow-hidden border border-slate-100 bg-slate-50 group">
                         <img src={url} alt="" className="w-full h-full object-cover" />
                         <button
                           onClick={() => removeImage(i)}
@@ -379,24 +382,27 @@ export default function MyStore() {
           {products.length === 0 ? (
             <div className="text-center py-16 text-slate-400">No products yet. Add your first product!</div>
           ) : (
-            products.map((product) => (
-              <motion.div key={product.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white rounded-xl border border-slate-100 p-4 flex items-center gap-4">
-                <div className="w-14 h-14 rounded-xl bg-slate-100 overflow-hidden shrink-0">
-                  {product.images?.[0] && <img src={product.images[0]} alt="" className="w-full h-full object-cover" />}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-slate-900 truncate">{product.title}</p>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-sm font-bold text-indigo-600">${product.price?.toFixed(2)}</span>
-                    <Badge variant="secondary" className="text-[10px]">{product.status}</Badge>
-                    <span className="text-xs text-slate-400">Stock: {product.inventory_count || 0}</span>
+            products.map((product, idx) => {
+              const productId = product.id || product._id || `product-${idx}`;
+              return (
+                <motion.div key={productId} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white rounded-xl border border-slate-100 p-4 flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-xl bg-slate-100 overflow-hidden shrink-0">
+                    {product.images?.[0] && <img src={product.images[0]} alt="" className="w-full h-full object-cover" />}
                   </div>
-                </div>
-                <button onClick={() => deleteProductMutation.mutate(product.id)} className="p-2 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-500 transition-colors">
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </motion.div>
-            ))
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-slate-900 truncate">{product.title}</p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-sm font-bold text-indigo-600">${product.price?.toFixed(2)}</span>
+                      <Badge variant="secondary" className="text-[10px]">{product.status}</Badge>
+                      <span className="text-xs text-slate-400">Stock: {product.inventory_count || 0}</span>
+                    </div>
+                  </div>
+                  <button onClick={() => deleteProductMutation.mutate(productId)} className="p-2 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-500 transition-colors">
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </motion.div>
+              );
+            })
           )}
         </div>
       )}
@@ -432,16 +438,19 @@ export default function MyStore() {
           {orders.length === 0 ? (
             <div className="text-center py-16 text-slate-400">No orders yet</div>
           ) : (
-            orders.map((order) => (
-              <div key={order.id} className="bg-white rounded-xl border border-slate-100 p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-xs text-slate-400">#{order.id?.slice(-8)} · {new Date(order.created_date).toLocaleDateString()}</p>
-                  <Badge variant="secondary" className="text-xs">{order.status}</Badge>
+            orders.map((order, idx) => {
+              const orderId = order.id || order._id || `order-${idx}`;
+              return (
+                <div key={orderId} className="bg-white rounded-xl border border-slate-100 p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-xs text-slate-400">#{orderId?.slice(-8)} · {new Date(order.created_date || order.created_at).toLocaleDateString()}</p>
+                    <Badge variant="secondary" className="text-xs">{order.status}</Badge>
+                  </div>
+                  <p className="text-sm font-medium text-slate-700">{order.buyer_name || order.buyer_email}</p>
+                  <p className="text-sm font-bold text-slate-900 mt-1">${order.total?.toFixed(2)}</p>
                 </div>
-                <p className="text-sm font-medium text-slate-700">{order.buyer_name || order.buyer_email}</p>
-                <p className="text-sm font-bold text-slate-900 mt-1">${order.total?.toFixed(2)}</p>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       )}

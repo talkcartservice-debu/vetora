@@ -8,13 +8,13 @@ import { PostSkeleton, ProductSkeleton } from "@/components/shared/LoadingSkelet
 import ProfileEditModal from "@/components/profile/ProfileEditModal";
 import {
   usersAPI, postsAPI, productsAPI, ordersAPI, reviewsAPI,
-  followAPI, followsAPI, likesAPI, storesAPI
+  followsAPI, likesAPI, storesAPI
 } from "@/api/apiClient";
 import { useAuth } from "@/lib/AuthContext";
 import {
   Grid3X3, ShoppingBag, UserPlus, UserCheck, LogOut,
   Store, Package, CheckCircle2, Clock, Truck, Pencil, Star, BadgeCheck, Heart,
-  X, Search, Users2, Calendar, MessageCircle
+  Search, Users2, Calendar, MessageCircle
 } from "lucide-react";
 import StarRating from "@/components/reviews/StarRating";
 import { Button } from "@/components/ui/button";
@@ -22,7 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 
 function UserListModal({ open, onClose, title, users = [] }) {
   const [search, setSearch] = useState("");

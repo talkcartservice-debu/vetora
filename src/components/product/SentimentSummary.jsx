@@ -123,7 +123,7 @@ export default function SentimentSummary({ productId, reviews }) {
             </p>
             <ul className="space-y-1">
               {existing.pros.map((pro, i) => (
-                <li key={i} className="flex items-start gap-1.5 text-xs text-slate-700">
+                <li key={`pro-${i}-${pro}`} className="flex items-start gap-1.5 text-xs text-slate-700">
                   <span className="text-green-500 mt-0.5 shrink-0">✓</span>
                   {pro}
                 </li>
@@ -140,7 +140,7 @@ export default function SentimentSummary({ productId, reviews }) {
             </p>
             <ul className="space-y-1">
               {existing.cons.map((con, i) => (
-                <li key={i} className="flex items-start gap-1.5 text-xs text-slate-700">
+                <li key={`con-${i}-${con}`} className="flex items-start gap-1.5 text-xs text-slate-700">
                   <span className="text-orange-400 mt-0.5 shrink-0">–</span>
                   {con}
                 </li>

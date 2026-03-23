@@ -3,10 +3,10 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/lib/utils";
 import PostCard from "@/components/shared/PostCard";
-import { ArrowLeft, Send, Loader2 } from "lucide-react";
+import { ArrowLeft, Send, Loader2, MessageCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { postsAPI, commentsAPI, likesAPI } from "@/api/apiClient";
 import { useAuth } from "@/lib/AuthContext";
 
@@ -17,15 +17,6 @@ export default function PostDetail() {
   const queryClient = useQueryClient();
   const { user: currentUser } = useAuth();
 
-  // Early return if no postId
-  if (!postId) {
-    return (
-      <div className="flex items-center justify-center h-64 text-slate-400">
-        No post ID provided
-      </div>
-    );
-  }
-
   const { data: post, error: postError } = useQuery({
     queryKey: ["postDetail", postId],
     queryFn: async () => {
@@ -34,15 +25,6 @@ export default function PostDetail() {
     enabled: !!postId,
     retry: false,
   });
-
-  // Handle 404 or other errors
-  if (postError) {
-    return (
-      <div className="flex items-center justify-center h-64 text-slate-400">
-        {postError.status === 404 ? "Post not found" : "Error loading post"}
-      </div>
-    );
-  }
 
   const { data: commentsData = [], isLoading: commentsLoading, error: commentsError } = useQuery({
     queryKey: ["postComments", postId],
@@ -76,6 +58,24 @@ export default function PostDetail() {
       queryClient.invalidateQueries({ queryKey: ["postDetail"] });
     },
   });
+
+  // Early return if no postId (moved after all hooks)
+  if (!postId) {
+    return (
+      <div className="flex items-center justify-center h-64 text-slate-400">
+        No post ID provided
+      </div>
+    );
+  }
+
+  // Handle 404 or other errors
+  if (postError) {
+    return (
+      <div className="flex items-center justify-center h-64 text-slate-400">
+        {postError.status === 404 ? "Post not found" : "Error loading post"}
+      </div>
+    );
+  }
 
   if (!post) {
     return (

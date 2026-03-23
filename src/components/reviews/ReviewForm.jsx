@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 
-export default function ReviewForm({ productId, currentUser, onClose }) {
+export default function ReviewForm({ productId, storeId, currentUser, onClose }) {
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [title, setTitle] = useState("");
@@ -49,6 +49,11 @@ export default function ReviewForm({ productId, currentUser, onClose }) {
 
   const submitMutation = useMutation({
     mutationFn: async () => {
+      if (!productId || !storeId) {
+        toast.error("Product or store information is missing");
+        throw new Error("Missing product_id or store_id");
+      }
+
       setUploading(true);
       let uploadedUrls = [];
       try {
@@ -67,6 +72,7 @@ export default function ReviewForm({ productId, currentUser, onClose }) {
       
       await reviewsAPI.create({
         product_id: productId,
+        store_id: storeId,
         reviewer_email: currentUser.email,
         reviewer_name: currentUser.full_name || currentUser.email,
         rating,
@@ -122,7 +128,7 @@ export default function ReviewForm({ productId, currentUser, onClose }) {
         </p>
         <div className="flex gap-2 flex-wrap">
           {previews.map((prev, i) => (
-            <div key={i} className="relative w-16 h-16 rounded-xl overflow-hidden border border-slate-200">
+            <div key={`preview-${i}-${prev}`} className="relative w-16 h-16 rounded-xl overflow-hidden border border-slate-200">
               <img src={prev} alt="" className="w-full h-full object-cover" />
               <button
                 onClick={() => removeMedia(i)}
