@@ -73,7 +73,7 @@ export default function ProductDetail() {
         store_id: product.store_id,
         store_name: product.store_name,
         quantity,
-        affiliate_email: affiliateEmail || "",
+        ...(affiliateEmail ? { affiliate_email: affiliateEmail } : {}),
       });
     },
     onSuccess: () => {

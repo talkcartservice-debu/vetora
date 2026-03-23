@@ -6,7 +6,7 @@ import { z } from 'zod';
 const addToCartSchema = z.object({
   product_id: z.string(),
   quantity: z.number().min(1).default(1),
-  affiliate_email: z.string().email().optional(),
+  affiliate_email: z.string().email().or(z.literal('')).optional(),
 });
 
 const updateCartItemSchema = z.object({

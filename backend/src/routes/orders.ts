@@ -16,6 +16,7 @@ const createOrderSchema = z.object({
   shipping_fee: z.number().default(0),
   total: z.number().min(0),
   shipping_address: z.string().optional(),
+  affiliate_email: z.string().email().or(z.literal('')).optional(),
   payment_method: z.enum(['card', 'paypal', 'crypto', 'bank_transfer', 'paystack']).default('paystack'),
 });
 
@@ -103,6 +104,7 @@ export async function orderRoutes(fastify: FastifyInstance) {
         vendor_email: firstProduct.vendor_email,
         store_id: firstProduct.store_id,
         store_name: firstProduct.store_name,
+        affiliate_email: body.affiliate_email || undefined,
         status: 'pending',
         payment_status: 'pending',
         created_at: new Date(),

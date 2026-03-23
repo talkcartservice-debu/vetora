@@ -170,7 +170,7 @@ export default function Cart() {
             <AnimatePresence>
               {cartItems.map((item) => (
                 <motion.div
-                  key={item.id}
+                  key={item._id || item.id}
                   layout
                   exit={{ opacity: 0, x: -100 }}
                   className="bg-white rounded-2xl border border-slate-100 p-4 flex gap-4"
@@ -184,15 +184,15 @@ export default function Cart() {
                     <p className="text-base font-bold text-indigo-600">${item.product_price?.toFixed(2)}</p>
                   </div>
                   <div className="flex flex-col items-end justify-between">
-                    <button onClick={() => removeItemMutation.mutate(item.id)} className="text-slate-400 hover:text-red-500 p-1">
+                    <button onClick={() => removeItemMutation.mutate(item._id || item.id)} className="text-slate-400 hover:text-red-500 p-1">
                       <Trash2 className="w-4 h-4" />
                     </button>
                     <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden">
-                      <button onClick={() => updateQuantityMutation.mutate({ id: item.id, quantity: (item.quantity || 1) - 1 })} className="w-8 h-8 flex items-center justify-center hover:bg-slate-50">
+                      <button onClick={() => updateQuantityMutation.mutate({ id: item._id || item.id, quantity: (item.quantity || 1) - 1 })} className="w-8 h-8 flex items-center justify-center hover:bg-slate-50">
                         <Minus className="w-3 h-3" />
                       </button>
                       <span className="w-8 text-center text-sm font-medium">{item.quantity || 1}</span>
-                      <button onClick={() => updateQuantityMutation.mutate({ id: item.id, quantity: (item.quantity || 1) + 1 })} className="w-8 h-8 flex items-center justify-center hover:bg-slate-50">
+                      <button onClick={() => updateQuantityMutation.mutate({ id: item._id || item.id, quantity: (item.quantity || 1) + 1 })} className="w-8 h-8 flex items-center justify-center hover:bg-slate-50">
                         <Plus className="w-3 h-3" />
                       </button>
                     </div>
