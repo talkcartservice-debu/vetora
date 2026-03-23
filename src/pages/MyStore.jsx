@@ -159,6 +159,17 @@ export default function MyStore() {
       queryClient.invalidateQueries({ queryKey: ["myProducts"] });
     },
   });
+  
+  const updateOrderStatusMutation = useMutation({
+    mutationFn: ({ id, status }) => ordersAPI.updateStatus(id, status),
+    onSuccess: () => {
+      toast.success("Order status updated!");
+      queryClient.invalidateQueries({ queryKey: ["storeOrders"] });
+    },
+    onError: (err) => {
+      toast.error(err.message || "Failed to update order status");
+    }
+  });
 
   const totalRevenue = orders.reduce((sum, o) => sum + (o.total || 0), 0);
   const pendingOrders = orders.filter(o => o.status === "pending" || o.status === "confirmed").length;
@@ -434,20 +445,59 @@ export default function MyStore() {
 
       {/* Orders Tab */}
       {activeTab === "orders" && (
-        <div className="space-y-2">
+        <div className="space-y-3">
           {orders.length === 0 ? (
             <div className="text-center py-16 text-slate-400">No orders yet</div>
           ) : (
             orders.map((order, idx) => {
               const orderId = order.id || order._id || `order-${idx}`;
               return (
-                <div key={orderId} className="bg-white rounded-xl border border-slate-100 p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="text-xs text-slate-400">#{orderId?.slice(-8)} · {new Date(order.created_date || order.created_at).toLocaleDateString()}</p>
-                    <Badge variant="secondary" className="text-xs">{order.status}</Badge>
+                <div key={orderId} className="bg-white rounded-2xl border border-slate-100 p-5">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-xs text-slate-400 font-medium">#{orderId?.slice(-8)} · {new Date(order.created_date || order.created_at).toLocaleDateString()}</p>
+                    <Select 
+                      defaultValue={order.status} 
+                      onValueChange={(status) => updateOrderStatusMutation.mutate({ id: orderId, status })}
+                      disabled={updateOrderStatusMutation.isPending}
+                    >
+                      <SelectTrigger className="w-[120px] h-8 text-[11px] font-bold rounded-lg border-slate-200">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {["pending", "confirmed", "processing", "shipped", "delivered", "cancelled"].map(s => (
+                          <SelectItem key={s} value={s} className="text-[11px]">{s.charAt(0).toUpperCase() + s.slice(1)}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
-                  <p className="text-sm font-medium text-slate-700">{order.buyer_name || order.buyer_email}</p>
-                  <p className="text-sm font-bold text-slate-900 mt-1">${order.total?.toFixed(2)}</p>
+                  
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <h4 className="text-sm font-bold text-slate-900">{order.buyer_name || order.buyer_email}</h4>
+                      <p className="text-xs text-slate-500 mt-0.5">{order.shipping_address?.split(",")[0] || "No address"}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-black text-slate-900">${order.total?.toFixed(2)}</p>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{order.items?.length || 0} items</p>
+                    </div>
+                  </div>
+
+                  {order.order_note && (
+                    <div className="mb-4 p-3 bg-amber-50 rounded-xl border border-amber-100/50">
+                      <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" /> Customer Note
+                      </p>
+                      <p className="text-xs text-amber-700 leading-relaxed">{order.order_note}</p>
+                    </div>
+                  )}
+
+                  <div className="flex gap-2 overflow-x-auto pb-1 hide-scrollbar">
+                    {order.items?.map((item, i) => (
+                      <div key={i} className="w-12 h-12 rounded-lg bg-slate-50 border border-slate-100 overflow-hidden shrink-0">
+                        {item.product_image && <img src={item.product_image} alt="" className="w-full h-full object-cover" />}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               );
             })

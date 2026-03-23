@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { cartAPI, ordersAPI } from "@/api/apiClient";
@@ -43,8 +44,9 @@ export default function Checkout() {
   const [step, setStep] = useState(1);
   const [address, setAddress] = useState({ street: "", city: "", state: "", zip: "" });
   const [cardData, setCardData] = useState({ number: "", expiry: "", cvc: "" });
-  const [paymentMethod, setPaymentMethod] = useState("card");
+  const [paymentMethod, setPaymentMethod] = useState("paystack");
   const [placing, setPlacing] = useState(false);
+  const [orderNote, setOrderNote] = useState("");
   
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -96,13 +98,15 @@ export default function Checkout() {
         const order = await ordersAPI.create({
           buyer_email: currentUser.email,
           buyer_name: currentUser.full_name || currentUser.display_name,
-          vendor_email: group.items[0]?.vendor_email || group.items[0]?.author_email,
+          vendor_email: group.items[0]?.vendor_email,
           store_id: group.items[0]?.store_id,
           store_name: group.store_name,
           items: orderItems,
           subtotal: groupSubtotal,
           total: groupSubtotal,
           shipping_address: fullAddress,
+          affiliate_email: group.items[0]?.affiliate_email,
+          order_note: orderNote,
           status: "pending",
           payment_status: "paid",
           payment_method: paymentMethod,
@@ -150,6 +154,15 @@ export default function Checkout() {
                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">ZIP Code</label>
                 <Input value={address.zip} onChange={e => setAddress({...address, zip: e.target.value})} placeholder="10001" className="rounded-xl h-11 border-slate-200" />
               </div>
+              <div className="col-span-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">Order Note (Optional)</label>
+                <Textarea 
+                  value={orderNote} 
+                  onChange={e => setOrderNote(e.target.value)} 
+                  placeholder="Anything we should know about your delivery?" 
+                  className="rounded-xl min-h-[80px] border-slate-200 resize-none" 
+                />
+              </div>
               <Button onClick={() => setStep(2)} disabled={!address.street || !address.city || !address.zip} className="col-span-2 mt-4 bg-indigo-600 hover:bg-indigo-700 h-12 rounded-xl font-bold">
                 Continue to Payment
               </Button>
@@ -159,7 +172,8 @@ export default function Checkout() {
           <CheckoutStep number="2" title="Payment Method" active={step === 2} completed={step > 2}>
             <div className="space-y-3">
               {[
-                { id: "card", name: "Credit/Debit Card", icon: CreditCard },
+                { id: "paystack", name: "Paystack (Secure Payment)", icon: Zap },
+                { id: "card", name: "Credit/Debit Card", icon: CreditCard, disabled: true },
                 { id: "wallet", name: "Vetora Wallet", icon: Wallet, disabled: true },
                 { id: "crypto", name: "Cryptocurrency", icon: Zap, disabled: true }
               ].map(method => (
@@ -243,7 +257,11 @@ export default function Checkout() {
                 </div>
                 <div>
                   <h4 className="text-sm font-bold text-slate-900">Payment Method</h4>
-                  <p className="text-xs text-slate-500 mt-0.5">{paymentMethod === "card" ? "Credit Card •••• 4242" : paymentMethod}</p>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    {paymentMethod === "paystack" ? "Paystack Secure Payment" : 
+                     paymentMethod === "card" ? "Credit Card •••• 4242" : 
+                     paymentMethod}
+                  </p>
                 </div>
                 <button onClick={() => setStep(2)} className="ml-auto text-xs font-bold text-indigo-600 hover:underline">Edit</button>
               </div>

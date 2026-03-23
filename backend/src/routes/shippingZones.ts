@@ -60,7 +60,9 @@ export async function shippingZoneRoutes(fastify: FastifyInstance) {
 
       if (vendor_email) filter.vendor_email = vendor_email.toLowerCase();
       if (store_id) filter.store_id = store_id;
-      if (is_active !== undefined) filter.is_active = is_active === 'true';
+      if (query.is_active !== undefined) {
+        filter.is_active = query.is_active === 'true';
+      }
 
       // Build sort object
       const sortObj: any = {};

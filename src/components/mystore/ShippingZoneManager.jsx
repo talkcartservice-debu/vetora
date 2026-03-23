@@ -60,7 +60,7 @@ function ZoneForm({ initial = BLANK_ZONE, onSave, onCancel, saving }) {
           <label className="text-xs text-slate-500 font-medium block mb-1">Flat Rate (USD)</label>
           <Input
             type="number"
-            value={form.flat_rate}
+            value={form.flat_rate ?? ""}
             onChange={e => setForm(f => ({ ...f, flat_rate: e.target.value }))}
             placeholder="9.99"
             className="rounded-xl text-sm"
@@ -70,7 +70,7 @@ function ZoneForm({ initial = BLANK_ZONE, onSave, onCancel, saving }) {
           <label className="text-xs text-slate-500 font-medium block mb-1">Free Above ($) — 0 = never</label>
           <Input
             type="number"
-            value={form.free_above}
+            value={form.free_above ?? ""}
             onChange={e => setForm(f => ({ ...f, free_above: e.target.value }))}
             placeholder="50"
             className="rounded-xl text-sm"
@@ -159,7 +159,7 @@ export default function ShippingZoneManager({ store, vendorEmail }) {
   });
 
   const toggleActive = (zone) => {
-    updateMutation.mutate({ id: zone.id, data: { is_active: !zone.is_active } });
+    updateMutation.mutate({ id: zone._id || zone.id, data: { is_active: !zone.is_active } });
   };
 
   return (
@@ -197,12 +197,12 @@ export default function ShippingZoneManager({ store, vendorEmail }) {
       ) : (
         <div className="space-y-3">
           {zones.map(zone => (
-            <motion.div key={zone.id} layout className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
-              {editId === zone.id ? (
+            <motion.div key={zone._id || zone.id} layout className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
+              {editId === (zone._id || zone.id) ? (
                 <div className="p-4">
                   <ZoneForm
                     initial={zone}
-                    onSave={(data) => updateMutation.mutate({ id: zone.id, data })}
+                    onSave={(data) => updateMutation.mutate({ id: zone._id || zone.id, data })}
                     onCancel={() => setEditId(null)}
                     saving={updateMutation.isPending}
                   />
@@ -230,10 +230,10 @@ export default function ShippingZoneManager({ store, vendorEmail }) {
                       >
                         <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all ${zone.is_active ? "left-3.5" : "left-0.5"}`} />
                       </button>
-                      <button onClick={() => setEditId(zone.id)} className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors">
+                      <button onClick={() => setEditId(zone._id || zone.id)} className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors">
                         <Edit2 className="w-3.5 h-3.5" />
                       </button>
-                      <button onClick={() => deleteMutation.mutate(zone.id)} className="p-1.5 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-500 transition-colors">
+                      <button onClick={() => deleteMutation.mutate(zone._id || zone.id)} className="p-1.5 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-500 transition-colors">
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>

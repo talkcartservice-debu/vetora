@@ -22,6 +22,7 @@ export interface IOrder extends Document {
   status: 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'refunded';
   shipping_address?: string;
   tracking_number?: string;
+  order_note?: string;
   affiliate_email?: string;
   affiliate_commission: number;
   payment_method: 'card' | 'paypal' | 'crypto' | 'bank_transfer' | 'paystack';
@@ -107,6 +108,10 @@ const OrderSchema = new Schema<IOrder>({
   },
   tracking_number: {
     type: String,
+  },
+  order_note: {
+    type: String,
+    trim: true,
   },
   affiliate_email: {
     type: String,

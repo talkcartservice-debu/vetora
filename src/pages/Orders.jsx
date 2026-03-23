@@ -88,6 +88,12 @@ export default function Orders() {
                       Order #{orderId?.slice(-8)} · {new Date(order.created_at).toLocaleDateString()}
                     </p>
                     <p className="text-sm font-semibold text-slate-900 mt-0.5">{order.store_name || "Store"}</p>
+                    {order.order_note && (
+                      <p className="text-[10px] text-amber-600 font-medium mt-1 leading-tight flex items-start gap-1">
+                        <AlertCircle className="w-2.5 h-2.5 shrink-0" />
+                        Note: {order.order_note}
+                      </p>
+                    )}
                   </div>
                   <Badge className={`${status.color} border-0 text-xs`}>
                     <StatusIcon className="w-3 h-3 mr-1" />
