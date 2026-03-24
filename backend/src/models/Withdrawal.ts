@@ -5,10 +5,12 @@ export interface IWithdrawal extends Document {
   store_id?: string;
   store_name?: string;
   amount: number;
-  bank_account_name: string;
-  bank_account_number: string;
-  bank_name: string;
+  payment_method: 'bank_transfer' | 'paypal';
+  bank_account_name?: string;
+  bank_account_number?: string;
+  bank_name?: string;
   routing_number?: string;
+  paypal_email?: string;
   status: 'pending' | 'processing' | 'completed' | 'rejected';
   notes?: string;
   processed_at?: Date;
@@ -34,19 +36,25 @@ const WithdrawalSchema = new Schema<IWithdrawal>({
     required: true,
     min: 0.01
   },
+  payment_method: {
+    type: String,
+    enum: ['bank_transfer', 'paypal'],
+    default: 'bank_transfer',
+    required: true
+  },
   bank_account_name: {
     type: String,
-    required: true
   },
   bank_account_number: {
     type: String,
-    required: true
   },
   bank_name: {
     type: String,
-    required: true
   },
   routing_number: {
+    type: String
+  },
+  paypal_email: {
     type: String
   },
   status: {

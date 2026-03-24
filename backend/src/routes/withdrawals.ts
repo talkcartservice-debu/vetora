@@ -169,21 +169,28 @@ export async function withdrawalRoutes(fastify: FastifyInstance) {
         return reply.code(400).send({ error: 'Missing required field: amount' });
       }
 
-      if (!body.bank_account_name) {
-        return reply.code(400).send({ error: 'Missing required field: bank_account_name' });
-      }
-
-      if (!body.bank_account_number) {
-        return reply.code(400).send({ error: 'Missing required field: bank_account_number' });
-      }
-
-      if (!body.bank_name) {
-        return reply.code(400).send({ error: 'Missing required field: bank_name' });
-      }
-
-      // Validate amount
       if (body.amount <= 0) {
         return reply.code(400).send({ error: 'Amount must be greater than 0' });
+      }
+
+      if (!body.payment_method) {
+        body.payment_method = 'bank_transfer';
+      }
+
+      if (body.payment_method === 'bank_transfer') {
+        if (!body.bank_account_name) {
+          return reply.code(400).send({ error: 'Missing required field: bank_account_name' });
+        }
+        if (!body.bank_account_number) {
+          return reply.code(400).send({ error: 'Missing required field: bank_account_number' });
+        }
+        if (!body.bank_name) {
+          return reply.code(400).send({ error: 'Missing required field: bank_name' });
+        }
+      } else if (body.payment_method === 'paypal') {
+        if (!body.paypal_email) {
+          return reply.code(400).send({ error: 'Missing required field: paypal_email' });
+        }
       }
 
       // Set vendor_email from authenticated user
@@ -273,10 +280,12 @@ export async function withdrawalRoutes(fastify: FastifyInstance) {
       // Update allowed fields
       const allowedUpdates = [
         'amount',
+        'payment_method',
         'bank_account_name',
         'bank_account_number',
         'bank_name',
-        'routing_number'
+        'routing_number',
+        'paypal_email'
       ];
 
       allowedUpdates.forEach(field => {

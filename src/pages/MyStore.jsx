@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { createPageUrl } from "@/lib/utils";
 import {
   Store, Plus, Package, DollarSign, ShoppingCart, Trash2, Loader2, BarChart3, Eye,
-  X, Upload, Camera
+  X, Upload, Camera, CheckCircle2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,11 +31,35 @@ export default function MyStore() {
   const [showCreateStore, setShowCreateStore] = useState(false);
   const [showEditStore, setShowEditStore] = useState(false);
   const [showAddProduct, setShowAddProduct] = useState(false);
-  const [storeForm, setStoreForm] = useState({ name: "", description: "", category: "other", logo_url: "", banner_url: "" });
+  const [storeForm, setStoreForm] = useState({ 
+    name: "", 
+    description: "", 
+    category: "other", 
+    logo_url: "", 
+    banner_url: "",
+    // Payment Settings
+    payment_method: "bank_transfer",
+    bank_name: "",
+    bank_account_name: "",
+    bank_account_number: "",
+    routing_number: "",
+    paypal_email: "",
+    // Additional Info
+    phone_number: "",
+    address: "",
+    website_url: "",
+    social_links: {
+      facebook: "",
+      instagram: "",
+      twitter: "",
+      tiktok: "",
+    }
+  });
   const [productForm, setProductForm] = useState({ title: "", description: "", price: "", compare_at_price: "", category: "other", inventory_count: "" });
   const [productImages, setProductImages] = useState([]);
   const [imagePreviews, setImagePreviews] = useState([]);
   const [uploading, setUploading] = useState(false);
+  const [uploadingAssets, setUploadingAssets] = useState({ logo: false, banner: false });
   const queryClient = useQueryClient();
 
   const handleFileChange = (e) => {
@@ -55,6 +79,28 @@ export default function MyStore() {
     URL.revokeObjectURL(imagePreviews[index]);
     setProductImages(prev => prev.filter((_, i) => i !== index));
     setImagePreviews(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleAssetUpload = async (e, type) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please upload an image file");
+      return;
+    }
+
+    setUploadingAssets(prev => ({ ...prev, [type]: true }));
+    try {
+      const res = await filesAPI.upload(file);
+      if (res.url) {
+        setStoreForm(prev => ({ ...prev, [`${type}_url`]: res.url }));
+        toast.success(`${type.charAt(0).toUpperCase() + type.slice(1)} uploaded!`);
+      }
+    } catch (err) {
+      toast.error(`Failed to upload ${type}`);
+    } finally {
+      setUploadingAssets(prev => ({ ...prev, [type]: false }));
+    }
   };
 
   const { user: currentUser } = useAuth();
@@ -193,26 +239,117 @@ export default function MyStore() {
               <Plus className="w-5 h-5 mr-2" /> Create Store
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-w-2xl">
             <DialogHeader><DialogTitle>Create Your Store</DialogTitle></DialogHeader>
-            <div className="space-y-4">
-              <Input placeholder="Store name" value={storeForm.name} onChange={(e) => setStoreForm(p => ({ ...p, name: e.target.value }))} />
-              <Textarea placeholder="Describe your store..." value={storeForm.description} onChange={(e) => setStoreForm(p => ({ ...p, description: e.target.value }))} />
-              <div className="grid grid-cols-2 gap-3">
-                <Input placeholder="Logo URL (optional)" value={storeForm.logo_url} onChange={(e) => setStoreForm(p => ({ ...p, logo_url: e.target.value }))} />
-                <Input placeholder="Banner URL (optional)" value={storeForm.banner_url} onChange={(e) => setStoreForm(p => ({ ...p, banner_url: e.target.value }))} />
+            <Tabs defaultValue="general" className="w-full">
+              <TabsList className="grid grid-cols-2 mb-4">
+                <TabsTrigger value="general">Basic Info</TabsTrigger>
+                <TabsTrigger value="payment">Payout Settings</TabsTrigger>
+              </TabsList>
+
+              <div className="max-h-[60vh] overflow-y-auto pr-2">
+                <TabsContent value="general" className="space-y-4 pt-2">
+                  <Input placeholder="Store name *" value={storeForm.name} onChange={(e) => setStoreForm(p => ({ ...p, name: e.target.value }))} />
+                  <Textarea placeholder="Describe your store..." value={storeForm.description} onChange={(e) => setStoreForm(p => ({ ...p, description: e.target.value }))} />
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-xs font-medium text-slate-500 block mb-1">Store Logo</label>
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center overflow-hidden shrink-0">
+                          {storeForm.logo_url ? (
+                            <img src={storeForm.logo_url} alt="Logo" className="w-full h-full object-cover" />
+                          ) : (
+                            <Upload className="w-5 h-5 text-slate-300" />
+                          )}
+                        </div>
+                        <div className="relative flex-1">
+                          <input 
+                            type="file" 
+                            accept="image/*" 
+                            className="absolute inset-0 opacity-0 cursor-pointer" 
+                            onChange={(e) => handleAssetUpload(e, 'logo')}
+                            disabled={uploadingAssets.logo}
+                          />
+                          <Button variant="outline" size="sm" className="w-full text-xs h-9 rounded-lg" disabled={uploadingAssets.logo}>
+                            {uploadingAssets.logo ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : <Camera className="w-3.5 h-3.5 mr-1.5" />}
+                            {storeForm.logo_url ? 'Change' : 'Upload'}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-xs font-medium text-slate-500 block mb-1">Store Banner</label>
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center overflow-hidden shrink-0">
+                          {storeForm.banner_url ? (
+                            <img src={storeForm.banner_url} alt="Banner" className="w-full h-full object-cover" />
+                          ) : (
+                            <Upload className="w-5 h-5 text-slate-300" />
+                          )}
+                        </div>
+                        <div className="relative flex-1">
+                          <input 
+                            type="file" 
+                            accept="image/*" 
+                            className="absolute inset-0 opacity-0 cursor-pointer" 
+                            onChange={(e) => handleAssetUpload(e, 'banner')}
+                            disabled={uploadingAssets.banner}
+                          />
+                          <Button variant="outline" size="sm" className="w-full text-xs h-9 rounded-lg" disabled={uploadingAssets.banner}>
+                            {uploadingAssets.banner ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : <Camera className="w-3.5 h-3.5 mr-1.5" />}
+                            {storeForm.banner_url ? 'Change' : 'Upload'}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Select value={storeForm.category} onValueChange={(v) => setStoreForm(p => ({ ...p, category: v }))}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {CATEGORIES.map(c => <SelectItem key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </TabsContent>
+
+                <TabsContent value="payment" className="space-y-4 pt-2">
+                  <p className="text-xs text-slate-500 mb-2">Configure how you want to receive your earnings.</p>
+                  <Select value={storeForm.payment_method} onValueChange={(v) => setStoreForm(p => ({ ...p, payment_method: v }))}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                      <SelectItem value="paypal">PayPal</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  {storeForm.payment_method === 'bank_transfer' && (
+                    <div className="space-y-3 border-l-2 border-indigo-100 pl-4">
+                      <Input placeholder="Bank Name" value={storeForm.bank_name} onChange={e => setStoreForm(p => ({ ...p, bank_name: e.target.value }))} />
+                      <Input placeholder="Account Holder Name" value={storeForm.bank_account_name} onChange={e => setStoreForm(p => ({ ...p, bank_account_name: e.target.value }))} />
+                      <div className="grid grid-cols-2 gap-3">
+                        <Input placeholder="Account #" value={storeForm.bank_account_number} onChange={e => setStoreForm(p => ({ ...p, bank_account_number: e.target.value }))} />
+                        <Input placeholder="Routing #" value={storeForm.routing_number} onChange={e => setStoreForm(p => ({ ...p, routing_number: e.target.value }))} />
+                      </div>
+                    </div>
+                  )}
+
+                  {storeForm.payment_method === 'paypal' && (
+                    <div className="space-y-3 border-l-2 border-indigo-100 pl-4">
+                      <Input type="email" placeholder="PayPal Email Address" value={storeForm.paypal_email} onChange={e => setStoreForm(p => ({ ...p, paypal_email: e.target.value }))} />
+                    </div>
+                  )}
+                </TabsContent>
               </div>
-              <Select value={storeForm.category} onValueChange={(v) => setStoreForm(p => ({ ...p, category: v }))}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {CATEGORIES.map(c => <SelectItem key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</SelectItem>)}
-                </SelectContent>
-              </Select>
-              <Button onClick={() => createStoreMutation.mutate()} disabled={!storeForm.name.trim() || createStoreMutation.isPending} className="w-full bg-indigo-600 hover:bg-indigo-700">
-                {createStoreMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                Create Store
-              </Button>
-            </div>
+
+              <div className="mt-6">
+                <Button onClick={() => createStoreMutation.mutate()} disabled={!storeForm.name.trim() || createStoreMutation.isPending} className="w-full bg-indigo-600 hover:bg-indigo-700 h-11">
+                  {createStoreMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                  Create My Store
+                </Button>
+              </div>
+            </Tabs>
           </DialogContent>
         </Dialog>
       </div>
@@ -245,32 +382,188 @@ export default function MyStore() {
                     description: store.description,
                     category: store.category || "other",
                     logo_url: store.logo_url || "",
-                    banner_url: store.banner_url || ""
+                    banner_url: store.banner_url || "",
+                    payment_method: store.payment_method || "bank_transfer",
+                    bank_name: store.bank_name || "",
+                    bank_account_name: store.bank_account_name || "",
+                    bank_account_number: store.bank_account_number || "",
+                    routing_number: store.routing_number || "",
+                    paypal_email: store.paypal_email || "",
+                    phone_number: store.phone_number || "",
+                    address: store.address || "",
+                    website_url: store.website_url || "",
+                    social_links: {
+                      facebook: store.social_links?.facebook || "",
+                      instagram: store.social_links?.instagram || "",
+                      twitter: store.social_links?.twitter || "",
+                      tiktok: store.social_links?.tiktok || "",
+                    }
                   })}
                 >
                   Edit Store
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="max-w-2xl">
                 <DialogHeader><DialogTitle>Edit Store Details</DialogTitle></DialogHeader>
-                <div className="space-y-4">
-                  <Input placeholder="Store name" value={storeForm.name} onChange={(e) => setStoreForm(p => ({ ...p, name: e.target.value }))} />
-                  <Textarea placeholder="Describe your store..." value={storeForm.description} onChange={(e) => setStoreForm(p => ({ ...p, description: e.target.value }))} />
-                  <div className="grid grid-cols-2 gap-3">
-                    <Input placeholder="Logo URL (optional)" value={storeForm.logo_url} onChange={(e) => setStoreForm(p => ({ ...p, logo_url: e.target.value }))} />
-                    <Input placeholder="Banner URL (optional)" value={storeForm.banner_url} onChange={(e) => setStoreForm(p => ({ ...p, banner_url: e.target.value }))} />
+                <Tabs defaultValue="general" className="w-full">
+                  <TabsList className="grid grid-cols-3 mb-4">
+                    <TabsTrigger value="general">General</TabsTrigger>
+                    <TabsTrigger value="payment">Payment</TabsTrigger>
+                    <TabsTrigger value="additional">Additional</TabsTrigger>
+                  </TabsList>
+                  
+                  <div className="max-h-[60vh] overflow-y-auto pr-2">
+                    <TabsContent value="general" className="space-y-4 pt-2">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Store Name</label>
+                        <Input placeholder="Store name" value={storeForm.name} onChange={(e) => setStoreForm(p => ({ ...p, name: e.target.value }))} />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Description</label>
+                        <Textarea placeholder="Describe your store..." value={storeForm.description} onChange={(e) => setStoreForm(p => ({ ...p, description: e.target.value }))} />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">Store Logo</label>
+                          <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center overflow-hidden shrink-0">
+                              {storeForm.logo_url ? (
+                                <img src={storeForm.logo_url} alt="Logo" className="w-full h-full object-cover" />
+                              ) : (
+                                <Upload className="w-5 h-5 text-slate-300" />
+                              )}
+                            </div>
+                            <div className="relative flex-1">
+                              <input 
+                                type="file" 
+                                accept="image/*" 
+                                className="absolute inset-0 opacity-0 cursor-pointer" 
+                                onChange={(e) => handleAssetUpload(e, 'logo')}
+                                disabled={uploadingAssets.logo}
+                              />
+                              <Button variant="outline" size="sm" className="w-full text-xs h-9 rounded-lg" disabled={uploadingAssets.logo}>
+                                {uploadingAssets.logo ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : <Camera className="w-3.5 h-3.5 mr-1.5" />}
+                                {storeForm.logo_url ? 'Change Logo' : 'Upload Logo'}
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">Store Banner</label>
+                          <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center overflow-hidden shrink-0">
+                              {storeForm.banner_url ? (
+                                <img src={storeForm.banner_url} alt="Banner" className="w-full h-full object-cover" />
+                              ) : (
+                                <Upload className="w-5 h-5 text-slate-300" />
+                              )}
+                            </div>
+                            <div className="relative flex-1">
+                              <input 
+                                type="file" 
+                                accept="image/*" 
+                                className="absolute inset-0 opacity-0 cursor-pointer" 
+                                onChange={(e) => handleAssetUpload(e, 'banner')}
+                                disabled={uploadingAssets.banner}
+                              />
+                              <Button variant="outline" size="sm" className="w-full text-xs h-9 rounded-lg" disabled={uploadingAssets.banner}>
+                                {uploadingAssets.banner ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : <Camera className="w-3.5 h-3.5 mr-1.5" />}
+                                {storeForm.banner_url ? 'Change Banner' : 'Upload Banner'}
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Category</label>
+                        <Select value={storeForm.category} onValueChange={(v) => setStoreForm(p => ({ ...p, category: v }))}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {CATEGORIES.map(c => <SelectItem key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </TabsContent>
+
+                    <TabsContent value="payment" className="space-y-4 pt-2">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Default Payout Method</label>
+                        <Select value={storeForm.payment_method} onValueChange={(v) => setStoreForm(p => ({ ...p, payment_method: v }))}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                            <SelectItem value="paypal">PayPal</SelectItem>
+                            <SelectItem value="stripe">Stripe</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {storeForm.payment_method === 'bank_transfer' && (
+                        <div className="space-y-4 border-l-2 border-indigo-100 pl-4 py-1 mt-4">
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium text-slate-600">Bank Name</label>
+                            <Input placeholder="e.g. Chase, Bank of America" value={storeForm.bank_name} onChange={e => setStoreForm(p => ({ ...p, bank_name: e.target.value }))} />
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium text-slate-600">Account Holder Name</label>
+                            <Input placeholder="Full name on account" value={storeForm.bank_account_name} onChange={e => setStoreForm(p => ({ ...p, bank_account_name: e.target.value }))} />
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <label className="text-sm font-medium text-slate-600">Account Number</label>
+                              <Input placeholder="Account #" value={storeForm.bank_account_number} onChange={e => setStoreForm(p => ({ ...p, bank_account_number: e.target.value }))} />
+                            </div>
+                            <div className="space-y-2">
+                              <label className="text-sm font-medium text-slate-600">Routing Number</label>
+                              <Input placeholder="Routing #" value={storeForm.routing_number} onChange={e => setStoreForm(p => ({ ...p, routing_number: e.target.value }))} />
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {storeForm.payment_method === 'paypal' && (
+                        <div className="space-y-2 border-l-2 border-indigo-100 pl-4 py-1 mt-4">
+                          <label className="text-sm font-medium text-slate-600">PayPal Email Address</label>
+                          <Input type="email" placeholder="email@example.com" value={storeForm.paypal_email} onChange={e => setStoreForm(p => ({ ...p, paypal_email: e.target.value }))} />
+                        </div>
+                      )}
+                    </TabsContent>
+
+                    <TabsContent value="additional" className="space-y-4 pt-2">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">Phone Number</label>
+                          <Input placeholder="+1 234 567 890" value={storeForm.phone_number} onChange={(e) => setStoreForm(p => ({ ...p, phone_number: e.target.value }))} />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">Website URL</label>
+                          <Input placeholder="https://example.com" value={storeForm.website_url} onChange={(e) => setStoreForm(p => ({ ...p, website_url: e.target.value }))} />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Store Address</label>
+                        <Input placeholder="Street, City, Country" value={storeForm.address} onChange={(e) => setStoreForm(p => ({ ...p, address: e.target.value }))} />
+                      </div>
+                      <div className="space-y-3 pt-2">
+                        <label className="text-sm font-bold text-slate-800">Social Media Links</label>
+                        <div className="grid grid-cols-2 gap-4">
+                          <Input placeholder="Instagram URL" value={storeForm.social_links?.instagram} onChange={(e) => setStoreForm(p => ({ ...p, social_links: { ...p.social_links, instagram: e.target.value } }))} />
+                          <Input placeholder="Facebook URL" value={storeForm.social_links?.facebook} onChange={(e) => setStoreForm(p => ({ ...p, social_links: { ...p.social_links, facebook: e.target.value } }))} />
+                          <Input placeholder="Twitter URL" value={storeForm.social_links?.twitter} onChange={(e) => setStoreForm(p => ({ ...p, social_links: { ...p.social_links, twitter: e.target.value } }))} />
+                          <Input placeholder="TikTok URL" value={storeForm.social_links?.tiktok} onChange={(e) => setStoreForm(p => ({ ...p, social_links: { ...p.social_links, tiktok: e.target.value } }))} />
+                        </div>
+                      </div>
+                    </TabsContent>
                   </div>
-                  <Select value={storeForm.category} onValueChange={(v) => setStoreForm(p => ({ ...p, category: v }))}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {CATEGORIES.map(c => <SelectItem key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                  <Button onClick={() => updateStoreMutation.mutate(storeForm)} disabled={!storeForm.name.trim() || updateStoreMutation.isPending} className="w-full bg-indigo-600 hover:bg-indigo-700">
-                    {updateStoreMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                    Save Changes
-                  </Button>
-                </div>
+
+                  <div className="mt-6">
+                    <Button onClick={() => updateStoreMutation.mutate(storeForm)} disabled={!storeForm.name.trim() || updateStoreMutation.isPending} className="w-full bg-indigo-600 hover:bg-indigo-700 h-11">
+                      {updateStoreMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                      Save All Changes
+                    </Button>
+                  </div>
+                </Tabs>
               </DialogContent>
             </Dialog>
             <Link to={createPageUrl("StoreDetail") + `?id=${store.id || store._id}`}>
@@ -280,6 +573,38 @@ export default function MyStore() {
             </Link>
           </div>
         </div>
+
+        {/* Onboarding Checklist */}
+        {(!store.logo_url || !store.description || products.length === 0 || !store.payment_method) && (
+          <div className="mb-6 p-4 bg-indigo-50/50 rounded-2xl border border-indigo-100/50">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-bold text-indigo-900 flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4" /> Store Setup Progress
+              </h3>
+              <span className="text-[10px] font-bold text-indigo-600 bg-indigo-100 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                {Math.round(
+                  ((store.logo_url ? 1 : 0) + 
+                  (store.description ? 1 : 0) + 
+                  (products.length > 0 ? 1 : 0) + 
+                  (store.payment_method ? 1 : 0)) / 4 * 100
+                )}% Complete
+              </span>
+            </div>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              {[
+                { label: "Add logo", done: !!store.logo_url },
+                { label: "Describe store", done: !!store.description },
+                { label: "Add a product", done: products.length > 0 },
+                { label: "Payout method", done: !!store.payment_method },
+              ].map((step, i) => (
+                <div key={i} className={`flex items-center gap-2 p-2 rounded-xl border ${step.done ? 'bg-white/50 border-indigo-100 text-indigo-600' : 'bg-slate-50/50 border-slate-100 text-slate-400'}`}>
+                  {step.done ? <CheckCircle2 className="w-3.5 h-3.5" /> : <div className="w-3.5 h-3.5 rounded-full border-2 border-slate-200" />}
+                  <span className="text-xs font-medium">{step.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">

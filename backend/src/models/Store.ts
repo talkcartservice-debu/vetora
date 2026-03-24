@@ -15,6 +15,26 @@ export interface IStore extends Document {
   product_count: number;
   total_sales: number;
   rating_avg: number;
+  
+  // Payment Settings
+  payment_method?: 'bank_transfer' | 'paypal' | 'stripe' | 'other';
+  bank_name?: string;
+  bank_account_name?: string;
+  bank_account_number?: string;
+  routing_number?: string;
+  paypal_email?: string;
+  
+  // Additional Store Info
+  phone_number?: string;
+  address?: string;
+  website_url?: string;
+  social_links?: {
+    facebook?: string;
+    instagram?: string;
+    twitter?: string;
+    tiktok?: string;
+  };
+  
   created_at: Date;
   updated_at: Date;
 }
@@ -78,6 +98,29 @@ const StoreSchema = new Schema<IStore>({
     default: 0,
     min: 0,
     max: 5,
+  },
+  
+  // Payment Settings
+  payment_method: {
+    type: String,
+    enum: ['bank_transfer', 'paypal', 'stripe', 'other'],
+    default: 'bank_transfer',
+  },
+  bank_name: { type: String },
+  bank_account_name: { type: String },
+  bank_account_number: { type: String },
+  routing_number: { type: String },
+  paypal_email: { type: String },
+  
+  // Additional Store Info
+  phone_number: { type: String },
+  address: { type: String },
+  website_url: { type: String },
+  social_links: {
+    facebook: { type: String },
+    instagram: { type: String },
+    twitter: { type: String },
+    tiktok: { type: String },
   },
 }, {
   timestamps: {

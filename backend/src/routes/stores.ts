@@ -9,6 +9,26 @@ const createStoreSchema = z.object({
   category: z.string(),
   logo_url: z.string().optional(),
   banner_url: z.string().optional(),
+  owner_name: z.string().optional(),
+  
+  // Payment Settings
+  payment_method: z.enum(['bank_transfer', 'paypal', 'stripe', 'other']).optional(),
+  bank_name: z.string().optional(),
+  bank_account_name: z.string().optional(),
+  bank_account_number: z.string().optional(),
+  routing_number: z.string().optional(),
+  paypal_email: z.string().email().optional().or(z.literal('')),
+  
+  // Additional Info
+  phone_number: z.string().optional(),
+  address: z.string().optional(),
+  website_url: z.string().url().optional().or(z.literal('')),
+  social_links: z.object({
+    facebook: z.string().optional(),
+    instagram: z.string().optional(),
+    twitter: z.string().optional(),
+    tiktok: z.string().optional(),
+  }).optional(),
 });
 
 export async function storeRoutes(fastify: FastifyInstance) {
@@ -158,7 +178,11 @@ export async function storeRoutes(fastify: FastifyInstance) {
       }
 
       // Update allowed fields
-      const allowedUpdates = ['name', 'description', 'logo_url', 'banner_url', 'category'];
+      const allowedUpdates = [
+        'name', 'description', 'logo_url', 'banner_url', 'category',
+        'payment_method', 'bank_name', 'bank_account_name', 'bank_account_number', 'routing_number', 'paypal_email',
+        'phone_number', 'address', 'website_url', 'social_links'
+      ];
       allowedUpdates.forEach(field => {
         if ((body as any)[field] !== undefined) {
           (store as any)[field] = (body as any)[field];

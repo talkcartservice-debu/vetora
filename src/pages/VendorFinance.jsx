@@ -34,7 +34,7 @@ const PAYOUT_RATE = 0.9; // 90% after platform fee
 export default function VendorFinance() {
   const [withdrawOpen, setWithdrawOpen] = useState(false);
   const [withdrawForm, setWithdrawForm] = useState({
-    amount: "", bank_name: "", bank_account_name: "", bank_account_number: "", routing_number: ""
+    amount: "", bank_name: "", bank_account_name: "", bank_account_number: "", routing_number: "", paypal_email: ""
   });
   const [expandedOrder, setExpandedOrder] = useState(null);
   const queryClient = useQueryClient();
@@ -43,7 +43,19 @@ export default function VendorFinance() {
   const { data: store } = useQuery({
     queryKey: ["myStore", currentUser?.email],
     queryFn: async () => {
-      return storesAPI.getByOwner(currentUser?.email);
+      const res = await storesAPI.getByOwner(currentUser?.email);
+      if (res && !withdrawForm.bank_name && !withdrawForm.paypal_email) {
+        setWithdrawForm(prev => ({
+          ...prev,
+          payment_method: res.payment_method || "bank_transfer",
+          bank_name: res.bank_name || "",
+          bank_account_name: res.bank_account_name || "",
+          bank_account_number: res.bank_account_number || "",
+          routing_number: res.routing_number || "",
+          paypal_email: res.paypal_email || "",
+        }));
+      }
+      return res;
     },
     enabled: !!currentUser?.email,
   });
@@ -73,19 +85,21 @@ export default function VendorFinance() {
   const withdrawMutation = useMutation({
     mutationFn: () => withdrawalsAPI.create({
       vendor_email: currentUser.email,
-      store_id: store?.id,
+      store_id: store?.id || store?._id,
       store_name: store?.name,
       amount: parseFloat(withdrawForm.amount),
+      payment_method: withdrawForm.payment_method || "bank_transfer",
       bank_account_name: withdrawForm.bank_account_name,
       bank_account_number: withdrawForm.bank_account_number,
       bank_name: withdrawForm.bank_name,
       routing_number: withdrawForm.routing_number,
+      paypal_email: withdrawForm.paypal_email,
       status: "pending",
     }),
     onSuccess: () => {
       toast.success("Withdrawal request submitted!");
       setWithdrawOpen(false);
-      setWithdrawForm({ amount: "", bank_name: "", bank_account_name: "", bank_account_number: "", routing_number: "" });
+      setWithdrawForm({ amount: "", bank_name: "", bank_account_name: "", bank_account_number: "", routing_number: "", paypal_email: "" });
       queryClient.invalidateQueries({ queryKey: ["withdrawals"] });
     },
   });
@@ -267,34 +281,69 @@ export default function VendorFinance() {
                   <p className="text-xs text-red-500 mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> Exceeds available balance</p>
                 )}
               </div>
-              <div>
-                <label className="text-xs font-medium text-slate-600 mb-1 block">Bank Name *</label>
-                <Input placeholder="e.g. Chase, Bank of America" value={withdrawForm.bank_name} onChange={e => setWithdrawForm(p => ({ ...p, bank_name: e.target.value }))} />
-              </div>
-              <div>
-                <label className="text-xs font-medium text-slate-600 mb-1 block">Account Holder Name *</label>
-                <Input placeholder="Full name on account" value={withdrawForm.bank_account_name} onChange={e => setWithdrawForm(p => ({ ...p, bank_account_name: e.target.value }))} />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-medium text-slate-600 mb-1 block">Account Number *</label>
-                  <Input placeholder="Account #" value={withdrawForm.bank_account_number} onChange={e => setWithdrawForm(p => ({ ...p, bank_account_number: e.target.value }))} />
+              
+              <div className="pt-2 border-t border-slate-100">
+                <label className="text-xs font-medium text-slate-600 mb-1 block">Payout Method</label>
+                <div className="flex gap-2">
+                  <button 
+                    type="button"
+                    onClick={() => setWithdrawForm(p => ({ ...p, payment_method: "bank_transfer" }))}
+                    className={`flex-1 py-2 px-3 rounded-lg border text-xs font-medium transition-colors ${withdrawForm.payment_method === "bank_transfer" ? "bg-indigo-50 border-indigo-200 text-indigo-700" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}`}
+                  >
+                    Bank Transfer
+                  </button>
+                  <button 
+                    type="button"
+                    onClick={() => setWithdrawForm(p => ({ ...p, payment_method: "paypal" }))}
+                    className={`flex-1 py-2 px-3 rounded-lg border text-xs font-medium transition-colors ${withdrawForm.payment_method === "paypal" ? "bg-indigo-50 border-indigo-200 text-indigo-700" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}`}
+                  >
+                    PayPal
+                  </button>
                 </div>
-                <div>
-                  <label className="text-xs font-medium text-slate-600 mb-1 block">Routing Number</label>
-                  <Input placeholder="Routing #" value={withdrawForm.routing_number} onChange={e => setWithdrawForm(p => ({ ...p, routing_number: e.target.value }))} />
-                </div>
               </div>
+
+              {withdrawForm.payment_method === "bank_transfer" ? (
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-xs font-medium text-slate-600 mb-1 block">Bank Name *</label>
+                    <Input placeholder="e.g. Chase, Bank of America" value={withdrawForm.bank_name} onChange={e => setWithdrawForm(p => ({ ...p, bank_name: e.target.value }))} />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-slate-600 mb-1 block">Account Holder Name *</label>
+                    <Input placeholder="Full name on account" value={withdrawForm.bank_account_name} onChange={e => setWithdrawForm(p => ({ ...p, bank_account_name: e.target.value }))} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs font-medium text-slate-600 mb-1 block">Account Number *</label>
+                      <Input placeholder="Account #" value={withdrawForm.bank_account_number} onChange={e => setWithdrawForm(p => ({ ...p, bank_account_number: e.target.value }))} />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-slate-600 mb-1 block">Routing Number</label>
+                      <Input placeholder="Routing #" value={withdrawForm.routing_number} onChange={e => setWithdrawForm(p => ({ ...p, routing_number: e.target.value }))} />
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-xs font-medium text-slate-600 mb-1 block">PayPal Email *</label>
+                    <Input type="email" placeholder="your-paypal@email.com" value={withdrawForm.paypal_email} onChange={e => setWithdrawForm(p => ({ ...p, paypal_email: e.target.value }))} />
+                  </div>
+                  <p className="text-[10px] text-slate-400">Payouts will be sent to this PayPal address within 1-3 business days.</p>
+                </div>
+              )}
+
               <Button
                 onClick={() => withdrawMutation.mutate()}
                 disabled={
                   withdrawMutation.isPending ||
-                  !withdrawForm.amount || !withdrawForm.bank_name ||
-                  !withdrawForm.bank_account_name || !withdrawForm.bank_account_number ||
+                  !withdrawForm.amount || 
+                  (withdrawForm.payment_method === "bank_transfer" && (!withdrawForm.bank_name || !withdrawForm.bank_account_name || !withdrawForm.bank_account_number)) ||
+                  (withdrawForm.payment_method === "paypal" && !withdrawForm.paypal_email) ||
                   parseFloat(withdrawForm.amount) <= 0 ||
                   parseFloat(withdrawForm.amount) > availableBalance
                 }
-                className="w-full bg-indigo-600 hover:bg-indigo-700"
+                className="w-full bg-indigo-600 hover:bg-indigo-700 mt-2"
               >
                 {withdrawMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <ArrowDownCircle className="w-4 h-4 mr-2" />}
                 Submit Withdrawal Request
