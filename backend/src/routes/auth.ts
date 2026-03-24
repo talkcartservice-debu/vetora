@@ -206,6 +206,14 @@ export async function authRoutes(fastify: FastifyInstance) {
       }
       
       fastify.log.error('Registration Error:', error);
+
+      // Check for connection errors specifically
+      if (error.name === 'MongooseServerSelectionError' || error.name === 'MongooseError' || error.message?.includes('ECONNREFUSED') || error.message?.includes('buffering timed out')) {
+        return reply.code(503).send({ 
+          error: 'Database connection error. Please ensure MongoDB is running.',
+          message: 'Database connection error'
+        });
+      }
       
       const errorMessage = process.env.NODE_ENV === 'development' 
         ? (error?.message || error?.errmsg || JSON.stringify(error))

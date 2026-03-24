@@ -138,8 +138,11 @@ fastify.get('/api/health', async () => {
 // Start server
 const start = async () => {
   try {
-    // Connect to database before starting server
-    await connectDB();
+    // Try to connect to database but don't block server startup if it's not ready
+    // This allows the server to at least start so the proxy doesn't fail with 500/504
+    connectDB().catch(err => {
+      console.error('❌ Delayed MongoDB connection failed:', err.message);
+    });
     
     await fastify.listen({ port: PORT, host: '0.0.0.0' });
     console.log(`🚀 Server running on http://localhost:${PORT}`);
