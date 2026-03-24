@@ -69,9 +69,12 @@ export async function messageRoutes(fastify: FastifyInstance) {
         limit: parseInt(limit),
         skip: parseInt(skip),
       };
-    } catch (error) {
+    } catch (error: any) {
       fastify.log.error(error);
-      return reply.code(500).send({ error: 'Internal server error' });
+      return reply.code(500).send({ 
+        error: 'Internal server error', 
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      });
     }
   });
 
@@ -123,9 +126,12 @@ export async function messageRoutes(fastify: FastifyInstance) {
       }));
 
       return populatedConversations;
-    } catch (error) {
+    } catch (error: any) {
       fastify.log.error(error);
-      return reply.code(500).send({ error: 'Internal server error' });
+      return reply.code(500).send({ 
+        error: 'Internal server error', 
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      });
     }
   });
 
@@ -140,9 +146,12 @@ export async function messageRoutes(fastify: FastifyInstance) {
         .lean();
       
       return messages;
-    } catch (error) {
+    } catch (error: any) {
       fastify.log.error(error);
-      return reply.code(500).send({ error: 'Internal server error' });
+      return reply.code(500).send({ 
+        error: 'Internal server error', 
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      });
     }
   });
 
@@ -202,9 +211,12 @@ export async function messageRoutes(fastify: FastifyInstance) {
       }
 
       return message;
-    } catch (error) {
+    } catch (error: any) {
       fastify.log.error(error);
-      return reply.code(500).send({ error: 'Internal server error' });
+      return reply.code(500).send({ 
+        error: 'Internal server error', 
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      });
     }
   });
 
@@ -227,9 +239,12 @@ export async function messageRoutes(fastify: FastifyInstance) {
       }
 
       return message;
-    } catch (error) {
+    } catch (error: any) {
       fastify.log.error(error);
-      return reply.code(500).send({ error: 'Internal server error' });
+      return reply.code(500).send({ 
+        error: 'Internal server error', 
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      });
     }
   });
 
@@ -247,9 +262,12 @@ export async function messageRoutes(fastify: FastifyInstance) {
       );
 
       return { success: true };
-    } catch (error) {
+    } catch (error: any) {
       fastify.log.error(error);
-      return reply.code(500).send({ error: 'Internal server error' });
+      return reply.code(500).send({ 
+        error: 'Internal server error', 
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      });
     }
   });
 
@@ -274,9 +292,12 @@ export async function messageRoutes(fastify: FastifyInstance) {
       }
 
       return { success: true };
-    } catch (error) {
+    } catch (error: any) {
       fastify.log.error(error);
-      return reply.code(500).send({ error: 'Internal server error' });
+      return reply.code(500).send({ 
+        error: 'Internal server error', 
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      });
     }
   });
 }

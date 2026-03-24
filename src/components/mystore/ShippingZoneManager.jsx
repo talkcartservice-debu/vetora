@@ -38,10 +38,16 @@ function ZoneForm({ initial = BLANK_ZONE, onSave, onCancel, saving }) {
   const [form, setForm] = useState(initial);
 
   const toggleCountry = (code) => {
-    setForm(f => ({
-      ...f,
-      countries: f.countries.includes(code) ? f.countries.filter(c => c !== code) : [...f.countries, code],
-    }));
+    setForm(f => {
+      let next;
+      if (code === "WORLD") {
+        next = f.countries.includes("WORLD") ? [] : ["WORLD"];
+      } else {
+        next = f.countries.includes(code) ? f.countries.filter(c => c !== code) : [...f.countries, code];
+        next = next.filter(c => c !== "WORLD");
+      }
+      return { ...f, countries: next };
+    });
   };
 
   return (
@@ -114,7 +120,13 @@ function ZoneForm({ initial = BLANK_ZONE, onSave, onCancel, saving }) {
 
       <div className="flex gap-2 pt-1">
         <Button
-          onClick={() => onSave({ ...form, flat_rate: parseFloat(form.flat_rate) || 0, free_above: parseFloat(form.free_above) || 0 })}
+          onClick={() => onSave({ 
+            ...form, 
+            flat_rate: parseFloat(form.flat_rate) || 0, 
+            free_above: parseFloat(form.free_above) || 0,
+            estimated_days_min: parseInt(form.estimated_days_min) || 1,
+            estimated_days_max: parseInt(form.estimated_days_max) || 1
+          })}
           disabled={saving || !form.zone_name.trim()}
           className="bg-indigo-600 hover:bg-indigo-700 rounded-xl flex-1"
         >
@@ -217,8 +229,8 @@ export default function ShippingZoneManager({ store, vendorEmail }) {
                       <div>
                         <p className={`text-sm font-semibold ${zone.is_active ? "text-slate-900" : "text-slate-400 line-through"}`}>{zone.zone_name}</p>
                         <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                          <span className="text-xs font-bold text-green-600">${zone.flat_rate?.toFixed(2)} flat</span>
-                          {zone.free_above > 0 && <span className="text-xs text-slate-400">· Free over ${zone.free_above}</span>}
+                          <span className="text-xs font-bold text-green-600">${(Number(zone.flat_rate) || 0).toFixed(2)} flat</span>
+                          {(Number(zone.free_above) || 0) > 0 && <span className="text-xs text-slate-400">· Free over ${zone.free_above}</span>}
                           <span className="text-xs text-slate-400">· {zone.estimated_days_min}–{zone.estimated_days_max} days</span>
                         </div>
                       </div>

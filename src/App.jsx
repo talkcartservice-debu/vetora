@@ -18,7 +18,7 @@ const LayoutWrapper = ({ children, currentPageName }) => Layout ?
   : <>{children}</>;
 
 const AppRoutes = () => {
-  const { isLoadingAuth, authError, navigateToLogin } = useAuth();
+  const { isLoadingAuth, isAuthenticated, authError } = useAuth();
 
   // Show loading spinner while checking auth
   if (isLoadingAuth) {
@@ -37,10 +37,14 @@ const AppRoutes = () => {
       <Route path="/Login" element={<Pages.Login />} />
       <Route path="/register" element={<Pages.Register />} />
       <Route path="/Register" element={<Pages.Register />} />
+      <Route path="/forgot-password" element={<Pages.ForgotPassword />} />
+      <Route path="/ForgotPassword" element={<Pages.ForgotPassword />} />
+      <Route path="/reset-password" element={<Pages.ResetPassword />} />
+      <Route path="/ResetPassword" element={<Pages.ResetPassword />} />
 
       {/* Main app routes (with layout & auth check) */}
       <Route path="/" element={
-        authError?.type === 'auth_required' ? <Pages.Login /> :
+        !isAuthenticated ? <Pages.Login /> :
         <LayoutWrapper currentPageName={mainPageKey}>
           <MainPage />
         </LayoutWrapper>
@@ -48,14 +52,14 @@ const AppRoutes = () => {
 
       {Object.entries(Pages).map(([path, Page]) => {
         // Skip Login and Register as they are handled above
-        if (path === 'Login' || path === 'Register') return null;
+        if (['Login', 'Register', 'ForgotPassword', 'ResetPassword'].includes(path)) return null;
         
         return (
           <Route
             key={path}
             path={`/${path}`}
             element={
-              authError?.type === 'auth_required' ? <Pages.Login /> :
+              !isAuthenticated ? <Pages.Login /> :
               <LayoutWrapper currentPageName={path}>
                 <Page />
               </LayoutWrapper>
@@ -65,7 +69,7 @@ const AppRoutes = () => {
       })}
       
       <Route path="/Affiliate" element={
-        authError?.type === 'auth_required' ? <Pages.Login /> :
+        !isAuthenticated ? <Pages.Login /> :
         <LayoutWrapper currentPageName="Affiliate"><Affiliate /></LayoutWrapper>
       } />
       

@@ -30,9 +30,12 @@ export async function bookmarkRoutes(fastify: FastifyInstance) {
         limit: parseInt(limit),
         skip: parseInt(skip)
       });
-    } catch (error) {
+    } catch (error: any) {
       fastify.log.error(error);
-      reply.code(500).send({ error: 'Internal server error' });
+      return reply.code(500).send({ 
+        error: 'Internal server error', 
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      });
     }
   });
 
@@ -55,9 +58,12 @@ export async function bookmarkRoutes(fastify: FastifyInstance) {
       });
 
       reply.send({ is_bookmarked: !!bookmark });
-    } catch (error) {
+    } catch (error: any) {
       fastify.log.error(error);
-      reply.code(500).send({ error: 'Internal server error' });
+      return reply.code(500).send({ 
+        error: 'Internal server error', 
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      });
     }
   });
 
@@ -97,9 +103,12 @@ export async function bookmarkRoutes(fastify: FastifyInstance) {
 
       await bookmark.save();
       reply.code(201).send(bookmark);
-    } catch (error) {
+    } catch (error: any) {
       fastify.log.error(error);
-      reply.code(500).send({ error: 'Internal server error' });
+      return reply.code(500).send({ 
+        error: 'Internal server error', 
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      });
     }
   });
 
@@ -126,9 +135,12 @@ export async function bookmarkRoutes(fastify: FastifyInstance) {
       }
 
       reply.send({ message: 'Bookmark removed' });
-    } catch (error) {
+    } catch (error: any) {
       fastify.log.error(error);
-      reply.code(500).send({ error: 'Internal server error' });
+      return reply.code(500).send({ 
+        error: 'Internal server error', 
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      });
     }
   });
 }

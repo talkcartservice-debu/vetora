@@ -47,7 +47,7 @@ export async function postRoutes(fastify: FastifyInstance) {
         .sort(sort)
         .limit(parseInt(limit))
         .skip(parseInt(skip))
-        .lean({ virtuals: true });
+        .lean();
 
       const total = await Post.countDocuments(filter);
 
@@ -57,9 +57,12 @@ export async function postRoutes(fastify: FastifyInstance) {
         limit: parseInt(limit),
         skip: parseInt(skip),
       };
-    } catch (error) {
+    } catch (error: any) {
       fastify.log.error(error);
-      return reply.code(500).send({ error: 'Internal server error' });
+      return reply.code(500).send({ 
+        error: 'Internal server error', 
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      });
     }
   });
 
@@ -67,16 +70,19 @@ export async function postRoutes(fastify: FastifyInstance) {
   fastify.get('/:id', async (request, reply) => {
     try {
       const { id } = request.params as { id: string };
-      const post = await Post.findById(id).lean({ virtuals: true });
+      const post = await Post.findById(id).lean();
 
       if (!post) {
         return reply.code(404).send({ error: 'Post not found' });
       }
 
       return post;
-    } catch (error) {
+    } catch (error: any) {
       fastify.log.error(error);
-      return reply.code(500).send({ error: 'Internal server error' });
+      return reply.code(500).send({ 
+        error: 'Internal server error', 
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      });
     }
   });
 
@@ -115,7 +121,7 @@ export async function postRoutes(fastify: FastifyInstance) {
       
       fastify.log.info(`Post created successfully: ${post._id}`);
       return post;
-    } catch (error) {
+    } catch (error: any) {
       if (error instanceof z.ZodError) {
         const errorMsg = error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ');
         fastify.log.error(`Validation error: ${errorMsg}`);
@@ -125,7 +131,7 @@ export async function postRoutes(fastify: FastifyInstance) {
         });
       }
       fastify.log.error(error);
-      return reply.code(500).send({ error: 'Internal server error' });
+      return reply.code(500).send({ error: 'Internal server error', message: error.message });
     }
   });
 
@@ -136,6 +142,10 @@ export async function postRoutes(fastify: FastifyInstance) {
     try {
       const { id } = request.params as { id: string };
       const user = request.user as any;
+
+      if (!user?.email) {
+        return reply.code(401).send({ error: 'Unauthorized - invalid user data' });
+      }
 
       // Check if already liked
       const existingLike = await Like.findOne({
@@ -160,9 +170,12 @@ export async function postRoutes(fastify: FastifyInstance) {
       await Post.findByIdAndUpdate(id, { $inc: { likes_count: 1 } });
 
       return { status: 'liked' };
-    } catch (error) {
+    } catch (error: any) {
       fastify.log.error(error);
-      return reply.code(500).send({ error: 'Internal server error' });
+      return reply.code(500).send({ 
+        error: 'Internal server error', 
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      });
     }
   });
 
@@ -173,6 +186,10 @@ export async function postRoutes(fastify: FastifyInstance) {
     try {
       const { id } = request.params as { id: string };
       const user = request.user as any;
+
+      if (!user?.email) {
+        return reply.code(401).send({ error: 'Unauthorized - invalid user data' });
+      }
 
       fastify.log.info(`User ${user.email} unliking post ${id}`);
 
@@ -192,9 +209,12 @@ export async function postRoutes(fastify: FastifyInstance) {
       await Post.findByIdAndUpdate(id, { $inc: { likes_count: -1 } });
 
       return { status: 'unliked' };
-    } catch (error) {
+    } catch (error: any) {
       fastify.log.error(error);
-      return reply.code(500).send({ error: 'Internal server error' });
+      return reply.code(500).send({ 
+        error: 'Internal server error', 
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      });
     }
   });
 
@@ -205,6 +225,10 @@ export async function postRoutes(fastify: FastifyInstance) {
     try {
       const { id } = request.params as { id: string };
       const user = request.user as any;
+
+      if (!user?.email) {
+        return reply.code(401).send({ error: 'Unauthorized - invalid user data' });
+      }
 
       const post = await Post.findById(id);
       if (!post) {
@@ -217,9 +241,12 @@ export async function postRoutes(fastify: FastifyInstance) {
 
       await Post.deleteOne({ _id: id });
       return { status: 'deleted' };
-    } catch (error) {
+    } catch (error: any) {
       fastify.log.error(error);
-      return reply.code(500).send({ error: 'Internal server error' });
+      return reply.code(500).send({ 
+        error: 'Internal server error', 
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      });
     }
   });
 
@@ -237,9 +264,12 @@ export async function postRoutes(fastify: FastifyInstance) {
       }
 
       return post;
-    } catch (error) {
+    } catch (error: any) {
       fastify.log.error(error);
-      return reply.code(500).send({ error: 'Internal server error' });
+      return reply.code(500).send({ 
+        error: 'Internal server error', 
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      });
     }
   });
 }

@@ -47,9 +47,12 @@ export async function storyRoutes(fastify: FastifyInstance) {
       }, {} as Record<string, any>);
 
       reply.send({ feed: Object.values(groupedStories) });
-    } catch (error) {
+    } catch (error: any) {
       fastify.log.error(error);
-      reply.code(500).send({ error: 'Internal server error' });
+      return reply.code(500).send({ 
+        error: 'Internal server error', 
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      });
     }
   });
 
@@ -96,9 +99,12 @@ export async function storyRoutes(fastify: FastifyInstance) {
           hasMore: total > parseInt(skip) + parseInt(limit)
         }
       });
-    } catch (error) {
+    } catch (error: any) {
       fastify.log.error(error);
-      reply.code(500).send({ error: 'Internal server error' });
+      return reply.code(500).send({ 
+        error: 'Internal server error', 
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      });
     }
   });
 
@@ -114,9 +120,12 @@ export async function storyRoutes(fastify: FastifyInstance) {
       }
 
       reply.send(story);
-    } catch (error) {
+    } catch (error: any) {
       fastify.log.error(error);
-      reply.code(500).send({ error: 'Internal server error' });
+      return reply.code(500).send({ 
+        error: 'Internal server error', 
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      });
     }
   });
 
@@ -170,9 +179,12 @@ export async function storyRoutes(fastify: FastifyInstance) {
       });
 
       reply.code(201).send(story);
-    } catch (error) {
+    } catch (error: any) {
       fastify.log.error(error);
-      reply.code(500).send({ error: 'Internal server error' });
+      return reply.code(500).send({ 
+        error: 'Internal server error', 
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      });
     }
   });
 
@@ -208,9 +220,12 @@ export async function storyRoutes(fastify: FastifyInstance) {
       await story.save();
 
       reply.send(story);
-    } catch (error) {
+    } catch (error: any) {
       fastify.log.error(error);
-      reply.code(500).send({ error: 'Internal server error' });
+      return reply.code(500).send({ 
+        error: 'Internal server error', 
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      });
     }
   });
 
@@ -242,9 +257,12 @@ export async function storyRoutes(fastify: FastifyInstance) {
       });
 
       reply.send({ message: 'Story deleted successfully' });
-    } catch (error) {
+    } catch (error: any) {
       fastify.log.error(error);
-      reply.code(500).send({ error: 'Internal server error' });
+      return reply.code(500).send({ 
+        error: 'Internal server error', 
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      });
     }
   });
 
@@ -274,9 +292,12 @@ export async function storyRoutes(fastify: FastifyInstance) {
       // For now, just increment the count
 
       reply.send({ views_count: story.views_count });
-    } catch (error) {
+    } catch (error: any) {
       fastify.log.error(error);
-      reply.code(500).send({ error: 'Internal server error' });
+      return reply.code(500).send({ 
+        error: 'Internal server error', 
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      });
     }
   });
   
@@ -308,9 +329,12 @@ export async function storyRoutes(fastify: FastifyInstance) {
       });
       
       reply.send({ likes_count: story.likes_count });
-    } catch (error) {
+    } catch (error: any) {
       fastify.log.error(error);
-      reply.code(500).send({ error: 'Internal server error' });
+      return reply.code(500).send({ 
+        error: 'Internal server error', 
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      });
     }
   });
 
@@ -338,9 +362,12 @@ export async function storyRoutes(fastify: FastifyInstance) {
       // For now, we'll just log it or you can integrate with messages route
       
       reply.send({ message: 'Reply sent successfully' });
-    } catch (error) {
+    } catch (error: any) {
       fastify.log.error(error);
-      reply.code(500).send({ error: 'Internal server error' });
+      return reply.code(500).send({ 
+        error: 'Internal server error', 
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      });
     }
   });
 
@@ -360,9 +387,12 @@ export async function storyRoutes(fastify: FastifyInstance) {
         .sort({ created_at: -1 });
 
       reply.send({ stories });
-    } catch (error) {
+    } catch (error: any) {
       fastify.log.error(error);
-      reply.code(500).send({ error: 'Internal server error' });
+      return reply.code(500).send({ 
+        error: 'Internal server error', 
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      });
     }
   });
 
@@ -377,13 +407,19 @@ export async function storyRoutes(fastify: FastifyInstance) {
           is_active: true,
           expires_at: { $gt: new Date() }
         })
-        .sort({ created_at: -1 })
-        .populate('author_email', 'display_name avatar_url');
+        .sort({ created_at: -1 });
+
+      // Since author_email is a string, we can't use .populate(). 
+      // Instead, we'll manually fetch the user data if needed, or just return what we have.
+      // The current Story model already has author_name and author_avatar.
 
       reply.send({ stories });
-    } catch (error) {
+    } catch (error: any) {
       fastify.log.error(error);
-      reply.code(500).send({ error: 'Internal server error' });
+      return reply.code(500).send({ 
+        error: 'Internal server error', 
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      });
     }
   });
 
@@ -409,9 +445,12 @@ export async function storyRoutes(fastify: FastifyInstance) {
         message: 'Expired stories cleaned up',
         updated_count: result.modifiedCount
       });
-    } catch (error) {
+    } catch (error: any) {
       fastify.log.error(error);
-      reply.code(500).send({ error: 'Internal server error' });
+      return reply.code(500).send({ 
+        error: 'Internal server error', 
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      });
     }
   });
 }

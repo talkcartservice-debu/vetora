@@ -1,7 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
-import { authenticator } from 'otplib';
+import { generateSecret, verify, generateURI } from 'otplib';
 import QRCode from 'qrcode';
 import { randomInt, randomBytes } from 'crypto';
 import { User } from '../models/User';
@@ -39,7 +39,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       if (user.is_2fa_enabled) {
         // Generate a temporary token for 2FA challenge (5 mins expiry)
         const twoFactorToken = fastify.jwt.sign({
-          userId: user._id,
+          userId: user._id.toString(),
           pending_2fa: true,
         }, { expiresIn: '5m' });
 
@@ -51,7 +51,7 @@ export async function authRoutes(fastify: FastifyInstance) {
 
       // Generate JWT token
       const token = fastify.jwt.sign({
-        userId: user._id,
+        userId: user._id.toString(),
         email: user.email,
       });
 
@@ -75,17 +75,18 @@ export async function authRoutes(fastify: FastifyInstance) {
       if (error instanceof z.ZodError) {
         return reply.code(400).send({ error: 'Invalid request data', details: error.errors });
       }
-      // Log detailed error for debugging
-      const err = error as Error;
-      fastify.log.error(err.message || 'Login error');
+      
+      const err = error as any;
+      fastify.log.error(err);
       
       const errorMessage = process.env.NODE_ENV === 'development' 
-        ? err.message || 'Internal server error'
+        ? err.message || err.errmsg || String(err) || 'Internal server error'
         : 'Internal server error';
       
       return reply.code(500).send({ 
         error: errorMessage,
-        details: process.env.NODE_ENV === 'development' ? err.message : undefined
+        message: errorMessage, // Support both formats
+        details: process.env.NODE_ENV === 'development' ? err.stack : undefined
       });
     }
   });
@@ -111,7 +112,7 @@ export async function authRoutes(fastify: FastifyInstance) {
         return reply.code(400).send({ error: 'Invalid request' });
       }
 
-      const isValid = authenticator.verify({ 
+      const { valid: isValid } = await verify({ 
         token: otpToken, 
         secret: user.two_factor_secret 
       });
@@ -122,7 +123,7 @@ export async function authRoutes(fastify: FastifyInstance) {
 
       // Generate JWT token
       const jwtToken = fastify.jwt.sign({
-        userId: user._id,
+        userId: user._id.toString(),
         email: user.email,
       });
 
@@ -179,7 +180,7 @@ export async function authRoutes(fastify: FastifyInstance) {
 
       // Generate JWT token
       const token = fastify.jwt.sign({
-        userId: user._id,
+        userId: user._id.toString(),
         email: user.email,
       });
 
@@ -204,15 +205,17 @@ export async function authRoutes(fastify: FastifyInstance) {
         return reply.code(400).send({ error: 'Invalid request data', details: error.errors });
       }
       
-      fastify.log.error(error);
+      fastify.log.error('Registration Error:', error);
       
       const errorMessage = process.env.NODE_ENV === 'development' 
-        ? (error?.message || 'Internal server error')
+        ? (error?.message || error?.errmsg || JSON.stringify(error))
         : 'Internal server error';
       
       return reply.code(500).send({ 
         error: errorMessage,
-        details: process.env.NODE_ENV === 'development' ? error?.message : undefined
+        message: errorMessage,
+        details: process.env.NODE_ENV === 'development' ? (error?.stack || error) : undefined,
+        raw: process.env.NODE_ENV === 'development' ? error : undefined
       });
     }
   });
@@ -305,9 +308,12 @@ export async function authRoutes(fastify: FastifyInstance) {
         created_at: user.created_at,
         updated_at: user.updated_at,
       };
-    } catch (error) {
+    } catch (error: any) {
       fastify.log.error(error);
-      return reply.code(500).send({ error: 'Internal server error' });
+      return reply.code(500).send({ 
+        error: 'Internal server error', 
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      });
     }
   });
 
@@ -362,9 +368,12 @@ export async function authRoutes(fastify: FastifyInstance) {
         created_at: user.created_at,
         updated_at: user.updated_at,
       };
-    } catch (error) {
+    } catch (error: any) {
       fastify.log.error(error);
-      return reply.code(500).send({ error: 'Internal server error' });
+      return reply.code(500).send({ 
+        error: 'Internal server error', 
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      });
     }
   });
 
@@ -586,17 +595,20 @@ export async function authRoutes(fastify: FastifyInstance) {
       }
 
       // Generate a new secret and save it to the user
-      const secret = authenticator.generateSecret();
+      const secret = generateSecret();
       user.two_factor_secret = secret;
       await user.save();
 
-      const otpauth = authenticator.keyuri(user.email, 'Vetora', secret);
+      const otpauth = generateURI({ secret, label: user.email, issuer: 'Vetora' });
       const qrCode = await QRCode.toDataURL(otpauth);
 
       return { secret, qrCode };
-    } catch (error) {
+    } catch (error: any) {
       fastify.log.error(error);
-      return reply.code(500).send({ error: 'Internal server error' });
+      return reply.code(500).send({ 
+        error: 'Internal server error', 
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      });
     }
   });
 
@@ -616,7 +628,7 @@ export async function authRoutes(fastify: FastifyInstance) {
         return reply.code(400).send({ error: '2FA setup not initiated' });
       }
 
-      const isValid = authenticator.verify({ 
+      const { valid: isValid } = await verify({ 
         token, 
         secret: user.two_factor_secret 
       });
@@ -654,7 +666,7 @@ export async function authRoutes(fastify: FastifyInstance) {
         return reply.code(400).send({ error: '2FA is not enabled' });
       }
 
-      const isValid = authenticator.verify({ 
+      const { valid: isValid } = await verify({ 
         token, 
         secret: user.two_factor_secret 
       });

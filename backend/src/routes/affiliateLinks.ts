@@ -38,9 +38,10 @@ export async function affiliateLinkRoutes(fastify: FastifyInstance) {
         .find(filter)
         .sort(sortObj)
         .limit(parseInt(limit))
-        .skip(parseInt(skip))
-        .populate('product_id', 'title price vendor_email')
-        .populate('store_id', 'name');
+        .skip(parseInt(skip));
+
+      // product_id and store_id are strings, so we can't use .populate()
+      // If we need product/store info, we would need to fetch it separately.
 
       const total = await AffiliateLink.countDocuments(filter);
 
@@ -53,9 +54,12 @@ export async function affiliateLinkRoutes(fastify: FastifyInstance) {
           hasMore: total > parseInt(skip) + parseInt(limit)
         }
       });
-    } catch (error) {
+    } catch (error: any) {
       fastify.log.error(error);
-      reply.code(500).send({ error: 'Internal server error' });
+      return reply.code(500).send({ 
+        error: 'Internal server error', 
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      });
     }
   });
 
@@ -64,18 +68,19 @@ export async function affiliateLinkRoutes(fastify: FastifyInstance) {
     try {
       const { id } = request.params as { id: string };
 
-      const link = await AffiliateLink.findById(id)
-        .populate('product_id', 'title price vendor_email')
-        .populate('store_id', 'name');
+      const link = await AffiliateLink.findById(id);
 
       if (!link) {
         return reply.code(404).send({ error: 'Affiliate link not found' });
       }
 
       reply.send(link);
-    } catch (error) {
+    } catch (error: any) {
       fastify.log.error(error);
-      reply.code(500).send({ error: 'Internal server error' });
+      return reply.code(500).send({ 
+        error: 'Internal server error', 
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      });
     }
   });
 
@@ -87,17 +92,19 @@ export async function affiliateLinkRoutes(fastify: FastifyInstance) {
       const link = await AffiliateLink.findOne({
         ref_code: refCode.toUpperCase(),
         status: 'active'
-      }).populate('product_id', 'title price vendor_email')
-        .populate('store_id', 'name');
+      });
 
       if (!link) {
         return reply.code(404).send({ error: 'Affiliate link not found or inactive' });
       }
 
       reply.send(link);
-    } catch (error) {
+    } catch (error: any) {
       fastify.log.error(error);
-      reply.code(500).send({ error: 'Internal server error' });
+      return reply.code(500).send({ 
+        error: 'Internal server error', 
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      });
     }
   });
 
@@ -137,9 +144,12 @@ export async function affiliateLinkRoutes(fastify: FastifyInstance) {
       await link.save();
 
       reply.code(201).send(link);
-    } catch (error) {
+    } catch (error: any) {
       fastify.log.error(error);
-      reply.code(500).send({ error: 'Internal server error' });
+      return reply.code(500).send({ 
+        error: 'Internal server error', 
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      });
     }
   });
 
@@ -180,9 +190,12 @@ export async function affiliateLinkRoutes(fastify: FastifyInstance) {
       await link.save();
 
       reply.send(link);
-    } catch (error) {
+    } catch (error: any) {
       fastify.log.error(error);
-      reply.code(500).send({ error: 'Internal server error' });
+      return reply.code(500).send({ 
+        error: 'Internal server error', 
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      });
     }
   });
 
@@ -208,9 +221,12 @@ export async function affiliateLinkRoutes(fastify: FastifyInstance) {
       await AffiliateLink.findByIdAndDelete(id);
 
       reply.send({ message: 'Affiliate link deleted successfully' });
-    } catch (error) {
+    } catch (error: any) {
       fastify.log.error(error);
-      reply.code(500).send({ error: 'Internal server error' });
+      return reply.code(500).send({ 
+        error: 'Internal server error', 
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      });
     }
   });
 
@@ -233,9 +249,12 @@ export async function affiliateLinkRoutes(fastify: FastifyInstance) {
         message: 'Click tracked successfully',
         clicks: link.clicks
       });
-    } catch (error) {
+    } catch (error: any) {
       fastify.log.error(error);
-      reply.code(500).send({ error: 'Internal server error' });
+      return reply.code(500).send({ 
+        error: 'Internal server error', 
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      });
     }
   });
 
@@ -267,9 +286,12 @@ export async function affiliateLinkRoutes(fastify: FastifyInstance) {
         conversions: link.conversions,
         total_commission_earned: link.total_commission_earned
       });
-    } catch (error) {
+    } catch (error: any) {
       fastify.log.error(error);
-      reply.code(500).send({ error: 'Internal server error' });
+      return reply.code(500).send({ 
+        error: 'Internal server error', 
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      });
     }
   });
 
@@ -289,9 +311,7 @@ export async function affiliateLinkRoutes(fastify: FastifyInstance) {
         .find(filter)
         .sort({ created_at: -1 })
         .limit(parseInt(limit))
-        .skip(parseInt(skip))
-        .populate('product_id', 'title price vendor_email')
-        .populate('store_id', 'name');
+        .skip(parseInt(skip));
 
       const total = await AffiliateLink.countDocuments(filter);
 
@@ -324,9 +344,12 @@ export async function affiliateLinkRoutes(fastify: FastifyInstance) {
           hasMore: total > parseInt(skip) + parseInt(limit)
         }
       });
-    } catch (error) {
+    } catch (error: any) {
       fastify.log.error(error);
-      reply.code(500).send({ error: 'Internal server error' });
+      return reply.code(500).send({ 
+        error: 'Internal server error', 
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      });
     }
   });
 
@@ -343,8 +366,10 @@ export async function affiliateLinkRoutes(fastify: FastifyInstance) {
         .find(filter)
         .sort({ clicks: -1 })
         .limit(parseInt(limit))
-        .skip(parseInt(skip))
-        .populate('influencer_email', 'display_name avatar_url');
+        .skip(parseInt(skip));
+
+      // influencer_email is a string, so we can't use .populate()
+      // If we need influencer info, we would need to fetch it separately by email.
 
       const total = await AffiliateLink.countDocuments(filter);
 
@@ -357,9 +382,12 @@ export async function affiliateLinkRoutes(fastify: FastifyInstance) {
           hasMore: total > parseInt(skip) + parseInt(limit)
         }
       });
-    } catch (error) {
+    } catch (error: any) {
       fastify.log.error(error);
-      reply.code(500).send({ error: 'Internal server error' });
+      return reply.code(500).send({ 
+        error: 'Internal server error', 
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      });
     }
   });
 }

@@ -39,16 +39,19 @@ export async function productRoutes(fastify: FastifyInstance) {
       })
       .sort({ sales_count: -1, created_at: -1 })
       .limit(parseInt(limit))
-      .lean({ virtuals: true });
+      .lean();
 
       // 4. Boost logic: if a product is in wishlist or liked, it should probably be higher
       // but here we already have them. The client side was doing scoring.
       // For a "Recommended for you" we usually want NEW things.
       
       return { data: recommendations };
-    } catch (error) {
+    } catch (error: any) {
       fastify.log.error(error);
-      return reply.code(500).send({ error: 'Internal server error' });
+      return reply.code(500).send({ 
+        error: 'Internal server error', 
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      });
     }
   });
 
@@ -97,7 +100,7 @@ export async function productRoutes(fastify: FastifyInstance) {
         .sort(sortObj)
         .limit(parseInt(limit))
         .skip(parseInt(skip))
-        .lean({ virtuals: true });
+        .lean();
 
       const total = await Product.countDocuments(filter);
 
@@ -107,9 +110,12 @@ export async function productRoutes(fastify: FastifyInstance) {
         limit: parseInt(limit),
         skip: parseInt(skip),
       };
-    } catch (error) {
+    } catch (error: any) {
       fastify.log.error(error);
-      return reply.code(500).send({ error: 'Internal server error' });
+      return reply.code(500).send({ 
+        error: 'Internal server error', 
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      });
     }
   });
 
@@ -117,16 +123,19 @@ export async function productRoutes(fastify: FastifyInstance) {
   fastify.get('/:id', async (request, reply) => {
     try {
       const { id } = request.params as { id: string };
-      const product = await Product.findById(id).lean({ virtuals: true });
+      const product = await Product.findById(id).lean();
 
       if (!product) {
         return reply.code(404).send({ error: 'Product not found' });
       }
 
       return product;
-    } catch (error) {
+    } catch (error: any) {
       fastify.log.error(error);
-      return reply.code(500).send({ error: 'Internal server error' });
+      return reply.code(500).send({ 
+        error: 'Internal server error', 
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      });
     }
   });
 
@@ -214,9 +223,12 @@ export async function productRoutes(fastify: FastifyInstance) {
       fastify.io?.emit('product:updated', product);
 
       return product;
-    } catch (error) {
+    } catch (error: any) {
       fastify.log.error(error);
-      return reply.code(500).send({ error: 'Internal server error' });
+      return reply.code(500).send({ 
+        error: 'Internal server error', 
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      });
     }
   });
 
@@ -227,6 +239,10 @@ export async function productRoutes(fastify: FastifyInstance) {
     try {
       const { id } = request.params as { id: string };
       const { userId } = request.user as { userId: string };
+
+      if (!userId) {
+        return reply.code(401).send({ error: 'Unauthorized - invalid user data' });
+      }
 
       // Get user to verify ownership
       const user = await User.findById(userId);
@@ -247,9 +263,12 @@ export async function productRoutes(fastify: FastifyInstance) {
       fastify.io?.emit('product:deleted', { id });
 
       return { success: true };
-    } catch (error) {
+    } catch (error: any) {
       fastify.log.error(error);
-      return reply.code(500).send({ error: 'Internal server error' });
+      return reply.code(500).send({ 
+        error: 'Internal server error', 
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      });
     }
   });
 }

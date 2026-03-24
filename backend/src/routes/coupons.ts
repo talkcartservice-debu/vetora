@@ -35,8 +35,10 @@ export async function couponRoutes(fastify: FastifyInstance) {
         .find(filter)
         .sort(sortObj)
         .limit(parseInt(limit))
-        .skip(parseInt(skip))
-        .populate('store_id', 'name');
+        .skip(parseInt(skip));
+
+      // store_id is a string, so we can't use .populate()
+      // If we need store info, we would need to fetch it separately.
 
       const total = await Coupon.countDocuments(filter);
 
@@ -60,8 +62,7 @@ export async function couponRoutes(fastify: FastifyInstance) {
     try {
       const { id } = request.params as { id: string };
 
-      const coupon = await Coupon.findById(id)
-        .populate('store_id', 'name');
+      const coupon = await Coupon.findById(id);
 
       if (!coupon) {
         return reply.code(404).send({ error: 'Coupon not found' });
@@ -82,7 +83,7 @@ export async function couponRoutes(fastify: FastifyInstance) {
       const coupon = await Coupon.findOne({
         code: code.toUpperCase(),
         is_active: true
-      }).populate('store_id', 'name');
+      });
 
       if (!coupon) {
         return reply.code(404).send({ error: 'Coupon not found or inactive' });

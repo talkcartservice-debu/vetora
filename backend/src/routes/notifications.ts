@@ -1,6 +1,5 @@
 import { FastifyInstance } from 'fastify';
-import { Notification, INotification } from '../models/Notification';
-import { z } from 'zod';
+import { Notification as NotificationModel, INotification } from '../models/Notification';
 
 export async function notificationRoutes(fastify: FastifyInstance) {
   // List notifications for a user
@@ -9,32 +8,53 @@ export async function notificationRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     try {
       const user = request.user as any;
-      const { limit = 50, skip = 0, unread_only = 'false' } = request.query as any;
+      const query = request.query as any;
+      
+      const limit = parseInt(query.limit) || 50;
+      const skip = parseInt(query.skip) || 0;
+      const unread_only = query.unread_only === 'true';
 
-      const filter: any = { recipient_email: user.email };
-      if (unread_only === 'true') {
+      if (!user?.email) {
+        return reply.code(401).send({ error: 'Unauthorized - invalid user data' });
+      }
+
+      const filter: any = { recipient_email: user.email.toLowerCase() };
+      if (unread_only) {
         filter.is_read = false;
       }
 
-      const notifications = await Notification.find(filter)
-        .sort({ created_at: -1 })
-        .limit(parseInt(limit))
-        .skip(parseInt(skip))
-        .lean();
+      // Use Promise.all to run queries in parallel
+      const [notifications, total, unreadCount] = await Promise.all([
+        NotificationModel.find(filter)
+          .sort({ created_at: -1 })
+          .limit(limit)
+          .skip(skip)
+          .lean(),
+        NotificationModel.countDocuments(filter),
+        NotificationModel.countDocuments({ recipient_email: user.email.toLowerCase(), is_read: false })
+      ]);
 
-      const total = await Notification.countDocuments(filter);
-      const unreadCount = await Notification.countDocuments({ recipient_email: user.email, is_read: false });
+      // Map _id to id for consistency
+      const formattedNotifications = notifications.map((n: any) => ({
+        ...n,
+        id: n._id.toString()
+      }));
 
       return {
-        data: notifications,
+        data: formattedNotifications,
         total,
         unreadCount,
-        limit: parseInt(limit),
-        skip: parseInt(skip),
+        limit,
+        skip,
       };
-    } catch (error) {
+    } catch (error: any) {
+      console.error('❌ Notifications API Error:', error);
       fastify.log.error(error);
-      return reply.code(500).send({ error: 'Internal server error' });
+      return reply.code(500).send({ 
+        error: 'Internal server error', 
+        message: error.message,
+        details: process.env.NODE_ENV === 'development' ? error.stack : undefined 
+      });
     }
   });
 
@@ -46,8 +66,12 @@ export async function notificationRoutes(fastify: FastifyInstance) {
       const { id } = request.params as { id: string };
       const user = request.user as any;
 
-      const notification = await Notification.findOneAndUpdate(
-        { _id: id, recipient_email: user.email },
+      if (!user?.email) {
+        return reply.code(401).send({ error: 'Unauthorized - invalid user data' });
+      }
+
+      const notification = await NotificationModel.findOneAndUpdate(
+        { _id: id, recipient_email: user.email.toLowerCase() },
         { is_read: true },
         { new: true }
       );
@@ -57,9 +81,12 @@ export async function notificationRoutes(fastify: FastifyInstance) {
       }
 
       return notification;
-    } catch (error) {
+    } catch (error: any) {
       fastify.log.error(error);
-      return reply.code(500).send({ error: 'Internal server error' });
+      return reply.code(500).send({ 
+        error: 'Internal server error', 
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      });
     }
   });
 
@@ -70,15 +97,22 @@ export async function notificationRoutes(fastify: FastifyInstance) {
     try {
       const user = request.user as any;
 
-      await Notification.updateMany(
-        { recipient_email: user.email, is_read: false },
+      if (!user?.email) {
+        return reply.code(401).send({ error: 'Unauthorized - invalid user data' });
+      }
+
+      await NotificationModel.updateMany(
+        { recipient_email: user.email.toLowerCase(), is_read: false },
         { is_read: true }
       );
 
       return { status: 'success' };
-    } catch (error) {
+    } catch (error: any) {
       fastify.log.error(error);
-      return reply.code(500).send({ error: 'Internal server error' });
+      return reply.code(500).send({ 
+        error: 'Internal server error', 
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      });
     }
   });
 
@@ -90,15 +124,22 @@ export async function notificationRoutes(fastify: FastifyInstance) {
       const { id } = request.params as { id: string };
       const user = request.user as any;
 
-      const result = await Notification.deleteOne({ _id: id, recipient_email: user.email });
+      if (!user?.email) {
+        return reply.code(401).send({ error: 'Unauthorized - invalid user data' });
+      }
+
+      const result = await NotificationModel.deleteOne({ _id: id, recipient_email: user.email.toLowerCase() });
       if (result.deletedCount === 0) {
         return reply.code(404).send({ error: 'Notification not found' });
       }
 
       return { status: 'deleted' };
-    } catch (error) {
+    } catch (error: any) {
       fastify.log.error(error);
-      return reply.code(500).send({ error: 'Internal server error' });
+      return reply.code(500).send({ 
+        error: 'Internal server error', 
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      });
     }
   });
 }

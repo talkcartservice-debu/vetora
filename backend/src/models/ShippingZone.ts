@@ -32,7 +32,7 @@ const ShippingZoneSchema = new Schema<IShippingZone>({
     type: String,
     uppercase: true,
     minlength: 2,
-    maxlength: 2
+    maxlength: 5 // Allow 'WORLD' for worldwide shipping
   }],
   flat_rate: {
     type: Number,

@@ -3,7 +3,7 @@ import mongoose, { Document, Schema } from 'mongoose';
 export interface INotification extends Document {
   _id: mongoose.Types.ObjectId;
   recipient_email: string;
-  type: 'like' | 'comment' | 'follow' | 'order_update' | 'message' | 'mention' | 'community' | 'promotion';
+  type: 'like' | 'comment' | 'follow' | 'order_update' | 'message' | 'mention' | 'community' | 'promotion' | 'offer';
   title: string;
   body?: string;
   link?: string;
@@ -25,7 +25,7 @@ const NotificationSchema = new Schema<INotification>({
   type: {
     type: String,
     required: true,
-    enum: ['like', 'comment', 'follow', 'order_update', 'message', 'mention', 'community', 'promotion'],
+    enum: ['like', 'comment', 'follow', 'order_update', 'message', 'mention', 'community', 'promotion', 'offer'],
   },
   title: {
     type: String,

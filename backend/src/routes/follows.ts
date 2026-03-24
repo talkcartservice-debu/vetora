@@ -193,8 +193,10 @@ export async function followRoutes(fastify: FastifyInstance) {
         .find(filter)
         .sort({ created_at: -1 })
         .limit(parseInt(limit))
-        .skip(parseInt(skip))
-        .populate('follower_email', 'display_name avatar_url');
+        .skip(parseInt(skip));
+
+      // follower_email is a string, so we can't use .populate()
+      // If we need user info, we would need to fetch them separately by email.
 
       const total = await Follow.countDocuments(filter);
 
@@ -331,8 +333,10 @@ export async function followRoutes(fastify: FastifyInstance) {
         .find(filter)
         .sort({ created_at: -1 })
         .limit(parseInt(limit))
-        .skip(parseInt(skip))
-        .populate('follower_email', 'display_name avatar_url');
+        .skip(parseInt(skip));
+
+      // follower_email is a string, so we can't use .populate()
+      // If we need user info, we would need to fetch them separately by email.
 
       const total = await Follow.countDocuments(filter);
 

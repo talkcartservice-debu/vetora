@@ -39,9 +39,11 @@ export async function reviewRoutes(fastify: FastifyInstance) {
         .find(filter)
         .sort(sortObj)
         .limit(parseInt(limit))
-        .skip(parseInt(skip))
-        .populate('product_id', 'title vendor_email')
-        .populate('store_id', 'name');
+        .skip(parseInt(skip));
+
+      // product_id and store_id are strings, so we can't use .populate()
+      // If we need product/store info, we would need to fetch them separately
+      // but the model should probably have used ObjectIds if populate was intended.
 
       const total = await Review.countDocuments(filter);
 
@@ -65,9 +67,7 @@ export async function reviewRoutes(fastify: FastifyInstance) {
     try {
       const { id } = request.params as { id: string };
 
-      const review = await Review.findById(id)
-        .populate('product_id', 'title vendor_email')
-        .populate('store_id', 'name');
+      const review = await Review.findById(id);
 
       if (!review) {
         return reply.code(404).send({ error: 'Review not found' });

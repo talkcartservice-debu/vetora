@@ -28,8 +28,10 @@ export async function communityMemberRoutes(fastify: FastifyInstance) {
         .find(filter)
         .sort({ joined_at: -1 })
         .limit(parseInt(limit))
-        .skip(parseInt(skip))
-        .populate('member_email', 'display_name avatar_url');
+        .skip(parseInt(skip));
+
+      // member_email is a string, so we can't use .populate()
+      // If we need user info, we would need to fetch it separately by email.
 
       const total = await CommunityMember.countDocuments(filter);
 
@@ -259,8 +261,10 @@ export async function communityMemberRoutes(fastify: FastifyInstance) {
         .find({ member_email: user.email })
         .sort({ joined_at: -1 })
         .limit(parseInt(limit))
-        .skip(parseInt(skip))
-        .populate('community_id', 'name description icon_url category member_count');
+        .skip(parseInt(skip));
+
+      // community_id is a string, so we can't use .populate()
+      // If we need community info, we would need to fetch it separately.
 
       const total = await CommunityMember.countDocuments({ member_email: user.email });
 

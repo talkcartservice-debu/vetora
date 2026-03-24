@@ -60,11 +60,20 @@ fastify.register(jwt, {
 // Add authentication decorator
 fastify.decorate('authenticate', authenticate);
 
-// Add Socket.IO decorator
-fastify.decorate('io', null);
-
-// Connect to database
-connectDB();
+// Global error handler
+fastify.setErrorHandler((error, request, reply) => {
+  fastify.log.error(error);
+  
+  const statusCode = error.statusCode || 500;
+  const isDev = process.env.NODE_ENV === 'development';
+  
+  reply.status(statusCode).send({
+    error: isDev ? error.message : 'Internal server error',
+    message: isDev ? error.message : 'Internal server error',
+    details: isDev ? error.stack : undefined,
+    statusCode
+  });
+});
 
 // Register routes
 fastify.register(authRoutes, { prefix: '/api/auth' });
@@ -98,6 +107,19 @@ fastify.register(withdrawalRoutes, { prefix: '/api/withdrawals' });
 fastify.register(wishlistRoutes, { prefix: '/api/wishlist' });
 fastify.register(bookmarkRoutes, { prefix: '/api/bookmarks' });
 
+// Error handling for uncaught exceptions
+process.on('uncaughtException', (error) => {
+  console.error('💥 Uncaught Exception:', error);
+  // Optional: Graceful shutdown
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('💥 Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+// Add Socket.IO decorator
+fastify.decorate('io', null);
+
 // Setup WebSocket
 setupWebSocket(fastify);
 
@@ -116,6 +138,9 @@ fastify.get('/api/health', async () => {
 // Start server
 const start = async () => {
   try {
+    // Connect to database before starting server
+    await connectDB();
+    
     await fastify.listen({ port: PORT, host: '0.0.0.0' });
     console.log(`🚀 Server running on http://localhost:${PORT}`);
   } catch (err) {

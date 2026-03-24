@@ -149,12 +149,15 @@ export async function shippingZoneRoutes(fastify: FastifyInstance) {
       await zone.save();
 
       reply.code(201).send(zone);
-    } catch (error) {
-      if (error && typeof error === 'object' && 'code' in error && error.code === 11000) {
+    } catch (error: any) {
+      if (error && typeof error === 'object' && error.code === 11000) {
         reply.code(409).send({ error: 'A shipping zone with this name already exists for this vendor/store' });
+      } else if (error.name === 'ValidationError') {
+        const messages = Object.values(error.errors).map((err: any) => err.message);
+        reply.code(400).send({ error: 'Validation failed', details: messages });
       } else {
         fastify.log.error(error);
-        reply.code(500).send({ error: 'Internal server error' });
+        reply.code(500).send({ error: 'Internal server error', message: error.message });
       }
     }
   });
@@ -212,12 +215,15 @@ export async function shippingZoneRoutes(fastify: FastifyInstance) {
       await zone.save();
 
       reply.send(zone);
-    } catch (error) {
-      if (error && typeof error === 'object' && 'code' in error && error.code === 11000) {
+    } catch (error: any) {
+      if (error && typeof error === 'object' && error.code === 11000) {
         reply.code(409).send({ error: 'A shipping zone with this name already exists for this vendor/store' });
+      } else if (error.name === 'ValidationError') {
+        const messages = Object.values(error.errors).map((err: any) => err.message);
+        reply.code(400).send({ error: 'Validation failed', details: messages });
       } else {
         fastify.log.error(error);
-        reply.code(500).send({ error: 'Internal server error' });
+        reply.code(500).send({ error: 'Internal server error', message: error.message });
       }
     }
   });
@@ -269,8 +275,10 @@ export async function shippingZoneRoutes(fastify: FastifyInstance) {
         return reply.code(400).send({ error: 'Shipping zone is not active' });
       }
 
-      // Check if country is in the zone
-      if (zone.countries.length > 0 && !zone.countries.includes(country_code?.toUpperCase())) {
+      // Check if country is in the zone or it's a worldwide zone
+      if (zone.countries.length > 0 && 
+          !zone.countries.includes(country_code?.toUpperCase()) && 
+          !zone.countries.includes('WORLD')) {
         return reply.code(400).send({ error: 'Country not covered by this shipping zone' });
       }
 
@@ -305,7 +313,7 @@ export async function shippingZoneRoutes(fastify: FastifyInstance) {
       const filter: any = {
         is_active: true,
         $or: [
-          { countries: { $in: [countryCode.toUpperCase()] } },
+          { countries: { $in: [countryCode.toUpperCase(), 'WORLD'] } },
           { countries: { $size: 0 } } // Empty countries array means worldwide
         ]
       };

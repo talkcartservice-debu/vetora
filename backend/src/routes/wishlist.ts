@@ -45,9 +45,12 @@ export async function wishlistRoutes(fastify: FastifyInstance) {
           hasMore: total > parseInt(skip) + parseInt(limit)
         }
       });
-    } catch (error) {
+    } catch (error: any) {
       fastify.log.error(error);
-      reply.code(500).send({ error: 'Internal server error' });
+      return reply.code(500).send({ 
+        error: 'Internal server error', 
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      });
     }
   });
 
@@ -69,9 +72,12 @@ export async function wishlistRoutes(fastify: FastifyInstance) {
         in_wishlist: !!item,
         item: item || null
       });
-    } catch (error) {
+    } catch (error: any) {
       fastify.log.error(error);
-      reply.code(500).send({ error: 'Internal server error' });
+      return reply.code(500).send({ 
+        error: 'Internal server error', 
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      });
     }
   });
 
@@ -143,9 +149,12 @@ export async function wishlistRoutes(fastify: FastifyInstance) {
       }
 
       reply.send({ message: 'Product removed from wishlist successfully' });
-    } catch (error) {
+    } catch (error: any) {
       fastify.log.error(error);
-      reply.code(500).send({ error: 'Internal server error' });
+      return reply.code(500).send({ 
+        error: 'Internal server error', 
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      });
     }
   });
 
@@ -186,9 +195,12 @@ export async function wishlistRoutes(fastify: FastifyInstance) {
       await item.save();
 
       reply.send(item);
-    } catch (error) {
+    } catch (error: any) {
       fastify.log.error(error);
-      reply.code(500).send({ error: 'Internal server error' });
+      return reply.code(500).send({ 
+        error: 'Internal server error', 
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      });
     }
   });
 
@@ -239,9 +251,12 @@ export async function wishlistRoutes(fastify: FastifyInstance) {
         avg_price: Math.round(result.avg_price * 100) / 100,
         store_breakdown: storeBreakdown
       });
-    } catch (error) {
+    } catch (error: any) {
       fastify.log.error(error);
-      reply.code(500).send({ error: 'Internal server error' });
+      return reply.code(500).send({ 
+        error: 'Internal server error', 
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      });
     }
   });
 
@@ -296,9 +311,12 @@ export async function wishlistRoutes(fastify: FastifyInstance) {
         results,
         errors
       });
-    } catch (error) {
+    } catch (error: any) {
       fastify.log.error(error);
-      reply.code(500).send({ error: 'Internal server error' });
+      return reply.code(500).send({ 
+        error: 'Internal server error', 
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      });
     }
   });
 
@@ -315,9 +333,12 @@ export async function wishlistRoutes(fastify: FastifyInstance) {
         message: 'Wishlist cleared successfully',
         deleted_count: result.deletedCount
       });
-    } catch (error) {
+    } catch (error: any) {
       fastify.log.error(error);
-      reply.code(500).send({ error: 'Internal server error' });
+      return reply.code(500).send({ 
+        error: 'Internal server error', 
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      });
     }
   });
 
@@ -345,9 +366,12 @@ export async function wishlistRoutes(fastify: FastifyInstance) {
       ]);
 
       reply.send({ popular_items: popular });
-    } catch (error) {
+    } catch (error: any) {
       fastify.log.error(error);
-      reply.code(500).send({ error: 'Internal server error' });
+      return reply.code(500).send({ 
+        error: 'Internal server error', 
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      });
     }
   });
 }

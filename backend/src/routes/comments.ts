@@ -41,8 +41,10 @@ export async function commentRoutes(fastify: FastifyInstance) {
         .find(filter)
         .sort(sortObj)
         .limit(parseInt(limit))
-        .skip(parseInt(skip))
-        .populate('post_id', 'title author_email');
+        .skip(parseInt(skip));
+
+      // post_id is a string, so we can't use .populate()
+      // If we need post info, we would need to fetch it separately.
 
       const total = await Comment.countDocuments(filter);
 
@@ -66,8 +68,7 @@ export async function commentRoutes(fastify: FastifyInstance) {
     try {
       const { id } = request.params as { id: string };
 
-      const comment = await Comment.findById(id)
-        .populate('post_id', 'title author_email');
+      const comment = await Comment.findById(id);
 
       if (!comment) {
         return reply.code(404).send({ error: 'Comment not found' });
@@ -114,9 +115,6 @@ export async function commentRoutes(fastify: FastifyInstance) {
 
       await comment.save();
 
-      // Populate the post info
-      await comment.populate('post_id', 'title author_email');
-
       // Emit real-time event
       fastify.io?.emit('comment:created', {
         comment: comment.toObject(),
@@ -160,9 +158,6 @@ export async function commentRoutes(fastify: FastifyInstance) {
       });
 
       await comment.save();
-
-      // Populate the post info
-      await comment.populate('post_id', 'title author_email');
 
       // Emit real-time event
       fastify.io?.emit('comment:updated', {
@@ -255,8 +250,7 @@ export async function commentRoutes(fastify: FastifyInstance) {
     try {
       const { id } = request.params as { id: string };
 
-      const comment = await Comment.findById(id)
-        .populate('post_id', 'title author_email');
+      const comment = await Comment.findById(id);
 
       if (!comment) {
         return reply.code(404).send({ error: 'Comment not found' });
