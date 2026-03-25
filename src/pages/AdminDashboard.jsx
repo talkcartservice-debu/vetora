@@ -42,8 +42,24 @@ import {
   RefreshCw,
   MoreVertical,
   ShieldAlert,
-  Settings as SettingsIcon
+  ShieldCheck as ShieldCheckIcon,
+  Flag,
+  History,
+  Settings as SettingsIcon,
+  Percent,
+  Wallet
 } from 'lucide-react';
+import { 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip as RechartsTooltip, 
+  ResponsiveContainer,
+  LineChart,
+  Line
+} from 'recharts';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -79,10 +95,21 @@ const AdminDashboard = () => {
   const [withdrawals, setWithdrawals] = useState([]);
   const [withdrawalLoading, setWithdrawalLoading] = useState(false);
 
+  // Reports State
+  const [reports, setReports] = useState([]);
+  const [reportsLoading, setReportsLoading] = useState(false);
+
+  // Activity Logs State
+  const [activityLogs, setActivityLogs] = useState([]);
+  const [activityLogsLoading, setActivityLogsLoading] = useState(false);
+
   // Settings State
   const [settings, setSettings] = useState({
     maintenance_mode: false,
-    maintenance_message: ''
+    maintenance_message: '',
+    allow_registration: true,
+    min_withdrawal_amount: 10,
+    platform_fee_percent: 5
   });
   const [settingsLoading, setSettingsLoading] = useState(false);
 
@@ -175,11 +202,45 @@ const AdminDashboard = () => {
     }
   };
 
+  const fetchReports = async () => {
+    try {
+      setReportsLoading(true);
+      const data = await adminAPI.getReports();
+      setReports(data.reports);
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to fetch reports',
+        variant: 'destructive',
+      });
+    } finally {
+      setReportsLoading(false);
+    }
+  };
+
+  const fetchActivityLogs = async () => {
+    try {
+      setActivityLogsLoading(true);
+      const data = await adminAPI.getActivityLogs();
+      setActivityLogs(data.logs);
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to fetch activity logs',
+        variant: 'destructive',
+      });
+    } finally {
+      setActivityLogsLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (activeTab === 'users') fetchUsers();
     if (activeTab === 'stores') fetchStores();
     if (activeTab === 'orders') fetchOrders();
     if (activeTab === 'withdrawals') fetchWithdrawals();
+    if (activeTab === 'moderation') fetchReports();
+    if (activeTab === 'logs') fetchActivityLogs();
   }, [activeTab]);
 
   const handleBlockUser = async (userId, isBlocked) => {
@@ -233,6 +294,23 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleResolveReport = async (id, status) => {
+    try {
+      await adminAPI.resolveReport(id, status);
+      toast({
+        title: 'Success',
+        description: `Report ${status}`,
+      });
+      fetchReports();
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to resolve report',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const handleUpdateSettings = async (data) => {
     try {
       setSettingsLoading(true);
@@ -277,7 +355,7 @@ const AdminDashboard = () => {
         </Button>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Users</CardTitle>
@@ -310,6 +388,16 @@ const AdminDashboard = () => {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Pending Reports</CardTitle>
+            <Flag className="h-4 w-4 text-orange-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats?.counts?.reports?.pending || 0}</div>
+            <p className="text-xs text-muted-foreground">Reports to review</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Sales</CardTitle>
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
@@ -321,16 +409,72 @@ const AdminDashboard = () => {
       </div>
 
       <Tabs defaultValue="overview" className="space-y-4" onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-6 lg:w-[900px]">
+        <TabsList className="grid w-full grid-cols-8 lg:w-[1100px]">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="users">Users</TabsTrigger>
           <TabsTrigger value="stores">Stores</TabsTrigger>
+          <TabsTrigger value="moderation">Moderation</TabsTrigger>
           <TabsTrigger value="orders">Orders</TabsTrigger>
           <TabsTrigger value="withdrawals">Withdrawals</TabsTrigger>
+          <TabsTrigger value="logs">Activity Logs</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+            <Card className="col-span-4">
+              <CardHeader>
+                <CardTitle>Sales Overview (Last 7 Days)</CardTitle>
+                <CardDescription>Revenue trends across the platform.</CardDescription>
+              </CardHeader>
+              <CardContent className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={stats?.charts?.sales || []}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                    <XAxis 
+                      dataKey="_id" 
+                      tickFormatter={(val) => new Date(val).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                    />
+                    <YAxis />
+                    <RechartsTooltip 
+                      labelFormatter={(val) => new Date(val).toLocaleDateString()}
+                      formatter={(val) => [`$${val}`, 'Sales']}
+                    />
+                    <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+            <Card className="col-span-3">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <History className="w-4 h-4" />
+                  Recent Admin Activity
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {stats?.recent?.activity?.map((log) => (
+                    <div key={log._id} className="flex flex-col border-b pb-2 last:border-0">
+                      <div className="flex justify-between items-start">
+                        <span className="text-sm font-medium">{log.user_id?.display_name || 'Admin'}</span>
+                        <span className="text-[10px] text-muted-foreground">
+                          {new Date(log.created_at).toLocaleString()}
+                        </span>
+                      </div>
+                      <span className="text-xs text-muted-foreground capitalize">
+                        {log.action.replace(/_/g, ' ')} 
+                        {log.target_type && ` on ${log.target_type}`}
+                      </span>
+                    </div>
+                  ))}
+                  {(!stats?.recent?.activity || stats?.recent?.activity.length === 0) && (
+                    <p className="text-sm text-muted-foreground text-center py-4">No recent activity</p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
             <Card className="col-span-4">
               <CardHeader>
@@ -674,6 +818,116 @@ const AdminDashboard = () => {
           </Card>
         </TabsContent>
 
+        <TabsContent value="moderation" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Moderation Queue</CardTitle>
+              <CardDescription>Review and resolve user-reported content.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Reason</TableHead>
+                    <TableHead>Reporter</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {reports.map((r) => (
+                    <TableRow key={r._id}>
+                      <TableCell>
+                        <Badge variant="outline" className="capitalize">{r.target_type}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="max-w-[200px] truncate font-medium" title={r.description}>
+                          {r.reason}
+                        </div>
+                      </TableCell>
+                      <TableCell>{r.reporter_id?.display_name || 'System'}</TableCell>
+                      <TableCell>
+                        <Badge variant={
+                          r.status === 'resolved' ? 'success' : 
+                          r.status === 'dismissed' ? 'secondary' : 'warning'
+                        }>
+                          {r.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{new Date(r.created_at).toLocaleDateString()}</TableCell>
+                      <TableCell className="text-right">
+                        {r.status === 'pending' && (
+                          <div className="flex justify-end gap-2">
+                            <Button size="sm" variant="outline" className="text-success h-8" onClick={() => handleResolveReport(r._id, 'resolved')}>
+                              <ShieldCheckIcon className="w-4 h-4 mr-1" /> Resolve
+                            </Button>
+                            <Button size="sm" variant="outline" className="text-muted-foreground h-8" onClick={() => handleResolveReport(r._id, 'dismissed')}>
+                              Dismiss
+                            </Button>
+                          </div>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {reports.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                        No reports found
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="logs" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>System Activity Logs</CardTitle>
+              <CardDescription>Full audit trail of administrative actions.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Admin</TableHead>
+                    <TableHead>Action</TableHead>
+                    <TableHead>Target</TableHead>
+                    <TableHead>IP Address</TableHead>
+                    <TableHead>Date</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {activityLogs.map((log) => (
+                    <TableRow key={log._id}>
+                      <TableCell>
+                        <div className="font-medium">{log.user_id?.display_name}</div>
+                        <div className="text-[10px] text-muted-foreground">{log.user_id?.email}</div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="capitalize">
+                          {log.action.replace(/_/g, ' ')}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-xs">{log.target_type || '-'}</span>
+                      </TableCell>
+                      <TableCell className="font-mono text-xs">{log.ip_address || 'Internal'}</TableCell>
+                      <TableCell className="text-xs">
+                        {new Date(log.created_at).toLocaleString()}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="settings" className="space-y-4">
           <Card>
             <CardHeader>
@@ -683,41 +937,106 @@ const AdminDashboard = () => {
               </CardTitle>
               <CardDescription>Manage global platform configurations.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="flex items-center justify-between space-x-2 border p-4 rounded-lg bg-slate-50/50">
-                <div className="flex flex-col space-y-1">
-                  <Label htmlFor="maintenance-mode" className="text-base flex items-center gap-2">
-                    <ShieldAlert className="w-4 h-4 text-orange-500" />
-                    Maintenance Mode
-                  </Label>
-                  <p className="text-sm text-muted-foreground">
-                    When enabled, the platform will be inaccessible to all users except Super Admins.
-                  </p>
+            <CardContent className="space-y-8">
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Security & Access</h3>
+                <div className="flex items-center justify-between space-x-2 border p-4 rounded-lg bg-slate-50/50">
+                  <div className="flex flex-col space-y-1">
+                    <Label htmlFor="maintenance-mode" className="text-base flex items-center gap-2">
+                      <ShieldAlert className="w-4 h-4 text-orange-500" />
+                      Maintenance Mode
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      When enabled, the platform will be inaccessible to all users except Super Admins.
+                    </p>
+                  </div>
+                  <Switch
+                    id="maintenance-mode"
+                    checked={settings.maintenance_mode}
+                    onCheckedChange={(checked) => handleUpdateSettings({ maintenance_mode: checked })}
+                    disabled={settingsLoading}
+                  />
                 </div>
-                <Switch
-                  id="maintenance-mode"
-                  checked={settings.maintenance_mode}
-                  onCheckedChange={(checked) => handleUpdateSettings({ maintenance_mode: checked })}
-                  disabled={settingsLoading}
-                />
+
+                <div className="space-y-2">
+                  <Label htmlFor="maintenance-message">Maintenance Message</Label>
+                  <Textarea
+                    id="maintenance-message"
+                    placeholder="Enter the message users will see during maintenance..."
+                    value={settings.maintenance_message}
+                    onChange={(e) => setSettings({ ...settings, maintenance_message: e.target.value })}
+                    className="min-h-[100px]"
+                  />
+                  <Button 
+                    onClick={() => handleUpdateSettings({ maintenance_message: settings.maintenance_message })}
+                    disabled={settingsLoading}
+                    size="sm"
+                  >
+                    Save Message
+                  </Button>
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="maintenance-message">Maintenance Message</Label>
-                <Textarea
-                  id="maintenance-message"
-                  placeholder="Enter the message users will see during maintenance..."
-                  value={settings.maintenance_message}
-                  onChange={(e) => setSettings({ ...settings, maintenance_message: e.target.value })}
-                  className="min-h-[100px]"
-                />
-                <Button 
-                  onClick={() => handleUpdateSettings({ maintenance_message: settings.maintenance_message })}
-                  disabled={settingsLoading}
-                  size="sm"
-                >
-                  Save Message
-                </Button>
+              <div className="space-y-4 pt-4 border-t">
+                <h3 className="text-lg font-semibold">Platform Policies</h3>
+                <div className="grid gap-6 md:grid-cols-2">
+                  <div className="flex items-center justify-between space-x-2 border p-4 rounded-lg bg-slate-50/50">
+                    <div className="flex flex-col space-y-1">
+                      <Label htmlFor="allow-reg" className="text-base">User Registration</Label>
+                      <p className="text-xs text-muted-foreground">Allow new users to sign up</p>
+                    </div>
+                    <Switch
+                      id="allow-reg"
+                      checked={settings.allow_registration}
+                      onCheckedChange={(checked) => handleUpdateSettings({ allow_registration: checked })}
+                      disabled={settingsLoading}
+                    />
+                  </div>
+
+                  <div className="space-y-2 border p-4 rounded-lg bg-slate-50/50">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Wallet className="w-4 h-4 text-indigo-500" />
+                      <Label htmlFor="min-withdrawal">Min Withdrawal ($)</Label>
+                    </div>
+                    <div className="flex gap-2">
+                      <Input
+                        id="min-withdrawal"
+                        type="number"
+                        value={settings.min_withdrawal_amount}
+                        onChange={(e) => setSettings({ ...settings, min_withdrawal_amount: parseFloat(e.target.value) })}
+                      />
+                      <Button 
+                        size="sm" 
+                        onClick={() => handleUpdateSettings({ min_withdrawal_amount: settings.min_withdrawal_amount })}
+                        disabled={settingsLoading}
+                      >
+                        Update
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2 border p-4 rounded-lg bg-slate-50/50">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Percent className="w-4 h-4 text-emerald-500" />
+                      <Label htmlFor="fee-percent">Platform Fee (%)</Label>
+                    </div>
+                    <div className="flex gap-2">
+                      <Input
+                        id="fee-percent"
+                        type="number"
+                        value={settings.platform_fee_percent}
+                        onChange={(e) => setSettings({ ...settings, platform_fee_percent: parseFloat(e.target.value) })}
+                      />
+                      <Button 
+                        size="sm" 
+                        onClick={() => handleUpdateSettings({ platform_fee_percent: settings.platform_fee_percent })}
+                        disabled={settingsLoading}
+                      >
+                        Update
+                      </Button>
+                    </div>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>

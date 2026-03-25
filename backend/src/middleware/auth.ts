@@ -1,5 +1,6 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { Settings } from '../models/Settings';
+import { ActivityLog } from '../models/ActivityLog';
 
 export async function authenticate(request: FastifyRequest, reply: FastifyReply) {
   try {
@@ -17,6 +18,24 @@ export async function isAdmin(request: FastifyRequest, reply: FastifyReply) {
     }
   } catch (err) {
     return reply.code(401).send({ error: 'Unauthorized' });
+  }
+}
+
+export async function logActivity(request: FastifyRequest, action: string, targetId?: any, targetType?: string, metadata?: any) {
+  try {
+    const user = request.user as any;
+    if (!user) return;
+
+    await ActivityLog.create({
+      user_id: user._id,
+      action,
+      target_id: targetId,
+      target_type: targetType,
+      metadata,
+      ip_address: request.ip
+    });
+  } catch (err) {
+    console.error('Failed to log activity:', err);
   }
 }
 

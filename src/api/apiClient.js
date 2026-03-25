@@ -416,6 +416,17 @@ export const adminAPI = {
   updateWithdrawalStatus: (id, status, notes) => apiClient.patch(`/admin/withdrawals/${id}/status`, { status, notes }),
   // Settings
   updateSettings: (data) => apiClient.patch('/admin/settings', data),
+  // Reports
+  getReports: (params) => {
+    const query = apiClient.buildQueryString(params);
+    return apiClient.get(`/admin/reports?${query}`);
+  },
+  resolveReport: (id, status, admin_notes) => apiClient.patch(`/admin/reports/${id}/resolve`, { status, admin_notes }),
+  // Activity Logs
+  getActivityLogs: (params) => {
+    const query = apiClient.buildQueryString(params);
+    return apiClient.get(`/admin/activity-logs?${query}`);
+  },
 };
 
 export const shippingZonesAPI = {
