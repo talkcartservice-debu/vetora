@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/AuthContext';
-import { adminAPI } from '@/api/apiClient';
+import { adminAPI, vendorSubscriptionsAPI } from '@/api/apiClient';
 import { useToast } from '@/components/ui/use-toast';
 import { 
   Card, 
@@ -47,8 +47,28 @@ import {
   History,
   Settings as SettingsIcon,
   Percent,
-  Wallet
+  Wallet,
+  Eye,
+  Info,
+  ChevronRight,
+  Filter
 } from 'lucide-react';
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { 
   BarChart, 
   Bar, 
@@ -69,6 +89,114 @@ import {
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
 
+const StoreDetailsModal = ({ store, isOpen, onOpenChange, onUpdateStatus, onUpdateVerification }) => {
+  if (!store) return null;
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-2xl flex items-center gap-2">
+            {store.name}
+            {store.is_verified && <ShieldCheckIcon className="w-5 h-5 text-blue-500" />}
+          </DialogTitle>
+          <DialogDescription>
+            Store ID: {store._id}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
+          <div className="space-y-4">
+            <div>
+              <Label className="text-muted-foreground">Owner Information</Label>
+              <div className="mt-1 font-medium">{store.owner_email}</div>
+            </div>
+            <div>
+              <Label className="text-muted-foreground">Status</Label>
+              <div className="mt-1">
+                <Badge variant={store.status === 'active' ? 'success' : store.status === 'pending' ? 'warning' : 'destructive'}>
+                  {store.status}
+                </Badge>
+              </div>
+            </div>
+            <div>
+              <Label className="text-muted-foreground">Joined At</Label>
+              <div className="mt-1">{new Date(store.created_at).toLocaleDateString()}</div>
+            </div>
+            <div>
+              <Label className="text-muted-foreground">Description</Label>
+              <div className="mt-1 text-sm">{store.description || 'No description provided.'}</div>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div className="bg-muted p-4 rounded-lg">
+              <h4 className="font-semibold mb-2">Store Metrics</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <div className="text-xs text-muted-foreground uppercase">Orders</div>
+                  <div className="text-xl font-bold">{store.orders_count || 0}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground uppercase">Products</div>
+                  <div className="text-xl font-bold">{store.products_count || 0}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground uppercase">Revenue</div>
+                  <div className="text-xl font-bold text-success">${store.total_revenue || 0}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground uppercase">Rating</div>
+                  <div className="text-xl font-bold">{store.rating || 'N/A'}</div>
+                </div>
+              </div>
+            </div>
+
+            {store.logo && (
+              <div>
+                <Label className="text-muted-foreground">Store Logo</Label>
+                <img 
+                  src={store.logo} 
+                  alt={store.name} 
+                  className="mt-2 w-24 h-24 object-cover rounded-md border"
+                />
+              </div>
+            )}
+          </div>
+        </div>
+
+        <DialogFooter className="flex flex-col sm:flex-row gap-2 border-t pt-4 mt-4">
+          <div className="flex-1 flex gap-2">
+            {store.status !== 'active' && (
+              <Button 
+                onClick={() => onUpdateStatus(store._id, 'active')}
+                className="bg-success hover:bg-success/90"
+              >
+                Approve Store
+              </Button>
+            )}
+            {store.status !== 'suspended' && (
+              <Button 
+                variant="destructive"
+                onClick={() => onUpdateStatus(store._id, 'suspended')}
+              >
+                Suspend Store
+              </Button>
+            )}
+          </div>
+          <Button 
+            variant="outline"
+            onClick={() => onUpdateVerification(store._id, !store.is_verified)}
+          >
+            {store.is_verified ? 'Remove Verification' : 'Verify Store'}
+          </Button>
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>Close</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 const AdminDashboard = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -84,7 +212,10 @@ const AdminDashboard = () => {
   // Stores State
   const [stores, setStores] = useState([]);
   const [storeSearch, setStoreSearch] = useState('');
+  const [storeFilter, setStoreFilter] = useState('all');
   const [storeLoading, setStoreLoading] = useState(false);
+  const [selectedStore, setSelectedStore] = useState(null);
+  const [isStoreModalOpen, setIsStoreModalOpen] = useState(false);
 
   // Orders State
   const [orders, setOrders] = useState([]);
@@ -94,14 +225,27 @@ const AdminDashboard = () => {
   // Withdrawals State
   const [withdrawals, setWithdrawals] = useState([]);
   const [withdrawalLoading, setWithdrawalLoading] = useState(false);
+  const [selectedWithdrawal, setSelectedWithdrawal] = useState(null);
+  const [withdrawalNotes, setWithdrawalNotes] = useState('');
+  const [isWithdrawalModalOpen, setIsWithdrawalModalOpen] = useState(false);
+  const [withdrawalAction, setWithdrawalAction] = useState('completed'); // or 'rejected'
 
   // Reports State
   const [reports, setReports] = useState([]);
   const [reportsLoading, setReportsLoading] = useState(false);
+  const [selectedReport, setSelectedReport] = useState(null);
+  const [reportNotes, setReportNotes] = useState('');
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [reportAction, setReportAction] = useState('resolved'); // or 'dismissed'
 
   // Activity Logs State
   const [activityLogs, setActivityLogs] = useState([]);
   const [activityLogsLoading, setActivityLogsLoading] = useState(false);
+
+  // Subscriptions State
+  const [subscriptions, setSubscriptions] = useState([]);
+  const [subscriptionsLoading, setSubscriptionsLoading] = useState(false);
+  const [subscriptionSearch, setSubscriptionSearch] = useState('');
 
   // Settings State
   const [settings, setSettings] = useState({
@@ -157,7 +301,10 @@ const AdminDashboard = () => {
   const fetchStores = async () => {
     try {
       setStoreLoading(true);
-      const data = await adminAPI.getStores({ search: storeSearch });
+      const data = await adminAPI.getStores({ 
+        search: storeSearch,
+        status: storeFilter === 'all' ? undefined : storeFilter
+      });
       setStores(data.stores);
     } catch (error) {
       toast({
@@ -235,12 +382,33 @@ const AdminDashboard = () => {
   };
 
   useEffect(() => {
+    if (activeTab === 'stores') fetchStores();
+  }, [storeFilter]);
+
+  const fetchSubscriptions = async () => {
+    try {
+      setSubscriptionsLoading(true);
+      const data = await vendorSubscriptionsAPI.list({ search: subscriptionSearch });
+      setSubscriptions(data.subscriptions || []);
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to fetch subscriptions',
+        variant: 'destructive',
+      });
+    } finally {
+      setSubscriptionsLoading(false);
+    }
+  };
+
+  useEffect(() => {
     if (activeTab === 'users') fetchUsers();
     if (activeTab === 'stores') fetchStores();
     if (activeTab === 'orders') fetchOrders();
     if (activeTab === 'withdrawals') fetchWithdrawals();
     if (activeTab === 'moderation') fetchReports();
     if (activeTab === 'logs') fetchActivityLogs();
+    if (activeTab === 'subscriptions') fetchSubscriptions();
   }, [activeTab]);
 
   const handleBlockUser = async (userId, isBlocked) => {
@@ -268,6 +436,9 @@ const AdminDashboard = () => {
         description: `Store status updated to ${status}`,
       });
       fetchStores();
+      if (selectedStore?._id === storeId) {
+        setIsStoreModalOpen(false);
+      }
     } catch (error) {
       toast({
         title: 'Error',
@@ -277,14 +448,36 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleWithdrawalStatus = async (id, status) => {
+  const handleUpdateStoreVerification = async (storeId, isVerified) => {
     try {
-      await adminAPI.updateWithdrawalStatus(id, status);
+      await adminAPI.updateStoreVerification(storeId, isVerified);
+      toast({
+        title: 'Success',
+        description: `Store verification ${isVerified ? 'enabled' : 'disabled'}`,
+      });
+      fetchStores();
+      if (selectedStore?._id === storeId) {
+        setIsStoreModalOpen(false);
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update store verification',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleWithdrawalStatus = async (id, status, notes = '') => {
+    try {
+      await adminAPI.updateWithdrawalStatus(id, status, notes);
       toast({
         title: 'Success',
         description: `Withdrawal ${status}`,
       });
       fetchWithdrawals();
+      setIsWithdrawalModalOpen(false);
+      setWithdrawalNotes('');
     } catch (error) {
       toast({
         title: 'Error',
@@ -294,14 +487,16 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleResolveReport = async (id, status) => {
+  const handleResolveReport = async (id, status, notes = '') => {
     try {
-      await adminAPI.resolveReport(id, status);
+      await adminAPI.resolveReport(id, status, notes);
       toast({
         title: 'Success',
         description: `Report ${status}`,
       });
       fetchReports();
+      setIsReportModalOpen(false);
+      setReportNotes('');
     } catch (error) {
       toast({
         title: 'Error',
@@ -409,10 +604,11 @@ const AdminDashboard = () => {
       </div>
 
       <Tabs defaultValue="overview" className="space-y-4" onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-8 lg:w-[1100px]">
+        <TabsList className="grid w-full grid-cols-9 lg:w-[1150px]">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="users">Users</TabsTrigger>
           <TabsTrigger value="stores">Stores</TabsTrigger>
+          <TabsTrigger value="subscriptions">Subscriptions</TabsTrigger>
           <TabsTrigger value="moderation">Moderation</TabsTrigger>
           <TabsTrigger value="orders">Orders</TabsTrigger>
           <TabsTrigger value="withdrawals">Withdrawals</TabsTrigger>
@@ -617,23 +813,37 @@ const AdminDashboard = () => {
         <TabsContent value="stores" className="space-y-4">
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                   <CardTitle>Store Management</CardTitle>
                   <CardDescription>Approve or manage vendor stores.</CardDescription>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex items-center gap-2 mr-2">
+                    <Filter className="w-4 h-4 text-muted-foreground" />
+                    <Select value={storeFilter} onValueChange={setStoreFilter}>
+                      <SelectTrigger className="w-[130px] h-9">
+                        <SelectValue placeholder="Status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Status</SelectItem>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="suspended">Suspended</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                   <div className="relative">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
-                      placeholder="Search store name..."
-                      className="pl-8 w-[250px]"
+                      placeholder="Search name or owner email..."
+                      className="pl-8 w-[200px] h-9"
                       value={storeSearch}
                       onChange={(e) => setStoreSearch(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && fetchStores()}
                     />
                   </div>
-                  <Button onClick={fetchStores} disabled={storeLoading} size="sm">
+                  <Button onClick={fetchStores} disabled={storeLoading} size="sm" className="h-9">
                     Search
                   </Button>
                 </div>
@@ -647,59 +857,97 @@ const AdminDashboard = () => {
                     <TableHead>Owner</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Verified</TableHead>
+                    <TableHead>Stats</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {stores.map((s) => (
-                    <TableRow key={s._id}>
-                      <TableCell className="font-medium">{s.name}</TableCell>
-                      <TableCell>{s.owner_email}</TableCell>
-                      <TableCell>
-                        <Badge variant={s.status === 'active' ? 'success' : s.status === 'pending' ? 'warning' : 'destructive'}>
-                          {s.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {s.is_verified ? (
-                          <Badge variant="success">Yes</Badge>
-                        ) : (
-                          <Badge variant="outline">No</Badge>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Status</DropdownMenuLabel>
-                            <DropdownMenuItem onClick={() => handleUpdateStoreStatus(s._id, 'active')}>
-                              Set Active
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleUpdateStoreStatus(s._id, 'suspended')}>
-                              Suspend
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => {
-                              adminAPI.updateStoreVerification(s._id, !s.is_verified).then(() => {
-                                toast({ title: 'Success', description: 'Verification updated' });
-                                fetchStores();
-                              });
-                            }}>
-                              {s.is_verified ? 'Remove Verification' : 'Verify Store'}
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                  {stores.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                        No stores found.
                       </TableCell>
                     </TableRow>
-                  ))}
+                  ) : (
+                    stores.map((s) => (
+                      <TableRow key={s._id}>
+                        <TableCell className="font-medium">
+                          <div className="flex flex-col">
+                            <span>{s.name}</span>
+                            <span className="text-xs text-muted-foreground font-normal">ID: {s._id.substring(0, 8)}...</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="max-w-[150px] truncate">{s.owner_email}</TableCell>
+                        <TableCell>
+                          <Badge variant={s.status === 'active' ? 'success' : s.status === 'pending' ? 'warning' : 'destructive'}>
+                            {s.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {s.is_verified ? (
+                            <Badge variant="success" className="bg-blue-500 hover:bg-blue-600">Verified</Badge>
+                          ) : (
+                            <Badge variant="outline">Unverified</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col text-xs">
+                            <span>Products: {s.products_count || 0}</span>
+                            <span>Orders: {s.orders_count || 0}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-8 w-8 p-0"
+                              onClick={() => {
+                                setSelectedStore(s);
+                                setIsStoreModalOpen(true);
+                              }}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuLabel>Manage Store</DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={() => handleUpdateStoreStatus(s._id, 'active')}>
+                                  <CheckCircle className="w-4 h-4 mr-2 text-success" /> Set Active
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleUpdateStoreStatus(s._id, 'suspended')}>
+                                  <AlertCircle className="w-4 h-4 mr-2 text-destructive" /> Suspend
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={() => handleUpdateStoreVerification(s._id, !s.is_verified)}>
+                                  <ShieldCheckIcon className="w-4 h-4 mr-2 text-blue-500" /> 
+                                  {s.is_verified ? 'Remove Verification' : 'Verify Store'}
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
           </Card>
+
+          <StoreDetailsModal 
+            store={selectedStore}
+            isOpen={isStoreModalOpen}
+            onOpenChange={setIsStoreModalOpen}
+            onUpdateStatus={handleUpdateStoreStatus}
+            onUpdateVerification={handleUpdateStoreVerification}
+          />
         </TabsContent>
 
         <TabsContent value="orders" className="space-y-4">
@@ -766,9 +1014,15 @@ const AdminDashboard = () => {
 
         <TabsContent value="withdrawals" className="space-y-4">
           <Card>
-            <CardHeader>
-              <CardTitle>Withdrawal Requests</CardTitle>
-              <CardDescription>Process vendor withdrawal requests.</CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0">
+              <div>
+                <CardTitle>Withdrawal Requests</CardTitle>
+                <CardDescription>Process vendor withdrawal requests.</CardDescription>
+              </div>
+              <Button onClick={fetchWithdrawals} disabled={withdrawalLoading} variant="ghost" size="sm">
+                <RefreshCw className={`h-4 w-4 mr-2 ${withdrawalLoading ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
             </CardHeader>
             <CardContent>
               <Table>
@@ -783,35 +1037,213 @@ const AdminDashboard = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {withdrawals.map((w) => (
-                    <TableRow key={w._id}>
-                      <TableCell>{w.vendor_email}</TableCell>
-                      <TableCell className="font-medium">${w.amount}</TableCell>
-                      <TableCell className="capitalize">{w.payment_method.replace('_', ' ')}</TableCell>
-                      <TableCell>
-                        <Badge variant={
-                          w.status === 'completed' ? 'success' : 
-                          w.status === 'pending' ? 'warning' : 
-                          w.status === 'rejected' ? 'destructive' : 'default'
-                        }>
-                          {w.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{new Date(w.created_at).toLocaleDateString()}</TableCell>
-                      <TableCell className="text-right">
-                        {w.status === 'pending' && (
-                          <div className="flex justify-end gap-2">
-                            <Button size="sm" variant="outline" className="text-success h-8" onClick={() => handleWithdrawalStatus(w._id, 'completed')}>
-                              <CheckCircle className="w-4 h-4 mr-1" /> Approve
-                            </Button>
-                            <Button size="sm" variant="outline" className="text-destructive h-8" onClick={() => handleWithdrawalStatus(w._id, 'rejected')}>
-                              <AlertCircle className="w-4 h-4 mr-1" /> Reject
-                            </Button>
-                          </div>
-                        )}
+                  {withdrawals.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                        No withdrawal requests found.
                       </TableCell>
                     </TableRow>
-                  ))}
+                  ) : (
+                    withdrawals.map((w) => (
+                      <TableRow key={w._id}>
+                        <TableCell>
+                          <div className="flex flex-col">
+                            <span className="font-medium text-sm">{w.vendor_email}</span>
+                            {w.admin_notes && (
+                              <span className="text-xs text-muted-foreground italic truncate max-w-[200px]" title={w.admin_notes}>
+                                Note: {w.admin_notes}
+                              </span>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="font-bold text-success">${w.amount}</TableCell>
+                        <TableCell className="capitalize">
+                          <Badge variant="outline" className="font-normal">
+                            {w.payment_method?.replace('_', ' ')}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={
+                            w.status === 'completed' ? 'success' : 
+                            w.status === 'pending' ? 'warning' : 
+                            w.status === 'rejected' ? 'destructive' : 'default'
+                          }>
+                            {w.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground">
+                          {new Date(w.created_at).toLocaleDateString()}<br/>
+                          {new Date(w.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {w.status === 'pending' && (
+                            <div className="flex justify-end gap-2">
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                className="text-success border-success/20 hover:bg-success/10 h-8" 
+                                onClick={() => {
+                                  setSelectedWithdrawal(w);
+                                  setWithdrawalAction('completed');
+                                  setIsWithdrawalModalOpen(true);
+                                }}
+                              >
+                                <CheckCircle className="w-4 h-4 mr-1" /> Approve
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                className="text-destructive border-destructive/20 hover:bg-destructive/10 h-8" 
+                                onClick={() => {
+                                  setSelectedWithdrawal(w);
+                                  setWithdrawalAction('rejected');
+                                  setIsWithdrawalModalOpen(true);
+                                }}
+                              >
+                                <AlertCircle className="w-4 h-4 mr-1" /> Reject
+                              </Button>
+                            </div>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+
+          <Dialog open={isWithdrawalModalOpen} onOpenChange={setIsWithdrawalModalOpen}>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>{withdrawalAction === 'completed' ? 'Approve' : 'Reject'} Withdrawal</DialogTitle>
+                <DialogDescription>
+                  Reviewing withdrawal request for {selectedWithdrawal?.vendor_email} of ${selectedWithdrawal?.amount}.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-2">
+                <div className="space-y-2">
+                  <Label htmlFor="notes">Admin Notes (Optional)</Label>
+                  <Textarea
+                    id="notes"
+                    placeholder={withdrawalAction === 'completed' ? 'e.g. Transaction processed via Bank Transfer' : 'e.g. Invalid payment information provided'}
+                    value={withdrawalNotes}
+                    onChange={(e) => setWithdrawalNotes(e.target.value)}
+                    className="h-24"
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="ghost" onClick={() => setIsWithdrawalModalOpen(false)}>Cancel</Button>
+                <Button 
+                  variant={withdrawalAction === 'completed' ? 'success' : 'destructive'}
+                  onClick={() => handleWithdrawalStatus(selectedWithdrawal?._id, withdrawalAction, withdrawalNotes)}
+                >
+                  Confirm {withdrawalAction === 'completed' ? 'Approval' : 'Rejection'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </TabsContent>
+
+        <TabsContent value="subscriptions" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                  <CardTitle>Vendor Subscriptions</CardTitle>
+                  <CardDescription>Manage vendor subscription plans and status.</CardDescription>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search vendor or store..."
+                      className="pl-8 w-[250px] h-9"
+                      value={subscriptionSearch}
+                      onChange={(e) => setSubscriptionSearch(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && fetchSubscriptions()}
+                    />
+                  </div>
+                  <Button onClick={fetchSubscriptions} disabled={subscriptionsLoading} size="sm" className="h-9">
+                    Search
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Vendor / Store</TableHead>
+                    <TableHead>Plan</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Expires</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {subscriptions.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                        {subscriptionsLoading ? 'Loading subscriptions...' : 'No subscriptions found.'}
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    subscriptions.map((sub) => (
+                      <TableRow key={sub._id}>
+                        <TableCell>
+                          <div className="flex flex-col">
+                            <span className="font-medium">{sub.vendor_email}</span>
+                            <span className="text-xs text-muted-foreground">Store ID: {sub.store_id}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="capitalize">
+                            {sub.plan_id?.name || sub.plan_name || 'Standard'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={
+                            sub.status === 'active' ? 'success' : 
+                            sub.status === 'expired' ? 'destructive' : 
+                            sub.status === 'cancelled' ? 'secondary' : 'warning'
+                          }>
+                            {sub.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          ${sub.amount || 0}
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {sub.expires_at ? new Date(sub.expires_at).toLocaleDateString() : 'Never'}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                              <DropdownMenuItem onClick={() => {
+                                if (confirm('Are you sure you want to cancel this subscription?')) {
+                                  vendorSubscriptionsAPI.cancel(sub._id).then(() => {
+                                    toast({ title: 'Success', description: 'Subscription cancelled' });
+                                    fetchSubscriptions();
+                                  });
+                                }
+                              }}>
+                                <UserX className="w-4 h-4 mr-2" /> Cancel Subscription
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
@@ -820,9 +1252,15 @@ const AdminDashboard = () => {
 
         <TabsContent value="moderation" className="space-y-4">
           <Card>
-            <CardHeader>
-              <CardTitle>Moderation Queue</CardTitle>
-              <CardDescription>Review and resolve user-reported content.</CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0">
+              <div>
+                <CardTitle>Moderation Queue</CardTitle>
+                <CardDescription>Review and resolve user-reported content.</CardDescription>
+              </div>
+              <Button onClick={fetchReports} disabled={reportsLoading} variant="ghost" size="sm">
+                <RefreshCw className={`h-4 w-4 mr-2 ${reportsLoading ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
             </CardHeader>
             <CardContent>
               <Table>
@@ -837,51 +1275,115 @@ const AdminDashboard = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {reports.map((r) => (
-                    <TableRow key={r._id}>
-                      <TableCell>
-                        <Badge variant="outline" className="capitalize">{r.target_type}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="max-w-[200px] truncate font-medium" title={r.description}>
-                          {r.reason}
-                        </div>
-                      </TableCell>
-                      <TableCell>{r.reporter_id?.display_name || 'System'}</TableCell>
-                      <TableCell>
-                        <Badge variant={
-                          r.status === 'resolved' ? 'success' : 
-                          r.status === 'dismissed' ? 'secondary' : 'warning'
-                        }>
-                          {r.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{new Date(r.created_at).toLocaleDateString()}</TableCell>
-                      <TableCell className="text-right">
-                        {r.status === 'pending' && (
-                          <div className="flex justify-end gap-2">
-                            <Button size="sm" variant="outline" className="text-success h-8" onClick={() => handleResolveReport(r._id, 'resolved')}>
-                              <ShieldCheckIcon className="w-4 h-4 mr-1" /> Resolve
-                            </Button>
-                            <Button size="sm" variant="outline" className="text-muted-foreground h-8" onClick={() => handleResolveReport(r._id, 'dismissed')}>
-                              Dismiss
-                            </Button>
-                          </div>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {reports.length === 0 && (
+                  {reports.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                        No reports found
+                        No reports found.
                       </TableCell>
                     </TableRow>
+                  ) : (
+                    reports.map((r) => (
+                      <TableRow key={r._id}>
+                        <TableCell>
+                          <Badge variant="outline" className="capitalize">{r.target_type}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col">
+                            <span className="font-medium truncate max-w-[200px]" title={r.description}>
+                              {r.reason}
+                            </span>
+                            {r.admin_notes && (
+                              <span className="text-xs text-muted-foreground italic truncate max-w-[200px]">
+                                Admin: {r.admin_notes}
+                              </span>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {r.reporter_id?.display_name || 'System'}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={
+                            r.status === 'resolved' ? 'success' : 
+                            r.status === 'dismissed' ? 'secondary' : 'warning'
+                          }>
+                            {r.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground">
+                          {new Date(r.created_at).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {r.status === 'pending' && (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm">
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuLabel>Resolve Report</DropdownMenuLabel>
+                                <DropdownMenuItem onClick={() => {
+                                  setSelectedReport(r);
+                                  setReportAction('resolved');
+                                  setIsReportModalOpen(true);
+                                }}>
+                                  <CheckCircle className="w-4 h-4 mr-2 text-success" /> Resolve
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => {
+                                  setSelectedReport(r);
+                                  setReportAction('dismissed');
+                                  setIsReportModalOpen(true);
+                                }}>
+                                  <AlertCircle className="w-4 h-4 mr-2 text-muted-foreground" /> Dismiss
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))
                   )}
                 </TableBody>
               </Table>
             </CardContent>
           </Card>
+
+          <Dialog open={isReportModalOpen} onOpenChange={setIsReportModalOpen}>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>{reportAction === 'resolved' ? 'Resolve' : 'Dismiss'} Report</DialogTitle>
+                <DialogDescription>
+                  Provide {reportAction === 'resolved' ? 'resolution' : 'dismissal'} notes for this {selectedReport?.target_type} report.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-2">
+                <div className="p-3 bg-muted rounded-md text-sm">
+                  <div className="font-semibold">{selectedReport?.reason}</div>
+                  <div className="mt-1 text-muted-foreground">{selectedReport?.description}</div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="report-notes">Admin Notes (Optional)</Label>
+                  <Textarea
+                    id="report-notes"
+                    placeholder="Provide details about the action taken..."
+                    value={reportNotes}
+                    onChange={(e) => setReportNotes(e.target.value)}
+                    className="h-24"
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="ghost" onClick={() => setIsReportModalOpen(false)}>Cancel</Button>
+                <Button 
+                  variant={reportAction === 'resolved' ? 'success' : 'secondary'}
+                  onClick={() => handleResolveReport(selectedReport?._id, reportAction, reportNotes)}
+                >
+                  Confirm {reportAction === 'resolved' ? 'Resolution' : 'Dismissal'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </TabsContent>
 
         <TabsContent value="logs" className="space-y-4">
