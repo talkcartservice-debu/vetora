@@ -387,6 +387,37 @@ export const vendorSubscriptionsAPI = {
   getPlans: () => apiClient.get('/vendor-subscriptions/public/plans'),
 };
 
+export const adminAPI = {
+  getStats: () => apiClient.get('/admin/stats'),
+  // Users
+  getUsers: (params) => {
+    const query = apiClient.buildQueryString(params);
+    return apiClient.get(`/admin/users?${query}`);
+  },
+  updateUserBlockStatus: (id, is_blocked) => apiClient.patch(`/admin/users/${id}/block`, { is_blocked }),
+  updateUserRole: (id, role) => apiClient.patch(`/admin/users/${id}/role`, { role }),
+  // Stores
+  getStores: (params) => {
+    const query = apiClient.buildQueryString(params);
+    return apiClient.get(`/admin/stores?${query}`);
+  },
+  updateStoreStatus: (id, status) => apiClient.patch(`/admin/stores/${id}/status`, { status }),
+  updateStoreVerification: (id, is_verified) => apiClient.patch(`/admin/stores/${id}/verify`, { is_verified }),
+  // Orders
+  getOrders: (params) => {
+    const query = apiClient.buildQueryString(params);
+    return apiClient.get(`/admin/orders?${query}`);
+  },
+  // Withdrawals
+  getWithdrawals: (params) => {
+    const query = apiClient.buildQueryString(params);
+    return apiClient.get(`/admin/withdrawals?${query}`);
+  },
+  updateWithdrawalStatus: (id, status, notes) => apiClient.patch(`/admin/withdrawals/${id}/status`, { status, notes }),
+  // Settings
+  updateSettings: (data) => apiClient.patch('/admin/settings', data),
+};
+
 export const shippingZonesAPI = {
   list: (filters) => {
     const query = apiClient.buildQueryString(filters);

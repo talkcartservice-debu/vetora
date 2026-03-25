@@ -205,8 +205,8 @@ export default function GlobalSearch() {
                         {u.avatar_url ? <img src={u.avatar_url} alt="" className="w-full h-full object-cover" /> : <span className="text-white font-bold text-sm">{u.full_name?.[0]?.toUpperCase() || "U"}</span>}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-slate-800 truncate">{u.display_name || u.full_name}</p>
-                        <p className="text-xs text-slate-400 truncate">{u.email}</p>
+                        <p className="text-sm font-medium text-slate-800 truncate">{u.display_name || u.full_name || "User"}</p>
+                        <p className="text-xs text-slate-400 truncate">@{u.display_name?.replace(/\s+/g, '_').toLowerCase() || u.email?.split('@')[0]}</p>
                       </div>
                     </Link>
                   ))}

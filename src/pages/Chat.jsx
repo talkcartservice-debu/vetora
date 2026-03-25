@@ -177,12 +177,18 @@ export default function Chat() {
     const convoMap = {};
     allMsgs.forEach(msg => {
       const otherEmail = msg.sender_email === currentUser?.email ? msg.receiver_email : msg.sender_email;
-      const otherName = msg.sender_email === currentUser?.email ? msg.receiver_email : msg.sender_name;
+      let otherName = msg.sender_email === currentUser?.email ? msg.receiver_email : msg.sender_name;
+      
+      // If name is an email or missing, use handle
+      if (!otherName || otherName.includes("@")) {
+        otherName = `@${otherEmail.split("@")[0]}`;
+      }
+      
       const msgDate = msg.created_at || msg.created_date;
       if (!convoMap[otherEmail] || new Date(msgDate) > new Date(convoMap[otherEmail].lastDate)) {
         convoMap[otherEmail] = {
           email: otherEmail,
-          name: otherName || otherEmail,
+          name: otherName,
           lastMessage: msg.content,
           lastDate: msgDate,
           unread: msg.receiver_email === currentUser?.email && !msg.is_read,

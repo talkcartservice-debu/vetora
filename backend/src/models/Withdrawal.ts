@@ -34,7 +34,7 @@ const WithdrawalSchema = new Schema<IWithdrawal>({
   amount: {
     type: Number,
     required: true,
-    min: 0.01
+    min: 20
   },
   payment_method: {
     type: String,

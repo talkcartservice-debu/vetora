@@ -33,7 +33,8 @@ const Login = () => {
         setTwoFactorToken(res.two_factor_token);
         setShow2FA(true);
       } else {
-        navigate('/');
+        const redirectPath = res.user?.role === 'super_admin' ? '/AdminDashboard' : '/';
+        navigate(redirectPath);
       }
     } catch (err) {
       setError(err.message || 'Failed to login. Please check your credentials.');
@@ -48,8 +49,9 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      await verify2FA(twoFactorToken, otpToken);
-      navigate('/');
+      const res = await verify2FA(twoFactorToken, otpToken);
+      const redirectPath = res.user?.role === 'super_admin' ? '/AdminDashboard' : '/';
+      navigate(redirectPath);
     } catch (err) {
       setError(err.message || 'Invalid verification code.');
     } finally {

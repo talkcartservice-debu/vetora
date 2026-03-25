@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
 import { pagesConfig } from './pages.config'
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
@@ -18,7 +18,7 @@ const LayoutWrapper = ({ children, currentPageName }) => Layout ?
   : <>{children}</>;
 
 const AppRoutes = () => {
-  const { isLoadingAuth, isAuthenticated, authError } = useAuth();
+  const { isLoadingAuth, isAuthenticated, authError, user } = useAuth();
 
   // Show loading spinner while checking auth
   if (isLoadingAuth) {
@@ -45,6 +45,8 @@ const AppRoutes = () => {
       {/* Main app routes (with layout & auth check) */}
       <Route path="/" element={
         !isAuthenticated ? <Pages.Login /> :
+        // NOTE: This is a UX-only guard. Backend APIs must independently enforce super_admin authorization.
+        user?.role === 'super_admin' ? <Navigate to="/AdminDashboard" replace /> :
         <LayoutWrapper currentPageName={mainPageKey}>
           <MainPage />
         </LayoutWrapper>
@@ -60,6 +62,9 @@ const AppRoutes = () => {
             path={`/${path}`}
             element={
               !isAuthenticated ? <Pages.Login /> :
+              // NOTE: This is a UX-only guard. Backend APIs must independently enforce super_admin authorization.
+              user?.role === 'super_admin' && !['AdminDashboard', 'Profile', 'Chat', 'Notifications', 'Settings'].includes(path) ? 
+              <Navigate to="/AdminDashboard" replace /> :
               <LayoutWrapper currentPageName={path}>
                 <Page />
               </LayoutWrapper>
@@ -67,11 +72,6 @@ const AppRoutes = () => {
           />
         );
       })}
-      
-      <Route path="/Affiliate" element={
-        !isAuthenticated ? <Pages.Login /> :
-        <LayoutWrapper currentPageName="Affiliate"><Affiliate /></LayoutWrapper>
-      } />
       
       <Route path="*" element={<PageNotFound />} />
     </Routes>

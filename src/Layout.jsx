@@ -22,7 +22,8 @@ import {
   MapPin,
   DollarSign,
   Link2,
-  Bell
+  Bell,
+  Shield
 } from "lucide-react";
 import LanguagePicker from "@/components/layout/LanguagePicker";
 import NotificationBell from "@/components/layout/NotificationBell";
@@ -36,6 +37,16 @@ const NAV_ITEMS = [
   { name: "Live", icon: Radio, page: "Live" },
   { name: "Profile", icon: User, page: "Profile" },
 ];
+
+const ADMIN_NAV_ITEMS = [
+  { name: "Admin", icon: Shield, page: "AdminDashboard" },
+  { name: "Messages", icon: MessageCircle, page: "Chat" },
+  { name: "Notifications", icon: Bell, page: "Notifications" },
+  { name: "Settings", icon: SettingsIcon, page: "Settings" },
+  { name: "Profile", icon: User, page: "Profile" },
+];
+
+const ALLOWED_ADMIN_SIDEBAR_NAMES = ["Admin", "Profile", "Messages", "Notifications", "Settings"];
 
 const SIDEBAR_ITEMS = [
   { name: "Feed", icon: Home, page: "Home" },
@@ -55,6 +66,7 @@ const SIDEBAR_ITEMS = [
   { name: "Affiliate", icon: Link2, page: "Affiliate" },
   { name: "Notifications", icon: Bell, page: "Notifications" },
   { name: "Settings", icon: SettingsIcon, page: "Settings" },
+  { name: "Admin", icon: Shield, page: "AdminDashboard", adminOnly: true },
 ];
 
 const HIDE_LAYOUT_PAGES = [];
@@ -90,17 +102,24 @@ export default function Layout({ children, currentPageName }) {
       {/* Desktop Sidebar */}
       <aside className="hidden lg:flex fixed left-0 top-0 bottom-0 w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex-col z-40">
         <div className="p-6">
-          <Link to={createPageUrl("Home")} className="flex items-center gap-2 mb-4">
+          <Link to={createPageUrl(currentUser?.role === 'super_admin' ? "AdminDashboard" : "Home")} className="flex items-center gap-2 mb-4">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center">
               <span className="text-white font-bold text-lg">V</span>
             </div>
             <span className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">Vetora</span>
           </Link>
-          <GlobalSearch />
+          {currentUser?.role !== 'super_admin' && <GlobalSearch />}
         </div>
 
         <nav className="flex-1 px-3 space-y-1 overflow-y-auto hide-scrollbar">
           {SIDEBAR_ITEMS.map((item) => {
+            if (item.adminOnly && currentUser?.role !== 'super_admin') return null;
+            
+            // If super_admin, only show admin-specific and account-related items
+            if (currentUser?.role === 'super_admin' && !ALLOWED_ADMIN_SIDEBAR_NAMES.includes(item.name)) {
+              return null;
+            }
+            
             const isActive = currentPageName === item.page;
             return (
               <Link
@@ -129,23 +148,32 @@ export default function Layout({ children, currentPageName }) {
           })}
         </nav>
 
-        <div className="p-4 border-t border-slate-100 dark:border-slate-800 space-y-2">
-          <button
-            onClick={() => setShowCreate(true)}
-            className="flex items-center justify-center gap-2 w-full py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-medium text-sm hover:shadow-lg hover:shadow-indigo-200 dark:hover:shadow-indigo-900/40 transition-all"
-          >
-            <Plus className="w-4 h-4" />
-            Create
-          </button>
-          <div className="flex justify-center">
-            <LanguagePicker />
+        {currentUser?.role !== 'super_admin' && (
+          <div className="p-4 border-t border-slate-100 dark:border-slate-800 space-y-2">
+            <button
+              onClick={() => setShowCreate(true)}
+              className="flex items-center justify-center gap-2 w-full py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-medium text-sm hover:shadow-lg hover:shadow-indigo-200 dark:hover:shadow-indigo-900/40 transition-all"
+            >
+              <Plus className="w-4 h-4" />
+              Create
+            </button>
+            <div className="flex justify-center">
+              <LanguagePicker />
+            </div>
           </div>
-        </div>
+        )}
+        {currentUser?.role === 'super_admin' && (
+          <div className="p-4 border-t border-slate-100 dark:border-slate-800 space-y-2">
+            <div className="flex justify-center">
+              <LanguagePicker />
+            </div>
+          </div>
+        )}
       </aside>
 
       {/* Mobile Top Bar */}
       <header className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-b border-slate-200/60 dark:border-slate-800/60 flex items-center justify-between px-4 z-40">
-        <Link to={createPageUrl("Home")} className="flex items-center gap-2">
+        <Link to={createPageUrl(currentUser?.role === 'super_admin' ? "AdminDashboard" : "Home")} className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center">
             <span className="text-white font-bold text-sm">V</span>
           </div>
@@ -153,18 +181,22 @@ export default function Layout({ children, currentPageName }) {
         </Link>
         <div className="flex items-center gap-1">
           <LanguagePicker />
-          <Link to={createPageUrl("Chat")} className="relative p-2">
-            <MessageCircle className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-            {unreadMsgCount > 0 && (
-              <span className="absolute top-1 right-1 w-4 h-4 bg-indigo-500 text-white text-[10px] rounded-full flex items-center justify-center">
-                {unreadMsgCount > 9 ? "9+" : unreadMsgCount}
-              </span>
-            )}
-          </Link>
+          {currentUser?.role !== 'super_admin' && (
+            <Link to={createPageUrl("Chat")} className="relative p-2">
+              <MessageCircle className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+              {unreadMsgCount > 0 && (
+                <span className="absolute top-1 right-1 w-4 h-4 bg-indigo-500 text-white text-[10px] rounded-full flex items-center justify-center">
+                  {unreadMsgCount > 9 ? "9+" : unreadMsgCount}
+                </span>
+              )}
+            </Link>
+          )}
           <NotificationBell userEmail={currentUser?.email} />
-          <Link to={createPageUrl("Cart")} className="p-2">
-            <ShoppingBag className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-          </Link>
+          {currentUser?.role !== 'super_admin' && (
+            <Link to={createPageUrl("Cart")} className="p-2">
+              <ShoppingBag className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+            </Link>
+          )}
         </div>
       </header>
 
@@ -176,7 +208,7 @@ export default function Layout({ children, currentPageName }) {
       {/* Mobile Bottom Nav */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-t border-slate-200/60 dark:border-slate-800/60 z-40">
         <div className="flex items-center justify-around h-16 px-2">
-          {NAV_ITEMS.map((item) => {
+          {(currentUser?.role === 'super_admin' ? ADMIN_NAV_ITEMS : NAV_ITEMS).map((item) => {
             const isActive = currentPageName === item.page;
             if (item.accent) {
               return (

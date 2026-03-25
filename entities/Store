@@ -64,6 +64,33 @@
     "rating_avg": {
       "type": "number",
       "default": 0
+    },
+    "payment_method": {
+      "type": "string",
+      "enum": [
+        "bank_transfer",
+        "paypal",
+        "stripe",
+        "other"
+      ],
+      "default": "bank_transfer"
+    },
+    "bank_name": { "type": "string" },
+    "bank_account_name": { "type": "string" },
+    "bank_account_number": { "type": "string" },
+    "routing_number": { "type": "string" },
+    "paypal_email": { "type": "string" },
+    "phone_number": { "type": "string" },
+    "address": { "type": "string" },
+    "website_url": { "type": "string" },
+    "social_links": {
+      "type": "object",
+      "properties": {
+        "facebook": { "type": "string" },
+        "instagram": { "type": "string" },
+        "twitter": { "type": "string" },
+        "tiktok": { "type": "string" }
+      }
     }
   },
   "required": [

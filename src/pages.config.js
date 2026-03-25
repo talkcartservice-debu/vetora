@@ -75,6 +75,7 @@ import Wishlist from './pages/Wishlist';
 import VendorFinance from './pages/VendorFinance';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import AdminDashboard from './pages/AdminDashboard';
 import __Layout from './Layout.jsx';
 
 
@@ -107,6 +108,7 @@ export const PAGES = {
     "VendorFinance": VendorFinance,
     "Login": Login,
     "Register": Register,
+    "AdminDashboard": AdminDashboard,
 }
 
 export const pagesConfig = {

@@ -29,6 +29,8 @@ export interface IUser extends Document {
   phone_verification_expiry?: Date;
   reset_token?: string;
   reset_token_expiry?: Date;
+  role: 'user' | 'vendor' | 'super_admin';
+  is_blocked: boolean;
   created_at: Date;
   updated_at: Date;
 }
@@ -114,6 +116,15 @@ const UserSchema = new Schema<IUser>({
   reset_token_expiry: {
     type: Date,
     select: false,
+  },
+  role: {
+    type: String,
+    enum: ['user', 'vendor', 'super_admin'],
+    default: 'user',
+  },
+  is_blocked: {
+    type: Boolean,
+    default: false,
   },
 }, {
   timestamps: {

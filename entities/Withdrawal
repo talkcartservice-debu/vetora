@@ -12,7 +12,16 @@
       "type": "string"
     },
     "amount": {
-      "type": "number"
+      "type": "number",
+      "minimum": 20
+    },
+    "payment_method": {
+      "type": "string",
+      "enum": [
+        "bank_transfer",
+        "paypal"
+      ],
+      "default": "bank_transfer"
     },
     "bank_account_name": {
       "type": "string"
@@ -24,6 +33,9 @@
       "type": "string"
     },
     "routing_number": {
+      "type": "string"
+    },
+    "paypal_email": {
       "type": "string"
     },
     "status": {

@@ -76,7 +76,8 @@ function UserListModal({ open, onClose, title, users = [] }) {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-slate-900 truncate">{name}</p>
-                    <p className="text-[10px] text-slate-400 truncate">{email}</p>
+                    {/* Hide email, maybe show bio snippet or followers instead */}
+                    <p className="text-[10px] text-slate-400 truncate">View profile</p>
                   </div>
                 </Link>
               );
@@ -355,7 +356,7 @@ export default function Profile() {
                 <Badge variant="secondary" className="bg-indigo-50 text-indigo-600 border-0 text-[10px] font-bold py-0 px-1.5 h-4 uppercase tracking-wider">YOU</Badge>
               )}
             </div>
-            <p className="text-xs text-slate-400 font-medium mb-2">@{profileUser?.email?.split('@')[0]}</p>
+            <p className="text-xs text-slate-400 font-medium mb-2">@{profileUser?.display_name?.replace(/\s+/g, '_').toLowerCase() || profileUser?.email?.split('@')[0]}</p>
             {bio && <p className="text-sm text-slate-600 leading-relaxed mt-2 max-w-lg">{bio}</p>}
             
             <div className="mt-3 flex flex-wrap items-center gap-3">

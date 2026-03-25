@@ -153,7 +153,9 @@ export default function StoriesRow({ currentUser }) {
                     </div>
                   )}
                 </div>
-                <span className="text-[10px] text-slate-500 font-medium max-w-[56px] truncate">{group.name?.split(" ")[0] || group.email?.split("@")[0]}</span>
+                <span className="text-[10px] text-slate-500 font-medium max-w-[56px] truncate">
+                  {(group.name && !group.name.includes("@")) ? group.name.split(" ")[0] : `@${group.email?.split("@")[0]}`}
+                </span>
               </button>
             );
           })}

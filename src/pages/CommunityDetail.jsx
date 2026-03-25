@@ -203,7 +203,7 @@ const COMMUNITY_CATEGORIES = [
                    {m.member_email?.[0]?.toUpperCase()} 
                  </div> 
                  <div className="flex-1 min-w-0"> 
-                   <p className="text-sm font-medium text-slate-800 truncate">{m.member_email}</p> 
+                   <p className="text-sm font-medium text-slate-800 truncate">@{m.member_email?.split('@')[0]}</p> 
                    <p className="text-xs text-slate-400">Joined {new Date(m.created_at).toLocaleDateString()}</p> 
                  </div> 
                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full capitalize ${m.role === "admin" ? "bg-indigo-100 text-indigo-700" : m.role === "moderator" ? "bg-purple-100 text-purple-700" : "bg-slate-100 text-slate-600"}`}> 

@@ -33,8 +33,9 @@ import { vendorSubscriptionRoutes } from './routes/vendorSubscriptions';
 import { withdrawalRoutes } from './routes/withdrawals';
 import { wishlistRoutes } from './routes/wishlist';
 import { bookmarkRoutes } from './routes/bookmarks';
+import { adminRoutes } from './routes/admin';
 import { setupWebSocket, io } from './websocket/socket';
-import { authenticate } from './middleware/auth';
+import { authenticate, checkMaintenance } from './middleware/auth';
 
 const fastify = Fastify({
   logger: {
@@ -59,6 +60,9 @@ fastify.register(jwt, {
 
 // Add authentication decorator
 fastify.decorate('authenticate', authenticate);
+
+// Add maintenance mode check
+fastify.addHook('preHandler', checkMaintenance);
 
 // Global error handler
 fastify.setErrorHandler((error, request, reply) => {
@@ -106,6 +110,7 @@ fastify.register(vendorSubscriptionRoutes, { prefix: '/api/vendor-subscriptions'
 fastify.register(withdrawalRoutes, { prefix: '/api/withdrawals' });
 fastify.register(wishlistRoutes, { prefix: '/api/wishlist' });
 fastify.register(bookmarkRoutes, { prefix: '/api/bookmarks' });
+fastify.register(adminRoutes, { prefix: '/api/admin' });
 
 // Error handling for uncaught exceptions
 process.on('uncaughtException', (error) => {

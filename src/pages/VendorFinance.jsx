@@ -262,12 +262,32 @@ export default function VendorFinance() {
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-md">
-            <DialogHeader><DialogTitle>Request Withdrawal</DialogTitle></DialogHeader>
+            <DialogHeader>
+              <DialogTitle>Request Withdrawal</DialogTitle>
+              {store?.payment_method && (
+                <p className="text-[10px] text-indigo-600 font-medium flex items-center gap-1 mt-1">
+                  <CheckCircle2 className="w-3 h-3" /> Payout details pre-filled from store settings
+                </p>
+              )}
+            </DialogHeader>
             <div className="space-y-4 mt-2">
               <div className="p-3 bg-indigo-50 rounded-xl">
                 <p className="text-xs text-slate-500">Available Balance</p>
                 <p className="text-2xl font-bold text-indigo-700">${availableBalance.toFixed(2)}</p>
               </div>
+
+              {!store?.payment_method && (
+                <div className="p-3 bg-amber-50 border border-amber-100 rounded-xl flex gap-3 items-start">
+                  <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-xs font-bold text-amber-900">Payout method not set</p>
+                    <p className="text-[10px] text-amber-700 mt-0.5 leading-relaxed">
+                      You haven't configured a default payout method in your store settings. 
+                      Setting this up will save you time on future withdrawals.
+                    </p>
+                  </div>
+                </div>
+              )}
               <div>
                 <label className="text-xs font-medium text-slate-600 mb-1 block">Withdrawal Amount *</label>
                 <Input
@@ -279,6 +299,9 @@ export default function VendorFinance() {
                 />
                 {parseFloat(withdrawForm.amount) > availableBalance && (
                   <p className="text-xs text-red-500 mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> Exceeds available balance</p>
+                )}
+                {parseFloat(withdrawForm.amount) > 0 && parseFloat(withdrawForm.amount) < 20 && (
+                  <p className="text-xs text-amber-600 mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> Minimum withdrawal is $20.00</p>
                 )}
               </div>
               
@@ -340,7 +363,7 @@ export default function VendorFinance() {
                   !withdrawForm.amount || 
                   (withdrawForm.payment_method === "bank_transfer" && (!withdrawForm.bank_name || !withdrawForm.bank_account_name || !withdrawForm.bank_account_number)) ||
                   (withdrawForm.payment_method === "paypal" && !withdrawForm.paypal_email) ||
-                  parseFloat(withdrawForm.amount) <= 0 ||
+                  parseFloat(withdrawForm.amount) < 20 ||
                   parseFloat(withdrawForm.amount) > availableBalance
                 }
                 className="w-full bg-indigo-600 hover:bg-indigo-700 mt-2"

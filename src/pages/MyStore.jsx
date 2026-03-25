@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import AdvancedAnalytics from "@/components/mystore/AdvancedAnalytics";
@@ -546,12 +546,56 @@ export default function MyStore() {
                         <Input placeholder="Street, City, Country" value={storeForm.address} onChange={(e) => setStoreForm(p => ({ ...p, address: e.target.value }))} />
                       </div>
                       <div className="space-y-3 pt-2">
-                        <label className="text-sm font-bold text-slate-800">Social Media Links</label>
-                        <div className="grid grid-cols-2 gap-4">
-                          <Input placeholder="Instagram URL" value={storeForm.social_links?.instagram} onChange={(e) => setStoreForm(p => ({ ...p, social_links: { ...p.social_links, instagram: e.target.value } }))} />
-                          <Input placeholder="Facebook URL" value={storeForm.social_links?.facebook} onChange={(e) => setStoreForm(p => ({ ...p, social_links: { ...p.social_links, facebook: e.target.value } }))} />
-                          <Input placeholder="Twitter URL" value={storeForm.social_links?.twitter} onChange={(e) => setStoreForm(p => ({ ...p, social_links: { ...p.social_links, twitter: e.target.value } }))} />
-                          <Input placeholder="TikTok URL" value={storeForm.social_links?.tiktok} onChange={(e) => setStoreForm(p => ({ ...p, social_links: { ...p.social_links, tiktok: e.target.value } }))} />
+                        <label className="text-sm font-bold text-slate-800">Social Media Handles</label>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Instagram</label>
+                            <div className="relative">
+                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-medium">@</span>
+                              <Input 
+                                className="pl-7 h-10 text-xs rounded-xl" 
+                                placeholder="username" 
+                                value={storeForm.social_links?.instagram?.replace(/^(https?:\/\/)?(www\.)?instagram\.com\//, '').replace('@', '')} 
+                                onChange={(e) => setStoreForm(p => ({ ...p, social_links: { ...p.social_links, instagram: e.target.value } }))} 
+                              />
+                            </div>
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">TikTok</label>
+                            <div className="relative">
+                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-medium">@</span>
+                              <Input 
+                                className="pl-7 h-10 text-xs rounded-xl" 
+                                placeholder="username" 
+                                value={storeForm.social_links?.tiktok?.replace(/^(https?:\/\/)?(www\.)?tiktok\.com\/@?/, '').replace('@', '')} 
+                                onChange={(e) => setStoreForm(p => ({ ...p, social_links: { ...p.social_links, tiktok: e.target.value } }))} 
+                              />
+                            </div>
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Twitter / X</label>
+                            <div className="relative">
+                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-medium">@</span>
+                              <Input 
+                                className="pl-7 h-10 text-xs rounded-xl" 
+                                placeholder="username" 
+                                value={storeForm.social_links?.twitter?.replace(/^(https?:\/\/)?(www\.)?(twitter|x)\.com\//, '').replace('@', '')} 
+                                onChange={(e) => setStoreForm(p => ({ ...p, social_links: { ...p.social_links, twitter: e.target.value } }))} 
+                              />
+                            </div>
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Facebook</label>
+                            <div className="relative">
+                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 font-medium">fb.com/</span>
+                              <Input 
+                                className="pl-14 h-10 text-xs rounded-xl" 
+                                placeholder="page-handle" 
+                                value={storeForm.social_links?.facebook?.replace(/^(https?:\/\/)?(www\.)?facebook\.com\//, '')} 
+                                onChange={(e) => setStoreForm(p => ({ ...p, social_links: { ...p.social_links, facebook: e.target.value } }))} 
+                              />
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </TabsContent>

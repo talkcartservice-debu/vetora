@@ -2,6 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { Post, IPost } from '../models/Post';
 import { User } from '../models/User';
 import { Like } from '../models/Like';
+import { Follow } from '../models/Follow';
 import { z } from 'zod';
 
 const createPostSchema = z.object({
@@ -28,6 +29,8 @@ export async function postRoutes(fastify: FastifyInstance) {
         author_email,
         community_id,
         visibility = 'public',
+        following_only,
+        user_email,
         search,
         limit = 20,
         skip = 0,
@@ -38,6 +41,20 @@ export async function postRoutes(fastify: FastifyInstance) {
       if (author_email) filter.author_email = author_email;
       if (community_id) filter.community_id = community_id;
       if (visibility) filter.visibility = visibility;
+
+      // Handle following_only filter
+      if (following_only === 'true' && user_email) {
+        const follows = await Follow.find({ follower_email: user_email.toLowerCase() }).lean();
+        const followingEmails = follows.map(f => f.following_email);
+        
+        // If following no one, we should probably return empty array or handle it
+        if (followingEmails.length > 0) {
+          filter.author_email = { $in: followingEmails };
+        } else {
+          // Special case: following no one, so return empty list
+          return { data: [], total: 0, limit: parseInt(limit), skip: parseInt(skip) };
+        }
+      }
 
       if (search) {
         filter.content = { $regex: search, $options: 'i' };

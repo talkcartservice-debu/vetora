@@ -36,6 +36,10 @@ export async function authRoutes(fastify: FastifyInstance) {
         return reply.code(401).send({ error: 'Invalid credentials' });
       }
 
+      if (user.is_blocked) {
+        return reply.code(403).send({ error: 'Your account has been suspended' });
+      }
+
       if (user.is_2fa_enabled) {
         // Generate a temporary token for 2FA challenge (5 mins expiry)
         const twoFactorToken = fastify.jwt.sign({
@@ -53,6 +57,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       const token = fastify.jwt.sign({
         userId: user._id.toString(),
         email: user.email,
+        role: user.role,
       });
 
       return {
@@ -62,6 +67,8 @@ export async function authRoutes(fastify: FastifyInstance) {
           display_name: user.display_name,
           avatar_url: user.avatar_url,
           banner_url: user.banner_url,
+          role: user.role,
+          is_blocked: user.is_blocked,
           is_verified: user.is_verified,
           is_2fa_enabled: user.is_2fa_enabled,
           phone_number: user.phone_number,
@@ -112,6 +119,10 @@ export async function authRoutes(fastify: FastifyInstance) {
         return reply.code(400).send({ error: 'Invalid request' });
       }
 
+      if (user.is_blocked) {
+        return reply.code(403).send({ error: 'Your account has been suspended' });
+      }
+
       const { valid: isValid } = await verify({ 
         token: otpToken, 
         secret: user.two_factor_secret 
@@ -125,6 +136,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       const jwtToken = fastify.jwt.sign({
         userId: user._id.toString(),
         email: user.email,
+        role: user.role,
       });
 
       return {
@@ -134,6 +146,8 @@ export async function authRoutes(fastify: FastifyInstance) {
           display_name: user.display_name,
           avatar_url: user.avatar_url,
           banner_url: user.banner_url,
+          role: user.role,
+          is_blocked: user.is_blocked,
           is_verified: user.is_verified,
           is_2fa_enabled: user.is_2fa_enabled,
           phone_number: user.phone_number,
@@ -182,6 +196,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       const token = fastify.jwt.sign({
         userId: user._id.toString(),
         email: user.email,
+        role: user.role,
       });
 
       return {
@@ -191,6 +206,8 @@ export async function authRoutes(fastify: FastifyInstance) {
           display_name: user.display_name,
           avatar_url: user.avatar_url,
           banner_url: user.banner_url,
+          role: user.role,
+          is_blocked: user.is_blocked,
           is_verified: user.is_verified,
           is_2fa_enabled: user.is_2fa_enabled,
           phone_number: user.phone_number,
@@ -311,6 +328,8 @@ export async function authRoutes(fastify: FastifyInstance) {
         is_2fa_enabled: user.is_2fa_enabled,
         phone_number: user.phone_number,
         is_phone_verified: user.is_phone_verified,
+        role: user.role,
+        is_blocked: user.is_blocked,
         notifications: user.notifications,
         preferences: user.preferences,
         created_at: user.created_at,
@@ -371,6 +390,8 @@ export async function authRoutes(fastify: FastifyInstance) {
         is_2fa_enabled: user.is_2fa_enabled,
         phone_number: user.phone_number,
         is_phone_verified: user.is_phone_verified,
+        role: user.role,
+        is_blocked: user.is_blocked,
         notifications: user.notifications,
         preferences: user.preferences,
         created_at: user.created_at,

@@ -18,8 +18,16 @@ export default function Home() {
   const { user: currentUser } = useAuth();
 
   const { data: postsResponse, isLoading: postsLoading } = useQuery({
-    queryKey: ["posts"],
-    queryFn: () => postsAPI.list({ sort: "-created_at", limit: 20 }),
+    queryKey: ["posts", activeTab],
+    queryFn: () => {
+      if (activeTab === "trending") {
+        return postsAPI.list({ sort: "-likes_count", limit: 20 });
+      }
+      if (activeTab === "following" && currentUser?.email) {
+        return postsAPI.list({ following_only: true, user_email: currentUser.email, sort: "-created_at", limit: 20 });
+      }
+      return postsAPI.list({ sort: "-created_at", limit: 20 });
+    },
   });
   const posts = postsResponse?.data || [];
 
@@ -69,7 +77,7 @@ export default function Home() {
       {activeTab === "for_you" && <RecommendedSection currentUser={currentUser} />}
 
       {/* Trending Products Section */}
-      {trendingProducts.length > 0 && activeTab === "for_you" && (
+      {trendingProducts.length > 0 && activeTab === "trending" && (
         <div className="mb-6">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
@@ -81,13 +89,13 @@ export default function Home() {
             </Link>
           </div>
           <div className="overflow-x-auto -mx-4 px-4 hide-scrollbar">
-            <div className="flex gap-3" style={{ width: "max-content" }}>
+            <div className="flex gap-3 pb-2" style={{ width: "max-content" }}>
               {productsLoading
                 ? Array(4).fill(0).map((_, i) => (
-                    <div key={`trending-skeleton-${i}`} className="w-40 shrink-0"><ProductSkeleton /></div>
+                    <div key={`trending-skeleton-${i}`} className="w-44 shrink-0"><ProductSkeleton /></div>
                   ))
-                : trendingProducts.slice(0, 6).map((product, idx) => (
-                    <div key={product._id || product.id || `trending-${idx}`} className="w-40 shrink-0">
+                : trendingProducts.slice(0, 8).map((product, idx) => (
+                    <div key={product._id || product.id || `trending-${idx}`} className="w-44 shrink-0">
                       <ProductCard product={product} compact />
                     </div>
                   ))}

@@ -192,7 +192,10 @@ export default function PostDetail() {
                 <div className="flex-1">
                   <div className="bg-white border border-slate-100 rounded-2xl rounded-tl-sm p-4 hover:shadow-md hover:shadow-slate-100 transition-all">
                     <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-sm font-bold text-slate-900">{comment.author_name || "User"}</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-sm font-bold text-slate-900">{comment.author_name || "User"}</span>
+                        <span className="text-[10px] text-slate-400 font-medium">@{comment.author_email?.split('@')[0]}</span>
+                      </div>
                       <span className="text-[10px] font-medium text-slate-400">
                         {new Date(comment.created_at || comment.created_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                       </span>

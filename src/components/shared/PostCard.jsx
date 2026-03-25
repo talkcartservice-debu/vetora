@@ -98,8 +98,9 @@ export default function PostCard({ post, currentUser, userLikes = [] }) {
             )}
           </div>
           <div>
-            <p className="text-sm font-semibold text-slate-900">{post.author_name || "User"}</p>
-            <p className="text-xs text-slate-400">
+            <p className="text-sm font-semibold text-slate-900 leading-none">{post.author_name || "User"}</p>
+            <p className="text-[10px] text-slate-400 font-medium mb-1">@{post.author_email?.split('@')[0]}</p>
+            <p className="text-[10px] text-slate-400">
               {new Date(post.created_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
               {post.is_sponsored && (
                 <span className="ml-2 px-1.5 py-0.5 bg-amber-50 text-amber-600 rounded text-[10px] font-medium">Sponsored</span>

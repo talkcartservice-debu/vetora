@@ -169,8 +169,8 @@ export async function withdrawalRoutes(fastify: FastifyInstance) {
         return reply.code(400).send({ error: 'Missing required field: amount' });
       }
 
-      if (body.amount <= 0) {
-        return reply.code(400).send({ error: 'Amount must be greater than 0' });
+      if (body.amount < 20) {
+        return reply.code(400).send({ error: 'Minimum withdrawal amount is $20' });
       }
 
       if (!body.payment_method) {
@@ -296,8 +296,8 @@ export async function withdrawalRoutes(fastify: FastifyInstance) {
       });
 
       // Validate amount if being updated
-      if (body.amount !== undefined && body.amount <= 0) {
-        return reply.code(400).send({ error: 'Amount must be greater than 0' });
+      if (body.amount !== undefined && body.amount < 20) {
+        return reply.code(400).send({ error: 'Minimum withdrawal amount is $20' });
       }
 
       await withdrawal.save();

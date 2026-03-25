@@ -184,10 +184,10 @@ export default function ShareModal({ isOpen, onOpenChange, post, product, curren
                     </div>
                     <div className="flex-1 text-left min-w-0">
                       <p className="text-sm font-semibold text-slate-900 truncate">
-                        {recipient.display_name || recipient.name || recipient.full_name}
+                        {recipient.display_name || recipient.name || recipient.full_name || "User"}
                       </p>
                       <p className="text-xs text-slate-400 truncate">
-                        {recipient.type === 'vendor' ? 'Vendor' : recipient.email}
+                        {recipient.type === 'vendor' ? (recipient.category || 'Vendor') : `@${recipient.display_name?.replace(/\s+/g, '_').toLowerCase() || recipient.email?.split('@')[0]}`}
                       </p>
                     </div>
                     {selectedRecipient?.id === recipient.id && (
