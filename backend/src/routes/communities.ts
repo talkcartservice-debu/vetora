@@ -2,6 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { Community, ICommunity } from '../models/Community';
 import { CommunityMember } from '../models/CommunityMember';
 import { User } from '../models/User';
+import { Notification } from '../models/Notification';
 
 export async function communityRoutes(fastify: FastifyInstance) {
   // List communities with filtering and search
@@ -320,11 +321,45 @@ export async function communityRoutes(fastify: FastifyInstance) {
         return reply.code(403).send({ error: 'This community is private' });
       }
 
-      // TODO: Check if user is already a member
-      // TODO: Add user to CommunityMember collection
-      // For now, just increment member count
+      // Check if user is already a member
+      const existingMember = await CommunityMember.findOne({
+        community_id: id,
+        member_email: user.email
+      });
+
+      if (existingMember) {
+        return reply.code(409).send({ error: 'You are already a member of this community' });
+      }
+
+      // Add user to CommunityMember collection
+      const member = new CommunityMember({
+        community_id: id,
+        member_email: user.email,
+        role: 'member'
+      });
+      await member.save();
+
+      // Increment member count
       community.member_count += 1;
       await community.save();
+
+      // Create notification for community owner
+      if (community.owner_email !== user.email) {
+        const notification = new Notification({
+          recipient_email: community.owner_email,
+          type: 'follow',
+          title: `${user.display_name || user.email} joined your community: ${community.name}`,
+          sender_email: user.email,
+          sender_name: user.display_name || user.email,
+          link: `/community/${community._id}`,
+          metadata: {
+            community_id: community._id,
+            member_id: member._id
+          }
+        });
+        await notification.save();
+        fastify.io?.to(community.owner_email).emit('notification:new', notification);
+      }
 
       // Emit real-time event
       fastify.io?.emit('community:joined', {
@@ -362,9 +397,20 @@ export async function communityRoutes(fastify: FastifyInstance) {
         return reply.code(400).send({ error: 'Community owner cannot leave the community' });
       }
 
-      // TODO: Check if user is a member
-      // TODO: Remove user from CommunityMember collection
-      // For now, just decrement member count
+      // Check if user is a member
+      const membership = await CommunityMember.findOne({
+        community_id: id,
+        member_email: user.email
+      });
+
+      if (!membership) {
+        return reply.code(404).send({ error: 'You are not a member of this community' });
+      }
+
+      // Remove user from CommunityMember collection
+      await CommunityMember.findByIdAndDelete(membership._id);
+
+      // Decrement member count
       if (community.member_count > 0) {
         community.member_count -= 1;
         await community.save();

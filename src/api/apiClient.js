@@ -230,8 +230,8 @@ export const followsAPI = {
     const query = apiClient.buildQueryString(filters);
     return apiClient.get(`/follows?${query}`);
   },
-  follow: (followingEmail, followType = 'user', targetId = null) => 
-    apiClient.post('/follows', { following_email: followingEmail, follow_type: followType, target_id: targetId }),
+  follow: (followingUsername, followType = 'user', targetId = null) => 
+    apiClient.post('/follows', { following_username: followingUsername, follow_type: followType, target_id: targetId }),
   unfollow: (params) => {
     const query = apiClient.buildQueryString(params);
     return apiClient.delete(`/follows?${query}`);
@@ -356,10 +356,7 @@ export const withdrawalsAPI = {
     return apiClient.get(`/withdrawals?${query}`);
   },
   get: (id) => apiClient.get(`/withdrawals/${id}`),
-  getByVendor: (vendorEmail, filters) => {
-    const query = apiClient.buildQueryString(filters);
-    return apiClient.get(`/withdrawals/vendor/${vendorEmail}?${query}`);
-  },
+  getByVendor: (emailOrUsername) => apiClient.get(`/withdrawals/vendor/${emailOrUsername}`),
   create: (data) => apiClient.post('/withdrawals', data),
   update: (id, data) => apiClient.put(`/withdrawals/${id}`, data),
   updateStatus: (id, data) => apiClient.put(`/withdrawals/${id}/status`, data),
@@ -376,7 +373,7 @@ export const vendorSubscriptionsAPI = {
     return apiClient.get(`/vendor-subscriptions?${query}`);
   },
   get: (id) => apiClient.get(`/vendor-subscriptions/${id}`),
-  getByVendor: (vendorEmail) => apiClient.get(`/vendor-subscriptions/vendor/${vendorEmail}`),
+  getByVendor: (emailOrUsername) => apiClient.get(`/vendor-subscriptions/vendor/${emailOrUsername}`),
   getByStore: (storeId) => apiClient.get(`/vendor-subscriptions/store/${storeId}`),
   create: (data) => apiClient.post('/vendor-subscriptions', data),
   update: (id, data) => apiClient.put(`/vendor-subscriptions/${id}`, data),
@@ -456,11 +453,11 @@ export const storesAPI = {
   get: (id) => apiClient.get(`/stores/${id}`),
   create: (data) => apiClient.post('/stores', data),
   update: (id, data) => apiClient.patch(`/stores/${id}`, data),
-  getByOwner: (email) => apiClient.get(`/stores/owner/${email}`)
+  getByOwner: (emailOrUsername) => apiClient.get(`/stores/owner/${emailOrUsername}`)
 };
 
 export const usersAPI = {
-  getProfile: (email) => apiClient.get(`/users/${email}`),
+  getProfile: (usernameOrEmail) => apiClient.get(`/users/${usernameOrEmail}`),
   search: (query) => apiClient.get(`/users/search?q=${encodeURIComponent(query)}`)
 };
 
@@ -575,7 +572,7 @@ export const storiesAPI = {
     return apiClient.get(`/stories?${query}`);
   },
   get: (id) => apiClient.get(`/stories/${id}`),
-  getByUser: (email) => apiClient.get(`/stories/user/${email}`),
+  getByUser: (emailOrUsername) => apiClient.get(`/stories/user/${emailOrUsername}`),
   getMe: () => apiClient.get('/stories/user/me'),
   getFeed: () => apiClient.get('/stories/feed'),
   create: (data) => apiClient.post('/stories', data),

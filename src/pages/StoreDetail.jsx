@@ -1,21 +1,23 @@
 import React from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/lib/utils";
 import ProductCard from "@/components/shared/ProductCard";
 import { ProductSkeleton } from "@/components/shared/LoadingSkeleton";
-import { ArrowLeft, Users, Package, CheckCircle, MessageCircle } from "lucide-react";
+import { ArrowLeft, Users, Package, CheckCircle, MessageCircle, UserPlus, UserCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import StoreReviewSection from "@/components/store/StoreReviewSection";
 import StarRating from "@/components/reviews/StarRating";
-import { storesAPI, productsAPI, reviewsAPI } from "@/api/apiClient";
+import { storesAPI, productsAPI, reviewsAPI, followsAPI } from "@/api/apiClient";
 import { useAuth } from "@/lib/AuthContext";
+import toast from "react-hot-toast";
 
 export default function StoreDetail() {
   const params = new URLSearchParams(window.location.search);
   const storeId = params.get("id");
   const { user: currentUser } = useAuth();
+  const queryClient = useQueryClient();
 
   const isValidId = !!storeId && storeId !== "undefined" && storeId !== "null" && storeId.length >= 8;
 
@@ -27,6 +29,45 @@ export default function StoreDetail() {
     },
     enabled: isValidId,
     retry: false,
+  });
+
+  const { data: isFollowing = false } = useQuery({
+    queryKey: ["isFollowing", currentUser?.username, storeId],
+    queryFn: async () => {
+      if (!currentUser?.username || !storeId) return false;
+      const res = await followsAPI.check({ 
+        follower_username: currentUser.username, 
+        target_id: storeId,
+        follow_type: 'store'
+      });
+      return !!res.is_following;
+    },
+    enabled: !!currentUser?.username && !!storeId && isValidId,
+  });
+
+  const followMutation = useMutation({
+    mutationFn: async () => {
+      if (!currentUser) throw new Error("Please login to follow");
+      const followingUsername = store.owner_username || store.name?.toLowerCase().replace(/\s+/g, '_');
+      if (isFollowing) {
+        await followsAPI.unfollow({ 
+          follower_username: currentUser.username, 
+          following_username: followingUsername,
+          target_id: storeId,
+          follow_type: 'store'
+        });
+      } else {
+        await followsAPI.follow(followingUsername, 'store', storeId);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["isFollowing", currentUser?.username, storeId] });
+      queryClient.invalidateQueries({ queryKey: ["storeDetail", storeId] });
+      toast.success(isFollowing ? "Unfollowed" : "Following Store!");
+    },
+    onError: (error) => {
+      toast.error(error.message || "Something went wrong");
+    }
   });
 
   const { data: productsData, isLoading: productsLoading } = useQuery({
@@ -138,10 +179,28 @@ export default function StoreDetail() {
                 </span>
               )}
             </div>
-            {currentUser && currentUser.email !== store.owner_email && (
-              <div className="mt-4">
-                <Link to={createPageUrl("Chat") + `?to=${store.owner_email}`}>
-                  <Button className="bg-indigo-600 hover:bg-indigo-700 rounded-xl gap-2" size="sm">
+            {currentUser && currentUser.username !== store.owner_username && (
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Button
+                  onClick={() => followMutation.mutate()}
+                  disabled={followMutation.isPending}
+                  className={`rounded-xl gap-2 font-semibold transition-all ${
+                    isFollowing 
+                      ? "bg-slate-100 text-slate-700 hover:bg-slate-200" 
+                      : "bg-indigo-600 text-white hover:bg-indigo-700 shadow-md shadow-indigo-100"
+                  }`}
+                  size="sm"
+                  variant={isFollowing ? "secondary" : "default"}
+                >
+                  {isFollowing ? (
+                    <><UserCheck className="w-4 h-4" /> Following</>
+                  ) : (
+                    <><UserPlus className="w-4 h-4" /> Follow Store</>
+                  )}
+                </Button>
+
+                <Link to={createPageUrl("Chat") + `?to=${store.owner_username}`}>
+                  <Button variant="outline" className="rounded-xl gap-2 border-slate-200" size="sm">
                     <MessageCircle className="w-4 h-4" /> Chat with Vendor
                   </Button>
                 </Link>

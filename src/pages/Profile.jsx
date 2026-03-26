@@ -29,9 +29,9 @@ function UserListModal({ open, onClose, title, users = [] }) {
   const [search, setSearch] = useState("");
   const filtered = users.filter(u => 
     u.display_name?.toLowerCase().includes(search.toLowerCase()) || 
-    u.email?.toLowerCase().includes(search.toLowerCase()) ||
-    u.following_email?.toLowerCase().includes(search.toLowerCase()) ||
-    u.follower_email?.toLowerCase().includes(search.toLowerCase())
+    u.username?.toLowerCase().includes(search.toLowerCase()) ||
+    u.following_username?.toLowerCase().includes(search.toLowerCase()) ||
+    u.follower_username?.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -59,12 +59,12 @@ function UserListModal({ open, onClose, title, users = [] }) {
                 <p className="text-xs text-slate-400">No users found</p>
               </div>
             ) : filtered.map((u, i) => {
-              const email = u.following_email || u.follower_email || u.email;
-              const name = u.display_name || email?.split('@')[0] || "User";
+              const username = u.following_username || u.follower_username || u.username;
+              const name = u.display_name || username || "User";
               return (
                 <Link 
                   key={i} 
-                  to={createPageUrl("Profile") + `?email=${email}`}
+                  to={createPageUrl("Profile") + `?username=${username}`}
                   onClick={onClose}
                   className="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-xl transition-colors"
                 >
@@ -100,105 +100,102 @@ const STATUS_CONFIG = {
 
 export default function Profile() {
   const params = new URLSearchParams(window.location.search);
-  const profileEmail = params.get("email");
+  const profileUsername = params.get("username") || params.get("email");
   const [activeTab, setActiveTab] = useState("posts");
   const [editOpen, setEditOpen] = useState(false);
   const [userList, setUserList] = useState({ open: false, title: "", users: [] });
   const queryClient = useQueryClient();
   const { user: currentUser, logout } = useAuth();
 
-  const targetEmail = profileEmail || currentUser?.email;
-  const isOwnProfile = !profileEmail || profileEmail.toLowerCase() === currentUser?.email?.toLowerCase();
+  const targetUsername = profileUsername || currentUser?.username;
+  const isOwnProfile = !profileUsername || profileUsername.toLowerCase() === currentUser?.username?.toLowerCase() || profileUsername.toLowerCase() === currentUser?.email?.toLowerCase();
 
   const { data: profileUser } = useQuery({
-    queryKey: ["profileUser", targetEmail],
+    queryKey: ["profileUser", targetUsername],
     queryFn: async () => {
-      if (isOwnProfile) return currentUser;
-      return usersAPI.getProfile(targetEmail);
+      if (isOwnProfile && currentUser?.username === targetUsername) return currentUser;
+      return usersAPI.getProfile(targetUsername);
     },
-    enabled: !!targetEmail,
+    enabled: !!targetUsername,
   });
 
+  const targetEmail = profileUser?.email;
+
   const { data: posts = [], isLoading: postsLoading } = useQuery({
-    queryKey: ["userPosts", targetEmail],
+    queryKey: ["userPosts", targetUsername],
     queryFn: async () => {
-      const res = await postsAPI.list({ author_email: targetEmail, sort: "-created_date", limit: 50 });
+      const res = await postsAPI.list({ author_username: targetUsername, sort: "-created_date", limit: 50 });
       return res.data || [];
     },
-    enabled: !!targetEmail,
+    enabled: !!targetUsername,
   });
 
   const { data: userProducts = [], isLoading: productsLoading } = useQuery({
-    queryKey: ["userProducts", targetEmail],
+    queryKey: ["userProducts", targetUsername],
     queryFn: async () => {
-      const res = await productsAPI.list({ vendor_email: targetEmail, status: "active", sort: "-created_date", limit: 30 });
+      const res = await productsAPI.list({ vendor_username: targetUsername, status: "active", sort: "-created_date", limit: 30 });
       return res.data || [];
     },
-    enabled: !!targetEmail,
+    enabled: !!targetUsername,
   });
 
   const { data: buyerOrders = [], isLoading: ordersLoading } = useQuery({
-    queryKey: ["profileOrders", targetEmail],
+    queryKey: ["profileOrders", targetUsername],
     queryFn: async () => {
-      const res = await ordersAPI.list({ buyer_email: targetEmail, sort: "-created_date", limit: 30 });
+      const res = await ordersAPI.list({ buyer_username: targetUsername, sort: "-created_date", limit: 30 });
       return res.data || [];
     },
-    enabled: !!targetEmail && isOwnProfile,
+    enabled: !!targetUsername && isOwnProfile,
   });
 
   const { data: reviews = [] } = useQuery({
-    queryKey: ["userReviews", targetEmail],
+    queryKey: ["userReviews", targetUsername],
     queryFn: async () => {
-      const res = await reviewsAPI.list({ reviewer_email: targetEmail, sort: "-created_date", limit: 5 });
+      const res = await reviewsAPI.list({ reviewer_username: targetUsername, sort: "-created_date", limit: 5 });
       return res.data || [];
     },
-    enabled: !!targetEmail,
+    enabled: !!targetUsername,
   });
 
-  const { data: followersCount = 0 } = useQuery({
-    queryKey: ["followers", targetEmail],
+  const { data: followCounts = { follower_count: 0, following_count: 0 } } = useQuery({
+    queryKey: ["followCounts", targetUsername],
     queryFn: async () => {
-      const res = await followsAPI.getFollowers({ following_email: targetEmail });
-      const followers = Array.isArray(res) ? res : (res.data || []);
-      return followers.length;
+      const res = await followsAPI.getCounts({ 
+        following_username: targetUsername,
+        follow_type: 'user'
+      });
+      return res || { follower_count: 0, following_count: 0 };
     },
-    enabled: !!targetEmail,
+    enabled: !!targetUsername,
   });
 
-  const { data: followingCount = 0 } = useQuery({
-    queryKey: ["following", targetEmail],
-    queryFn: async () => {
-      const res = await followsAPI.getFollowing({ follower_email: targetEmail });
-      const following = Array.isArray(res) ? res : (res.data || []);
-      return following.length;
-    },
-    enabled: !!targetEmail,
-  });
+  const followersCount = followCounts?.follower_count || profileUser?.follower_count || 0;
+  const followingCount = followCounts?.following_count || profileUser?.following_count || 0;
 
   const { data: isFollowing = false } = useQuery({
-    queryKey: ["isFollowing", currentUser?.email, targetEmail],
+    queryKey: ["isFollowing", currentUser?.username, targetUsername],
     queryFn: async () => {
-      if (!currentUser?.email) return false;
-      const res = await followsAPI.check({ follower_email: currentUser.email, following_email: targetEmail });
+      if (!currentUser?.username) return false;
+      const res = await followsAPI.check({ follower_username: currentUser.username, following_username: targetUsername });
       return !!res.is_following || !!res.following;
     },
-    enabled: !!currentUser?.email && !isOwnProfile,
+    enabled: !!currentUser?.username && !isOwnProfile,
   });
 
   const { data: userLikesResponse } = useQuery({
-    queryKey: ["userLikes", currentUser?.email],
+    queryKey: ["userLikes", currentUser?.username],
     queryFn: async () => {
-      const res = await likesAPI.list({ user_email: currentUser?.email });
+      const res = await likesAPI.list({ user_username: currentUser?.username });
       return res;
     },
-    enabled: !!currentUser?.email,
+    enabled: !!currentUser?.username,
   });
   const userLikes = Array.isArray(userLikesResponse?.data) ? userLikesResponse.data : [];
 
   const { data: likedPosts = [], isLoading: likedPostsLoading } = useQuery({
-    queryKey: ["likedPosts", targetEmail],
+    queryKey: ["likedPosts", targetUsername],
     queryFn: async () => {
-      const res = await likesAPI.list({ user_email: targetEmail, target_type: "post" });
+      const res = await likesAPI.list({ user_username: targetUsername, target_type: "post" });
       const likes = res.data || res || [];
       if (likes.length === 0) return [];
       
@@ -214,26 +211,26 @@ export default function Profile() {
       );
       return posts.filter(p => !!p);
     },
-    enabled: !!targetEmail && isOwnProfile,
+    enabled: !!targetUsername && isOwnProfile,
   });
 
   const { data: store } = useQuery({
-    queryKey: ["userStore", targetEmail],
+    queryKey: ["userStore", targetUsername],
     queryFn: async () => {
-      const res = await storesAPI.getByOwner(targetEmail);
+      const res = await storesAPI.getByOwner(targetUsername);
       return res.data || res; // Handle both wrapped and unwrapped store response
     },
-    enabled: !!targetEmail,
+    enabled: !!targetUsername,
   });
 
   const { data: subscription } = useQuery({
-    queryKey: ["vendorSubscription", targetEmail],
+    queryKey: ["vendorSubscription", targetUsername],
     queryFn: async () => {
-      const res = await vendorSubscriptionsAPI.list({ vendor_email: targetEmail });
+      const res = await vendorSubscriptionsAPI.list({ vendor_username: targetUsername });
       const subs = Array.isArray(res) ? res : (res.data || res.subscriptions || []);
       return subs[0] || null;
     },
-    enabled: !!targetEmail && (isOwnProfile || currentUser?.role === 'super_admin'),
+    enabled: !!targetUsername && (isOwnProfile || currentUser?.role === 'super_admin'),
   });
 
   const { data: vendorStoreReviews = [] } = useQuery({
@@ -252,14 +249,14 @@ export default function Profile() {
   const followMutation = useMutation({
     mutationFn: async () => {
       if (isFollowing) {
-        await followsAPI.unfollow({ follower_email: currentUser.email, following_email: targetEmail });
+        await followsAPI.unfollow({ follower_username: currentUser.username, following_username: targetUsername });
       } else {
-        await followsAPI.follow(targetEmail);
+        await followsAPI.follow(targetUsername);
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["isFollowing"] });
-      queryClient.invalidateQueries({ queryKey: ["followers"] });
+      queryClient.invalidateQueries({ queryKey: ["isFollowing", currentUser?.username, targetUsername] });
+      queryClient.invalidateQueries({ queryKey: ["followCounts", targetUsername] });
       toast.success(isFollowing ? "Unfollowed" : "Following!");
     },
   });
@@ -370,7 +367,7 @@ export default function Profile() {
                       <><UserPlus className="w-3.5 h-3.5 mr-1.5" />Follow</>
                     )}
                   </Button>
-                  <Link to={createPageUrl("Chat") + `?to=${targetEmail}`}>
+                  <Link to={createPageUrl("Chat") + `?to=${targetUsername || profileUser?.username}`}>
                     <Button 
                       variant="outline" 
                       size="sm" 
@@ -392,7 +389,7 @@ export default function Profile() {
                 <Badge variant="secondary" className="bg-indigo-50 text-indigo-600 border-0 text-[10px] font-bold py-0 px-1.5 h-4 uppercase tracking-wider">YOU</Badge>
               )}
             </div>
-            <p className="text-xs text-slate-400 font-medium mb-2">@{profileUser?.display_name?.replace(/\s+/g, '_').toLowerCase() || profileUser?.email?.split('@')[0]}</p>
+            <p className="text-xs text-slate-400 font-medium mb-2">@{profileUser?.username || profileUser?.display_name?.replace(/\s+/g, '_').toLowerCase() || profileUser?.email?.split('@')[0]}</p>
             {bio && <p className="text-sm text-slate-600 leading-relaxed mt-2 max-w-lg">{bio}</p>}
             
             <div className="mt-3 flex flex-wrap items-center gap-3">

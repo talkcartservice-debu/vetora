@@ -11,6 +11,7 @@ export async function commentRoutes(fastify: FastifyInstance) {
         post_id,
         parent_comment_id,
         author_email,
+        author_username,
         sort = '-created_at',
         limit = 20,
         skip = 0
@@ -28,6 +29,7 @@ export async function commentRoutes(fastify: FastifyInstance) {
         }
       }
       if (author_email) filter.author_email = author_email;
+      if (author_username) filter.author_username = author_username;
 
       // Build sort object
       const sortObj: any = {};
@@ -106,11 +108,19 @@ export async function commentRoutes(fastify: FastifyInstance) {
         }
       }
 
+      // Get user info
+      const userData = await User.findOne({ email: user.email });
+      
+      if (!userData) {
+        return reply.code(404).send({ error: 'User not found' });
+      }
+
       const comment = new Comment({
         ...body,
         author_email: user.email,
-        author_name: user.name || user.email,
-        author_avatar: user.avatar_url,
+        author_username: userData.username,
+        author_name: userData.display_name || user.email.split('@')[0],
+        author_avatar: userData.avatar_url,
       });
 
       await comment.save();
@@ -143,8 +153,16 @@ export async function commentRoutes(fastify: FastifyInstance) {
         return reply.code(404).send({ error: 'Comment not found' });
       }
 
+      // Get user info
+      const userData = await User.findOne({ email: user.email });
+      
+      if (!userData) {
+        return reply.code(404).send({ error: 'User not found' });
+      }
+
       // Check if user owns the comment
-      if (comment.author_email !== user.email) {
+      const isOwner = comment.author_email === user.email || (comment.author_username && comment.author_username === userData.username);
+      if (!isOwner) {
         return reply.code(403).send({ error: 'You can only update your own comments' });
       }
 
@@ -186,8 +204,16 @@ export async function commentRoutes(fastify: FastifyInstance) {
         return reply.code(404).send({ error: 'Comment not found' });
       }
 
+      // Get user info
+      const userData = await User.findOne({ email: user.email });
+      
+      if (!userData) {
+        return reply.code(404).send({ error: 'User not found' });
+      }
+
       // Check if user owns the comment
-      if (comment.author_email !== user.email) {
+      const isOwner = comment.author_email === user.email || (comment.author_username && comment.author_username === userData.username);
+      if (!isOwner) {
         return reply.code(403).send({ error: 'You can only delete your own comments' });
       }
 

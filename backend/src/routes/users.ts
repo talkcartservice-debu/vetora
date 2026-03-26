@@ -3,26 +3,33 @@ import { User, IUser } from '../models/User';
 import { z } from 'zod';
 
 export async function userRoutes(fastify: FastifyInstance) {
-  // Get user profile by email
-  fastify.get('/:email', async (request, reply) => {
+  // Get user profile by email or username
+  fastify.get('/:identifier', async (request, reply) => {
     try {
-      const { email } = request.params as { email: string };
-      const user = await User.findOne({ email }).lean();
+      const { identifier } = request.params as { identifier: string };
+      
+      // Try finding by username first, then email
+      let user = await User.findOne({ username: identifier.toLowerCase() }).lean();
+      if (!user) {
+        user = await User.findOne({ email: identifier.toLowerCase() }).lean();
+      }
 
       if (!user) {
         return reply.code(404).send({ error: 'User not found' });
       }
 
-      // Return public profile info
+      // Return public profile info (email hidden)
       return {
         id: user._id,
-        email: user.email,
+        username: user.username,
         display_name: user.display_name,
         bio: user.bio,
         avatar_url: user.avatar_url,
         banner_url: user.banner_url,
         is_verified: user.is_verified,
-        role: user.role, // Added role
+        role: user.role,
+        follower_count: user.follower_count || 0,
+        following_count: user.following_count || 0,
         created_at: user.created_at,
       };
     } catch (error: any) {
@@ -42,12 +49,12 @@ export async function userRoutes(fastify: FastifyInstance) {
 
       const users = await User.find({
         $or: [
-          { email: { $regex: q, $options: 'i' } },
+          { username: { $regex: q, $options: 'i' } },
           { display_name: { $regex: q, $options: 'i' } }
         ]
       })
       .limit(parseInt(limit))
-      .select('email display_name avatar_url is_verified')
+      .select('username display_name avatar_url is_verified')
       .lean();
 
       return users;

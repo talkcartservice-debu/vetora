@@ -23,8 +23,8 @@ export default function Home() {
       if (activeTab === "trending") {
         return postsAPI.list({ sort: "-likes_count", limit: 20 });
       }
-      if (activeTab === "following" && currentUser?.email) {
-        return postsAPI.list({ following_only: true, user_email: currentUser.email, sort: "-created_at", limit: 20 });
+      if (activeTab === "following" && currentUser?.username) {
+        return postsAPI.list({ following_only: true, user_username: currentUser.username, sort: "-created_at", limit: 20 });
       }
       return postsAPI.list({ sort: "-created_at", limit: 20 });
     },
@@ -38,9 +38,9 @@ export default function Home() {
   const trendingProducts = trendingProductsResponse?.data || [];
 
   const { data: userLikesResponse = [] } = useQuery({
-    queryKey: ["userLikes", currentUser?.email],
-    queryFn: () => likesAPI.list({ user_email: currentUser?.email }),
-    enabled: !!currentUser?.email,
+    queryKey: ["userLikes", currentUser?.username],
+    queryFn: () => likesAPI.list({ user_username: currentUser?.username }),
+    enabled: !!currentUser?.username,
   });
   const userLikes = Array.isArray(userLikesResponse) ? userLikesResponse : userLikesResponse?.data || [];
 

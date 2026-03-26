@@ -2,6 +2,7 @@ import mongoose, { Document, Schema } from 'mongoose';
 
 export interface IUser extends Document {
   _id: mongoose.Types.ObjectId;
+  username: string;
   email: string;
   password?: string;
   display_name?: string;
@@ -31,11 +32,22 @@ export interface IUser extends Document {
   reset_token_expiry?: Date;
   role: 'user' | 'vendor' | 'super_admin';
   is_blocked: boolean;
+  follower_count: number;
+  following_count: number;
   created_at: Date;
   updated_at: Date;
 }
 
 const UserSchema = new Schema<IUser>({
+  username: {
+    type: String,
+    required: true,
+    unique: true,
+    lowercase: true,
+    trim: true,
+    minlength: 3,
+    maxlength: 30,
+  },
   email: {
     type: String,
     required: true,
@@ -125,6 +137,16 @@ const UserSchema = new Schema<IUser>({
   is_blocked: {
     type: Boolean,
     default: false,
+  },
+  follower_count: {
+    type: Number,
+    default: 0,
+    min: 0,
+  },
+  following_count: {
+    type: Number,
+    default: 0,
+    min: 0,
   },
 }, {
   timestamps: {

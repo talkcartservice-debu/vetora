@@ -4,6 +4,7 @@ export interface IComment extends Document {
   _id: mongoose.Types.ObjectId;
   post_id: string;
   author_email: string;
+  author_username: string;
   author_name?: string;
   author_avatar?: string;
   content: string;
@@ -19,6 +20,12 @@ const CommentSchema = new Schema<IComment>({
     required: true,
   },
   author_email: {
+    type: String,
+    required: true,
+    lowercase: true,
+    trim: true,
+  },
+  author_username: {
     type: String,
     required: true,
     lowercase: true,
@@ -55,6 +62,7 @@ const CommentSchema = new Schema<IComment>({
 // Indexes for performance
 CommentSchema.index({ post_id: 1, created_at: -1 });
 CommentSchema.index({ author_email: 1 });
+CommentSchema.index({ author_username: 1 });
 CommentSchema.index({ parent_comment_id: 1 });
 CommentSchema.index({ created_at: -1 });
 

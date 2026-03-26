@@ -14,6 +14,7 @@ const createPostSchema = z.object({
   visibility: z.enum(['public', 'followers', 'community']).default('public'),
   // Optional fields that can be provided but are not required
   author_email: z.string().optional().nullable(),
+  author_username: z.string().optional().nullable(),
   author_name: z.string().optional().nullable(),
   likes_count: z.number().default(0),
   comments_count: z.number().default(0),
@@ -27,10 +28,12 @@ export async function postRoutes(fastify: FastifyInstance) {
       const query = request.query as any;
       const {
         author_email,
+        author_username,
         community_id,
         visibility = 'public',
         following_only,
         user_email,
+        user_username,
         search,
         limit = 20,
         skip = 0,
@@ -39,17 +42,25 @@ export async function postRoutes(fastify: FastifyInstance) {
 
       const filter: any = {};
       if (author_email) filter.author_email = author_email;
+      if (author_username) filter.author_username = author_username;
       if (community_id) filter.community_id = community_id;
       if (visibility) filter.visibility = visibility;
 
       // Handle following_only filter
-      if (following_only === 'true' && user_email) {
-        const follows = await Follow.find({ follower_email: user_email.toLowerCase() }).lean();
-        const followingEmails = follows.map(f => f.following_email);
+      if (following_only === 'true' && (user_email || user_username)) {
+        const followFilter: any = {};
+        if (user_email) followFilter.follower_email = user_email.toLowerCase();
+        if (user_username) followFilter.follower_username = user_username.toLowerCase();
+        
+        const follows = await Follow.find(followFilter).lean();
+        const followingEmails = follows.map(f => f.following_email).filter(Boolean);
+        const followingUsernames = follows.map(f => f.following_username).filter(Boolean);
         
         // If following no one, we should probably return empty array or handle it
-        if (followingEmails.length > 0) {
-          filter.author_email = { $in: followingEmails };
+        if (followingEmails.length > 0 || followingUsernames.length > 0) {
+          filter.$or = [];
+          if (followingEmails.length > 0) filter.$or.push({ author_email: { $in: followingEmails } });
+          if (followingUsernames.length > 0) filter.$or.push({ author_username: { $in: followingUsernames } });
         } else {
           // Special case: following no one, so return empty list
           return { data: [], total: 0, limit: parseInt(limit), skip: parseInt(skip) };
@@ -128,6 +139,7 @@ export async function postRoutes(fastify: FastifyInstance) {
       const post = new Post({
         ...body,
         author_email: user.email,
+        author_username: userData.username,
         author_name: userData?.display_name || user.email.split('@')[0],
         author_avatar: userData?.avatar_url,
         created_at: new Date(),
@@ -164,11 +176,20 @@ export async function postRoutes(fastify: FastifyInstance) {
         return reply.code(401).send({ error: 'Unauthorized - invalid user data' });
       }
 
+      // Get user info for author details
+      const userData = await User.findOne({ email: user.email });
+      
+      if (!userData) {
+        fastify.log.error(`User not found: ${user.email}`);
+        return reply.code(400).send({ error: 'User not found. Please complete your profile.' });
+      }
+
       // Check if already liked
       const existingLike = await Like.findOne({
-        user_email: user.email,
-        target_id: id,
-        target_type: 'post'
+        $or: [
+          { user_email: user.email, target_id: id, target_type: 'post' },
+          { user_username: userData.username, target_id: id, target_type: 'post' }
+        ]
       });
 
       if (existingLike) {
@@ -177,6 +198,7 @@ export async function postRoutes(fastify: FastifyInstance) {
 
       const like = new Like({
         user_email: user.email,
+        user_username: userData.username,
         target_id: id,
         target_type: 'post'
       });
@@ -208,10 +230,21 @@ export async function postRoutes(fastify: FastifyInstance) {
         return reply.code(401).send({ error: 'Unauthorized - invalid user data' });
       }
 
+      // Get user info for author details
+      const userData = await User.findOne({ email: user.email });
+      
+      if (!userData) {
+        fastify.log.error(`User not found: ${user.email}`);
+        return reply.code(400).send({ error: 'User not found. Please complete your profile.' });
+      }
+
       fastify.log.info(`User ${user.email} unliking post ${id}`);
 
       const result = await Like.deleteOne({
-        user_email: user.email.toLowerCase().trim(),
+        $or: [
+          { user_email: user.email.toLowerCase().trim() },
+          { user_username: userData.username }
+        ],
         target_id: id,
         target_type: 'post'
       });

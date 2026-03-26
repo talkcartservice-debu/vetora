@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { postsAPI, bookmarksAPI } from "@/api/apiClient";
-import { Heart, MessageCircle, Share2, ShoppingBag, MoreHorizontal, Bookmark } from "lucide-react";
+import { postsAPI, bookmarksAPI, followsAPI } from "@/api/apiClient";
+import { Heart, MessageCircle, Share2, ShoppingBag, MoreHorizontal, Bookmark, UserPlus, UserCheck } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/lib/utils";
@@ -13,6 +13,7 @@ export default function PostCard({ post, currentUser, userLikes = [] }) {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   
   const postId = (post?.id || post?._id)?.toString();
+  const authorUsername = post?.author_username;
   const isLiked = userLikes.some(l => String(l.target_id) === String(postId) && l.target_type === "post");
   const [optimisticLiked, setOptimisticLiked] = useState(isLiked);
   const [optimisticCount, setOptimisticCount] = useState(post?.likes_count || 0);
@@ -25,6 +26,43 @@ export default function PostCard({ post, currentUser, userLikes = [] }) {
   useEffect(() => {
     setOptimisticCount(post?.likes_count || 0);
   }, [post?.likes_count]);
+
+  // Follow state
+  const { data: isFollowing = false } = useQuery({
+    queryKey: ["isFollowing", currentUser?.username, authorUsername],
+    queryFn: async () => {
+      if (!currentUser?.username || !authorUsername || currentUser.username === authorUsername) return false;
+      const res = await followsAPI.check({ 
+        follower_username: currentUser.username, 
+        following_username: authorUsername,
+        follow_type: 'user'
+      });
+      return !!res.is_following;
+    },
+    enabled: !!currentUser?.username && !!authorUsername && currentUser.username !== authorUsername,
+  });
+
+  const followMutation = useMutation({
+    mutationFn: async () => {
+      if (!currentUser) {
+        toast.error("Please login to follow");
+        return;
+      }
+      if (isFollowing) {
+        await followsAPI.unfollow({ 
+          follower_username: currentUser.username, 
+          following_username: authorUsername,
+          follow_type: 'user'
+        });
+      } else {
+        await followsAPI.follow(authorUsername, 'user');
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["isFollowing", currentUser?.username, authorUsername] });
+      toast.success(isFollowing ? "Unfollowed" : `Following ${post.author_name || authorUsername}`);
+    },
+  });
 
   // Bookmark state
   const { data: bookmarkData } = useQuery({
@@ -89,7 +127,7 @@ export default function PostCard({ post, currentUser, userLikes = [] }) {
 
       {/* Header */}
       <div className="flex items-center justify-between p-4 pb-2">
-        <Link to={createPageUrl("Profile") + `?email=${post.author_email}`} className="flex items-center gap-3">
+        <Link to={createPageUrl("Profile") + `?username=${authorUsername}`} className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white font-semibold text-sm ring-2 ring-white">
             {post.author_avatar ? (
               <img src={post.author_avatar} alt="" className="w-full h-full rounded-full object-cover" />
@@ -98,8 +136,27 @@ export default function PostCard({ post, currentUser, userLikes = [] }) {
             )}
           </div>
           <div>
-            <p className="text-sm font-semibold text-slate-900 leading-none">{post.author_name || "User"}</p>
-            <p className="text-[10px] text-slate-400 font-medium mb-1">@{post.author_email?.split('@')[0]}</p>
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-semibold text-slate-900 leading-none">{post.author_name || "User"}</p>
+              {currentUser && authorUsername && currentUser.username !== authorUsername && (
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    followMutation.mutate();
+                  }}
+                  disabled={followMutation.isPending}
+                  className={`text-[11px] font-bold px-2 py-0.5 rounded-full transition-colors ${
+                    isFollowing 
+                      ? "text-slate-400 hover:text-slate-600 bg-slate-50" 
+                      : "text-indigo-600 hover:text-indigo-700 bg-indigo-50"
+                  }`}
+                >
+                  {isFollowing ? "Following" : "Follow"}
+                </button>
+              )}
+            </div>
+            <p className="text-[10px] text-slate-400 font-medium mb-1">@{authorUsername}</p>
             <p className="text-[10px] text-slate-400">
               {new Date(post.created_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
               {post.is_sponsored && (

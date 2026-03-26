@@ -65,7 +65,7 @@ export default function ProductDetail() {
   const addToCartMutation = useMutation({
     mutationFn: async () => {
       await cartAPI.add({
-        user_email: currentUser.email,
+        user_username: currentUser.username,
         product_id: productId,
         product_title: product.title,
         product_image: product.images?.[0],
@@ -73,7 +73,7 @@ export default function ProductDetail() {
         store_id: product.store_id,
         store_name: product.store_name,
         quantity,
-        ...(affiliateEmail ? { affiliate_email: affiliateEmail } : {}),
+        ...(affiliateEmail ? { affiliate_username: affiliateEmail } : {}),
       });
     },
     onSuccess: () => {
@@ -85,12 +85,12 @@ export default function ProductDetail() {
   });
 
   const { data: wishlistItems = [] } = useQuery({
-    queryKey: ["wishlist", currentUser?.email],
+    queryKey: ["wishlist", currentUser?.username],
     queryFn: async () => {
-      const res = await wishlistAPI.list({ user_email: currentUser?.email, sort: "-created_date", limit: 200 });
+      const res = await wishlistAPI.list({ user_username: currentUser?.username, sort: "-created_date", limit: 200 });
       return res.items || res.data || (Array.isArray(res) ? res : []);
     },
-    enabled: !!currentUser?.email,
+    enabled: !!currentUser?.username,
   });
 
   const isWishlisted = wishlistItems.some(w => (w.product_id === productId || w.product_id === product?.id || w.product_id === product?._id));
@@ -106,16 +106,10 @@ export default function ProductDetail() {
       if (isWishlisted) {
         await wishlistAPI.remove(productId);
       } else {
-        const vendorEmail = product.vendor_email || product.store_email || productResponse?.vendor_email || "";
+        const vendorUsername = product.vendor_username || product.store_username || productResponse?.vendor_username || "";
         
-        if (!vendorEmail) {
-          console.error("Missing vendor email for product", product);
-          // If vendor_email is truly missing, try fetching it if possible or show error
-          // For now, if it's missing, the API will fail anyway with 400.
-        }
-
         await wishlistAPI.add({
-          user_email: currentUser.email,
+          user_username: currentUser.username,
           product_id: productId,
           product_title: product.title,
           product_image: product.images?.[0],
@@ -123,7 +117,7 @@ export default function ProductDetail() {
           compare_at_price: product.compare_at_price,
           store_id: product.store_id,
           store_name: product.store_name,
-          vendor_email: vendorEmail,
+          vendor_username: vendorUsername,
         });
         toast.success("Saved to wishlist!");
       }

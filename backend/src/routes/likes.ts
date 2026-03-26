@@ -3,7 +3,7 @@ import { Like, ILike } from '../models/Like';
 import { Post } from '../models/Post';
 import { Comment } from '../models/Comment';
 import { Product } from '../models/Product';
-import { Review } from '../models/Review';
+import { User } from '../models/User';
 
 export async function likeRoutes(fastify: FastifyInstance) {
   // Get likes for a specific target
@@ -14,6 +14,7 @@ export async function likeRoutes(fastify: FastifyInstance) {
         target_type,
         target_id,
         user_email,
+        user_username,
         limit = 50,
         skip = 0
       } = query;
@@ -24,6 +25,7 @@ export async function likeRoutes(fastify: FastifyInstance) {
       if (target_type) filter.target_type = target_type;
       if (target_id) filter.target_id = target_id;
       if (user_email) filter.user_email = user_email;
+      if (user_username) filter.user_username = user_username;
 
       const likes = await Like
         .find(filter)
@@ -65,8 +67,18 @@ export async function likeRoutes(fastify: FastifyInstance) {
         return reply.code(400).send({ error: 'Missing required parameters: target_type, target_id' });
       }
 
+      // Get user info
+      const userData = await User.findOne({ email: user.email });
+      
+      if (!userData) {
+        return reply.code(404).send({ error: 'User not found' });
+      }
+
       const like = await Like.findOne({
-        user_email: user.email,
+        $or: [
+          { user_email: user.email },
+          { user_username: userData.username }
+        ],
         target_type,
         target_id
       });
@@ -118,9 +130,19 @@ export async function likeRoutes(fastify: FastifyInstance) {
         return reply.code(404).send({ error: `${target_type} not found` });
       }
 
+      // Get user info for author details
+      const userData = await User.findOne({ email: user.email });
+      
+      if (!userData) {
+        return reply.code(404).send({ error: 'User not found' });
+      }
+
       // Check if user already liked this target
       const existingLike = await Like.findOne({
-        user_email: user.email,
+        $or: [
+          { user_email: user.email },
+          { user_username: userData.username }
+        ],
         target_type,
         target_id
       });
@@ -131,6 +153,7 @@ export async function likeRoutes(fastify: FastifyInstance) {
 
       const like = new Like({
         user_email: user.email,
+        user_username: userData.username,
         target_type,
         target_id
       });
@@ -170,8 +193,18 @@ export async function likeRoutes(fastify: FastifyInstance) {
         return reply.code(400).send({ error: 'Missing required parameters: target_type, target_id' });
       }
 
+      // Get user info
+      const userData = await User.findOne({ email: user.email });
+      
+      if (!userData) {
+        return reply.code(404).send({ error: 'User not found' });
+      }
+
       const like = await Like.findOneAndDelete({
-        user_email: user.email,
+        $or: [
+          { user_email: user.email },
+          { user_username: userData.username }
+        ],
         target_type,
         target_id
       });
@@ -235,7 +268,19 @@ export async function likeRoutes(fastify: FastifyInstance) {
       } = query;
       const user = request.user as any;
 
-      const filter: any = { user_email: user.email };
+      // Get user info
+      const userData = await User.findOne({ email: user.email });
+      
+      if (!userData) {
+        return reply.code(404).send({ error: 'User not found' });
+      }
+
+      const filter: any = { 
+        $or: [
+          { user_email: user.email },
+          { user_username: userData.username }
+        ]
+      };
       if (target_type) filter.target_type = target_type;
 
       const likes = await Like

@@ -14,6 +14,7 @@ const loginSchema = z.object({
 
 const registerSchema = z.object({
   email: z.string().email(),
+  username: z.string().min(3).max(30).regex(/^[a-zA-Z0-9_]+$/).optional(),
   password: z.string().min(6),
   display_name: z.string().min(1).max(50).optional(),
 });
@@ -63,6 +64,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       return {
         user: {
           id: user._id,
+          username: user.username,
           email: user.email,
           display_name: user.display_name,
           avatar_url: user.avatar_url,
@@ -142,6 +144,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       return {
         user: {
           id: user._id,
+          username: user.username,
           email: user.email,
           display_name: user.display_name,
           avatar_url: user.avatar_url,
@@ -171,12 +174,28 @@ export async function authRoutes(fastify: FastifyInstance) {
     try {
       const body = request.body;
       
-      const { email, password, display_name } = registerSchema.parse(body);
+      const { email, username, password, display_name } = registerSchema.parse(body);
 
       // Check if user already exists
-      const existingUser = await User.findOne({ email });
+      const existingUser = await User.findOne({ 
+        $or: [{ email }, { username: username || '' }] 
+      });
       if (existingUser) {
-        return reply.code(409).send({ error: 'User already exists' });
+        return reply.code(409).send({ error: 'User or email already exists' });
+      }
+
+      // Generate username if not provided
+      let finalUsername = username;
+      if (!finalUsername) {
+        finalUsername = email.split('@')[0].toLowerCase().replace(/[^a-z0-9_]/g, '');
+        // Ensure uniqueness
+        let count = 0;
+        let candidate = finalUsername;
+        while (await User.findOne({ username: candidate })) {
+          count++;
+          candidate = `${finalUsername}${count}`;
+        }
+        finalUsername = candidate;
       }
 
       // Hash password
@@ -185,6 +204,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       // Create user
       const user = new User({
         email,
+        username: finalUsername,
         password: hashedPassword,
         display_name,
         is_verified: false
@@ -202,6 +222,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       return {
         user: {
           id: user._id,
+          username: user.username,
           email: user.email,
           display_name: user.display_name,
           avatar_url: user.avatar_url,
@@ -319,6 +340,7 @@ export async function authRoutes(fastify: FastifyInstance) {
 
       return {
         id: user._id,
+        username: user.username,
         email: user.email,
         display_name: user.display_name,
         bio: user.bio,
@@ -349,6 +371,7 @@ export async function authRoutes(fastify: FastifyInstance) {
     preHandler: [fastify.authenticate],
   }, async (request, reply) => {
     const updateSchema = z.object({
+      username: z.string().min(3).max(30).regex(/^[a-zA-Z0-9_]+$/).optional(),
       display_name: z.string().max(50).optional(),
       bio: z.string().max(500).optional(),
       avatar_url: z.string().optional(),
@@ -381,6 +404,7 @@ export async function authRoutes(fastify: FastifyInstance) {
 
       return {
         id: user._id,
+        username: user.username,
         email: user.email,
         display_name: user.display_name,
         bio: user.bio,

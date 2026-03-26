@@ -37,9 +37,9 @@ export default function PostDetail() {
   const comments = Array.isArray(commentsData) ? commentsData : commentsData?.comments || [];
 
   const { data: userLikesResponse = [] } = useQuery({
-    queryKey: ["userLikes", currentUser?.email],
-    queryFn: () => likesAPI.list({ user_email: currentUser?.email }),
-    enabled: !!currentUser?.email,
+    queryKey: ["userLikes", currentUser?.username],
+    queryFn: () => likesAPI.list({ user_username: currentUser?.username }),
+    enabled: !!currentUser?.username,
   });
   const userLikes = Array.isArray(userLikesResponse) ? userLikesResponse : userLikesResponse?.data || [];
 
@@ -47,8 +47,8 @@ export default function PostDetail() {
     mutationFn: async () => {
       await commentsAPI.create({
         post_id: postId,
-        author_email: currentUser.email,
-        author_name: currentUser.full_name,
+        author_username: currentUser.username,
+        author_name: currentUser.display_name || currentUser.full_name,
         content: commentText,
       });
     },
@@ -194,7 +194,7 @@ export default function PostDetail() {
                     <div className="flex items-center justify-between mb-1.5">
                       <div className="flex items-center gap-1.5">
                         <span className="text-sm font-bold text-slate-900">{comment.author_name || "User"}</span>
-                        <span className="text-[10px] text-slate-400 font-medium">@{comment.author_email?.split('@')[0]}</span>
+                        <span className="text-[10px] text-slate-400 font-medium">@{comment.author_username || comment.author_email?.split('@')[0]}</span>
                       </div>
                       <span className="text-[10px] font-medium text-slate-400">
                         {new Date(comment.created_at || comment.created_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}

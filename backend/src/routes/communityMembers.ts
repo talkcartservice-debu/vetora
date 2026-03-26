@@ -2,6 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { CommunityMember, ICommunityMember } from '../models/CommunityMember';
 import { Community } from '../models/Community';
 import { User } from '../models/User';
+import { Notification } from '../models/Notification';
 
 export async function communityMemberRoutes(fastify: FastifyInstance) {
   // Get members of a community
@@ -101,6 +102,24 @@ export async function communityMemberRoutes(fastify: FastifyInstance) {
       // Update community member count
       community.member_count += 1;
       await community.save();
+
+      // Create notification for community owner
+      if (community.owner_email !== user.email) {
+        const notification = new Notification({
+          recipient_email: community.owner_email,
+          type: 'follow',
+          title: `${user.display_name || user.email} joined your community: ${community.name}`,
+          sender_email: user.email,
+          sender_name: user.display_name || user.email,
+          link: `/community/${community._id}`,
+          metadata: {
+            community_id: community._id,
+            member_id: member._id
+          }
+        });
+        await notification.save();
+        fastify.io?.to(community.owner_email).emit('notification:new', notification);
+      }
 
       // Emit real-time event
       fastify.io?.emit('community:member-joined', {
