@@ -1,6 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { LiveChatMessage, ILiveChatMessage } from '../models/LiveChatMessage';
 import { LiveSession } from '../models/LiveSession';
+import { User } from '../models/User';
 
 export async function liveChatMessageRoutes(fastify: FastifyInstance) {
   // Get messages for a live session
@@ -69,10 +70,17 @@ export async function liveChatMessageRoutes(fastify: FastifyInstance) {
         return reply.code(400).send({ error: 'Live session is not active' });
       }
 
+      // Get user info
+      const userData = await User.findOne({ email: user.email });
+      if (!userData) {
+        return reply.code(404).send({ error: 'User not found' });
+      }
+
       const message = new LiveChatMessage({
         session_id: body.session_id,
         user_email: user.email,
-        user_name: user.name || user.email,
+        user_username: userData.username,
+        user_name: userData.display_name || userData.username,
         content: body.content,
         message_type: body.message_type || 'chat',
         product_id: body.product_id,
@@ -125,10 +133,17 @@ export async function liveChatMessageRoutes(fastify: FastifyInstance) {
         return reply.code(400).send({ error: 'Live session is not active' });
       }
 
+      // Get user info
+      const userData = await User.findOne({ email: user.email });
+      if (!userData) {
+        return reply.code(404).send({ error: 'User not found' });
+      }
+
       const message = new LiveChatMessage({
         session_id,
         user_email: user.email,
-        user_name: user.name || user.email,
+        user_username: userData.username,
+        user_name: userData.display_name || userData.username,
         content,
         message_type,
         product_id,
@@ -166,7 +181,7 @@ export async function liveChatMessageRoutes(fastify: FastifyInstance) {
       ]);
 
       const totalMessages = await LiveChatMessage.countDocuments({ session_id: sessionId });
-      const uniqueUsers = await LiveChatMessage.distinct('user_email', { session_id: sessionId });
+      const uniqueUsers = await LiveChatMessage.distinct('user_username', { session_id: sessionId });
 
       reply.send({
         session_id: sessionId,
@@ -198,7 +213,7 @@ export async function liveChatMessageRoutes(fastify: FastifyInstance) {
       }
 
       // TODO: Add moderator check - for now only message author can delete
-      if (message.user_email !== user.email) {
+      if (message.user_email !== user.email && message.user_username !== user.username) {
         return reply.code(403).send({ error: 'You can only delete your own messages' });
       }
 

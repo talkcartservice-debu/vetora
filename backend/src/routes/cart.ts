@@ -1,6 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { CartItem, ICartItem } from '../models/CartItem';
 import { Product } from '../models/Product';
+import { User } from '../models/User';
 import { z } from 'zod';
 
 const addToCartSchema = z.object({
@@ -20,7 +21,14 @@ export async function cartRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     try {
       const user = request.user as any;
-      const items = await CartItem.find({ user_email: user.email }).lean();
+
+      // Get user info
+      const userData = await User.findOne({ email: user.email });
+      if (!userData) {
+        return reply.code(404).send({ error: 'User not found' });
+      }
+
+      const items = await CartItem.find({ user_username: userData.username }).lean();
       return { items };
     } catch (error) {
       fastify.log.error(error);
@@ -36,8 +44,14 @@ export async function cartRoutes(fastify: FastifyInstance) {
       const user = request.user as any;
       const { product_id, quantity, affiliate_email } = addToCartSchema.parse(request.body);
 
+      // Get user info
+      const userData = await User.findOne({ email: user.email });
+      if (!userData) {
+        return reply.code(404).send({ error: 'User not found' });
+      }
+
       // Check if item already in cart
-      let cartItem = await CartItem.findOne({ user_email: user.email, product_id });
+      let cartItem = await CartItem.findOne({ user_username: userData.username, product_id });
 
       if (cartItem) {
         cartItem.quantity += quantity;
@@ -53,6 +67,7 @@ export async function cartRoutes(fastify: FastifyInstance) {
 
       cartItem = new CartItem({
         user_email: user.email,
+        user_username: userData.username,
         product_id,
         product_title: product.title,
         product_image: product.images[0],
@@ -83,8 +98,14 @@ export async function cartRoutes(fastify: FastifyInstance) {
       const { quantity } = updateCartItemSchema.parse(request.body);
       const user = request.user as any;
 
+      // Get user info
+      const userData = await User.findOne({ email: user.email });
+      if (!userData) {
+        return reply.code(404).send({ error: 'User not found' });
+      }
+
       const cartItem = await CartItem.findOneAndUpdate(
-        { _id: id, user_email: user.email },
+        { _id: id, user_username: userData.username },
         { quantity },
         { new: true }
       );
@@ -111,7 +132,13 @@ export async function cartRoutes(fastify: FastifyInstance) {
       const { id } = request.params as { id: string };
       const user = request.user as any;
 
-      const result = await CartItem.deleteOne({ _id: id, user_email: user.email });
+      // Get user info
+      const userData = await User.findOne({ email: user.email });
+      if (!userData) {
+        return reply.code(404).send({ error: 'User not found' });
+      }
+
+      const result = await CartItem.deleteOne({ _id: id, user_username: userData.username });
       if (result.deletedCount === 0) {
         return reply.code(404).send({ error: 'Cart item not found' });
       }
@@ -129,7 +156,14 @@ export async function cartRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     try {
       const user = request.user as any;
-      await CartItem.deleteMany({ user_email: user.email });
+
+      // Get user info
+      const userData = await User.findOne({ email: user.email });
+      if (!userData) {
+        return reply.code(404).send({ error: 'User not found' });
+      }
+
+      await CartItem.deleteMany({ user_username: userData.username });
       return { status: 'cleared' };
     } catch (error) {
       fastify.log.error(error);

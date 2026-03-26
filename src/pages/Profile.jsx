@@ -119,8 +119,6 @@ export default function Profile() {
     enabled: !!targetUsername,
   });
 
-  const targetEmail = profileUser?.email;
-
   const { data: posts = [], isLoading: postsLoading } = useQuery({
     queryKey: ["userPosts", targetUsername],
     queryFn: async () => {
@@ -419,16 +417,16 @@ export default function Profile() {
                 label: "Followers", 
                 value: followersCount, 
                 onClick: async () => {
-                  const res = await followsAPI.getFollowers({ following_email: targetEmail });
-                  setUserList({ open: true, title: "Followers", users: res.data || res || [] });
+                  const res = await followsAPI.getFollowers({ following_username: targetUsername });
+                  setUserList({ open: true, title: "Followers", users: res.followers || res.data || res || [] });
                 }
               },
               { 
                 label: "Following", 
                 value: followingCount, 
                 onClick: async () => {
-                  const res = await followsAPI.getFollowing({ follower_email: targetEmail });
-                  setUserList({ open: true, title: "Following", users: res.data || res || [] });
+                  const res = await followsAPI.getFollowing({ follower_username: targetUsername });
+                  setUserList({ open: true, title: "Following", users: res.following || res.data || res || [] });
                 }
               },
               ...(userProducts.length > 0 ? [{ label: "Products", value: userProducts.length, onClick: null }] : []),

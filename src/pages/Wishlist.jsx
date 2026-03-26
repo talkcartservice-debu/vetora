@@ -15,12 +15,12 @@ export default function Wishlist() {
   const { user: currentUser } = useAuth();
 
   const { data: wishlistItems = [], isLoading } = useQuery({
-    queryKey: ["wishlist", currentUser?.email],
+    queryKey: ["wishlist", currentUser?.username],
     queryFn: async () => {
-      const res = await wishlistAPI.list({ user_email: currentUser?.email, sort: "-created_date", limit: 100 });
+      const res = await wishlistAPI.list({ user_username: currentUser?.username, sort: "-created_date", limit: 100 });
       return res.data || [];
     },
-    enabled: !!currentUser?.email,
+    enabled: !!currentUser?.username,
   });
 
   const removeMutation = useMutation({
@@ -33,7 +33,7 @@ export default function Wishlist() {
 
   const addToCartMutation = useMutation({
     mutationFn: (item) => cartAPI.add({
-      user_email: currentUser.email,
+      user_username: currentUser.username,
       product_id: item.product_id,
       product_title: item.product_title,
       product_image: item.product_image,
@@ -51,7 +51,7 @@ export default function Wishlist() {
   const moveAllToCart = async () => {
     for (const item of wishlistItems) {
       await cartAPI.add({
-        user_email: currentUser.email,
+        user_username: currentUser.username,
         product_id: item.product_id,
         product_title: item.product_title,
         product_image: item.product_image,

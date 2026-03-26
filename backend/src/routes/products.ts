@@ -15,9 +15,14 @@ export async function productRoutes(fastify: FastifyInstance) {
       const { limit = 10 } = request.query as any;
 
       // 1. Fetch user signals
+      const userData = await User.findOne({ email: user.email });
+      if (!userData) {
+        return reply.code(404).send({ error: 'User not found' });
+      }
+
       const [likes, wishlist, orders] = await Promise.all([
-        Like.find({ user_email: user.email, target_type: 'product' }).select('target_id'),
-        WishlistItem.find({ user_email: user.email }).select('product_id'),
+        Like.find({ user_username: userData.username, target_type: 'product' }).select('target_id'),
+        WishlistItem.find({ user_username: userData.username }).select('product_id'),
         Order.find({ buyer_email: user.email }).select('items.product_id')
       ]);
 
@@ -62,7 +67,7 @@ export async function productRoutes(fastify: FastifyInstance) {
       const {
         category,
         status = 'active',
-        vendor_email,
+        vendor_username,
         store_id,
         search,
         sort = '-sales_count',
@@ -75,7 +80,7 @@ export async function productRoutes(fastify: FastifyInstance) {
 
       if (status) filter.status = status;
       if (category) filter.category = category;
-      if (vendor_email) filter.vendor_email = vendor_email;
+      if (vendor_username) filter.vendor_username = vendor_username;
       if (store_id) filter.store_id = store_id;
 
       // Text search
@@ -167,6 +172,7 @@ export async function productRoutes(fastify: FastifyInstance) {
       const product = new Product({
         ...productData,
         vendor_email: user.email,
+        vendor_username: user.username,
       });
 
       const savedProduct = await product.save();
@@ -210,7 +216,7 @@ export async function productRoutes(fastify: FastifyInstance) {
       }
 
       const product = await Product.findOneAndUpdate(
-        { _id: id, vendor_email: user.email },
+        { _id: id, $or: [{ vendor_email: user.email }, { vendor_username: user.username }] },
         { ...updateData, updated_at: new Date() },
         { new: true }
       );
@@ -252,7 +258,7 @@ export async function productRoutes(fastify: FastifyInstance) {
 
       const product = await Product.findOneAndDelete({
         _id: id,
-        vendor_email: user.email
+        $or: [{ vendor_email: user.email }, { vendor_username: user.username }]
       });
 
       if (!product) {

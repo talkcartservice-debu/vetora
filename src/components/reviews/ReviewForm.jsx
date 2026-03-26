@@ -73,8 +73,8 @@ export default function ReviewForm({ productId, storeId, currentUser, onClose })
       await reviewsAPI.create({
         product_id: productId,
         store_id: storeId,
-        reviewer_email: currentUser.email,
-        reviewer_name: currentUser.full_name || currentUser.email,
+        reviewer_username: currentUser.username,
+        reviewer_name: currentUser.display_name || currentUser.username,
         rating,
         title,
         content,

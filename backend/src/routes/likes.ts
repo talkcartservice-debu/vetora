@@ -3,6 +3,7 @@ import { Like, ILike } from '../models/Like';
 import { Post } from '../models/Post';
 import { Comment } from '../models/Comment';
 import { Product } from '../models/Product';
+import { Review } from '../models/Review';
 import { User } from '../models/User';
 
 export async function likeRoutes(fastify: FastifyInstance) {

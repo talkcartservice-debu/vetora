@@ -1,5 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { Bookmark, IBookmark } from '../models/Bookmark';
+import { User } from '../models/User';
 import { Post } from '../models/Post';
 import { Product } from '../models/Product';
 
@@ -12,7 +13,13 @@ export async function bookmarkRoutes(fastify: FastifyInstance) {
       const user = request.user as any;
       const { target_type, limit = 50, skip = 0 } = request.query as any;
 
-      const filter: any = { user_email: user.email };
+      // Get user info
+      const userData = await User.findOne({ email: user.email });
+      if (!userData) {
+        return reply.code(404).send({ error: 'User not found' });
+      }
+
+      const filter: any = { user_username: userData.username };
       if (target_type) filter.target_type = target_type;
 
       const bookmarks = await Bookmark
@@ -51,8 +58,14 @@ export async function bookmarkRoutes(fastify: FastifyInstance) {
         return reply.code(400).send({ error: 'Missing target_type or target_id' });
       }
 
+      // Get user info
+      const userData = await User.findOne({ email: user.email });
+      if (!userData) {
+        return reply.code(404).send({ error: 'User not found' });
+      }
+
       const bookmark = await Bookmark.findOne({
-        user_email: user.email,
+        user_username: userData.username,
         target_type,
         target_id
       });
@@ -84,9 +97,15 @@ export async function bookmarkRoutes(fastify: FastifyInstance) {
         return reply.code(400).send({ error: 'Invalid target_type. Must be post or product.' });
       }
 
+      // Get user info
+      const userData = await User.findOne({ email: user.email });
+      if (!userData) {
+        return reply.code(404).send({ error: 'User not found' });
+      }
+
       // Check if already bookmarked
       const existing = await Bookmark.findOne({
-        user_email: user.email,
+        user_username: userData.username,
         target_type,
         target_id
       });
@@ -97,6 +116,7 @@ export async function bookmarkRoutes(fastify: FastifyInstance) {
 
       const bookmark = new Bookmark({
         user_email: user.email,
+        user_username: userData.username,
         target_type,
         target_id
       });
@@ -124,8 +144,14 @@ export async function bookmarkRoutes(fastify: FastifyInstance) {
         return reply.code(400).send({ error: 'Missing target_type or target_id' });
       }
 
+      // Get user info
+      const userData = await User.findOne({ email: user.email });
+      if (!userData) {
+        return reply.code(404).send({ error: 'User not found' });
+      }
+
       const result = await Bookmark.findOneAndDelete({
-        user_email: user.email,
+        user_username: userData.username,
         target_type,
         target_id
       });

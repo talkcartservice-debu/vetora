@@ -3,6 +3,7 @@ import mongoose, { Document, Schema } from 'mongoose';
 export interface ICartItem extends Document {
   _id: mongoose.Types.ObjectId;
   user_email: string;
+  user_username: string;
   product_id: string;
   product_title: string;
   product_image?: string;
@@ -17,6 +18,12 @@ export interface ICartItem extends Document {
 
 const CartItemSchema = new Schema<ICartItem>({
   user_email: {
+    type: String,
+    required: true,
+    lowercase: true,
+    trim: true,
+  },
+  user_username: {
     type: String,
     required: true,
     lowercase: true,
@@ -66,6 +73,7 @@ const CartItemSchema = new Schema<ICartItem>({
 
 // Indexes for performance
 CartItemSchema.index({ user_email: 1 });
+CartItemSchema.index({ user_username: 1 });
 CartItemSchema.index({ product_id: 1 });
 CartItemSchema.index({ store_id: 1 });
 

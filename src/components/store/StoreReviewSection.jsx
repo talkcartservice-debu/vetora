@@ -70,7 +70,7 @@ function RatingBreakdown({ reviews }) {
   );
 }
 
-function ReviewCard({ review, isVendor, vendorEmail, storeId }) {
+function ReviewCard({ review, isVendor, vendorUsername, storeId }) {
   const [showReply, setShowReply] = useState(false);
   const [replyText, setReplyText] = useState(review.vendor_reply || "");
   const [expanded, setExpanded] = useState(false);
@@ -188,7 +188,7 @@ export default function StoreReviewSection({ store, currentUser }) {
   const [form, setForm] = useState({ rating: 0, title: "", content: "" });
   const queryClient = useQueryClient();
 
-  const isVendor = currentUser?.email === store?.owner_email;
+  const isVendor = currentUser?.username === store?.owner_username;
   const canReview = currentUser && !isVendor;
 
   const { data: response, isLoading } = useQuery({
@@ -199,15 +199,15 @@ export default function StoreReviewSection({ store, currentUser }) {
 
   const reviews = response?.data || response?.reviews || [];
 
-  const alreadyReviewed = reviews.some(r => r.reviewer_email === currentUser?.email);
+  const alreadyReviewed = reviews.some(r => r.reviewer_username === currentUser?.username);
 
   const submitMutation = useMutation({
     mutationFn: () => reviewsAPI.create({
       store_id: store.id,
       store_name: store.name,
-      vendor_email: store.owner_email,
-      reviewer_email: currentUser.email,
-      reviewer_name: currentUser.full_name,
+      vendor_username: store.owner_username,
+      reviewer_username: currentUser.username,
+      reviewer_name: currentUser.display_name || currentUser.username,
       rating: form.rating,
       title: form.title,
       content: form.content,
@@ -291,7 +291,7 @@ export default function StoreReviewSection({ store, currentUser }) {
               key={review._id || review.id}
               review={review}
               isVendor={isVendor}
-              vendorEmail={store?.owner_email}
+              vendorUsername={store?.owner_username}
               storeId={store?.id}
             />
           ))}

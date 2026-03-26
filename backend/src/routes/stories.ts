@@ -11,38 +11,47 @@ export async function storyRoutes(fastify: FastifyInstance) {
     try {
       const user = request.user as any;
 
+      // Get user info
+      const userData = await User.findOne({ email: user.email });
+      if (!userData) {
+        return reply.code(404).send({ error: 'User not found' });
+      }
+
       // Get users that the current user follows
       const following = await Follow.find({
-        follower_email: user.email,
+        $or: [
+          { follower_email: user.email },
+          { follower_username: userData.username }
+        ],
         follow_type: 'user'
-      }).select('following_email');
+      }).select('following_username');
 
-      const followingEmails = following.map(f => f.following_email);
-      followingEmails.push(user.email); // Include own stories
+      const followingUsernames = following.map(f => f.following_username);
+      followingUsernames.push(userData.username); // Include own stories
 
       const stories = await Story
         .find({
-          author_email: { $in: followingEmails },
+          author_username: { $in: followingUsernames },
           is_active: true,
           expires_at: { $gt: new Date() }
         })
         .sort({ created_at: -1 })
         .limit(50);
 
-      // Group by author - use email string from document
+      // Group by author - use username string from document
       const groupedStories = stories.reduce((acc, story) => {
-        const authorEmail = story.author_email;
-        if (!acc[authorEmail]) {
-          acc[authorEmail] = {
+        const authorUsername = story.author_username;
+        if (!acc[authorUsername]) {
+          acc[authorUsername] = {
             author: {
-              email: authorEmail,
-              name: story.author_name || authorEmail.split('@')[0],
+              username: authorUsername,
+              name: story.author_name || authorUsername,
               avatar: story.author_avatar
             },
             stories: []
           };
         }
-        acc[authorEmail].stories.push(story);
+        acc[authorUsername].stories.push(story);
         return acc;
       }, {} as Record<string, any>);
 
@@ -61,7 +70,7 @@ export async function storyRoutes(fastify: FastifyInstance) {
     try {
       const query = request.query as any;
       const {
-        author_email,
+        author_username,
         is_active = true,
         sort = '-created_at',
         limit = 20,
@@ -71,7 +80,7 @@ export async function storyRoutes(fastify: FastifyInstance) {
       // Build filter object
       const filter: any = {};
 
-      if (author_email) filter.author_email = author_email;
+      if (author_username) filter.author_username = author_username;
       if (is_active !== undefined) filter.is_active = is_active === 'true';
 
       // Build sort object
@@ -167,7 +176,8 @@ export async function storyRoutes(fastify: FastifyInstance) {
         ...body,
         media_url: body.media_url?.trim() || "",
         author_email: user.email,
-        author_name: user.display_name || user.email,
+        author_username: user.username,
+        author_name: user.display_name || user.username,
         author_avatar: user.avatar_url,
       });
 
@@ -204,7 +214,7 @@ export async function storyRoutes(fastify: FastifyInstance) {
       }
 
       // Check if user owns the story
-      if (story.author_email !== user.email) {
+      if (story.author_email !== user.email && story.author_username !== user.username) {
         return reply.code(403).send({ error: 'You can only update your own stories' });
       }
 
@@ -244,7 +254,7 @@ export async function storyRoutes(fastify: FastifyInstance) {
       }
 
       // Check if user owns the story
-      if (story.author_email !== user.email) {
+      if (story.author_email !== user.email && story.author_username !== user.username) {
         return reply.code(403).send({ error: 'You can only delete your own stories' });
       }
 
@@ -378,9 +388,14 @@ export async function storyRoutes(fastify: FastifyInstance) {
     try {
       const user = request.user as any;
 
+      const userData = await User.findOne({ email: user.email });
+      if (!userData) {
+        return reply.code(404).send({ error: 'User not found' });
+      }
+
       const stories = await Story
         .find({
-          author_email: user.email,
+          author_username: userData.username,
           is_active: true,
           expires_at: { $gt: new Date() }
         })

@@ -50,12 +50,12 @@ function ProductSharePicker({ onShare, onClose, currentUser }) {
   });
 
   const { data: myProducts = [] } = useQuery({
-    queryKey: ["myQuickProducts", currentUser?.email],
+    queryKey: ["myQuickProducts", currentUser?.username],
     queryFn: async () => {
-      const res = await productsAPI.list({ vendor_email: currentUser.email, status: "active", sort: "-created_date", limit: 30 });
+      const res = await productsAPI.list({ vendor_username: currentUser.username, status: "active", sort: "-created_date", limit: 30 });
       return res.data || [];
     },
-    enabled: !!currentUser?.email,
+    enabled: !!currentUser?.username,
   });
 
   const source = tab === "mine" ? myProducts : allProducts;
@@ -127,8 +127,8 @@ function OfferModal({ onSend, onClose }) {
 
 export default function Chat() {
   const params = new URLSearchParams(window.location.search);
-  const toEmail = params.get("to");
-  const [selectedConvo, setSelectedConvo] = useState(toEmail || null);
+  const toUsername = params.get("username") || params.get("to");
+  const [selectedConvo, setSelectedConvo] = useState(toUsername || null);
   const [newMessage, setNewMessage] = useState("");
   const [search, setSearch] = useState("");
   const [showProductPicker, setShowProductPicker] = useState(false);
@@ -137,7 +137,7 @@ export default function Chat() {
   const [showActionMenu, setShowActionMenu] = useState(false);
   const [replyingTo, setReplyingTo] = useState(null);
   const [forwardMsg, setForwardMsg] = useState(null);
-  const [forwardToEmail, setForwardToEmail] = useState("");
+  const [forwardToUsername, setForwardToUsername] = useState("");
   const [pendingImageUrl, setPendingImageUrl] = useState(null);
   const messagesEndRef = useRef(null);
   const queryClient = useQueryClient();
@@ -148,22 +148,22 @@ export default function Chat() {
   });
 
   const { data: allMessagesResponse = {} } = useQuery({
-    queryKey: ["allMessages", currentUser?.email],
+    queryKey: ["allMessages", currentUser?.username],
     queryFn: async () => {
-      const res = await messagesAPI.query({ sender_email: currentUser?.email, sort: "-created_at", limit: 200 });
+      const res = await messagesAPI.query({ sender_username: currentUser?.username, sort: "-created_at", limit: 200 });
       return res;
     },
-    enabled: !!currentUser?.email,
+    enabled: !!currentUser?.username,
     refetchInterval: 3000,
   });
 
   const { data: receivedMessagesResponse = {} } = useQuery({
-    queryKey: ["receivedMessages", currentUser?.email],
+    queryKey: ["receivedMessages", currentUser?.username],
     queryFn: async () => {
-      const res = await messagesAPI.query({ receiver_email: currentUser?.email, sort: "-created_at", limit: 200 });
+      const res = await messagesAPI.query({ receiver_username: currentUser?.username, sort: "-created_at", limit: 200 });
       return res;
     },
-    enabled: !!currentUser?.email,
+    enabled: !!currentUser?.username,
     refetchInterval: 3000,
   });
   
@@ -176,22 +176,22 @@ export default function Chat() {
     const allMsgs = [...allMessages, ...receivedMessages];
     const convoMap = {};
     allMsgs.forEach(msg => {
-      const otherEmail = msg.sender_email === currentUser?.email ? msg.receiver_email : msg.sender_email;
-      let otherName = msg.sender_email === currentUser?.email ? msg.receiver_email : msg.sender_name;
+      const otherUsername = msg.sender_username === currentUser?.username ? msg.receiver_username : msg.sender_username;
+      let otherName = msg.sender_username === currentUser?.username ? msg.receiver_username : msg.sender_name;
       
-      // If name is an email or missing, use handle
-      if (!otherName || otherName.includes("@")) {
-        otherName = `@${otherEmail.split("@")[0]}`;
+      // If name is missing, use username
+      if (!otherName) {
+        otherName = `@${otherUsername}`;
       }
       
       const msgDate = msg.created_at || msg.created_date;
-      if (!convoMap[otherEmail] || new Date(msgDate) > new Date(convoMap[otherEmail].lastDate)) {
-        convoMap[otherEmail] = {
-          email: otherEmail,
+      if (!convoMap[otherUsername] || new Date(msgDate) > new Date(convoMap[otherUsername].lastDate)) {
+        convoMap[otherUsername] = {
+          username: otherUsername,
           name: otherName,
           lastMessage: msg.content,
           lastDate: msgDate,
-          unread: msg.receiver_email === currentUser?.email && !msg.is_read,
+          unread: msg.receiver_username === currentUser?.username && !msg.is_read,
           messageType: msg.message_type,
         };
       }
@@ -203,8 +203,8 @@ export default function Chat() {
     if (!selectedConvo) return [];
     const msgs = [...allMessages, ...receivedMessages]
       .filter(m =>
-        (m.sender_email === selectedConvo && m.receiver_email === currentUser?.email) ||
-        (m.sender_email === currentUser?.email && m.receiver_email === selectedConvo)
+        (m.sender_username === selectedConvo && m.receiver_username === currentUser?.username) ||
+        (m.sender_username === currentUser?.username && m.receiver_username === selectedConvo)
       )
       .sort((a, b) => new Date(a.created_at || a.created_date) - new Date(b.created_at || b.created_date));
     
@@ -220,21 +220,21 @@ export default function Chat() {
 
   const sendMutation = useMutation({
     mutationFn: async (msgData) => {
-      const recipient = msgData.recipient_email || selectedConvo;
+      const recipient = msgData.recipient_username || selectedConvo;
       if (!recipient) {
         toast.error("No recipient selected");
-        throw new Error("recipient_email is required");
+        throw new Error("recipient_username is required");
       }
-      if (!currentUser?.email) {
+      if (!currentUser?.username) {
         toast.error("You must be logged in");
-        throw new Error("sender_email is required");
+        throw new Error("sender_username is required");
       }
       
       await messagesAPI.send({
-        conversation_id: [currentUser.email, recipient].sort().join("_"),
-        sender_email: currentUser.email,
-        sender_name: currentUser.full_name,
-        recipient_email: recipient,
+        conversation_id: [currentUser.username, recipient].sort().join("_"),
+        sender_username: currentUser.username,
+        sender_name: currentUser.display_name || currentUser.full_name,
+        recipient_username: recipient,
         ...msgData,
       });
     },
@@ -249,10 +249,10 @@ export default function Chat() {
     if (!newMessage.trim() || !selectedConvo) return;
     const extra = replyingTo ? {
       reply_to_content: replyingTo.content,
-      reply_to_name: replyingTo.sender_email === currentUser?.email ? "You" : selectedConvoName,
+      reply_to_name: replyingTo.sender_username === currentUser?.username ? "You" : selectedConvoName,
     } : {};
     
-    const baseMsg = { recipient_email: selectedConvo, ...extra };
+    const baseMsg = { recipient_username: selectedConvo, ...extra };
     
     if (pendingImageUrl) {
       sendMutation.mutate({ ...baseMsg, content: newMessage || "📷 Image", message_type: "image", image_url: pendingImageUrl });
@@ -269,13 +269,13 @@ export default function Chat() {
   };
 
   const executeForward = async () => {
-    if (!forwardToEmail.trim() || !forwardMsg || !currentUser?.email) return;
+    if (!forwardToUsername.trim() || !forwardMsg || !currentUser?.username) return;
     try {
       await messagesAPI.send({
-        conversation_id: [currentUser.email, forwardToEmail].sort().join("_"),
-        sender_email: currentUser.email,
-        sender_name: currentUser.full_name,
-        recipient_email: forwardToEmail.trim(),
+        conversation_id: [currentUser.username, forwardToUsername].sort().join("_"),
+        sender_username: currentUser.username,
+        sender_name: currentUser.display_name || currentUser.full_name,
+        recipient_username: forwardToUsername.trim(),
         content: `Forwarded: ${forwardMsg.content || ""}`,
         message_type: forwardMsg.message_type,
         product_id: forwardMsg.product_id,
@@ -283,7 +283,7 @@ export default function Chat() {
       });
       toast.success("Message forwarded!");
       setForwardMsg(null);
-      setForwardToEmail("");
+      setForwardToUsername("");
     } catch (error) {
       toast.error("Failed to forward message");
     }
@@ -293,7 +293,7 @@ export default function Chat() {
     if (!selectedConvo) return;
     setShowProductPicker(false);
     sendMutation.mutate({
-      recipient_email: selectedConvo,
+      recipient_username: selectedConvo,
       content: `Check out this product: ${product.title}`,
       message_type: "product_share",
       product_id: product.id,
@@ -302,15 +302,15 @@ export default function Chat() {
   };
 
   const sendOffer = async (amount, productData) => {
-    if (!selectedConvo || !currentUser?.email) return;
+    if (!selectedConvo || !currentUser?.username) return;
     // Create an order for this offer
     let orderId = null;
     try {
       if (productData) {
         const order = await ordersAPI.create({
-          buyer_email: currentUser.email,
-          buyer_name: currentUser.full_name,
-          vendor_email: selectedConvo,
+          buyer_username: currentUser.username,
+          buyer_name: currentUser.display_name || currentUser.full_name,
+          vendor_username: selectedConvo,
           items: [{ product_id: productData.id, product_title: productData.title, product_image: productData.images?.[0], quantity: 1, price: amount }],
           subtotal: amount,
           total: amount,
@@ -320,7 +320,7 @@ export default function Chat() {
         orderId = order.id;
       }
       sendMutation.mutate({
-        recipient_email: selectedConvo,
+        recipient_username: selectedConvo,
         content: `💰 Offer: $${amount}${productData ? ` for "${productData.title}"` : ""}`,
         message_type: "offer",
         offer_amount: amount,
@@ -333,7 +333,7 @@ export default function Chat() {
 
   const markAsRead = async () => {
     if (!selectedConvo) return;
-    const unread = receivedMessages.filter(m => m.sender_email === selectedConvo && !m.is_read);
+    const unread = receivedMessages.filter(m => m.sender_username === selectedConvo && !m.is_read);
     for (const m of unread) {
       const messageId = m._id || m.id;
       if (messageId) {
@@ -348,7 +348,7 @@ export default function Chat() {
     if (selectedConvo) markAsRead();
   }, [selectedMessages, selectedConvo]);
 
-  const selectedConvoData = conversations.find(c => c.email === selectedConvo);
+  const selectedConvoData = conversations.find(c => c.username === selectedConvo);
   const selectedConvoName = selectedConvoData?.name || selectedConvo;
   const unreadTotal = conversations.filter(c => c.unread).length;
 

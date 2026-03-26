@@ -108,43 +108,43 @@ function LiveStreamViewer({ session: initialSession, onBack }) {
 
   // Follow Status
   const { data: followStatus } = useQuery({
-    queryKey: ["followStatus", session.host_email],
+    queryKey: ["followStatus", session.host_username],
     queryFn: async () => {
-      if (!currentUser?.email || !session.host_email) return null;
+      if (!currentUser?.username || !session.host_username) return null;
       try {
         const res = await followsAPI.check({ 
-          follower_email: currentUser.email, 
-          following_email: session.host_email 
+          follower_username: currentUser.username, 
+          following_username: session.host_username 
         });
         return res.is_following;
       } catch (e) {
         return false;
       }
     },
-    enabled: !!currentUser?.email && !!session.host_email,
+    enabled: !!currentUser?.username && !!session.host_username,
   });
 
   const followMutation = useMutation({
     mutationFn: () => {
-      if (!currentUser?.email) throw new Error("Not authenticated");
-      return followsAPI.follow(session.host_email);
+      if (!currentUser?.username) throw new Error("Not authenticated");
+      return followsAPI.follow(session.host_username);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["followStatus", session.host_email] });
+      queryClient.invalidateQueries({ queryKey: ["followStatus", session.host_username] });
       toast.success(`Following ${session.host_name}`);
     }
   });
 
   const unfollowMutation = useMutation({
     mutationFn: () => {
-      if (!currentUser?.email) throw new Error("Not authenticated");
+      if (!currentUser?.username) throw new Error("Not authenticated");
       return followsAPI.unfollow({ 
-        follower_email: currentUser.email, 
-        following_email: session.host_email 
+        follower_username: currentUser.username, 
+        following_username: session.host_username 
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["followStatus", session.host_email] });
+      queryClient.invalidateQueries({ queryKey: ["followStatus", session.host_username] });
       toast.info(`Unfollowed ${session.host_name}`);
     }
   });
@@ -167,8 +167,8 @@ function LiveStreamViewer({ session: initialSession, onBack }) {
   const sendChatMutation = useMutation({
     mutationFn: () => liveChatMessagesAPI.send({
       session_id: session?.id,
-      user_email: currentUser?.email || "guest",
-      user_name: currentUser?.full_name || "Guest",
+      user_username: currentUser?.username || "guest",
+      user_name: currentUser?.display_name || currentUser?.username || "Guest",
       content: chatInput,
       message_type: "chat",
     }),
@@ -245,7 +245,7 @@ function LiveStreamViewer({ session: initialSession, onBack }) {
               <p className="text-white font-semibold text-sm drop-shadow-md">{session.host_name}</p>
               <p className="text-white/70 text-xs drop-shadow-md">{session.store_name}</p>
             </div>
-            {currentUser?.email !== session.host_email && (
+            {currentUser?.username !== session.host_username && (
               <button 
                 onClick={() => {
                   if (!currentUser) return toast.error("Sign in to follow");
@@ -413,7 +413,8 @@ function VendorBroadcast({ onClose, currentUser, store }) {
     mutationFn: async () => {
       const payload = {
         host_email: currentUser.email,
-        host_name: currentUser.full_name,
+        host_username: currentUser.username,
+        host_name: currentUser.display_name || currentUser.username,
         store_id: store?.id,
         store_name: store?.name,
         title,

@@ -5,6 +5,7 @@ export interface IReview extends Document {
   product_id: string;
   store_id: string;
   reviewer_email: string;
+  reviewer_username: string;
   reviewer_name?: string;
   rating: number;
   title?: string;
@@ -26,6 +27,12 @@ const ReviewSchema = new Schema<IReview>({
     required: true,
   },
   reviewer_email: {
+    type: String,
+    required: true,
+    lowercase: true,
+    trim: true,
+  },
+  reviewer_username: {
     type: String,
     required: true,
     lowercase: true,
@@ -72,6 +79,7 @@ const ReviewSchema = new Schema<IReview>({
 ReviewSchema.index({ product_id: 1, created_at: -1 });
 ReviewSchema.index({ store_id: 1, created_at: -1 });
 ReviewSchema.index({ reviewer_email: 1 });
+ReviewSchema.index({ reviewer_username: 1 });
 ReviewSchema.index({ rating: -1 });
 ReviewSchema.index({ is_verified_purchase: 1 });
 

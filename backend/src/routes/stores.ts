@@ -104,11 +104,33 @@ export async function storeRoutes(fastify: FastifyInstance) {
     }
   });
 
-  // Get store by owner email
-  fastify.get('/owner/:email', async (request, reply) => {
+  // Get store by owner username
+  fastify.get('/owner/username/:username', async (request, reply) => {
     try {
-      const { email } = request.params as { email: string };
-      const store = await Store.findOne({ owner_email: email }).lean();
+      const { username } = request.params as { username: string };
+      const store = await Store.findOne({ owner_username: username.toLowerCase() }).lean();
+
+      if (!store) {
+        return reply.code(404).send({ error: 'Store not found' });
+      }
+
+      return store;
+    } catch (error: any) {
+      fastify.log.error(error);
+      return reply.code(500).send({ error: 'Internal server error' });
+    }
+  });
+
+  // Get store by owner email or username
+  fastify.get('/owner/:identifier', async (request, reply) => {
+    try {
+      const { identifier } = request.params as { identifier: string };
+      
+      const filter = identifier.includes('@') 
+        ? { owner_email: identifier.toLowerCase() }
+        : { owner_username: identifier.toLowerCase() };
+
+      const store = await Store.findOne(filter).lean();
 
       // Return null (200 OK) instead of 404 if store doesn't exist
       // This is expected behavior - not all users have stores
@@ -135,7 +157,9 @@ export async function storeRoutes(fastify: FastifyInstance) {
       const body = createStoreSchema.parse(request.body);
 
       // Check if user already has a store
-      const existingStore = await Store.findOne({ owner_email: user.email });
+      const existingStore = await Store.findOne({ 
+        $or: [{ owner_email: user.email }, { owner_username: user.username }] 
+      });
       if (existingStore) {
         return reply.code(400).send({ error: 'User already has a store' });
       }
@@ -143,6 +167,7 @@ export async function storeRoutes(fastify: FastifyInstance) {
       const store = new Store({
         ...body,
         owner_email: user.email,
+        owner_username: user.username,
         status: 'active', // In production, might be 'pending'
         created_at: new Date(),
         updated_at: new Date()
@@ -173,7 +198,7 @@ export async function storeRoutes(fastify: FastifyInstance) {
         return reply.code(404).send({ error: 'Store not found' });
       }
 
-      if (store.owner_email !== user.email) {
+      if (store.owner_username !== user.username) {
         return reply.code(403).send({ error: 'Unauthorized' });
       }
 

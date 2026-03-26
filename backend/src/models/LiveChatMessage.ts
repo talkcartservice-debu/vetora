@@ -4,6 +4,7 @@ export interface ILiveChatMessage extends Document {
   _id: mongoose.Types.ObjectId;
   session_id: string;
   user_email: string;
+  user_username: string;
   user_name?: string;
   content: string;
   message_type: 'chat' | 'purchase' | 'join' | 'like';
@@ -18,6 +19,12 @@ const LiveChatMessageSchema = new Schema<ILiveChatMessage>({
     required: true,
   },
   user_email: {
+    type: String,
+    required: true,
+    lowercase: true,
+    trim: true,
+  },
+  user_username: {
     type: String,
     required: true,
     lowercase: true,
@@ -56,6 +63,7 @@ const LiveChatMessageSchema = new Schema<ILiveChatMessage>({
 // Indexes for performance
 LiveChatMessageSchema.index({ session_id: 1, created_at: 1 });
 LiveChatMessageSchema.index({ user_email: 1 });
+LiveChatMessageSchema.index({ user_username: 1 });
 LiveChatMessageSchema.index({ message_type: 1 });
 
 export const LiveChatMessage = mongoose.model<ILiveChatMessage>('LiveChatMessage', LiveChatMessageSchema);

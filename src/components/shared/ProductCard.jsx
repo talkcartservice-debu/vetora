@@ -21,12 +21,12 @@ export default function ProductCard({ product, compact = false }) {
   });
 
   const { data: wishlistItems = [] } = useQuery({
-    queryKey: ["wishlist", currentUser?.email],
+    queryKey: ["wishlist", currentUser?.username],
     queryFn: async () => {
-      const res = await wishlistAPI.list({ user_email: currentUser?.email, sort: "-created_date", limit: 200 });
+      const res = await wishlistAPI.list({ user_username: currentUser?.username, sort: "-created_date", limit: 200 });
       return res.items || res.data || (Array.isArray(res) ? res : []);
     },
-    enabled: !!currentUser?.email,
+    enabled: !!currentUser?.username,
     staleTime: 30000,
   });
 
@@ -43,14 +43,14 @@ export default function ProductCard({ product, compact = false }) {
       if (isWishlisted) {
         await wishlistAPI.remove(productId);
       } else {
-        const vendorEmail = product.vendor_email || product.store_email || "";
+        const vendorUsername = product.vendor_username || product.store_username || "";
         
-        if (!vendorEmail) {
-          console.error("Missing vendor email for product", product);
+        if (!vendorUsername) {
+          console.error("Missing vendor username for product", product);
         }
 
         await wishlistAPI.add({
-          user_email: currentUser.email,
+          user_username: currentUser.username,
           product_id: productId,
           product_title: product.title,
           product_image: product.images?.[0],
@@ -58,7 +58,7 @@ export default function ProductCard({ product, compact = false }) {
           compare_at_price: product.compare_at_price,
           store_id: product.store_id,
           store_name: product.store_name,
-          vendor_email: vendorEmail,
+          vendor_username: vendorUsername,
         });
         toast.success("Saved to wishlist!");
       }

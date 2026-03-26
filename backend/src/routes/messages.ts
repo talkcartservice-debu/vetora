@@ -5,7 +5,8 @@ import { z } from 'zod';
 
 const sendMessageSchema = z.object({
   conversation_id: z.string().optional(),
-  recipient_email: z.string().email(),
+  recipient_email: z.string().email().optional(),
+  recipient_username: z.string().min(1),
   content: z.string().min(1),
   message_type: z.enum(['text', 'image', 'product_share', 'order_update', 'offer']).default('text'),
   image_url: z.string().optional(),
@@ -27,23 +28,25 @@ export async function messageRoutes(fastify: FastifyInstance) {
     try {
       const user = request.user as any;
       const query = request.query as any;
-      const { sender_email, receiver_email, sort = '-created_date', limit = 200, skip = 0 } = query;
+      const { 
+        sender_email, receiver_email, 
+        sender_username, receiver_username,
+        sort = '-created_date', limit = 200, skip = 0 
+      } = query;
 
-      // Build filter - if sender_email or receiver_email is provided, use them
+      // Build filter
       const filter: any = {};
       
-      if (sender_email) {
-        filter.sender_email = sender_email;
-      }
-      if (receiver_email) {
-        filter.receiver_email = receiver_email;
-      }
+      if (sender_email) filter.sender_email = sender_email;
+      if (receiver_email) filter.receiver_email = receiver_email;
+      if (sender_username) filter.sender_username = sender_username;
+      if (receiver_username) filter.receiver_username = receiver_username;
       
-      // If neither is provided, default to current user's messages
-      if (!sender_email && !receiver_email) {
+      // If none is provided, default to current user's messages
+      if (!sender_email && !receiver_email && !sender_username && !receiver_username) {
         filter.$or = [
-          { sender_email: user.email },
-          { receiver_email: user.email }
+          { sender_username: user.username },
+          { receiver_username: user.username }
         ];
       }
 
@@ -90,8 +93,8 @@ export async function messageRoutes(fastify: FastifyInstance) {
         {
           $match: {
             $or: [
-              { sender_email: user.email },
-              { receiver_email: user.email }
+              { sender_username: user.username },
+              { receiver_username: user.username }
             ]
           }
         },
@@ -103,9 +106,9 @@ export async function messageRoutes(fastify: FastifyInstance) {
             _id: "$conversation_id",
             last_message_content: { $first: "$content" },
             last_message_at: { $first: "$created_at" },
-            other_user_email: { 
+            other_user_username: { 
               $first: {
-                $cond: [{ $eq: ["$sender_email", user.email] }, "$receiver_email", "$sender_email"]
+                $cond: [{ $eq: ["$sender_username", user.username] }, "$receiver_username", "$sender_username"]
               }
             }
           }
@@ -117,11 +120,12 @@ export async function messageRoutes(fastify: FastifyInstance) {
 
       // Populate other user's info
       const populatedConversations = await Promise.all(conversations.map(async (conv) => {
-        const otherUser = await User.findOne({ email: conv.other_user_email }, 'display_name avatar_url');
+        const otherUser = await User.findOne({ username: conv.other_user_username }, 'display_name avatar_url username');
         return {
           ...conv,
-          other_user_name: otherUser?.display_name,
-          other_user_avatar: otherUser?.avatar_url
+          other_user_name: otherUser?.display_name || otherUser?.username,
+          other_user_avatar: otherUser?.avatar_url,
+          other_user_username: otherUser?.username
         };
       }));
 
@@ -163,15 +167,17 @@ export async function messageRoutes(fastify: FastifyInstance) {
       const user = request.user as any;
       const body = sendMessageSchema.parse(request.body);
       
-      // If no conversation_id, create one from both emails
-      const emails = [user.email, body.recipient_email].sort();
-      const conversationId = body.conversation_id || `chat_${emails[0]}_${emails[1]}`;
+      // If no conversation_id, create one from both usernames
+      const usernames = [user.username, body.recipient_username].sort();
+      const conversationId = body.conversation_id || `chat_${usernames[0]}_${usernames[1]}`;
 
       const message = new Message({
         ...body,
         conversation_id: conversationId,
         sender_email: user.email,
-        receiver_email: body.recipient_email,
+        sender_username: user.username,
+        sender_name: user.display_name || user.full_name,
+        receiver_username: body.recipient_username,
         created_at: new Date(),
         updated_at: new Date()
       });
@@ -179,7 +185,11 @@ export async function messageRoutes(fastify: FastifyInstance) {
       await message.save();
       
       // Emit real-time event via Socket.IO if available
-      fastify.io?.to(`user:${body.recipient_email}`).emit('new-message', message);
+      if (body.recipient_username) {
+        fastify.io?.to(`user:${body.recipient_username}`).emit('new-message', message);
+      } else if (body.recipient_email) {
+        fastify.io?.to(`user:${body.recipient_email}`).emit('new-message', message);
+      }
 
       return message;
     } catch (error) {
@@ -201,7 +211,7 @@ export async function messageRoutes(fastify: FastifyInstance) {
       const updateData = request.body as any;
 
       const message = await Message.findOneAndUpdate(
-        { _id: id, receiver_email: user.email },
+        { _id: id, receiver_username: user.username },
         { ...updateData, updated_at: new Date() },
         { new: true }
       );
@@ -229,7 +239,7 @@ export async function messageRoutes(fastify: FastifyInstance) {
       const user = request.user as any;
 
       const message = await Message.findOneAndUpdate(
-        { _id: id, receiver_email: user.email },
+        { _id: id, receiver_username: user.username },
         { is_read: true, read_at: new Date(), updated_at: new Date() },
         { new: true }
       );
@@ -257,7 +267,7 @@ export async function messageRoutes(fastify: FastifyInstance) {
       const user = request.user as any;
 
       await Message.updateMany(
-        { conversation_id: conversationId, receiver_email: user.email, is_read: false },
+        { conversation_id: conversationId, receiver_username: user.username, is_read: false },
         { is_read: true, read_at: new Date(), updated_at: new Date() }
       );
 
@@ -282,8 +292,8 @@ export async function messageRoutes(fastify: FastifyInstance) {
       const result = await Message.deleteOne({
         _id: id,
         $or: [
-          { sender_email: user.email },
-          { receiver_email: user.email }
+          { sender_username: user.username },
+          { receiver_username: user.username }
         ]
       });
 

@@ -2,6 +2,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IWishlistItem extends Document {
   user_email: string;
+  user_username: string;
   product_id: string;
   product_title: string;
   product_image?: string;
@@ -10,12 +11,18 @@ export interface IWishlistItem extends Document {
   store_id: string;
   store_name: string;
   vendor_email: string;
+  vendor_username: string;
   created_at: Date;
   updated_at: Date;
 }
 
 const WishlistItemSchema = new Schema<IWishlistItem>({
   user_email: {
+    type: String,
+    required: true,
+    index: true
+  },
+  user_username: {
     type: String,
     required: true,
     index: true
@@ -54,14 +61,22 @@ const WishlistItemSchema = new Schema<IWishlistItem>({
     type: String,
     required: true,
     index: true
+  },
+  vendor_username: {
+    type: String,
+    required: true,
+    index: true
   }
 }, {
   timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
 });
 
 // Compound indexes for efficient queries
-WishlistItemSchema.index({ user_email: 1, product_id: 1 }, { unique: true });
-WishlistItemSchema.index({ user_email: 1, created_at: -1 });
+WishlistItemSchema.index({ user_username: 1, product_id: 1 }, { unique: true });
+WishlistItemSchema.index({ user_username: 1, created_at: -1 });
+WishlistItemSchema.index({ user_email: 1 });
+WishlistItemSchema.index({ vendor_username: 1 });
+WishlistItemSchema.index({ vendor_email: 1 });
 WishlistItemSchema.index({ store_id: 1, created_at: -1 });
 
 export const WishlistItem = mongoose.model<IWishlistItem>('WishlistItem', WishlistItemSchema);

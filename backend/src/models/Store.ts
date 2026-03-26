@@ -5,6 +5,7 @@ export interface IStore extends Document {
   name: string;
   description?: string;
   owner_email: string;
+  owner_username: string;
   owner_name?: string;
   logo_url?: string;
   banner_url?: string;
@@ -53,6 +54,11 @@ const StoreSchema = new Schema<IStore>({
     type: String,
     required: true,
     lowercase: true,
+    trim: true,
+  },
+  owner_username: {
+    type: String,
+    required: true,
     trim: true,
   },
   owner_name: {
@@ -131,6 +137,7 @@ const StoreSchema = new Schema<IStore>({
 
 // Indexes for performance
 StoreSchema.index({ owner_email: 1 });
+StoreSchema.index({ owner_username: 1 });
 StoreSchema.index({ status: 1 });
 StoreSchema.index({ category: 1, status: 1 });
 StoreSchema.index({ follower_count: -1 });

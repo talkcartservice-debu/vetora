@@ -3,6 +3,7 @@ import mongoose, { Document, Schema } from 'mongoose';
 export interface IStory extends Document {
   _id: mongoose.Types.ObjectId;
   author_email: string;
+  author_username: string;
   author_name?: string;
   author_avatar?: string;
   media_url?: string;
@@ -19,6 +20,12 @@ export interface IStory extends Document {
 
 const StorySchema = new Schema<IStory>({
   author_email: {
+    type: String,
+    required: true,
+    lowercase: true,
+    trim: true,
+  },
+  author_username: {
     type: String,
     required: true,
     lowercase: true,
@@ -77,6 +84,7 @@ const StorySchema = new Schema<IStory>({
 
 // Indexes for performance
 StorySchema.index({ author_email: 1, created_at: -1 });
+StorySchema.index({ author_username: 1, created_at: -1 });
 StorySchema.index({ expires_at: 1 });
 StorySchema.index({ is_active: 1, expires_at: 1 });
 StorySchema.index({ created_at: -1 });

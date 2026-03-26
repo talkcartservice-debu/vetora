@@ -4,8 +4,10 @@ export interface IMessage extends Document {
   _id: mongoose.Types.ObjectId;
   conversation_id: string;
   sender_email: string;
+  sender_username?: string;
   sender_name?: string;
   receiver_email: string;
+  receiver_username?: string;
   content: string;
   message_type: 'text' | 'image' | 'product_share' | 'order_update' | 'offer';
   image_url?: string;
@@ -37,6 +39,12 @@ const MessageSchema = new Schema<IMessage>({
     lowercase: true,
     trim: true,
   },
+  sender_username: {
+    type: String,
+    lowercase: true,
+    trim: true,
+    index: true,
+  },
   sender_name: {
     type: String,
     trim: true,
@@ -46,6 +54,12 @@ const MessageSchema = new Schema<IMessage>({
     required: true,
     lowercase: true,
     trim: true,
+  },
+  receiver_username: {
+    type: String,
+    lowercase: true,
+    trim: true,
+    index: true,
   },
   content: {
     type: String,
@@ -103,8 +117,12 @@ const MessageSchema = new Schema<IMessage>({
 MessageSchema.index({ conversation_id: 1, created_at: 1 });
 MessageSchema.index({ sender_email: 1, created_at: -1 });
 MessageSchema.index({ receiver_email: 1, created_at: -1 });
+MessageSchema.index({ sender_username: 1, created_at: -1 });
+MessageSchema.index({ receiver_username: 1, created_at: -1 });
 MessageSchema.index({ sender_email: 1, receiver_email: 1, created_at: -1 });
+MessageSchema.index({ sender_username: 1, receiver_username: 1, created_at: -1 });
 MessageSchema.index({ is_read: 1, receiver_email: 1 });
+MessageSchema.index({ is_read: 1, receiver_username: 1 });
 MessageSchema.index({ message_type: 1 });
 
 export const Message = mongoose.model<IMessage>('Message', MessageSchema);

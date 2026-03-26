@@ -11,6 +11,7 @@ export async function liveSessionRoutes(fastify: FastifyInstance) {
         status = 'active',
         category,
         host_email,
+        host_username,
         store_id,
         sort = '-started_at',
         limit = 20,
@@ -23,6 +24,7 @@ export async function liveSessionRoutes(fastify: FastifyInstance) {
       if (status) filter.status = status;
       if (category) filter.category = category;
       if (host_email) filter.host_email = host_email;
+      if (host_username) filter.host_username = host_username;
       if (store_id) filter.store_id = store_id;
 
       // Build sort object
@@ -110,7 +112,8 @@ export async function liveSessionRoutes(fastify: FastifyInstance) {
       const session = new LiveSession({
         ...body,
         host_email: user.email,
-        host_name: user.name || user.email,
+        host_username: user.username,
+        host_name: user.display_name || user.username || user.email,
         status: 'scheduled',
         stream_key: generateStreamKey(),
       });
@@ -394,7 +397,7 @@ export async function liveSessionRoutes(fastify: FastifyInstance) {
       const { status, limit = 20, skip = 0 } = query;
       const user = request.user as any;
 
-      const filter: any = { host_email: user.email };
+      const filter: any = { host_username: user.username };
       if (status) filter.status = status;
 
       const sessions = await LiveSession

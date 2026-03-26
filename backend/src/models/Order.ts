@@ -11,8 +11,10 @@ export interface IOrderItem {
 export interface IOrder extends Document {
   _id: mongoose.Types.ObjectId;
   buyer_email: string;
+  buyer_username: string;
   buyer_name?: string;
   vendor_email: string;
+  vendor_username: string;
   store_id: string;
   store_name?: string;
   items: IOrderItem[];
@@ -64,11 +66,23 @@ const OrderSchema = new Schema<IOrder>({
     lowercase: true,
     trim: true,
   },
+  buyer_username: {
+    type: String,
+    required: true,
+    lowercase: true,
+    trim: true,
+  },
   buyer_name: {
     type: String,
     trim: true,
   },
   vendor_email: {
+    type: String,
+    required: true,
+    lowercase: true,
+    trim: true,
+  },
+  vendor_username: {
     type: String,
     required: true,
     lowercase: true,
@@ -150,8 +164,10 @@ const OrderSchema = new Schema<IOrder>({
 });
 
 // Indexes for performance
-OrderSchema.index({ buyer_email: 1, created_at: -1 });
-OrderSchema.index({ vendor_email: 1, created_at: -1 });
+OrderSchema.index({ buyer_username: 1, created_at: -1 });
+OrderSchema.index({ vendor_username: 1, created_at: -1 });
+OrderSchema.index({ buyer_email: 1 });
+OrderSchema.index({ vendor_email: 1 });
 OrderSchema.index({ store_id: 1, created_at: -1 });
 OrderSchema.index({ status: 1, created_at: -1 });
 OrderSchema.index({ payment_status: 1 });

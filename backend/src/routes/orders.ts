@@ -1,6 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { Order, IOrder } from '../models/Order';
 import { Product } from '../models/Product';
+import { User } from '../models/User';
 import { z } from 'zod';
 
 const createOrderSchema = z.object({
@@ -30,11 +31,17 @@ export async function orderRoutes(fastify: FastifyInstance) {
       const user = request.user as any;
       const { role = 'buyer', status, limit = 20, skip = 0 } = request.query as any;
 
+      // Get user info
+      const userData = await User.findOne({ email: user.email });
+      if (!userData) {
+        return reply.code(404).send({ error: 'User not found' });
+      }
+
       const filter: any = {};
       if (role === 'buyer') {
-        filter.buyer_email = user.email;
+        filter.buyer_username = userData.username;
       } else {
-        filter.vendor_email = user.email;
+        filter.vendor_username = userData.username;
       }
 
       if (status) filter.status = status;
@@ -70,6 +77,12 @@ export async function orderRoutes(fastify: FastifyInstance) {
       const { id } = request.params as { id: string };
       const user = request.user as any;
 
+      // Get user info
+      const userData = await User.findOne({ email: user.email });
+      if (!userData) {
+        return reply.code(404).send({ error: 'User not found' });
+      }
+
       const order = await Order.findById(id).lean();
 
       if (!order) {
@@ -77,7 +90,8 @@ export async function orderRoutes(fastify: FastifyInstance) {
       }
 
       // Check permissions
-      if (order.buyer_email !== user.email && order.vendor_email !== user.email) {
+      if (order.buyer_email !== user.email && order.vendor_email !== user.email && 
+          order.buyer_username !== userData.username && order.vendor_username !== userData.username) {
         return reply.code(403).send({ error: 'Unauthorized' });
       }
 
@@ -97,6 +111,12 @@ export async function orderRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     try {
       const user = request.user as any;
+      // Get user info
+      const userData = await User.findOne({ email: user.email });
+      if (!userData) {
+        return reply.code(404).send({ error: 'User not found' });
+      }
+
       const body = createOrderSchema.parse(request.body);
 
       // Get vendor_email and store_id from the first product
@@ -108,7 +128,9 @@ export async function orderRoutes(fastify: FastifyInstance) {
       const order = new Order({
         ...body,
         buyer_email: user.email,
+        buyer_username: userData.username,
         vendor_email: firstProduct.vendor_email,
+        vendor_username: firstProduct.vendor_username,
         store_id: firstProduct.store_id,
         store_name: firstProduct.store_name,
         order_note: body.order_note,

@@ -53,14 +53,11 @@ export async function postRoutes(fastify: FastifyInstance) {
         if (user_username) followFilter.follower_username = user_username.toLowerCase();
         
         const follows = await Follow.find(followFilter).lean();
-        const followingEmails = follows.map(f => f.following_email).filter(Boolean);
         const followingUsernames = follows.map(f => f.following_username).filter(Boolean);
         
         // If following no one, we should probably return empty array or handle it
-        if (followingEmails.length > 0 || followingUsernames.length > 0) {
-          filter.$or = [];
-          if (followingEmails.length > 0) filter.$or.push({ author_email: { $in: followingEmails } });
-          if (followingUsernames.length > 0) filter.$or.push({ author_username: { $in: followingUsernames } });
+        if (followingUsernames.length > 0) {
+          filter.author_username = { $in: followingUsernames };
         } else {
           // Special case: following no one, so return empty list
           return { data: [], total: 0, limit: parseInt(limit), skip: parseInt(skip) };

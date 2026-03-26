@@ -1,5 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { StoreReview, IStoreReview } from '../models/StoreReview';
+import { User } from '../models/User';
 
 export async function storeReviewRoutes(fastify: FastifyInstance) {
   // Get reviews for a store
@@ -81,20 +82,26 @@ export async function storeReviewRoutes(fastify: FastifyInstance) {
   });
 
   // Get reviews by reviewer
-  fastify.get('/reviewer/:reviewerEmail', {
+  fastify.get('/reviewer/:reviewerUsername', {
     preHandler: fastify.authenticate
   }, async (request, reply) => {
     try {
-      const { reviewerEmail } = request.params as { reviewerEmail: string };
+      const { reviewerUsername } = request.params as { reviewerUsername: string };
       const user = request.user as any;
 
+      // Get user info
+      const userData = await User.findOne({ email: user.email });
+      if (!userData) {
+        return reply.code(404).send({ error: 'User not found' });
+      }
+
       // Check if user is requesting their own reviews
-      if (user.email !== reviewerEmail.toLowerCase()) {
+      if (userData.username !== reviewerUsername.toLowerCase()) {
         return reply.code(403).send({ error: 'You can only view your own reviews' });
       }
 
       const reviews = await StoreReview
-        .find({ reviewer_email: reviewerEmail.toLowerCase() })
+        .find({ reviewer_username: reviewerUsername.toLowerCase() })
         .sort({ created_at: -1 });
 
       reply.send({ reviews });
@@ -110,8 +117,8 @@ export async function storeReviewRoutes(fastify: FastifyInstance) {
       const query = request.query as any;
       const {
         store_id,
-        vendor_email,
-        reviewer_email,
+        vendor_username,
+        reviewer_username,
         rating,
         is_verified_purchase,
         sort = '-created_at',
@@ -123,8 +130,8 @@ export async function storeReviewRoutes(fastify: FastifyInstance) {
       const filter: any = {};
 
       if (store_id) filter.store_id = store_id;
-      if (vendor_email) filter.vendor_email = vendor_email.toLowerCase();
-      if (reviewer_email) filter.reviewer_email = reviewer_email.toLowerCase();
+      if (vendor_username) filter.vendor_username = vendor_username.toLowerCase();
+      if (reviewer_username) filter.reviewer_username = reviewer_username.toLowerCase();
       if (rating) filter.rating = parseInt(rating);
       if (is_verified_purchase !== undefined) filter.is_verified_purchase = is_verified_purchase === 'true';
 
@@ -203,9 +210,16 @@ export async function storeReviewRoutes(fastify: FastifyInstance) {
         return reply.code(400).send({ error: 'Rating must be between 1 and 5' });
       }
 
+      // Get user info
+      const userData = await User.findOne({ email: user.email });
+      if (!userData) {
+        return reply.code(404).send({ error: 'User not found' });
+      }
+
       // Set reviewer info from authenticated user
       body.reviewer_email = user.email;
-      body.reviewer_name = user.name || user.email;
+      body.reviewer_username = userData.username;
+      body.reviewer_name = userData.display_name || userData.username;
 
       const review = new StoreReview(body);
       await review.save();
@@ -237,7 +251,7 @@ export async function storeReviewRoutes(fastify: FastifyInstance) {
       }
 
       // Check if user owns the review
-      if (review.reviewer_email !== user.email) {
+      if (review.reviewer_email !== user.email && review.reviewer_username !== user.username) {
         return reply.code(403).send({ error: 'You can only update your own reviews' });
       }
 
@@ -285,7 +299,7 @@ export async function storeReviewRoutes(fastify: FastifyInstance) {
       }
 
       // Check if user is the vendor
-      if (review.vendor_email !== user.email) {
+      if (review.vendor_email !== user.email && review.vendor_username !== user.username) {
         return reply.code(403).send({ error: 'Only the store vendor can reply to reviews' });
       }
 
@@ -342,7 +356,8 @@ export async function storeReviewRoutes(fastify: FastifyInstance) {
       }
 
       // Check if user owns the review or is the vendor
-      if (review.reviewer_email !== user.email && review.vendor_email !== user.email) {
+      if (review.reviewer_email !== user.email && review.reviewer_username !== user.username && 
+          review.vendor_email !== user.email && review.vendor_username !== user.username) {
         return reply.code(403).send({ error: 'You can only delete your own reviews or reviews for your store' });
       }
 

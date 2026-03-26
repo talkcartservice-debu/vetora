@@ -2,6 +2,77 @@ import { FastifyInstance } from 'fastify';
 import { Withdrawal, IWithdrawal } from '../models/Withdrawal';
 
 export async function withdrawalRoutes(fastify: FastifyInstance) {
+  // Get withdrawals for a vendor by username
+  fastify.get('/vendor/username/:username', {
+    preHandler: fastify.authenticate
+  }, async (request, reply) => {
+    try {
+      const { username } = request.params as { username: string };
+      const query = request.query as any;
+      const { status, sort = '-created_at', limit = 20, skip = 0 } = query;
+      const user = request.user as any;
+
+      // Check if user owns the vendor account
+      if (user.username !== username) {
+        return reply.code(403).send({ error: 'You can only view your own withdrawals' });
+      }
+
+      // Build filter object
+      const filter: any = { vendor_username: username };
+      if (status) filter.status = status;
+
+      // Build sort object
+      const sortObj: any = {};
+      if (sort.startsWith('-')) {
+        sortObj[sort.substring(1)] = -1;
+      } else {
+        sortObj[sort] = 1;
+      }
+
+      const withdrawals = await Withdrawal
+        .find(filter)
+        .sort(sortObj)
+        .limit(parseInt(limit))
+        .skip(parseInt(skip));
+
+      const total = await Withdrawal.countDocuments(filter);
+
+      // Calculate totals
+      const totals = await Withdrawal.aggregate([
+        { $match: filter },
+        {
+          $group: {
+            _id: '$status',
+            total_amount: { $sum: '$amount' },
+            count: { $sum: 1 }
+          }
+        }
+      ]);
+
+      const stats = totals.reduce((acc, stat) => {
+        acc[stat._id] = {
+          total_amount: stat.total_amount,
+          count: stat.count
+        };
+        return acc;
+      }, {} as Record<string, any>);
+
+      reply.send({
+        withdrawals,
+        stats,
+        pagination: {
+          total,
+          limit: parseInt(limit),
+          skip: parseInt(skip),
+          hasMore: total > parseInt(skip) + parseInt(limit)
+        }
+      });
+    } catch (error) {
+      fastify.log.error(error);
+      reply.code(500).send({ error: 'Internal server error' });
+    }
+  });
+
   // Get withdrawals for a vendor
   fastify.get('/vendor/:vendorEmail', {
     preHandler: fastify.authenticate
@@ -193,8 +264,9 @@ export async function withdrawalRoutes(fastify: FastifyInstance) {
         }
       }
 
-      // Set vendor_email from authenticated user
+      // Set vendor_email and vendor_username from authenticated user
       body.vendor_email = user.email;
+      body.vendor_username = user.username;
       body.status = 'pending';
 
       const withdrawal = new Withdrawal(body);
@@ -348,10 +420,11 @@ export async function withdrawalRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     try {
       const query = request.query as any;
-      const { vendor_email, store_id } = query;
+      const { vendor_email, vendor_username, store_id } = query;
 
       const matchFilter: any = {};
       if (vendor_email) matchFilter.vendor_email = vendor_email.toLowerCase();
+      if (vendor_username) matchFilter.vendor_username = vendor_username;
       if (store_id) matchFilter.store_id = store_id;
 
       const stats = await Withdrawal.aggregate([

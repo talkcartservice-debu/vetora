@@ -4,7 +4,9 @@ export interface IStoreReview extends Document {
   store_id: string;
   store_name: string;
   vendor_email: string;
+  vendor_username: string;
   reviewer_email: string;
+  reviewer_username: string;
   reviewer_name: string;
   rating: number; // 1-5 star rating
   title: string;
@@ -32,7 +34,17 @@ const StoreReviewSchema = new Schema<IStoreReview>({
     required: true,
     index: true
   },
+  vendor_username: {
+    type: String,
+    required: true,
+    index: true
+  },
   reviewer_email: {
+    type: String,
+    required: true,
+    index: true
+  },
+  reviewer_username: {
     type: String,
     required: true,
     index: true
@@ -78,11 +90,13 @@ const StoreReviewSchema = new Schema<IStoreReview>({
 
 // Compound indexes for efficient queries
 StoreReviewSchema.index({ store_id: 1, created_at: -1 });
-StoreReviewSchema.index({ vendor_email: 1, created_at: -1 });
-StoreReviewSchema.index({ reviewer_email: 1, created_at: -1 });
+StoreReviewSchema.index({ vendor_username: 1, created_at: -1 });
+StoreReviewSchema.index({ reviewer_username: 1, created_at: -1 });
+StoreReviewSchema.index({ vendor_email: 1 });
+StoreReviewSchema.index({ reviewer_email: 1 });
 StoreReviewSchema.index({ store_id: 1, rating: -1 });
 
 // Ensure one review per reviewer per store
-StoreReviewSchema.index({ store_id: 1, reviewer_email: 1 }, { unique: true });
+StoreReviewSchema.index({ store_id: 1, reviewer_username: 1 }, { unique: true });
 
 export const StoreReview = mongoose.model<IStoreReview>('StoreReview', StoreReviewSchema);

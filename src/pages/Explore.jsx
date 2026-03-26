@@ -111,18 +111,19 @@ export default function Explore() {
           <div className="flex gap-3 overflow-x-auto pb-2 hide-scrollbar">
             {users.map((u) => (
               <Link
-                key={u.id || u.email}
-                to={createPageUrl("Profile") + `?email=${u.email}`}
+                key={u.id || u.username}
+                to={createPageUrl("Profile") + `?username=${u.username}`}
                 className="flex flex-col items-center gap-2 p-3 bg-white rounded-2xl border border-slate-100 min-w-[100px] hover:shadow-md transition-shadow"
               >
                 <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center overflow-hidden border border-slate-50">
                   {u.avatar_url ? (
                     <img src={u.avatar_url} alt="" className="w-full h-full object-cover" />
                   ) : (
-                    <span className="text-indigo-600 font-bold text-lg">{u.display_name?.[0]?.toUpperCase()}</span>
+                    <span className="text-indigo-600 font-bold text-lg">{(u.username || u.display_name)?.[0]?.toUpperCase()}</span>
                   )}
                 </div>
-                <span className="text-xs font-semibold text-slate-900 truncate w-full text-center">{u.display_name}</span>
+                <span className="text-xs font-semibold text-slate-900 truncate w-full text-center">{u.display_name || u.username}</span>
+                <span className="text-[10px] text-slate-400 truncate w-full text-center">@{u.username}</span>
               </Link>
             ))}
           </div>

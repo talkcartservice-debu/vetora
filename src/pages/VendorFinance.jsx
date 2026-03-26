@@ -41,9 +41,9 @@ export default function VendorFinance() {
   const { user: currentUser } = useAuth();
 
   const { data: store } = useQuery({
-    queryKey: ["myStore", currentUser?.email],
+    queryKey: ["myStore", currentUser?.username],
     queryFn: async () => {
-      const res = await storesAPI.getByOwner(currentUser?.email);
+      const res = await storesAPI.getByOwnerUsername(currentUser?.username);
       if (res && !withdrawForm.bank_name && !withdrawForm.paypal_email) {
         setWithdrawForm(prev => ({
           ...prev,
@@ -57,33 +57,34 @@ export default function VendorFinance() {
       }
       return res;
     },
-    enabled: !!currentUser?.email,
+    enabled: !!currentUser?.username,
   });
 
   const { data: ordersResponse = {} } = useQuery({
-    queryKey: ["storeOrders", currentUser?.email],
+    queryKey: ["storeOrders", currentUser?.username],
     queryFn: async () => {
-      const res = await ordersAPI.list({ vendor_email: currentUser?.email, sort: "-created_at", limit: 200 });
+      const res = await ordersAPI.list({ vendor_username: currentUser?.username, sort: "-created_at", limit: 200 });
       return res;
     },
-    enabled: !!currentUser?.email,
+    enabled: !!currentUser?.username,
   });
   
   const orders = Array.isArray(ordersResponse?.data) ? ordersResponse.data : [];
 
   const { data: withdrawalsResponse = {} } = useQuery({
-    queryKey: ["withdrawals", currentUser?.email],
+    queryKey: ["withdrawals", currentUser?.username],
     queryFn: async () => {
-      const res = await withdrawalsAPI.list({ vendor_email: currentUser?.email, sort: "-created_at", limit: 50 });
+      const res = await withdrawalsAPI.listByUsername(currentUser?.username, { sort: "-created_at", limit: 50 });
       return res;
     },
-    enabled: !!currentUser?.email,
+    enabled: !!currentUser?.username,
   });
   
   const withdrawals = Array.isArray(withdrawalsResponse?.data) ? withdrawalsResponse.data : [];
 
   const withdrawMutation = useMutation({
     mutationFn: () => withdrawalsAPI.create({
+      vendor_username: currentUser.username,
       vendor_email: currentUser.email,
       store_id: store?.id || store?._id,
       store_name: store?.name,

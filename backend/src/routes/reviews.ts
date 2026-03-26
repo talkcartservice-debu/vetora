@@ -10,7 +10,7 @@ export async function reviewRoutes(fastify: FastifyInstance) {
       const {
         product_id,
         store_id,
-        reviewer_email,
+        reviewer_username,
         rating,
         is_verified_purchase,
         sort = '-created_at',
@@ -23,7 +23,7 @@ export async function reviewRoutes(fastify: FastifyInstance) {
 
       if (product_id) filter.product_id = product_id;
       if (store_id) filter.store_id = store_id;
-      if (reviewer_email) filter.reviewer_email = reviewer_email;
+      if (reviewer_username) filter.reviewer_username = reviewer_username;
       if (rating) filter.rating = parseInt(rating);
       if (is_verified_purchase !== undefined) filter.is_verified_purchase = is_verified_purchase === 'true';
 
@@ -97,10 +97,16 @@ export async function reviewRoutes(fastify: FastifyInstance) {
         return reply.code(400).send({ error: 'Rating must be between 1 and 5' });
       }
 
+      // Get user info
+      const userData = await User.findOne({ email: user.email });
+      if (!userData) {
+        return reply.code(404).send({ error: 'User not found' });
+      }
+
       // Check if user already reviewed this product
       const existingReview = await Review.findOne({
         product_id: body.product_id,
-        reviewer_email: user.email
+        reviewer_username: userData.username
       });
 
       if (existingReview) {
@@ -110,7 +116,8 @@ export async function reviewRoutes(fastify: FastifyInstance) {
       const review = new Review({
         ...body,
         reviewer_email: user.email,
-        reviewer_name: user.name || user.email,
+        reviewer_username: userData.username,
+        reviewer_name: userData.display_name || userData.username,
         is_verified_purchase: false // TODO: Implement purchase verification logic
       });
 
@@ -156,7 +163,7 @@ export async function reviewRoutes(fastify: FastifyInstance) {
       }
 
       // Check if user owns the review
-      if (review.reviewer_email !== user.email) {
+      if (review.reviewer_email !== user.email && review.reviewer_username !== user.username) {
         return reply.code(403).send({ error: 'You can only update your own reviews' });
       }
 
@@ -203,7 +210,7 @@ export async function reviewRoutes(fastify: FastifyInstance) {
       }
 
       // Check if user owns the review
-      if (review.reviewer_email !== user.email) {
+      if (review.reviewer_email !== user.email && review.reviewer_username !== user.username) {
         return reply.code(403).send({ error: 'You can only delete your own reviews' });
       }
 

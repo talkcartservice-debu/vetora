@@ -355,6 +355,10 @@ export const withdrawalsAPI = {
     const query = apiClient.buildQueryString(filters);
     return apiClient.get(`/withdrawals?${query}`);
   },
+  listByUsername: (username, filters = {}) => {
+    const query = apiClient.buildQueryString(filters);
+    return apiClient.get(`/withdrawals/vendor/username/${username}?${query}`);
+  },
   get: (id) => apiClient.get(`/withdrawals/${id}`),
   getByVendor: (emailOrUsername) => apiClient.get(`/withdrawals/vendor/${emailOrUsername}`),
   create: (data) => apiClient.post('/withdrawals', data),
@@ -453,7 +457,8 @@ export const storesAPI = {
   get: (id) => apiClient.get(`/stores/${id}`),
   create: (data) => apiClient.post('/stores', data),
   update: (id, data) => apiClient.patch(`/stores/${id}`, data),
-  getByOwner: (emailOrUsername) => apiClient.get(`/stores/owner/${emailOrUsername}`)
+  getByOwner: (emailOrUsername) => apiClient.get(`/stores/owner/${emailOrUsername}`),
+  getByOwnerUsername: (username) => apiClient.get(`/stores/owner/username/${username}`)
 };
 
 export const usersAPI = {

@@ -3,6 +3,7 @@ import mongoose, { Document, Schema } from 'mongoose';
 export interface ILiveSession extends Document {
   _id: mongoose.Types.ObjectId;
   host_email: string;
+  host_username: string;
   host_name?: string;
   store_id?: string;
   store_name?: string;
@@ -32,6 +33,11 @@ const LiveSessionSchema = new Schema<ILiveSession>({
     type: String,
     required: true,
     lowercase: true,
+    trim: true,
+  },
+  host_username: {
+    type: String,
+    required: true,
     trim: true,
   },
   host_name: {
@@ -120,6 +126,7 @@ const LiveSessionSchema = new Schema<ILiveSession>({
 
 // Indexes for performance
 LiveSessionSchema.index({ host_email: 1, status: 1 });
+LiveSessionSchema.index({ host_username: 1, status: 1 });
 LiveSessionSchema.index({ status: 1, scheduled_at: 1 });
 LiveSessionSchema.index({ status: 1, started_at: -1 });
 LiveSessionSchema.index({ category: 1 });
