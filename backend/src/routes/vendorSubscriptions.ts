@@ -1,5 +1,8 @@
 import { FastifyInstance } from 'fastify';
+import axios from 'axios';
 import { VendorSubscription, IVendorSubscription } from '../models/VendorSubscription';
+
+const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY || 'sk_test_mock_key';
 
 export async function vendorSubscriptionRoutes(fastify: FastifyInstance) {
   // Get subscription for a vendor
@@ -53,9 +56,12 @@ export async function vendorSubscriptionRoutes(fastify: FastifyInstance) {
   });
 
   // List vendor subscriptions with filtering
-  fastify.get('/', async (request, reply) => {
+  fastify.get('/', {
+    preHandler: fastify.authenticate
+  }, async (request, reply) => {
     try {
       const query = request.query as any;
+      const user = request.user as any;
       const {
         vendor_email,
         store_id,
@@ -66,10 +72,20 @@ export async function vendorSubscriptionRoutes(fastify: FastifyInstance) {
         skip = 0
       } = query;
 
+      // Check if user owns the vendor account (unless admin)
+      if (vendor_email && user.email !== vendor_email.toLowerCase() && user.role !== 'admin') {
+        return reply.code(403).send({ error: 'You can only view your own subscriptions' });
+      }
+
       // Build filter object
       const filter: any = {};
 
-      if (vendor_email) filter.vendor_email = vendor_email.toLowerCase();
+      if (vendor_email) {
+        filter.vendor_email = vendor_email.toLowerCase();
+      } else if (user.role !== 'admin') {
+        // Force filter to own email for non-admins
+        filter.vendor_email = user.email;
+      }
       if (store_id) filter.store_id = store_id;
       if (plan) filter.plan = plan;
       if (status) filter.status = status;
@@ -145,8 +161,8 @@ export async function vendorSubscriptionRoutes(fastify: FastifyInstance) {
       // Set vendor_email from authenticated user
       body.vendor_email = user.email;
 
-      // Set default values
-      body.status = 'active';
+      // Set status based on plan
+      body.status = body.plan === 'free' ? 'active' : 'pending';
       body.started_at = new Date();
 
       // Set expiration date based on billing cycle
@@ -211,14 +227,25 @@ export async function vendorSubscriptionRoutes(fastify: FastifyInstance) {
         if (!validPlans.includes(body.plan)) {
           return reply.code(400).send({ error: 'Invalid plan. Must be free, pro, or elite' });
         }
+        
+        // If switching from free to paid or upgrading, set to pending
+        if (body.plan !== 'free' && subscription.plan !== body.plan) {
+          subscription.status = 'pending';
+        } else if (body.plan === 'free') {
+          subscription.status = 'active';
+        }
       }
 
       // Update expiration if billing cycle changed
       if (body.billing_cycle) {
+        const currentExpiry = subscription.expires_at && subscription.expires_at > new Date() 
+          ? subscription.expires_at 
+          : new Date();
+          
         if (body.billing_cycle === 'annual') {
-          subscription.expires_at = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+          subscription.expires_at = new Date(currentExpiry.getTime() + 365 * 24 * 60 * 60 * 1000);
         } else {
-          subscription.expires_at = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+          subscription.expires_at = new Date(currentExpiry.getTime() + 30 * 24 * 60 * 60 * 1000);
         }
       }
 
@@ -391,7 +418,7 @@ export async function vendorSubscriptionRoutes(fastify: FastifyInstance) {
         pro: {
           name: 'Pro',
           price_monthly: 29,
-          price_annual: 290,
+          price_annual: 276,
           features: [
             'Unlimited products',
             'Advanced analytics',
@@ -402,8 +429,8 @@ export async function vendorSubscriptionRoutes(fastify: FastifyInstance) {
         },
         elite: {
           name: 'Elite',
-          price_monthly: 99,
-          price_annual: 990,
+          price_monthly: 79,
+          price_annual: 756,
           features: [
             'All Pro features',
             'White-label solution',
@@ -415,6 +442,83 @@ export async function vendorSubscriptionRoutes(fastify: FastifyInstance) {
       };
 
       reply.send({ plans });
+    } catch (error) {
+      fastify.log.error(error);
+      reply.code(500).send({ error: 'Internal server error' });
+    }
+  });
+
+  // Verify payment for a subscription
+  fastify.post('/:id/verify-payment', {
+    preHandler: fastify.authenticate
+  }, async (request, reply) => {
+    try {
+      const { id } = request.params as { id: string };
+      const { reference } = request.body as { reference: string };
+      const user = request.user as any;
+
+      if (!reference) {
+        return reply.code(400).send({ error: 'Missing payment reference' });
+      }
+
+      const subscription = await VendorSubscription.findById(id);
+
+      if (!subscription) {
+        return reply.code(404).send({ error: 'Subscription not found' });
+      }
+
+      // Check ownership
+      if (subscription.vendor_email !== user.email) {
+        return reply.code(403).send({ error: 'You can only verify your own subscription' });
+      }
+
+      // Actual Paystack API verification
+      try {
+        const response = await axios.get(
+          `https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`,
+          {
+            headers: {
+              Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
+            },
+          }
+        );
+
+        const data = response.data.data;
+        if (data.status !== 'success') {
+          return reply.code(402).send({ error: 'Payment verification failed' });
+        }
+
+        // Verify amount matches plan price
+        const prices: Record<string, Record<string, number>> = {
+          pro: { monthly: 29, annual: 276 },
+          elite: { monthly: 79, annual: 756 }
+        };
+
+        const planPrice = prices[subscription.plan]?.[subscription.billing_cycle || 'monthly'] || 0;
+        // Paystack amount is in kobo (kobo = price * 100)
+        if (data.amount < planPrice * 100) {
+          return reply.code(402).send({ error: 'Payment amount mismatch. Incorrect price paid.' });
+        }
+        
+        subscription.status = 'active';
+        subscription.payment_reference = reference;
+        subscription.last_payment_date = new Date();
+        
+        // Recalculate expiration from today
+        const now = new Date();
+        if (subscription.billing_cycle === 'annual') {
+          subscription.expires_at = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000);
+        } else {
+          subscription.expires_at = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+        }
+
+        await subscription.save();
+
+        reply.send(subscription);
+      } catch (paystackError) {
+        fastify.log.error(paystackError);
+        return reply.code(402).send({ error: 'Failed to verify with Paystack' });
+      }
     } catch (error) {
       fastify.log.error(error);
       reply.code(500).send({ error: 'Internal server error' });

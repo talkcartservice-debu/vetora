@@ -1085,6 +1085,7 @@ const AdminDashboard = () => {
                                 onClick={() => {
                                   setSelectedWithdrawal(w);
                                   setWithdrawalAction('completed');
+                                  setWithdrawalNotes('');
                                   setIsWithdrawalModalOpen(true);
                                 }}
                               >
@@ -1097,6 +1098,7 @@ const AdminDashboard = () => {
                                 onClick={() => {
                                   setSelectedWithdrawal(w);
                                   setWithdrawalAction('rejected');
+                                  setWithdrawalNotes('');
                                   setIsWithdrawalModalOpen(true);
                                 }}
                               >
@@ -1326,6 +1328,7 @@ const AdminDashboard = () => {
                                 <DropdownMenuItem onClick={() => {
                                   setSelectedReport(r);
                                   setReportAction('resolved');
+                                  setReportNotes('');
                                   setIsReportModalOpen(true);
                                 }}>
                                   <CheckCircle className="w-4 h-4 mr-2 text-success" /> Resolve
@@ -1333,6 +1336,7 @@ const AdminDashboard = () => {
                                 <DropdownMenuItem onClick={() => {
                                   setSelectedReport(r);
                                   setReportAction('dismissed');
+                                  setReportNotes('');
                                   setIsReportModalOpen(true);
                                 }}>
                                   <AlertCircle className="w-4 h-4 mr-2 text-muted-foreground" /> Dismiss

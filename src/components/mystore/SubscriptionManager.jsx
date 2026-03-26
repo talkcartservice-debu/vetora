@@ -1,14 +1,17 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { vendorSubscriptionsAPI } from "@/api/apiClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Crown, Zap, Star, Check, Globe, TrendingUp, Image, Infinity, Loader2, X, Shield, BadgeCheck
+  Crown, Zap, Star, Check, Globe, TrendingUp, Image, Infinity, Loader2, X, Shield, BadgeCheck,
+  CreditCard, AlertCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { initializePaystackPayment } from "@/lib/paystack";
+import { useAuth } from "@/lib/AuthContext";
 
 const PLANS = [
   {
@@ -141,12 +144,17 @@ function CustomDomainManager({ subscription, vendorEmail }) {
   const canUseDomain = subscription?.plan === "pro" || subscription?.plan === "elite";
 
   const save = async () => {
-    if (!subscription?.id) return;
+    if (!subscription?.id && !subscription?._id) return;
     setSaving(true);
-    await vendorSubscriptionsAPI.update(subscription.id, { custom_domain: domain });
-    queryClient.invalidateQueries({ queryKey: ["vendorSubscription"] });
-    toast.success("Custom domain saved!");
-    setSaving(false);
+    try {
+      await vendorSubscriptionsAPI.update(subscription.id || subscription._id, { custom_domain: domain });
+      queryClient.invalidateQueries({ queryKey: ["vendorSubscription"] });
+      toast.success("Custom domain saved!");
+    } catch (err) {
+      toast.error(err.message || "Failed to save domain");
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (!canUseDomain) {
@@ -167,7 +175,11 @@ function CustomDomainManager({ subscription, vendorEmail }) {
       <div className="flex items-center gap-2 mb-3">
         <Globe className="w-5 h-5 text-indigo-500" />
         <h4 className="text-sm font-semibold text-slate-900">Custom Domain</h4>
-        <Badge className="ml-auto bg-green-100 text-green-700 border-0 text-xs">Active</Badge>
+        {subscription?.custom_domain ? (
+          <Badge className="ml-auto bg-green-100 text-green-700 border-0 text-xs">Active</Badge>
+        ) : (
+          <Badge className="ml-auto bg-slate-100 text-slate-500 border-0 text-xs">Not configured</Badge>
+        )}
       </div>
       <p className="text-xs text-slate-500 mb-3">Point your domain to Vetora to use a branded store URL.</p>
       <div className="flex gap-2">
@@ -194,14 +206,44 @@ export default function SubscriptionManager({ store, vendorEmail }) {
   const [billing, setBilling] = useState("monthly");
   const [showConfirm, setShowConfirm] = useState(null);
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const reference = params.get('reference') || params.get('trxref');
+    
+    if (reference && subscription && (subscription.id || subscription._id)) {
+      verifyMutation.mutate({ 
+        id: subscription.id || subscription._id, 
+        reference 
+      });
+      
+      // Clean up URL properly
+      params.delete('reference');
+      params.delete('trxref');
+      const search = params.toString() ? `?${params.toString()}` : '';
+      window.history.replaceState({}, '', window.location.pathname + search);
+    }
+  }, [subscription, verifyMutation]);
 
   const { data: subscription, isLoading } = useQuery({
     queryKey: ["vendorSubscription", vendorEmail],
     queryFn: async () => {
-      const subs = await vendorSubscriptionsAPI.list({ vendor_email: vendorEmail });
+      const res = await vendorSubscriptionsAPI.list({ vendor_email: vendorEmail });
+      const subs = Array.isArray(res) ? res : (res.data || res.subscriptions || []);
       return subs[0] || null;
     },
     enabled: !!vendorEmail,
+  });
+
+  const verifyMutation = useMutation({
+    mutationFn: async ({ id, reference }) => {
+      return vendorSubscriptionsAPI.verifyPayment(id, reference);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["vendorSubscription"] });
+      toast.success("Payment verified! Subscription active.");
+    },
   });
 
   const subscribeMutation = useMutation({
@@ -210,53 +252,121 @@ export default function SubscriptionManager({ store, vendorEmail }) {
       const expires = new Date(today);
       expires.setMonth(expires.getMonth() + (billing === "annual" ? 12 : 1));
 
-      if (subscription?.id) {
-        return vendorSubscriptionsAPI.update(subscription.id, {
-          plan: plan.id,
-          billing_cycle: billing,
-          status: "active",
-          started_at: today.toISOString().split("T")[0],
-          expires_at: expires.toISOString().split("T")[0],
-        });
-      }
-      return vendorSubscriptionsAPI.create({
-        vendor_email: vendorEmail,
-        store_id: store?.id,
+      const payload = {
         plan: plan.id,
         billing_cycle: billing,
-        status: "active",
-        started_at: today.toISOString().split("T")[0],
-        expires_at: expires.toISOString().split("T")[0],
-      });
+        store_id: store?.id,
+        vendor_email: vendorEmail,
+      };
+
+      let sub;
+      if (subscription?.id || subscription?._id) {
+        sub = await vendorSubscriptionsAPI.update(subscription.id || subscription._id, payload);
+      } else {
+        sub = await vendorSubscriptionsAPI.create(payload);
+      }
+
+      if (plan.id === "free") {
+        return { sub, needsPayment: false };
+      }
+
+      return { sub, needsPayment: true, plan };
     },
-    onSuccess: (_, plan) => {
-      toast.success(`Upgraded to ${plan.name}!`);
-      setShowConfirm(null);
-      queryClient.invalidateQueries({ queryKey: ["vendorSubscription"] });
+    onSuccess: (data) => {
+      if (!data.needsPayment) {
+        toast.success(`Plan updated to ${data.sub.plan}!`);
+        setShowConfirm(null);
+        queryClient.invalidateQueries({ queryKey: ["vendorSubscription"] });
+      } else {
+        const annualPrice = data.plan.priceAnnual * 12;
+        const monthlyPrice = data.plan.price;
+        const price = billing === "annual" ? annualPrice : monthlyPrice;
+        
+        // Paystack uses kobo (kobo = price * 100)
+        initializePaystackPayment({
+          amount: Math.round(price * 100),
+          email: user.email,
+          order_id: `SUB-${data.sub.id || data.sub._id}`,
+          onSuccess: (res) => {
+            verifyMutation.mutate({ 
+              id: data.sub.id || data.sub._id, 
+              reference: res.reference 
+            });
+          }
+        });
+        setShowConfirm(null);
+      }
     },
   });
 
   const currentPlanInfo = PLANS.find(p => p.id === (subscription?.plan || "free"));
+  const isPending = subscription?.status === "pending";
 
   if (isLoading) return <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-slate-400" /></div>;
 
   return (
     <div className="space-y-6">
       {/* Current Plan Banner */}
-      <div className={`rounded-2xl p-5 flex items-center gap-4 ${subscription?.plan === "elite" ? "bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200" : subscription?.plan === "pro" ? "bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200" : "bg-slate-50 border border-slate-200"}`}>
+      <div className={`relative rounded-2xl p-5 flex items-center gap-4 ${subscription?.plan === "elite" ? "bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200" : subscription?.plan === "pro" ? "bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200" : "bg-slate-50 border border-slate-200"}`}>
         {currentPlanInfo && <currentPlanInfo.icon className={`w-8 h-8 shrink-0 ${currentPlanInfo.iconColor}`} />}
         <div className="flex-1">
-          <p className="text-sm font-bold text-slate-900">You are on the <span className={subscription?.plan === "elite" ? "text-amber-600" : subscription?.plan === "pro" ? "text-indigo-600" : "text-slate-600"}>{currentPlanInfo?.name}</span> plan</p>
+          <div className="flex items-center gap-2">
+            <p className="text-sm font-bold text-slate-900">
+              You are on the <span className={subscription?.plan === "elite" ? "text-amber-600" : subscription?.plan === "pro" ? "text-indigo-600" : "text-slate-600"}>{currentPlanInfo?.name}</span> plan
+            </p>
+            {isPending && (
+              <Badge variant="outline" className="bg-amber-50 text-amber-600 border-amber-200 animate-pulse">Pending Payment</Badge>
+            )}
+          </div>
           {subscription?.expires_at && (
-            <p className="text-xs text-slate-500">Renews {new Date(subscription.expires_at).toLocaleDateString()}</p>
+            <p className="text-xs text-slate-500">
+              {subscription.status === 'cancelled' ? 'Expires' : 'Renews'} {new Date(subscription.expires_at).toLocaleDateString()}
+            </p>
           )}
         </div>
-        {subscription?.plan !== "free" && (
-          <Badge className={`text-xs border-0 ${subscription?.plan === "elite" ? "bg-amber-100 text-amber-700" : "bg-indigo-100 text-indigo-700"}`}>
-            {subscription?.billing_cycle === "annual" ? "Annual" : "Monthly"}
-          </Badge>
-        )}
+        
+        <div className="flex flex-col items-end gap-2">
+          {subscription?.plan !== "free" && (
+            <Badge className={`text-xs border-0 ${subscription?.plan === "elite" ? "bg-amber-100 text-amber-700" : "bg-indigo-100 text-indigo-700"}`}>
+              {subscription?.billing_cycle === "annual" ? "Annual" : "Monthly"}
+            </Badge>
+          )}
+          {isPending && (
+            <Button 
+              size="sm" 
+              variant="default" 
+              className="h-8 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 rounded-lg px-4 shadow-sm shadow-indigo-100"
+              onClick={() => {
+                const plan = PLANS.find(p => p.id === subscription.plan);
+                const price = subscription.billing_cycle === "annual" ? plan.priceAnnual * 12 : plan.price;
+                initializePaystackPayment({
+                  amount: Math.round(price * 100),
+                  email: user.email,
+                  order_id: `SUB-${subscription.id || subscription._id}`,
+                  onSuccess: (res) => {
+                    verifyMutation.mutate({ 
+                      id: subscription.id || subscription._id, 
+                      reference: res.reference 
+                    });
+                  }
+                });
+              }}
+            >
+              Pay Now
+            </Button>
+          )}
+        </div>
       </div>
+
+      {isPending && (
+        <div className="bg-amber-50/50 border border-amber-100 rounded-xl p-4 flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+          <div className="text-xs text-amber-700 leading-relaxed">
+            <strong>Payment Required:</strong> Your {currentPlanInfo?.name} features will be unlocked once payment is confirmed. 
+            If you've already paid, it may take a few minutes to update.
+          </div>
+        </div>
+      )}
 
       {/* Billing toggle */}
       <div className="flex items-center justify-center gap-3">
@@ -315,7 +425,6 @@ export default function SubscriptionManager({ store, vendorEmail }) {
               <p className="text-slate-600 text-sm mb-2">
                 Upgrade to <strong>{showConfirm.name}</strong> for <strong>${billing === "annual" ? showConfirm.priceAnnual : showConfirm.price}/mo</strong> ({billing}).
               </p>
-              <p className="text-xs text-slate-400 mb-5">This is a demo — no real payment will be processed.</p>
               <div className="flex gap-3">
                 <Button variant="outline" className="flex-1 rounded-xl" onClick={() => setShowConfirm(null)}>Cancel</Button>
                 <Button

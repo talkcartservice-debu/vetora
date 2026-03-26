@@ -23,7 +23,8 @@ import {
   DollarSign,
   Link2,
   Bell,
-  Shield
+  Shield,
+  CreditCard
 } from "lucide-react";
 import LanguagePicker from "@/components/layout/LanguagePicker";
 import NotificationBell from "@/components/layout/NotificationBell";
@@ -63,6 +64,7 @@ const SIDEBAR_ITEMS = [
   { name: "Track Order", icon: MapPin, page: "OrderTracking" },
   { name: "My Store", icon: Store, page: "MyStore" },
   { name: "Finance", icon: DollarSign, page: "VendorFinance" },
+  { name: "Account Plans", icon: CreditCard, page: "MyStore", params: "?tab=subscription" },
   { name: "Affiliate", icon: Link2, page: "Affiliate" },
   { name: "Notifications", icon: Bell, page: "Notifications" },
   { name: "Settings", icon: SettingsIcon, page: "Settings" },
@@ -120,11 +122,15 @@ export default function Layout({ children, currentPageName }) {
               return null;
             }
             
-            const isActive = currentPageName === item.page;
+            const queryParams = new URLSearchParams(window.location.search);
+            const currentTab = queryParams.get("tab");
+            const itemTab = item.params ? new URLSearchParams(item.params).get("tab") : null;
+            
+            const isActive = currentPageName === item.page && (itemTab ? currentTab === itemTab : !currentTab);
             return (
               <Link
                 key={item.name}
-                to={createPageUrl(item.page)}
+                to={createPageUrl(item.page) + (item.params || "")}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
                   isActive
                     ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400"

@@ -4,12 +4,14 @@ export interface IVendorSubscription extends Document {
   vendor_email: string;
   store_id?: string;
   plan: 'free' | 'pro' | 'elite';
-  status: 'active' | 'cancelled' | 'expired';
+  status: 'active' | 'cancelled' | 'expired' | 'pending';
   billing_cycle: 'monthly' | 'annual';
   started_at: Date;
   expires_at?: Date;
   custom_domain?: string;
   payment_method?: string;
+  payment_reference?: string;
+  last_payment_date?: Date;
   created_at: Date;
   updated_at: Date;
 }
@@ -32,7 +34,7 @@ const VendorSubscriptionSchema = new Schema<IVendorSubscription>({
   },
   status: {
     type: String,
-    enum: ['active', 'cancelled', 'expired'],
+    enum: ['active', 'cancelled', 'expired', 'pending'],
     default: 'active'
   },
   billing_cycle: {
@@ -54,6 +56,14 @@ const VendorSubscriptionSchema = new Schema<IVendorSubscription>({
   },
   payment_method: {
     type: String
+  },
+  payment_reference: {
+    type: String,
+    sparse: true,
+    unique: true
+  },
+  last_payment_date: {
+    type: Date
   }
 }, {
   timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }

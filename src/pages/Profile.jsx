@@ -14,9 +14,10 @@ import { useAuth } from "@/lib/AuthContext";
 import {
   Grid3X3, ShoppingBag, UserPlus, UserCheck, LogOut,
   Store, Package, CheckCircle2, Clock, Truck, Pencil, Star, BadgeCheck, Heart,
-  Search, Users2, Calendar, MessageCircle
+  Search, Users2, Calendar, MessageCircle, CreditCard
 } from "lucide-react";
 import StarRating from "@/components/reviews/StarRating";
+import SubscriptionManager from "@/components/mystore/SubscriptionManager";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -107,7 +108,7 @@ export default function Profile() {
   const { user: currentUser, logout } = useAuth();
 
   const targetEmail = profileEmail || currentUser?.email;
-  const isOwnProfile = !profileEmail || profileEmail === currentUser?.email;
+  const isOwnProfile = !profileEmail || profileEmail.toLowerCase() === currentUser?.email?.toLowerCase();
 
   const { data: profileUser } = useQuery({
     queryKey: ["profileUser", targetEmail],
@@ -225,6 +226,16 @@ export default function Profile() {
     enabled: !!targetEmail,
   });
 
+  const { data: subscription } = useQuery({
+    queryKey: ["vendorSubscription", targetEmail],
+    queryFn: async () => {
+      const res = await vendorSubscriptionsAPI.list({ vendor_email: targetEmail });
+      const subs = Array.isArray(res) ? res : (res.data || res.subscriptions || []);
+      return subs[0] || null;
+    },
+    enabled: !!targetEmail && (isOwnProfile || currentUser?.role === 'super_admin'),
+  });
+
   const { data: vendorStoreReviews = [] } = useQuery({
     queryKey: ["vendorStoreReviews", store?.id],
     queryFn: async () => {
@@ -299,6 +310,31 @@ export default function Profile() {
             <div className="flex gap-2">
               {isOwnProfile ? (
                 <>
+                  {(currentUser?.role === 'vendor' || profileUser?.role === 'vendor' || currentUser?.role === 'super_admin' || store) && (
+                    <Button 
+                      type="button"
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => {
+                        setActiveTab("plan");
+                        setTimeout(() => {
+                          const el = document.getElementById('profile-tabs-list');
+                          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }, 100);
+                      }}
+                      className={`relative rounded-xl gap-1.5 transition-all font-bold h-9 px-4 shadow-sm border-indigo-200 ${
+                        activeTab === "plan" 
+                          ? "bg-indigo-600 text-white border-indigo-600 shadow-indigo-100" 
+                          : "bg-indigo-50/80 text-indigo-700 hover:bg-indigo-100 hover:text-indigo-800"
+                      }`}
+                    >
+                      <CreditCard className="w-4 h-4" /> 
+                      <span>Manage Plan</span>
+                      {subscription?.status === 'pending' && (
+                        <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white animate-pulse" />
+                      )}
+                    </Button>
+                  )}
                   <Button 
                     variant="outline" 
                     size="sm" 
@@ -445,7 +481,7 @@ export default function Profile() {
                   <ShoppingBag className="w-4 h-4 text-indigo-500" />
                   Store Highlights
                 </h2>
-                <Link to={createPageUrl("StoreDetail") + `?id=${store.id}`} className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider hover:underline">
+                <Link to={createPageUrl("StoreDetail") + `?id=${store.id || store._id}`} className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider hover:underline">
                   Visit Store
                 </Link>
               </div>
@@ -494,11 +530,20 @@ export default function Profile() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-4">
-        <TabsList className="bg-white border border-slate-100 w-full">
+        <TabsList id="profile-tabs-list" className="bg-white border border-slate-100 w-full">
           <TabsTrigger value="posts" className="flex-1 gap-1.5"><Grid3X3 className="w-4 h-4" />Posts</TabsTrigger>
           <TabsTrigger value="products" className="flex-1 gap-1.5"><ShoppingBag className="w-4 h-4" />Products</TabsTrigger>
           {isOwnProfile && <TabsTrigger value="orders" className="flex-1 gap-1.5"><Package className="w-4 h-4" />Orders</TabsTrigger>}
           {isOwnProfile && <TabsTrigger value="liked" className="flex-1 gap-1.5"><Heart className="w-4 h-4" />Liked</TabsTrigger>}
+          {isOwnProfile && (currentUser?.role === 'vendor' || profileUser?.role === 'vendor' || currentUser?.role === 'super_admin' || store) && (
+            <TabsTrigger value="plan" className="flex-1 gap-1.5 text-indigo-600 font-bold border-indigo-100 data-[state=active]:bg-indigo-50/50 relative">
+              <CreditCard className="w-4 h-4" />
+              <span>Plan</span>
+              {subscription?.status === 'pending' && (
+                <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
+              )}
+            </TabsTrigger>
+          )}
         </TabsList>
       </Tabs>
 
@@ -616,6 +661,23 @@ export default function Profile() {
             </div>
           )}
         </div>
+      )}
+
+      {/* Plan tab (vendor only) */}
+      {activeTab === "plan" && isOwnProfile && (currentUser?.role === 'vendor' || store) && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm"
+        >
+          <div className="mb-6 flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-bold text-slate-900">Subscription Management</h2>
+              <p className="text-sm text-slate-500">Manage your store plan and features</p>
+            </div>
+          </div>
+          <SubscriptionManager store={store} vendorEmail={currentUser?.email} />
+        </motion.div>
       )}
 
       {/* Edit Modal */}

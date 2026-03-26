@@ -22,6 +22,7 @@ export async function userRoutes(fastify: FastifyInstance) {
         avatar_url: user.avatar_url,
         banner_url: user.banner_url,
         is_verified: user.is_verified,
+        role: user.role, // Added role
         created_at: user.created_at,
       };
     } catch (error: any) {

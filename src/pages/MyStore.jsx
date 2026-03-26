@@ -27,7 +27,9 @@ import { useAuth } from "@/lib/AuthContext";
 const CATEGORIES = ["fashion", "electronics", "home", "beauty", "sports", "food", "art", "books", "handmade", "other"];
 
 export default function MyStore() {
-  const [activeTab, setActiveTab] = useState("products");
+  const params = new URLSearchParams(window.location.search);
+  const defaultTab = params.get("tab") || "products";
+  const [activeTab, setActiveTab] = useState(defaultTab);
   const [showCreateStore, setShowCreateStore] = useState(false);
   const [showEditStore, setShowEditStore] = useState(false);
   const [showAddProduct, setShowAddProduct] = useState(false);

@@ -385,6 +385,7 @@ export const vendorSubscriptionsAPI = {
   delete: (id) => apiClient.delete(`/vendor-subscriptions/${id}`),
   getStatus: (id) => apiClient.get(`/vendor-subscriptions/${id}/status`),
   getPlans: () => apiClient.get('/vendor-subscriptions/public/plans'),
+  verifyPayment: (id, reference) => apiClient.post(`/vendor-subscriptions/${id}/verify-payment`, { reference }),
 };
 
 export const adminAPI = {

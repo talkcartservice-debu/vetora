@@ -259,7 +259,7 @@ export default function ProductDetail() {
         <div className="lg:py-2">
           {product.store_name && (
             <Link
-              to={createPageUrl("StoreDetail") + `?id=${product.store_id}`}
+              to={createPageUrl("StoreDetail") + `?id=${product.store_id || product.store?._id}`}
               className="inline-flex items-center gap-1.5 text-sm text-indigo-600 font-medium mb-2 hover:underline"
             >
               <Store className="w-4 h-4" />
