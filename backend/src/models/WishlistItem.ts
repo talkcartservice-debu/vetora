@@ -74,9 +74,6 @@ const WishlistItemSchema = new Schema<IWishlistItem>({
 // Compound indexes for efficient queries
 WishlistItemSchema.index({ user_username: 1, product_id: 1 }, { unique: true });
 WishlistItemSchema.index({ user_username: 1, created_at: -1 });
-WishlistItemSchema.index({ user_email: 1 });
-WishlistItemSchema.index({ vendor_username: 1 });
-WishlistItemSchema.index({ vendor_email: 1 });
 WishlistItemSchema.index({ store_id: 1, created_at: -1 });
 
 export const WishlistItem = mongoose.model<IWishlistItem>('WishlistItem', WishlistItemSchema);

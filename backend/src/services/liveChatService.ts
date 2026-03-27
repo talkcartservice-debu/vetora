@@ -7,6 +7,16 @@ import { Report } from '../models/Report';
 const messageCooldowns = new Map<string, number>();
 const RATE_LIMIT_MS = 1000; // 1 message per second
 
+// Cleanup old cooldowns every minute
+setInterval(() => {
+  const now = Date.now();
+  for (const [username, lastTs] of messageCooldowns.entries()) {
+    if (now - lastTs > RATE_LIMIT_MS * 10) {
+      messageCooldowns.delete(username);
+    }
+  }
+}, 60000);
+
 // Basic profanity list (expand as needed)
 const BANNED_WORDS = ['badword1', 'badword2', 'spam'];
 
@@ -123,11 +133,10 @@ export class LiveChatService {
 
     // Check if authorized (author, host, or moderator)
     const isAuthor = message.user_username === username;
-    const isModerator = 
-      session.host_username === username || 
-      session.moderators.includes(username.toLowerCase());
+    const isHost = session.host_username === username;
+    const isModerator = session.moderators.includes(username.toLowerCase());
 
-    if (!isAuthor && !isModerator) {
+    if (!isAuthor && !isHost && !isModerator) {
       throw new Error('Unauthorized to delete this message');
     }
 
@@ -139,7 +148,7 @@ export class LiveChatService {
     io?.to(`live-session-${message.session_id}`).emit('live-chat-message-deleted', {
       message_id: messageId,
       session_id: message.session_id,
-      deleted_by: isModerator ? 'moderator' : 'author'
+      deleted_by: isHost || isModerator ? 'moderator' : 'author'
     });
 
     return message;
@@ -150,12 +159,24 @@ export class LiveChatService {
    */
   static async likeMessage(messageId: string, username: string) {
     const message = await LiveChatMessage.findOneAndUpdate(
-      { _id: messageId, is_deleted: false },
-      { $inc: { likes_count: 1 } },
+      { 
+        _id: messageId, 
+        is_deleted: false,
+        liked_by: { $ne: username.toLowerCase() }
+      },
+      { 
+        $inc: { likes_count: 1 },
+        $addToSet: { liked_by: username.toLowerCase() }
+      },
       { new: true }
     );
 
-    if (!message) throw new Error('Message not found or deleted');
+    if (!message) {
+      const existing = await LiveChatMessage.findById(messageId);
+      if (!existing) throw new Error('Message not found');
+      if (existing.is_deleted) throw new Error('Message is deleted');
+      throw new Error('You already liked this message');
+    }
 
     // Emit like event
     io?.to(`live-session-${message.session_id}`).emit('live-chat-message-liked', {
@@ -175,15 +196,24 @@ export class LiveChatService {
     if (!session) throw new Error('Session not found');
 
     // Only host or moderator can ban
-    const isAuthorized = 
-      session.host_username === moderatorUsername || 
-      session.moderators.includes(moderatorUsername.toLowerCase());
+    const isHost = session.host_username === moderatorUsername;
+    const isModerator = session.moderators.includes(moderatorUsername.toLowerCase());
     
-    if (!isAuthorized) throw new Error('Unauthorized to ban users');
+    if (!isHost && !isModerator) throw new Error('Unauthorized to ban users');
+
+    // Hierarchy guards
+    const targetLower = targetUsername.toLowerCase();
+    if (targetLower === session.host_username.toLowerCase()) {
+      throw new Error('Cannot ban the session host');
+    }
+
+    if (session.moderators.includes(targetLower) && !isHost) {
+      throw new Error('Only the host can ban a moderator');
+    }
 
     const update = ban 
-      ? { $addToSet: { banned_users: targetUsername.toLowerCase() } }
-      : { $pull: { banned_users: targetUsername.toLowerCase() } };
+      ? { $addToSet: { banned_users: targetLower } }
+      : { $pull: { banned_users: targetLower } };
 
     await LiveSession.findByIdAndUpdate(sessionId, update);
 

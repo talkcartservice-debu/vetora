@@ -43,8 +43,26 @@ export async function liveChatMessageRoutes(fastify: FastifyInstance) {
         return reply.code(400).send({ error: 'session_id is required' });
       }
 
+      // Access control for deleted messages
+      let canSeeDeleted = false;
+      if (include_deleted === 'true' || include_deleted === true) {
+        try {
+          // Check if user is authenticated and is host/moderator
+          await request.jwtVerify();
+          const user = request.user as any;
+          const session = await LiveSession.findById(session_id);
+          if (session) {
+            canSeeDeleted = 
+              session.host_username === user.username || 
+              session.moderators.includes(user.username.toLowerCase());
+          }
+        } catch (err) {
+          // Not authenticated or other error, canSeeDeleted stays false
+        }
+      }
+
       const filter: any = { session_id };
-      if (!include_deleted) filter.is_deleted = false;
+      if (!canSeeDeleted) filter.is_deleted = false;
       if (message_type) filter.message_type = message_type;
 
       const messages = await LiveChatMessage

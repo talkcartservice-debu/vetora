@@ -11,7 +11,8 @@ export interface ILiveChatMessage extends Document {
   product_title?: string;
   is_pinned: boolean;
   likes_count: number;
-  reply_to?: string; // ID of the message being replied to
+  liked_by: string[]; // List of usernames who liked the message
+  reply_to?: mongoose.Types.ObjectId; // ID of the message being replied to
   is_deleted: boolean;
   deleted_by?: string; // username of the moderator who deleted it
   created_at: Date;
@@ -60,6 +61,11 @@ const LiveChatMessageSchema = new Schema<ILiveChatMessage>({
     default: 0,
     min: 0,
   },
+  liked_by: [{
+    type: String,
+    lowercase: true,
+    trim: true,
+  }],
   reply_to: {
     type: Schema.Types.ObjectId,
     ref: 'LiveChatMessage',
@@ -84,5 +90,6 @@ LiveChatMessageSchema.index({ session_id: 1, is_pinned: 1 });
 LiveChatMessageSchema.index({ user_username: 1 });
 LiveChatMessageSchema.index({ message_type: 1 });
 LiveChatMessageSchema.index({ reply_to: 1 });
+LiveChatMessageSchema.index({ liked_by: 1 });
 
 export const LiveChatMessage = mongoose.model<ILiveChatMessage>('LiveChatMessage', LiveChatMessageSchema);
