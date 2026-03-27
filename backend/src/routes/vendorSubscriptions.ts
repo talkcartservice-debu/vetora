@@ -6,20 +6,20 @@ const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY || 'sk_test_mock_key
 
 export async function vendorSubscriptionRoutes(fastify: FastifyInstance) {
   // Get subscription for a vendor
-  fastify.get('/vendor/:vendorEmail', {
+  fastify.get('/vendor/:vendorUsername', {
     preHandler: fastify.authenticate
   }, async (request, reply) => {
     try {
-      const { vendorEmail } = request.params as { vendorEmail: string };
+      const { vendorUsername } = request.params as { vendorUsername: string };
       const user = request.user as any;
 
       // Check if user owns the vendor account
-      if (user.email !== vendorEmail.toLowerCase()) {
+      if (user.username !== vendorUsername.toLowerCase()) {
         return reply.code(403).send({ error: 'You can only view your own subscription' });
       }
 
       const subscription = await VendorSubscription.findOne({
-        vendor_email: vendorEmail.toLowerCase(),
+        vendor_username: vendorUsername.toLowerCase(),
         status: 'active'
       });
 
@@ -63,7 +63,7 @@ export async function vendorSubscriptionRoutes(fastify: FastifyInstance) {
       const query = request.query as any;
       const user = request.user as any;
       const {
-        vendor_email,
+        vendor_username,
         store_id,
         plan,
         status,
@@ -73,18 +73,18 @@ export async function vendorSubscriptionRoutes(fastify: FastifyInstance) {
       } = query;
 
       // Check if user owns the vendor account (unless admin)
-      if (vendor_email && user.email !== vendor_email.toLowerCase() && user.role !== 'admin') {
+      if (vendor_username && user.username !== vendor_username.toLowerCase() && user.role !== 'admin') {
         return reply.code(403).send({ error: 'You can only view your own subscriptions' });
       }
 
       // Build filter object
       const filter: any = {};
 
-      if (vendor_email) {
-        filter.vendor_email = vendor_email.toLowerCase();
+      if (vendor_username) {
+        filter.vendor_username = vendor_username.toLowerCase();
       } else if (user.role !== 'admin') {
-        // Force filter to own email for non-admins
-        filter.vendor_email = user.email;
+        // Force filter to own username for non-admins
+        filter.vendor_username = user.username;
       }
       if (store_id) filter.store_id = store_id;
       if (plan) filter.plan = plan;
@@ -158,8 +158,8 @@ export async function vendorSubscriptionRoutes(fastify: FastifyInstance) {
         return reply.code(400).send({ error: 'Invalid plan. Must be free, pro, or elite' });
       }
 
-      // Set vendor_email from authenticated user
-      body.vendor_email = user.email;
+      // Set vendor_username from authenticated user
+      body.vendor_username = user.username;
 
       // Set status based on plan
       body.status = body.plan === 'free' ? 'active' : 'pending';
@@ -202,7 +202,7 @@ export async function vendorSubscriptionRoutes(fastify: FastifyInstance) {
       }
 
       // Check if user owns the subscription
-      if (subscription.vendor_email !== user.email) {
+      if (subscription.vendor_username !== user.username) {
         return reply.code(403).send({ error: 'You can only update your own subscription' });
       }
 
@@ -277,7 +277,7 @@ export async function vendorSubscriptionRoutes(fastify: FastifyInstance) {
       }
 
       // Check if user owns the subscription
-      if (subscription.vendor_email !== user.email) {
+      if (subscription.vendor_username !== user.username) {
         return reply.code(403).send({ error: 'You can only cancel your own subscription' });
       }
 
@@ -306,7 +306,7 @@ export async function vendorSubscriptionRoutes(fastify: FastifyInstance) {
       }
 
       // Check if user owns the subscription
-      if (subscription.vendor_email !== user.email) {
+      if (subscription.vendor_username !== user.username) {
         return reply.code(403).send({ error: 'You can only renew your own subscription' });
       }
 
@@ -346,7 +346,7 @@ export async function vendorSubscriptionRoutes(fastify: FastifyInstance) {
       }
 
       // Check if user owns the subscription
-      if (subscription.vendor_email !== user.email) {
+      if (subscription.vendor_username !== user.username) {
         return reply.code(403).send({ error: 'You can only delete your own subscription' });
       }
 
@@ -468,7 +468,7 @@ export async function vendorSubscriptionRoutes(fastify: FastifyInstance) {
       }
 
       // Check ownership
-      if (subscription.vendor_email !== user.email) {
+      if (subscription.vendor_username !== user.username) {
         return reply.code(403).send({ error: 'You can only verify your own subscription' });
       }
 

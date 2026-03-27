@@ -209,7 +209,7 @@ function LiveStreamViewer({ session: initialSession, onBack }) {
     setTimeout(() => setFloatingHearts(prev => prev.filter(h => h.id !== heart.id)), 2000);
   };
 
-  const allChat = liveChatMsgs.map(m => ({ ...m, user_name: m.user_name || m.user_email }));
+  const allChat = liveChatMsgs.map(m => ({ ...m, user_name: m.user_name || m.user_username }));
 
   return (
     <div className="fixed inset-0 bg-black z-50 flex flex-col lg:flex-row">

@@ -196,8 +196,8 @@ export default function GlobalSearch() {
                   <p className="px-3 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-50 border-t border-slate-100">People</p>
                   {users.map(u => (
                     <Link
-                      key={u.id}
-                      to={createPageUrl("Profile") + `?email=${u.email}`}
+                      key={u.id || u._id}
+                      to={createPageUrl("Profile") + `?username=${u.username}`}
                       onClick={handleResultClick}
                       className="flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 transition-colors"
                     >
@@ -206,7 +206,7 @@ export default function GlobalSearch() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-slate-800 truncate">{u.display_name || u.full_name || "User"}</p>
-                        <p className="text-xs text-slate-400 truncate">@{u.display_name?.replace(/\s+/g, '_').toLowerCase() || u.email?.split('@')[0]}</p>
+                        <p className="text-xs text-slate-400 truncate">@{u.username || u.display_name?.replace(/\s+/g, '_').toLowerCase()}</p>
                       </div>
                     </Link>
                   ))}

@@ -1,11 +1,9 @@
 import { FastifyInstance } from 'fastify';
-import axios from 'axios';
 import { z } from 'zod';
-
-const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY || 'sk_test_mock_key';
+import { paystackService } from '../services/paystackService';
 
 const initializePaymentSchema = z.object({
-  amount: z.number().min(1), // In kobo (Paystack uses kobo for NGN)
+  amount: z.number().min(1), // Total amount in NGN/USD
   email: z.string().email(),
   order_id: z.string(),
   currency: z.string().default('NGN'),
@@ -13,97 +11,50 @@ const initializePaymentSchema = z.object({
 
 export async function paymentRoutes(fastify: FastifyInstance) {
   // Initialize Paystack payment
-  fastify.post('/initialize', {
+  fastify.post('/paystack/initialize', {
     preHandler: [fastify.authenticate],
   }, async (request, reply) => {
     try {
       const { amount, email, order_id, currency } = initializePaymentSchema.parse(request.body);
-
-      const response = await axios.post(
-        'https://api.paystack.co/transaction/initialize',
-        {
-          amount,
-          email,
-          currency,
-          metadata: {
-            order_id,
-            custom_fields: [
-              {
-                display_name: "Order ID",
-                variable_name: "order_id",
-                value: order_id
-              }
-            ]
-          },
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-
-      return response.data;
-    } catch (error) {
+      const data = await paystackService.initializeTransaction(email, amount, order_id, currency);
+      return data;
+    } catch (error: any) {
       if (error instanceof z.ZodError) {
         return reply.code(400).send({ error: 'Invalid request data', details: error.errors });
       }
-      if (axios.isAxiosError(error)) {
-        fastify.log.error(error.response?.data || error.message);
-        return reply.code(error.response?.status || 500).send({ 
-          error: 'Paystack Error', 
-          message: error.response?.data?.message || 'Failed to initialize payment' 
-        });
-      }
       fastify.log.error(error);
-      return reply.code(500).send({ error: 'Internal server error' });
+      return reply.code(500).send({ error: 'Failed to initialize payment', message: error.message });
     }
   });
 
   // Verify Paystack payment
-  fastify.get('/verify/:reference', {
+  fastify.get('/paystack/verify/:reference', {
     preHandler: [fastify.authenticate],
   }, async (request, reply) => {
     const { reference } = request.params as { reference: string };
 
     try {
-      const response = await axios.get(
-        `https://api.paystack.co/transaction/verify/${reference}`,
-        {
-          headers: {
-            Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
-          },
-        }
-      );
-
-      const data = response.data.data;
-      if (data.status === 'success') {
-        const orderId = data.metadata.order_id;
-        // Update order status to paid in database
-        // TODO: Update order model
-        console.log(`💰 Payment verified for order ${orderId}`);
-      }
-
-      return response.data;
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        fastify.log.error(error.response?.data || error.message);
-        return reply.code(error.response?.status || 500).send({ 
-          error: 'Paystack Verification Error', 
-          message: error.response?.data?.message || 'Failed to verify payment' 
-        });
-      }
+      const data = await paystackService.verifyTransaction(reference);
+      return data;
+    } catch (error: any) {
       fastify.log.error(error);
-      return reply.code(500).send({ error: 'Internal server error' });
+      return reply.code(500).send({ error: 'Failed to verify payment', message: error.message });
     }
   });
 
   // Paystack Webhook
-  fastify.post('/webhook', async (request, reply) => {
-    // In production, verify signature
-    // const hash = crypto.createHmac('sha512', PAYSTACK_SECRET_KEY).update(JSON.stringify(request.body)).digest('hex');
-    // if (hash !== request.headers['x-paystack-signature']) return reply.code(401).send();
+  fastify.post('/paystack/webhook', async (request, reply) => {
+    const signature = request.headers['x-paystack-signature'] as string;
+    
+    if (!signature) {
+      return reply.code(401).send({ error: 'Missing Paystack signature' });
+    }
+
+    const isValid = paystackService.verifyWebhookSignature(request.body, signature);
+    
+    if (!isValid) {
+      return reply.code(401).send({ error: 'Invalid Paystack signature' });
+    }
 
     const event = request.body as any;
 
@@ -111,15 +62,16 @@ export async function paymentRoutes(fastify: FastifyInstance) {
       if (event.event === 'charge.success') {
         const data = event.data;
         const orderId = data.metadata.order_id;
+        const reference = data.reference;
         
-        // Update order status in database
+        await paystackService.handleSuccessfulPayment(orderId, reference);
         console.log(`✅ Webhook: Payment success for order ${orderId}`);
       }
 
-      return reply.code(200).send();
+      return reply.code(200).send({ status: 'success' });
     } catch (error) {
       fastify.log.error(error);
-      return reply.code(500).send();
+      return reply.code(500).send({ error: 'Webhook processing failed' });
     }
   });
 }

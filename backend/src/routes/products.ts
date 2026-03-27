@@ -21,7 +21,7 @@ export async function productRoutes(fastify: FastifyInstance) {
       const [likes, wishlist, orders] = await Promise.all([
         Like.find({ user_username: user.username, target_type: 'product' }).select('target_id'),
         WishlistItem.find({ user_username: user.username }).select('product_id'),
-        Order.find({ $or: [{ buyer_email: user.email }, { buyer_username: user.username }] }).select('items.product_id')
+        Order.find({ buyer_username: user.username }).select('items.product_id')
       ]);
 
       const likedIds = likes.map(l => l.target_id);
@@ -156,7 +156,6 @@ export async function productRoutes(fastify: FastifyInstance) {
 
       const product = new Product({
         ...productData,
-        vendor_email: user.email,
         vendor_username: user.username,
       });
 

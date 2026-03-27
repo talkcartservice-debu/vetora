@@ -85,7 +85,6 @@ export default function VendorFinance() {
   const withdrawMutation = useMutation({
     mutationFn: () => withdrawalsAPI.create({
       vendor_username: currentUser.username,
-      vendor_email: currentUser.email,
       store_id: store?.id || store?._id,
       store_name: store?.name,
       amount: parseFloat(withdrawForm.amount),
@@ -157,7 +156,7 @@ export default function VendorFinance() {
     doc.text("From (Vendor)", 120, 40);
     doc.setFont("helvetica", "normal");
     doc.text(store?.name || "Your Store", 120, 48);
-    doc.text(currentUser?.email || "", 120, 54);
+    doc.text(`@${currentUser?.username}` || "", 120, 54);
 
     // Bill To
     doc.setFillColor(248, 250, 252);
@@ -166,7 +165,7 @@ export default function VendorFinance() {
     doc.setFontSize(9);
     doc.text("BILL TO", 18, 76);
     doc.setFont("helvetica", "normal");
-    doc.text(order.buyer_name || order.buyer_email || "Customer", 18, 82);
+    doc.text(order.buyer_name || `@${order.buyer_username}` || "Customer", 18, 82);
     doc.text(order.shipping_address || "", 18, 87);
 
     // Items table header
@@ -428,7 +427,7 @@ export default function VendorFinance() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-semibold text-slate-700 truncate">
-                        {order.buyer_name || order.buyer_email}
+                        {order.buyer_name || `@${order.buyer_username}`}
                       </p>
                       <p className="text-[10px] text-slate-400">
                         {new Date(order.created_at || order.created_date).toLocaleDateString()} · #{order.id?.slice(-8)}

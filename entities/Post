@@ -2,9 +2,9 @@
   "name": "Post",
   "type": "object",
   "properties": {
-    "author_email": {
+    "author_username": {
       "type": "string",
-      "description": "Email of the post author"
+      "description": "Username of the post author"
     },
     "author_name": {
       "type": "string",
@@ -73,7 +73,7 @@
     }
   },
   "required": [
-    "author_email",
+    "author_username",
     "content"
   ]
 }

@@ -109,7 +109,7 @@ const StoreDetailsModal = ({ store, isOpen, onOpenChange, onUpdateStatus, onUpda
           <div className="space-y-4">
             <div>
               <Label className="text-muted-foreground">Owner Information</Label>
-              <div className="mt-1 font-medium">{store.owner_email}</div>
+              <div className="mt-1 font-medium">@{store.owner_username}</div>
             </div>
             <div>
               <Label className="text-muted-foreground">Status</Label>
@@ -682,7 +682,7 @@ const AdminDashboard = () => {
                     <div key={u._id} className="flex items-center">
                       <div className="ml-4 space-y-1">
                         <p className="text-sm font-medium leading-none">{u.display_name || 'Anonymous'}</p>
-                        <p className="text-sm text-muted-foreground">{u.email}</p>
+                        <p className="text-sm text-muted-foreground">@{u.username}</p>
                       </div>
                       <div className="ml-auto font-medium">
                         <Badge variant={u.role === 'super_admin' ? 'default' : u.role === 'vendor' ? 'secondary' : 'outline'}>
@@ -704,7 +704,7 @@ const AdminDashboard = () => {
                     <div key={s._id} className="flex items-center">
                       <div className="ml-4 space-y-1">
                         <p className="text-sm font-medium leading-none">{s.name}</p>
-                        <p className="text-sm text-muted-foreground">{s.owner_email}</p>
+                        <p className="text-sm text-muted-foreground">@{s.owner_username}</p>
                       </div>
                       <div className="ml-auto">
                         <Badge variant={s.status === 'active' ? 'success' : s.status === 'pending' ? 'warning' : 'destructive'}>
@@ -731,7 +731,7 @@ const AdminDashboard = () => {
                   <div className="relative">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
-                      placeholder="Search email or name..."
+                      placeholder="Search username or name..."
                       className="pl-8 w-[250px]"
                       value={userSearch}
                       onChange={(e) => setUserSearch(e.target.value)}
@@ -760,7 +760,7 @@ const AdminDashboard = () => {
                     <TableRow key={u._id}>
                       <TableCell>
                         <div className="font-medium">{u.display_name}</div>
-                        <div className="text-xs text-muted-foreground">{u.email}</div>
+                        <div className="text-xs text-muted-foreground">@{u.username}</div>
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline">{u.role}</Badge>
@@ -836,7 +836,7 @@ const AdminDashboard = () => {
                   <div className="relative">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
-                      placeholder="Search name or owner email..."
+                      placeholder="Search name or owner username..."
                       className="pl-8 w-[200px] h-9"
                       value={storeSearch}
                       onChange={(e) => setStoreSearch(e.target.value)}
@@ -877,7 +877,7 @@ const AdminDashboard = () => {
                             <span className="text-xs text-muted-foreground font-normal">ID: {s._id.substring(0, 8)}...</span>
                           </div>
                         </TableCell>
-                        <TableCell className="max-w-[150px] truncate">{s.owner_email}</TableCell>
+                        <TableCell className="max-w-[150px] truncate">@{s.owner_username}</TableCell>
                         <TableCell>
                           <Badge variant={s.status === 'active' ? 'success' : s.status === 'pending' ? 'warning' : 'destructive'}>
                             {s.status}
@@ -1048,7 +1048,7 @@ const AdminDashboard = () => {
                       <TableRow key={w._id}>
                         <TableCell>
                           <div className="flex flex-col">
-                            <span className="font-medium text-sm">{w.vendor_email}</span>
+                            <span className="font-medium text-sm">@{w.vendor_username}</span>
                             {w.admin_notes && (
                               <span className="text-xs text-muted-foreground italic truncate max-w-[200px]" title={w.admin_notes}>
                                 Note: {w.admin_notes}
@@ -1120,7 +1120,7 @@ const AdminDashboard = () => {
               <DialogHeader>
                 <DialogTitle>{withdrawalAction === 'completed' ? 'Approve' : 'Reject'} Withdrawal</DialogTitle>
                 <DialogDescription>
-                  Reviewing withdrawal request for {selectedWithdrawal?.vendor_email} of ${selectedWithdrawal?.amount}.
+                  Reviewing withdrawal request for @{selectedWithdrawal?.vendor_username} of ${selectedWithdrawal?.amount}.
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-2">
@@ -1197,7 +1197,7 @@ const AdminDashboard = () => {
                       <TableRow key={sub._id}>
                         <TableCell>
                           <div className="flex flex-col">
-                            <span className="font-medium">{sub.vendor_email}</span>
+                            <span className="font-medium">@{sub.vendor_username}</span>
                             <span className="text-xs text-muted-foreground">Store ID: {sub.store_id}</span>
                           </div>
                         </TableCell>

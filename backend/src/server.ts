@@ -46,7 +46,12 @@ const fastify = Fastify({
 
 // Environment variables
 const PORT = parseInt(process.env.PORT || '4000');
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+  console.error('❌ FATAL: JWT_SECRET is not defined in environment variables');
+  process.exit(1);
+}
 
 // Register plugins
 fastify.register(cors, {
@@ -135,8 +140,7 @@ fastify.io = io;
 fastify.get('/api/health', async () => {
   return { 
     status: 'ok', 
-    timestamp: new Date().toISOString(),
-    restart_sync: "2026-03-20T18:30:00Z" // Force tsx watch to reload .env
+    timestamp: new Date().toISOString()
   };
 });
 

@@ -2,7 +2,7 @@
   "name": "Story",
   "type": "object",
   "properties": {
-    "author_email": {
+    "author_username": {
       "type": "string"
     },
     "author_name": {
@@ -45,7 +45,7 @@
     }
   },
   "required": [
-    "author_email",
+    "author_username",
     "media_type"
   ]
 }

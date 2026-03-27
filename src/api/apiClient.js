@@ -360,7 +360,7 @@ export const withdrawalsAPI = {
     return apiClient.get(`/withdrawals/vendor/username/${username}?${query}`);
   },
   get: (id) => apiClient.get(`/withdrawals/${id}`),
-  getByVendor: (emailOrUsername) => apiClient.get(`/withdrawals/vendor/${emailOrUsername}`),
+  getByVendor: (username) => apiClient.get(`/withdrawals/vendor/${username}`),
   create: (data) => apiClient.post('/withdrawals', data),
   update: (id, data) => apiClient.put(`/withdrawals/${id}`, data),
   updateStatus: (id, data) => apiClient.put(`/withdrawals/${id}/status`, data),
@@ -377,7 +377,7 @@ export const vendorSubscriptionsAPI = {
     return apiClient.get(`/vendor-subscriptions?${query}`);
   },
   get: (id) => apiClient.get(`/vendor-subscriptions/${id}`),
-  getByVendor: (emailOrUsername) => apiClient.get(`/vendor-subscriptions/vendor/${emailOrUsername}`),
+  getByVendor: (username) => apiClient.get(`/vendor-subscriptions/vendor/${username}`),
   getByStore: (storeId) => apiClient.get(`/vendor-subscriptions/store/${storeId}`),
   create: (data) => apiClient.post('/vendor-subscriptions', data),
   update: (id, data) => apiClient.put(`/vendor-subscriptions/${id}`, data),
@@ -437,7 +437,7 @@ export const shippingZonesAPI = {
     return apiClient.get(`/shipping-zones?${query}`);
   },
   get: (id) => apiClient.get(`/shipping-zones/${id}`),
-  getByVendor: (vendorEmail) => apiClient.get(`/shipping-zones/vendor/${vendorEmail}`),
+  getByVendor: (vendorUsername) => apiClient.get(`/shipping-zones/vendor/${vendorUsername}`),
   getByStore: (storeId) => apiClient.get(`/shipping-zones/store/${storeId}`),
   create: (data) => apiClient.post('/shipping-zones', data),
   update: (id, data) => apiClient.put(`/shipping-zones/${id}`, data),
@@ -457,7 +457,7 @@ export const storesAPI = {
   get: (id) => apiClient.get(`/stores/${id}`),
   create: (data) => apiClient.post('/stores', data),
   update: (id, data) => apiClient.patch(`/stores/${id}`, data),
-  getByOwner: (emailOrUsername) => apiClient.get(`/stores/owner/${emailOrUsername}`),
+  getByOwner: (username) => apiClient.get(`/stores/owner/${username}`),
   getByOwnerUsername: (username) => apiClient.get(`/stores/owner/username/${username}`)
 };
 
@@ -562,7 +562,7 @@ export const storeReviewsAPI = {
     const query = apiClient.buildQueryString(filters);
     return apiClient.get(`/store-reviews/store/${storeId}?${query}`);
   },
-  getByReviewer: (reviewerEmail) => apiClient.get(`/store-reviews/reviewer/${reviewerEmail}`),
+  getByReviewer: (reviewerUsername) => apiClient.get(`/store-reviews/reviewer/${reviewerUsername}`),
   create: (data) => apiClient.post('/store-reviews', data),
   update: (id, data) => apiClient.put(`/store-reviews/${id}`, data),
   reply: (id, replyText) => apiClient.post(`/store-reviews/${id}/reply`, { reply: replyText }),
@@ -577,7 +577,7 @@ export const storiesAPI = {
     return apiClient.get(`/stories?${query}`);
   },
   get: (id) => apiClient.get(`/stories/${id}`),
-  getByUser: (emailOrUsername) => apiClient.get(`/stories/user/${emailOrUsername}`),
+  getByUser: (username) => apiClient.get(`/stories/user/${username}`),
   getMe: () => apiClient.get('/stories/user/me'),
   getFeed: () => apiClient.get('/stories/feed'),
   create: (data) => apiClient.post('/stories', data),
@@ -645,8 +645,10 @@ export const filesAPI = {
 };
 
 export const paymentAPI = {
-  initialize: (data) => apiClient.post('/payments/initialize', data),
-  verify: (reference) => apiClient.get(`/payments/verify/${reference}`),
+  paystack: {
+    initialize: (data) => apiClient.post('/payments/paystack/initialize', data),
+    verify: (reference) => apiClient.get(`/payments/paystack/verify/${reference}`),
+  }
 };
 
 export const affiliateLinksAPI = {

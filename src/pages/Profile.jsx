@@ -100,7 +100,7 @@ const STATUS_CONFIG = {
 
 export default function Profile() {
   const params = new URLSearchParams(window.location.search);
-  const profileUsername = params.get("username") || params.get("email");
+  const profileUsername = params.get("username");
   const [activeTab, setActiveTab] = useState("posts");
   const [editOpen, setEditOpen] = useState(false);
   const [userList, setUserList] = useState({ open: false, title: "", users: [] });
@@ -108,7 +108,7 @@ export default function Profile() {
   const { user: currentUser, logout } = useAuth();
 
   const targetUsername = profileUsername || currentUser?.username;
-  const isOwnProfile = !profileUsername || profileUsername.toLowerCase() === currentUser?.username?.toLowerCase() || profileUsername.toLowerCase() === currentUser?.email?.toLowerCase();
+  const isOwnProfile = !profileUsername || profileUsername.toLowerCase() === currentUser?.username?.toLowerCase();
 
   const { data: profileUser } = useQuery({
     queryKey: ["profileUser", targetUsername],
@@ -671,7 +671,7 @@ export default function Profile() {
               <p className="text-sm text-slate-500">Manage your store plan and features</p>
             </div>
           </div>
-          <SubscriptionManager store={store} vendorEmail={currentUser?.email} />
+          <SubscriptionManager store={store} vendorUsername={currentUser?.username} />
         </motion.div>
       )}
 

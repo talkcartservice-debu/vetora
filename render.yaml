@@ -5,6 +5,8 @@ services:
     rootDir: backend
     buildCommand: npm install && npm run build
     startCommand: npm start
+    port: 4000
+    healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV
         value: production
@@ -18,5 +20,13 @@ services:
         sync: false
       - key: CLOUDINARY_URL
         sync: false
-      - key: STRIPE_SECRET_KEY
+      - key: PAYSTACK_SECRET_KEY
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
         sync: false

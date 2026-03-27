@@ -419,10 +419,9 @@ export async function withdrawalRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     try {
       const query = request.query as any;
-      const { vendor_email, vendor_username, store_id } = query;
+      const { vendor_username, store_id } = query;
 
       const matchFilter: any = {};
-      if (vendor_email) matchFilter.vendor_email = vendor_email.toLowerCase();
       if (vendor_username) matchFilter.vendor_username = vendor_username;
       if (store_id) matchFilter.store_id = store_id;
 

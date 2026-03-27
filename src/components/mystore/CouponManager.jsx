@@ -15,7 +15,7 @@ const defaultForm = {
   min_order_amount: "", max_uses: "", expires_at: "",
 };
 
-export default function CouponManager({ store, vendorEmail }) {
+export default function CouponManager({ store, vendorUsername }) {
   const [showCreate, setShowCreate] = useState(false);
   const [form, setForm] = useState(defaultForm);
   const queryClient = useQueryClient();
@@ -23,10 +23,10 @@ export default function CouponManager({ store, vendorEmail }) {
   const { data: couponsResponse = {}, isLoading } = useQuery({
     queryKey: ["coupons", store?.id],
     queryFn: async () => {
-      const res = await couponsAPI.list({ vendor_email: vendorEmail, sort: "-created_date", limit: 50 });
+      const res = await couponsAPI.list({ vendor_username: vendorUsername, sort: "-created_date", limit: 50 });
       return res;
     },
-    enabled: !!vendorEmail,
+    enabled: !!vendorUsername,
   });
   
   const coupons = Array.isArray(couponsResponse?.coupons) ? couponsResponse.coupons : [];
@@ -35,7 +35,7 @@ export default function CouponManager({ store, vendorEmail }) {
     mutationFn: () => couponsAPI.create({
       code: form.code.toUpperCase().trim(),
       store_id: store?.id,
-      vendor_email: vendorEmail,
+      vendor_username: vendorUsername,
       discount_type: form.discount_type,
       discount_value: parseFloat(form.discount_value),
       min_order_amount: parseFloat(form.min_order_amount) || 0,

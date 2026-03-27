@@ -57,8 +57,9 @@ export default function CreateStoryModal({ currentUser, onClose }) {
 
       const expires = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
       const storyData = {
+        author_username: currentUser?.username,
         author_email: currentUser?.email,
-        author_name: currentUser?.display_name || currentUser?.full_name || currentUser?.email?.split('@')[0],
+        author_name: currentUser?.display_name || currentUser?.full_name || `@${currentUser?.username}`,
         author_avatar: currentUser?.avatar_url,
         media_url: media_url || "", // Always provide a string
         media_type: type,

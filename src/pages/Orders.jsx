@@ -31,9 +31,9 @@ export default function Orders() {
   const { user: currentUser } = useAuth();
 
   const { data: response, isLoading } = useQuery({
-    queryKey: ["myOrders", currentUser?.email],
-    queryFn: () => ordersAPI.list({ buyer_email: currentUser?.email, sort: "-created_at", limit: 50 }),
-    enabled: !!currentUser?.email,
+    queryKey: ["myOrders", currentUser?.username],
+    queryFn: () => ordersAPI.list({ buyer_username: currentUser?.username, sort: "-created_at", limit: 50 }),
+    enabled: !!currentUser?.username,
   });
 
   const orders = response?.data || [];

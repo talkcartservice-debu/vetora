@@ -63,7 +63,7 @@ export default function StoryViewer({ stories = [], startIndex = 0, onClose }) {
 
     try {
       await messagesAPI.send({
-        recipient_email: story.author_email,
+        recipient_username: story.author_username,
         content: `Replied to your story: "${replyText}"`,
         message_type: 'text'
       });
@@ -113,12 +113,12 @@ export default function StoryViewer({ stories = [], startIndex = 0, onClose }) {
               <img src={story.author_avatar} alt="" className="w-full h-full object-cover" />
             ) : (
               <div className="w-full h-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white text-[10px] font-bold">
-                {story.author_name?.[0]?.toUpperCase() || story.author_email?.[0]?.toUpperCase() || "U"}
+                {story.author_name?.[0]?.toUpperCase() || story.author_username?.[0]?.toUpperCase() || "U"}
               </div>
             )}
           </div>
           <div>
-            <p className="text-white text-sm font-bold drop-shadow-md">{story.author_name || story.author_email?.split('@')[0]}</p>
+            <p className="text-white text-sm font-bold drop-shadow-md">{story.author_name || `@${story.author_username}`}</p>
             <p className="text-white/80 text-[10px] drop-shadow-md">{new Date(story.created_at || story.created_date).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}</p>
           </div>
           <button onClick={onClose} className="ml-auto w-10 h-10 rounded-full bg-black/20 backdrop-blur-md flex items-center justify-center hover:bg-black/40 transition-colors">

@@ -3,11 +3,11 @@ import mongoose, { Document, Schema } from 'mongoose';
 export interface IMessage extends Document {
   _id: mongoose.Types.ObjectId;
   conversation_id: string;
-  sender_email: string;
-  sender_username?: string;
+  sender_email?: string;
+  sender_username: string;
   sender_name?: string;
-  receiver_email: string;
-  receiver_username?: string;
+  receiver_email?: string;
+  receiver_username: string;
   content: string;
   message_type: 'text' | 'image' | 'product_share' | 'order_update' | 'offer';
   image_url?: string;
@@ -35,12 +35,12 @@ const MessageSchema = new Schema<IMessage>({
   },
   sender_email: {
     type: String,
-    required: true,
     lowercase: true,
     trim: true,
   },
   sender_username: {
     type: String,
+    required: true,
     lowercase: true,
     trim: true,
     index: true,
@@ -51,12 +51,12 @@ const MessageSchema = new Schema<IMessage>({
   },
   receiver_email: {
     type: String,
-    required: true,
     lowercase: true,
     trim: true,
   },
   receiver_username: {
     type: String,
+    required: true,
     lowercase: true,
     trim: true,
     index: true,
@@ -115,13 +115,9 @@ const MessageSchema = new Schema<IMessage>({
 
 // Indexes for performance
 MessageSchema.index({ conversation_id: 1, created_at: 1 });
-MessageSchema.index({ sender_email: 1, created_at: -1 });
-MessageSchema.index({ receiver_email: 1, created_at: -1 });
 MessageSchema.index({ sender_username: 1, created_at: -1 });
 MessageSchema.index({ receiver_username: 1, created_at: -1 });
-MessageSchema.index({ sender_email: 1, receiver_email: 1, created_at: -1 });
 MessageSchema.index({ sender_username: 1, receiver_username: 1, created_at: -1 });
-MessageSchema.index({ is_read: 1, receiver_email: 1 });
 MessageSchema.index({ is_read: 1, receiver_username: 1 });
 MessageSchema.index({ message_type: 1 });
 

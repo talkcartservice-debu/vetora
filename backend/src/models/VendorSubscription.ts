@@ -1,7 +1,7 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IVendorSubscription extends Document {
-  vendor_email: string;
+  vendor_username: string;
   store_id?: string;
   plan: 'free' | 'pro' | 'elite';
   status: 'active' | 'cancelled' | 'expired' | 'pending';
@@ -17,7 +17,7 @@ export interface IVendorSubscription extends Document {
 }
 
 const VendorSubscriptionSchema = new Schema<IVendorSubscription>({
-  vendor_email: {
+  vendor_username: {
     type: String,
     required: true,
     index: true
@@ -75,7 +75,7 @@ VendorSubscriptionSchema.index({ status: 1, expires_at: 1 });
 
 // Ensure one active subscription per vendor/store
 VendorSubscriptionSchema.index(
-  { vendor_email: 1, status: 1 },
+  { vendor_username: 1, status: 1 },
   {
     unique: true,
     partialFilterExpression: { status: 'active' }

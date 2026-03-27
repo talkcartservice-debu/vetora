@@ -139,24 +139,24 @@ function ZoneForm({ initial = BLANK_ZONE, onSave, onCancel, saving }) {
   );
 }
 
-export default function ShippingZoneManager({ store, vendorEmail }) {
+export default function ShippingZoneManager({ store, vendorUsername }) {
   const [showAdd, setShowAdd] = useState(false);
   const [editId, setEditId] = useState(null);
   const queryClient = useQueryClient();
 
   const { data: zonesResponse = {}, isLoading } = useQuery({
-    queryKey: ["shippingZones", vendorEmail],
+    queryKey: ["shippingZones", vendorUsername],
     queryFn: async () => {
-      const res = await shippingZonesAPI.list({ vendor_email: vendorEmail });
+      const res = await shippingZonesAPI.list({ vendor_username: vendorUsername });
       return res;
     },
-    enabled: !!vendorEmail,
+    enabled: !!vendorUsername,
   });
   
   const zones = Array.isArray(zonesResponse?.zones) ? zonesResponse.zones : [];
 
   const createMutation = useMutation({
-    mutationFn: (data) => shippingZonesAPI.create({ ...data, vendor_email: vendorEmail, store_id: store?.id }),
+    mutationFn: (data) => shippingZonesAPI.create({ ...data, vendor_username: vendorUsername, store_id: store?.id }),
     onSuccess: () => { toast.success("Shipping zone added!"); setShowAdd(false); queryClient.invalidateQueries({ queryKey: ["shippingZones"] }); },
   });
 

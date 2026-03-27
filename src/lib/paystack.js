@@ -12,7 +12,7 @@ import { paymentAPI } from '@/api/apiClient';
 export const initializePaystackPayment = async ({ amount, email, order_id, onSuccess, onClose }) => {
   try {
     // 1. Initialize on backend to get authorization URL or reference
-    const response = await paymentAPI.initialize({
+    const response = await paymentAPI.paystack.initialize({
       amount,
       email,
       order_id
@@ -37,7 +37,7 @@ export const initializePaystackPayment = async ({ amount, email, order_id, onSuc
  */
 export const verifyPayment = async (reference) => {
   try {
-    return await paymentAPI.verify(reference);
+    return await paymentAPI.paystack.verify(reference);
   } catch (error) {
     console.error('Paystack verification error:', error);
     throw error;

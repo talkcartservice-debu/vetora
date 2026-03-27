@@ -202,12 +202,12 @@ export default function OrderTracking() {
   const { user: currentUser } = useAuth();
 
   const { data: myOrdersData, isLoading } = useQuery({
-    queryKey: ["myOrders", currentUser?.email],
+    queryKey: ["myOrders", currentUser?.username],
     queryFn: async () => {
-      const res = await ordersAPI.list({ buyer_email: currentUser?.email, sort: "-created_date", limit: 20 });
+      const res = await ordersAPI.list({ buyer_username: currentUser?.username, sort: "-created_date", limit: 20 });
       return res;
     },
-    enabled: !!currentUser?.email,
+    enabled: !!currentUser?.username,
   });
 
   const myOrders = Array.isArray(myOrdersData) 

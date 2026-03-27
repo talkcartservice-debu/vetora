@@ -28,12 +28,12 @@ export default function Cart() {
   });
 
   const { data: cartResponse = {}, isLoading } = useQuery({
-    queryKey: ["cart", currentUser?.email],
+    queryKey: ["cart", currentUser?.username],
     queryFn: async () => {
       const res = await cartAPI.get();
       return res;
     },
-    enabled: !!currentUser?.email,
+    enabled: !!currentUser?.username,
   });
   
   const cartItems = Array.isArray(cartResponse?.items) ? cartResponse.items : [];
@@ -58,7 +58,7 @@ export default function Cart() {
       const storeGroups = {};
       cartItems.forEach(item => {
         const key = item.store_id || "default";
-        if (!storeGroups[key]) storeGroups[key] = { items: [], store_name: item.store_name, vendor_email: "" };
+        if (!storeGroups[key]) storeGroups[key] = { items: [], store_name: item.store_name };
         storeGroups[key].items.push(item);
       });
 
@@ -73,18 +73,14 @@ export default function Cart() {
         const subtotal = orderItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
 
         await ordersAPI.create({
-          buyer_email: currentUser.email,
-          buyer_name: currentUser.full_name,
-          vendor_email: group.items[0]?.affiliate_email || currentUser.email,
-          store_id: group.items[0]?.store_id,
-          store_name: group.store_name,
+          buyer_username: currentUser.username,
+          buyer_name: currentUser.full_name || currentUser.username,
           items: orderItems,
           subtotal,
-          total: subtotal,
+          total: subtotal, // In a real app, apply discount/shipping per store if needed
           shipping_address: shippingAddress,
-          status: "pending",
-          payment_status: "paid",
-          payment_method: "card",
+          affiliate_username: group.items[0]?.affiliate_username,
+          payment_method: "paystack",
         });
       }
 

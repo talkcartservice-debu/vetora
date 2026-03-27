@@ -9,9 +9,9 @@ import { createPageUrl } from "@/lib/utils";
 
 export default function RecommendedSection({ currentUser }) {
   const { data: recommendedResponse, isLoading } = useQuery({
-    queryKey: ["recommendedProducts", currentUser?.email],
+    queryKey: ["recommendedProducts", currentUser?.username],
     queryFn: () => productsAPI.getRecommendations(8),
-    enabled: !!currentUser?.email,
+    enabled: !!currentUser?.username,
     staleTime: 300000, // 5 minutes
   });
 

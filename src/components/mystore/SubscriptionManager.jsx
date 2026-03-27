@@ -136,7 +136,7 @@ function PlanCard({ plan, currentPlan, onSelect, billing }) {
   );
 }
 
-function CustomDomainManager({ subscription, vendorEmail }) {
+function CustomDomainManager({ subscription, vendorUsername }) {
   const [domain, setDomain] = useState(subscription?.custom_domain || "");
   const [saving, setSaving] = useState(false);
   const queryClient = useQueryClient();
@@ -202,7 +202,7 @@ function CustomDomainManager({ subscription, vendorEmail }) {
   );
 }
 
-export default function SubscriptionManager({ store, vendorEmail }) {
+export default function SubscriptionManager({ store, vendorUsername }) {
   const [billing, setBilling] = useState("monthly");
   const [showConfirm, setShowConfirm] = useState(null);
   const queryClient = useQueryClient();
@@ -227,13 +227,13 @@ export default function SubscriptionManager({ store, vendorEmail }) {
   }, [subscription, verifyMutation]);
 
   const { data: subscription, isLoading } = useQuery({
-    queryKey: ["vendorSubscription", vendorEmail],
+    queryKey: ["vendorSubscription", vendorUsername],
     queryFn: async () => {
-      const res = await vendorSubscriptionsAPI.list({ vendor_email: vendorEmail });
+      const res = await vendorSubscriptionsAPI.list({ vendor_username: vendorUsername });
       const subs = Array.isArray(res) ? res : (res.data || res.subscriptions || []);
       return subs[0] || null;
     },
-    enabled: !!vendorEmail,
+    enabled: !!vendorUsername,
   });
 
   const verifyMutation = useMutation({
@@ -256,7 +256,7 @@ export default function SubscriptionManager({ store, vendorEmail }) {
         plan: plan.id,
         billing_cycle: billing,
         store_id: store?.id,
-        vendor_email: vendorEmail,
+        vendor_username: vendorUsername,
       };
 
       let sub;
@@ -396,7 +396,7 @@ export default function SubscriptionManager({ store, vendorEmail }) {
       </div>
 
       {/* Custom Domain */}
-      <CustomDomainManager subscription={subscription} vendorEmail={vendorEmail} />
+      <CustomDomainManager subscription={subscription} vendorUsername={vendorUsername} />
 
       {/* Feature comparison callout */}
       <div className="grid grid-cols-3 gap-3 text-center">

@@ -40,8 +40,8 @@ function ConversionBar({ clicks, conversions }) {
   );
 }
 
-function generateRefCode(email, productId) {
-  const base = (email.split("@")[0] + productId.slice(-4)).replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+function generateRefCode(username, productId) {
+  const base = (username + productId.slice(-4)).replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
   return base.slice(0, 8) + Math.random().toString(36).slice(-4).toUpperCase();
 }
 
@@ -53,12 +53,12 @@ export default function Affiliate() {
   const { user: currentUser } = useAuth();
 
   const { data: myLinks = [], isLoading } = useQuery({
-    queryKey: ["affiliateLinks", currentUser?.email],
+    queryKey: ["affiliateLinks", currentUser?.username],
     queryFn: async () => {
-      const res = await affiliateLinksAPI.list({ influencer_email: currentUser?.email, sort: "-created_date", limit: 50 });
+      const res = await affiliateLinksAPI.list({ influencer_username: currentUser?.username, sort: "-created_date", limit: 50 });
       return res.data || [];
     },
-    enabled: !!currentUser?.email,
+    enabled: !!currentUser?.username,
   });
 
   const { data: products = [] } = useQuery({
@@ -77,10 +77,10 @@ export default function Affiliate() {
   const createLinkMutation = useMutation({
     mutationFn: async (product) => {
       const productId = product._id || product.id;
-      const refCode = generateRefCode(currentUser.email, productId);
+      const refCode = generateRefCode(currentUser.username, productId);
       return affiliateLinksAPI.create({
-        influencer_email: currentUser.email,
-        influencer_name: currentUser.full_name,
+        influencer_username: currentUser.username,
+        influencer_name: currentUser.full_name || currentUser.username,
         store_id: product.store_id,
         store_name: product.store_name,
         product_id: productId,

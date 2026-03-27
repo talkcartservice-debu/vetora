@@ -7,6 +7,7 @@ import { motion } from 'framer-motion';
 const Register = () => {
   const [formData, setFormData] = useState({
     display_name: '',
+    username: '',
     email: '',
     password: '',
     confirm_password: ''
@@ -34,6 +35,7 @@ const Register = () => {
     try {
       await register({
         email: formData.email,
+        username: formData.username,
         password: formData.password,
         display_name: formData.display_name
       });
@@ -127,6 +129,22 @@ const Register = () => {
                       required
                     />
                     <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-indigo-600 transition-colors duration-300" />
+                  </div>
+                </div>
+
+                <div className="space-y-2.5">
+                  <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1 opacity-60">Username</label>
+                  <div className="relative group">
+                    <input
+                      type="text"
+                      name="username"
+                      value={formData.username}
+                      onChange={(e) => setFormData({ ...formData, username: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '') })}
+                      className="w-full pl-12 pr-4 py-4 rounded-2xl border border-slate-100 bg-slate-50/50 text-slate-900 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 focus:bg-white outline-none transition-all duration-300 font-medium group-hover:border-slate-200"
+                      placeholder="unique_handle"
+                      required
+                    />
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-slate-400 group-focus-within:text-indigo-600 transition-colors duration-300">@</span>
                   </div>
                 </div>
 

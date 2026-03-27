@@ -8,7 +8,7 @@ import { User } from '../models/User';
 import { sendVerificationCode, sendWhatsAppVerification } from '../services/mailService';
 
 const loginSchema = z.object({
-  email: z.string().email(),
+  email: z.string().min(3), // Could be email or username
   password: z.string().min(6),
 });
 
@@ -23,9 +23,15 @@ export async function authRoutes(fastify: FastifyInstance) {
   // Login
   fastify.post('/login', async (request, reply) => {
     try {
-      const { email, password } = loginSchema.parse(request.body);
+      const { email: identifier, password } = loginSchema.parse(request.body);
 
-      const user = await User.findOne({ email }).select('+password +two_factor_secret');
+      // Support login by email OR username
+      const user = await User.findOne({ 
+        $or: [
+          { email: identifier.toLowerCase() }, 
+          { username: identifier.toLowerCase() }
+        ] 
+      }).select('+password +two_factor_secret');
 
       if (!user) {
         return reply.code(401).send({ error: 'Invalid credentials' });
@@ -58,6 +64,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       const token = fastify.jwt.sign({
         userId: user._id.toString(),
         email: user.email,
+        username: user.username,
         role: user.role,
       });
 
@@ -138,6 +145,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       const jwtToken = fastify.jwt.sign({
         userId: user._id.toString(),
         email: user.email,
+        username: user.username,
         role: user.role,
       });
 
@@ -216,6 +224,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       const token = fastify.jwt.sign({
         userId: user._id.toString(),
         email: user.email,
+        username: user.username,
         role: user.role,
       });
 
@@ -269,13 +278,20 @@ export async function authRoutes(fastify: FastifyInstance) {
   // Forgot Password
   fastify.post('/forgot-password', async (request, reply) => {
     try {
-      const { email } = z.object({ email: z.string().email() }).parse(request.body);
-      const user = await User.findOne({ email });
+      const { email: identifier } = z.object({ email: z.string().min(3) }).parse(request.body);
+      const user = await User.findOne({ 
+        $or: [
+          { email: identifier.toLowerCase() },
+          { username: identifier.toLowerCase() }
+        ]
+      });
 
-      if (!user) {
+      if (!user || !user.email) {
         // Return success even if user not found for security
         return { success: true, message: 'If an account exists, a reset link has been sent.' };
       }
+
+      const email = user.email;
 
       // Generate a secure reset token
       const resetToken = randomBytes(32).toString('hex').slice(0, 12).toUpperCase();

@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { cartAPI, ordersAPI } from "@/api/apiClient";
 import { useAuth } from "@/lib/AuthContext";
+import { initializePaystackPayment } from "@/lib/paystack";
 
 const CheckoutStep = ({ number, title, active, completed, children }) => (
   <div className={`bg-white rounded-3xl border ${active ? "border-indigo-500 shadow-xl shadow-indigo-100/50 scale-[1.02]" : "border-slate-100"} p-6 mb-4 transition-all duration-300`}>
@@ -53,9 +54,9 @@ export default function Checkout() {
   const { user: currentUser } = useAuth();
 
   const { data: cartResponse = {}, isLoading: cartLoading } = useQuery({
-    queryKey: ["cart", currentUser?.email],
+    queryKey: ["cart", currentUser?.username],
     queryFn: () => cartAPI.get(),
-    enabled: !!currentUser?.email,
+    enabled: !!currentUser?.username,
   });
   
   const cartItems = Array.isArray(cartResponse?.items) ? cartResponse.items : [];
@@ -96,28 +97,44 @@ export default function Checkout() {
         const groupSubtotal = orderItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
 
         const order = await ordersAPI.create({
-          buyer_email: currentUser.email,
-          buyer_name: currentUser.full_name || currentUser.display_name,
-          vendor_email: group.items[0]?.vendor_email,
+          buyer_username: currentUser.username,
+          buyer_name: currentUser.display_name || currentUser.full_name,
+          vendor_username: group.items[0]?.vendor_username,
           store_id: group.items[0]?.store_id,
           store_name: group.store_name,
           items: orderItems,
           subtotal: groupSubtotal,
           total: groupSubtotal,
           shipping_address: fullAddress,
-          affiliate_email: group.items[0]?.affiliate_email,
+          affiliate_username: group.items[0]?.affiliate_username,
           order_note: orderNote,
           status: "pending",
-          payment_status: "paid",
+          payment_status: "pending",
           payment_method: paymentMethod,
         });
         orders.push(order);
       }
       
+      // If Paystack, initialize payment
+      if (paymentMethod === "paystack") {
+        const orderId = orders[0]._id; // For simplicity, we use the first order ID for the payment transaction
+        await initializePaystackPayment({
+          amount: total, // Total for all orders in the cart
+          email: currentUser.email,
+          order_id: orderId
+        });
+        // This will redirect, so the code below won't run immediately
+        return orders;
+      }
+      
       await cartAPI.clear();
       return orders;
     },
-    onSuccess: () => {
+    onSuccess: (orders) => {
+      if (paymentMethod === "paystack") {
+        // Redirection happens in initializePaystackPayment
+        return;
+      }
       toast.success("Order placed successfully! 🎉");
       queryClient.invalidateQueries({ queryKey: ["cart"] });
       navigate(createPageUrl("Orders"));

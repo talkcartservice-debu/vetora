@@ -25,15 +25,20 @@ export default function StoriesRow({ currentUser }) {
   // Group by author
   const authorMap = {};
   stories.forEach(s => {
-    if (!authorMap[s.author_email]) {
-      authorMap[s.author_email] = { email: s.author_email, name: s.author_name, stories: [] };
+    if (!authorMap[s.author_username]) {
+      authorMap[s.author_username] = { 
+        username: s.author_username, 
+        name: s.author_name, 
+        avatar: s.author_avatar,
+        stories: [] 
+      };
     }
-    authorMap[s.author_email].stories.push(s);
+    authorMap[s.author_username].stories.push(s);
   });
   const groups = Object.values(authorMap);
 
   // Check if current user has a story
-  const myStory = groups.find(g => g.email === currentUser?.email);
+  const myStory = groups.find(g => g.username === currentUser?.username);
 
   return (
     <>
@@ -109,7 +114,7 @@ export default function StoriesRow({ currentUser }) {
           </button>
 
           {/* Other stories */}
-          {groups.filter(g => g.email !== currentUser?.email).map(group => {
+          {groups.filter(g => g.username !== currentUser?.username).map(group => {
             const latestStory = group.stories[0];
             const hasMedia = !!latestStory.media_url?.trim();
             const isVideo = latestStory.media_type === "video";
@@ -117,7 +122,7 @@ export default function StoriesRow({ currentUser }) {
 
             return (
               <button
-                key={group.email}
+                key={group.username}
                 onClick={() => setViewingGroup({ stories: group.stories, startIndex: 0 })}
                 className="shrink-0 flex flex-col items-center gap-1.5"
               >
@@ -142,7 +147,7 @@ export default function StoriesRow({ currentUser }) {
                       </div>
                     ) : (
                       <div className="w-full h-full rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white font-bold text-sm">
-                        {group.name?.[0]?.toUpperCase() || group.email?.[0]?.toUpperCase() || "U"}
+                        {group.name?.[0]?.toUpperCase() || group.username?.[0]?.toUpperCase() || "U"}
                       </div>
                     )}
                   </div>
@@ -154,7 +159,7 @@ export default function StoriesRow({ currentUser }) {
                   )}
                 </div>
                 <span className="text-[10px] text-slate-500 font-medium max-w-[56px] truncate">
-                  {(group.name && !group.name.includes("@")) ? group.name.split(" ")[0] : `@${group.email?.split("@")[0]}`}
+                  {(group.name && !group.name.includes("@")) ? group.name.split(" ")[0] : `@${group.username}`}
                 </span>
               </button>
             );

@@ -5,7 +5,7 @@
     "post_id": {
       "type": "string"
     },
-    "author_email": {
+    "author_username": {
       "type": "string"
     },
     "author_name": {
@@ -28,7 +28,7 @@
   },
   "required": [
     "post_id",
-    "author_email",
+    "author_username",
     "content"
   ]
 }

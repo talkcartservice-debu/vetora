@@ -21,7 +21,7 @@ export interface IStory extends Document {
 const StorySchema = new Schema<IStory>({
   author_email: {
     type: String,
-    required: true,
+    required: false,
     lowercase: true,
     trim: true,
   },
@@ -30,6 +30,7 @@ const StorySchema = new Schema<IStory>({
     required: true,
     lowercase: true,
     trim: true,
+    index: true,
   },
   author_name: {
     type: String,

@@ -2,7 +2,8 @@ import mongoose, { Document, Schema } from 'mongoose';
 
 export interface IAffiliateLink extends Document {
   _id: mongoose.Types.ObjectId;
-  influencer_email: string;
+  influencer_email?: string;
+  influencer_username: string;
   influencer_name?: string;
   store_id?: string;
   store_name?: string;
@@ -23,9 +24,16 @@ export interface IAffiliateLink extends Document {
 const AffiliateLinkSchema = new Schema<IAffiliateLink>({
   influencer_email: {
     type: String,
+    required: false,
+    lowercase: true,
+    trim: true,
+  },
+  influencer_username: {
+    type: String,
     required: true,
     lowercase: true,
     trim: true,
+    index: true,
   },
   influencer_name: {
     type: String,
@@ -96,7 +104,7 @@ const AffiliateLinkSchema = new Schema<IAffiliateLink>({
 });
 
 // Indexes for performance
-AffiliateLinkSchema.index({ influencer_email: 1 });
+AffiliateLinkSchema.index({ influencer_username: 1 });
 AffiliateLinkSchema.index({ product_id: 1 });
 AffiliateLinkSchema.index({ store_id: 1 });
 AffiliateLinkSchema.index({ status: 1 });

@@ -11,23 +11,14 @@ export async function storyRoutes(fastify: FastifyInstance) {
     try {
       const user = request.user as any;
 
-      // Get user info
-      const userData = await User.findOne({ email: user.email });
-      if (!userData) {
-        return reply.code(404).send({ error: 'User not found' });
-      }
-
       // Get users that the current user follows
       const following = await Follow.find({
-        $or: [
-          { follower_email: user.email },
-          { follower_username: userData.username }
-        ],
+        follower_username: user.username,
         follow_type: 'user'
       }).select('following_username');
 
       const followingUsernames = following.map(f => f.following_username);
-      followingUsernames.push(userData.username); // Include own stories
+      followingUsernames.push(user.username); // Include own stories
 
       const stories = await Story
         .find({
@@ -144,16 +135,10 @@ export async function storyRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     try {
       const body = request.body as Partial<IStory>;
-      const authUser = request.user as any;
+      const user = request.user as any;
       
-      // Fetch full user data to get display_name and avatar_url
-      const user = await User.findOne({ email: authUser.email });
-      if (!user) {
-        return reply.code(404).send({ error: 'User not found' });
-      }
-
       // Log incoming story for debugging
-      fastify.log.info(`Creating story for ${user.email}: ${JSON.stringify(body)}`);
+      fastify.log.info(`Creating story for ${user.username}: ${JSON.stringify(body)}`);
 
       // Validate required fields
       if (!body.media_type) {
@@ -168,7 +153,7 @@ export async function storyRoutes(fastify: FastifyInstance) {
 
       // For non-text stories, media_url is required
       if (body.media_type !== 'text' && !body.media_url?.trim()) {
-        fastify.log.warn(`Rejected story for ${user.email}: missing media_url for ${body.media_type}`);
+        fastify.log.warn(`Rejected story for ${user.username}: missing media_url for ${body.media_type}`);
         return reply.code(400).send({ error: `media_url is required for ${body.media_type} stories` });
       }
 
@@ -214,7 +199,7 @@ export async function storyRoutes(fastify: FastifyInstance) {
       }
 
       // Check if user owns the story
-      if (story.author_email !== user.email && story.author_username !== user.username) {
+      if (story.author_username !== user.username) {
         return reply.code(403).send({ error: 'You can only update your own stories' });
       }
 
@@ -254,7 +239,7 @@ export async function storyRoutes(fastify: FastifyInstance) {
       }
 
       // Check if user owns the story
-      if (story.author_email !== user.email && story.author_username !== user.username) {
+      if (story.author_username !== user.username) {
         return reply.code(403).send({ error: 'You can only delete your own stories' });
       }
 
@@ -263,7 +248,7 @@ export async function storyRoutes(fastify: FastifyInstance) {
       // Emit real-time event
       fastify.io?.emit('story:deleted', {
         story_id: id,
-        author_email: story.author_email
+        author_username: story.author_username
       });
 
       reply.send({ message: 'Story deleted successfully' });
@@ -388,14 +373,9 @@ export async function storyRoutes(fastify: FastifyInstance) {
     try {
       const user = request.user as any;
 
-      const userData = await User.findOne({ email: user.email });
-      if (!userData) {
-        return reply.code(404).send({ error: 'User not found' });
-      }
-
       const stories = await Story
         .find({
-          author_username: userData.username,
+          author_username: user.username,
           is_active: true,
           expires_at: { $gt: new Date() }
         })
@@ -412,13 +392,13 @@ export async function storyRoutes(fastify: FastifyInstance) {
   });
 
   // Get stories by user
-  fastify.get('/user/:email', async (request, reply) => {
+  fastify.get('/user/:username', async (request, reply) => {
     try {
-      const { email } = request.params as { email: string };
+      const { username } = request.params as { username: string };
 
       const stories = await Story
         .find({
-          author_email: email.toLowerCase(),
+          author_username: username.toLowerCase(),
           is_active: true,
           expires_at: { $gt: new Date() }
         })

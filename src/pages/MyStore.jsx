@@ -108,11 +108,11 @@ export default function MyStore() {
   const { user: currentUser } = useAuth();
 
   const { data: store, isLoading: storeLoading } = useQuery({
-    queryKey: ["myStore", currentUser?.email],
+    queryKey: ["myStore", currentUser?.username],
     queryFn: async () => {
-      return storesAPI.getByOwner(currentUser?.email);
+      return storesAPI.getByOwnerUsername(currentUser?.username);
     },
-    enabled: !!currentUser?.email,
+    enabled: !!currentUser?.username,
   });
 
   const { data: products = [] } = useQuery({
@@ -126,12 +126,12 @@ export default function MyStore() {
   });
 
   const { data: ordersResponse = {} } = useQuery({
-    queryKey: ["storeOrders", currentUser?.email],
+    queryKey: ["storeOrders", currentUser?.username],
     queryFn: async () => {
-      const res = await ordersAPI.list({ vendor_email: currentUser?.email, sort: "-created_at", limit: 50 });
+      const res = await ordersAPI.list({ vendor_username: currentUser?.username, sort: "-created_at", limit: 50 });
       return res;
     },
-    enabled: !!currentUser?.email,
+    enabled: !!currentUser?.username,
   });
   
   const orders = Array.isArray(ordersResponse?.data) ? ordersResponse.data : [];
@@ -139,7 +139,7 @@ export default function MyStore() {
   const createStoreMutation = useMutation({
     mutationFn: () => storesAPI.create({
       ...storeForm,
-      owner_email: currentUser.email,
+      owner_username: currentUser.username,
       owner_name: currentUser.full_name,
       status: "active",
     }),
@@ -185,7 +185,7 @@ export default function MyStore() {
         inventory_count: parseInt(productForm.inventory_count) || 0,
         store_id: storeId,
         store_name: store.name,
-        vendor_email: currentUser.email,
+        vendor_username: currentUser.username,
         status: "active",
       });
     },
@@ -791,12 +791,12 @@ export default function MyStore() {
 
       {/* Shipping Tab */}
       {activeTab === "shipping" && (
-        <ShippingZoneManager store={store} vendorEmail={currentUser?.email} />
+        <ShippingZoneManager store={store} vendorUsername={currentUser?.username} />
       )}
 
       {/* Subscription Tab */}
       {activeTab === "subscription" && (
-        <SubscriptionManager store={store} vendorEmail={currentUser?.email} />
+        <SubscriptionManager store={store} vendorUsername={currentUser?.username} />
       )}
 
       {/* Finance Tab */}
@@ -806,7 +806,7 @@ export default function MyStore() {
 
       {/* Coupons Tab */}
       {activeTab === "coupons" && (
-        <CouponManager store={store} vendorEmail={currentUser?.email} />
+        <CouponManager store={store} vendorUsername={currentUser?.username} />
       )}
 
       {/* Analytics Tab */}
@@ -844,7 +844,7 @@ export default function MyStore() {
                   
                   <div className="flex justify-between items-start mb-4">
                     <div>
-                      <h4 className="text-sm font-bold text-slate-900">{order.buyer_name || order.buyer_email}</h4>
+                      <h4 className="text-sm font-bold text-slate-900">{order.buyer_name || `@${order.buyer_username}`}</h4>
                       <p className="text-xs text-slate-500 mt-0.5">{order.shipping_address?.split(",")[0] || "No address"}</p>
                     </div>
                     <div className="text-right">

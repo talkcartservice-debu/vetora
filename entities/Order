@@ -2,13 +2,13 @@
   "name": "Order",
   "type": "object",
   "properties": {
-    "buyer_email": {
+    "buyer_username": {
       "type": "string"
     },
     "buyer_name": {
       "type": "string"
     },
-    "vendor_email": {
+    "vendor_username": {
       "type": "string"
     },
     "store_id": {
@@ -69,7 +69,7 @@
     "tracking_number": {
       "type": "string"
     },
-    "affiliate_email": {
+    "affiliate_username": {
       "type": "string",
       "description": "Affiliate who referred this order"
     },
@@ -99,8 +99,8 @@
     }
   },
   "required": [
-    "buyer_email",
-    "vendor_email",
+    "buyer_username",
+    "vendor_username",
     "items",
     "total"
   ]

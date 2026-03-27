@@ -9,7 +9,7 @@ export async function affiliateLinkRoutes(fastify: FastifyInstance) {
     try {
       const query = request.query as any;
       const {
-        influencer_email,
+        influencer_username,
         store_id,
         product_id,
         status = 'active',
@@ -21,7 +21,7 @@ export async function affiliateLinkRoutes(fastify: FastifyInstance) {
       // Build filter object
       const filter: any = {};
 
-      if (influencer_email) filter.influencer_email = influencer_email;
+      if (influencer_username) filter.influencer_username = influencer_username;
       if (store_id) filter.store_id = store_id;
       if (product_id) filter.product_id = product_id;
       if (status) filter.status = status;
@@ -133,7 +133,8 @@ export async function affiliateLinkRoutes(fastify: FastifyInstance) {
       const link = new AffiliateLink({
         ...body,
         influencer_email: user.email,
-        influencer_name: user.name || user.email,
+        influencer_username: user.username,
+        influencer_name: user.display_name || user.username,
         store_id: product.store_id,
         store_name: product.store_name,
         product_title: product.title,
@@ -169,7 +170,7 @@ export async function affiliateLinkRoutes(fastify: FastifyInstance) {
       }
 
       // Check if user owns the link
-      if (link.influencer_email !== user.email) {
+      if (link.influencer_username !== user.username) {
         return reply.code(403).send({ error: 'You can only update your own affiliate links' });
       }
 
@@ -214,7 +215,7 @@ export async function affiliateLinkRoutes(fastify: FastifyInstance) {
       }
 
       // Check if user owns the link
-      if (link.influencer_email !== user.email) {
+      if (link.influencer_username !== user.username) {
         return reply.code(403).send({ error: 'You can only delete your own affiliate links' });
       }
 
@@ -304,7 +305,7 @@ export async function affiliateLinkRoutes(fastify: FastifyInstance) {
       const { status, limit = 20, skip = 0 } = query;
       const user = request.user as any;
 
-      const filter: any = { influencer_email: user.email };
+      const filter: any = { influencer_username: user.username };
       if (status) filter.status = status;
 
       const links = await AffiliateLink
@@ -317,7 +318,7 @@ export async function affiliateLinkRoutes(fastify: FastifyInstance) {
 
       // Calculate totals
       const stats = await AffiliateLink.aggregate([
-        { $match: { influencer_email: user.email } },
+        { $match: { influencer_username: user.username } },
         {
           $group: {
             _id: null,

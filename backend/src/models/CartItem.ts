@@ -2,7 +2,6 @@ import mongoose, { Document, Schema } from 'mongoose';
 
 export interface ICartItem extends Document {
   _id: mongoose.Types.ObjectId;
-  user_email: string;
   user_username: string;
   product_id: string;
   product_title: string;
@@ -11,18 +10,12 @@ export interface ICartItem extends Document {
   store_id: string;
   store_name?: string;
   quantity: number;
-  affiliate_email?: string;
+  affiliate_username?: string;
   created_at: Date;
   updated_at: Date;
 }
 
 const CartItemSchema = new Schema<ICartItem>({
-  user_email: {
-    type: String,
-    required: true,
-    lowercase: true,
-    trim: true,
-  },
   user_username: {
     type: String,
     required: true,
@@ -59,7 +52,7 @@ const CartItemSchema = new Schema<ICartItem>({
     min: 1,
     default: 1,
   },
-  affiliate_email: {
+  affiliate_username: {
     type: String,
     lowercase: true,
     trim: true,
@@ -72,7 +65,6 @@ const CartItemSchema = new Schema<ICartItem>({
 });
 
 // Indexes for performance
-CartItemSchema.index({ user_email: 1 });
 CartItemSchema.index({ user_username: 1 });
 CartItemSchema.index({ product_id: 1 });
 CartItemSchema.index({ store_id: 1 });

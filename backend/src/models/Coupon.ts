@@ -4,7 +4,7 @@ export interface ICoupon extends Document {
   _id: mongoose.Types.ObjectId;
   code: string;
   store_id?: string;
-  vendor_email: string;
+  vendor_username: string;
   discount_type: 'percentage' | 'flat';
   discount_value: number;
   min_order_amount: number;
@@ -27,7 +27,7 @@ const CouponSchema = new Schema<ICoupon>({
   store_id: {
     type: String,
   },
-  vendor_email: {
+  vendor_username: {
     type: String,
     required: true,
     lowercase: true,
@@ -74,7 +74,7 @@ const CouponSchema = new Schema<ICoupon>({
 });
 
 // Indexes for performance
-CouponSchema.index({ vendor_email: 1 });
+CouponSchema.index({ vendor_username: 1 });
 CouponSchema.index({ store_id: 1 });
 CouponSchema.index({ is_active: 1, expires_at: 1 });
 CouponSchema.index({ expires_at: 1 });

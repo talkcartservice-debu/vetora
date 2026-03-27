@@ -3,20 +3,20 @@ import { ShippingZone, IShippingZone } from '../models/ShippingZone';
 
 export async function shippingZoneRoutes(fastify: FastifyInstance) {
   // Get shipping zones for a vendor
-  fastify.get('/vendor/:vendorEmail', {
+  fastify.get('/vendor/:vendorUsername', {
     preHandler: fastify.authenticate
   }, async (request, reply) => {
     try {
-      const { vendorEmail } = request.params as { vendorEmail: string };
+      const { vendorUsername } = request.params as { vendorUsername: string };
       const user = request.user as any;
 
       // Check if user owns the vendor account or is admin
-      if (user.email !== vendorEmail.toLowerCase()) {
+      if (user.username !== vendorUsername.toLowerCase()) {
         return reply.code(403).send({ error: 'You can only view your own shipping zones' });
       }
 
       const zones = await ShippingZone
-        .find({ vendor_email: vendorEmail.toLowerCase(), is_active: true })
+        .find({ vendor_username: vendorUsername.toLowerCase(), is_active: true })
         .sort({ zone_name: 1 });
 
       reply.send({ zones });
@@ -47,7 +47,7 @@ export async function shippingZoneRoutes(fastify: FastifyInstance) {
     try {
       const query = request.query as any;
       const {
-        vendor_email,
+        vendor_username,
         store_id,
         is_active = true,
         sort = 'zone_name',
@@ -58,7 +58,7 @@ export async function shippingZoneRoutes(fastify: FastifyInstance) {
       // Build filter object
       const filter: any = {};
 
-      if (vendor_email) filter.vendor_email = vendor_email.toLowerCase();
+      if (vendor_username) filter.vendor_username = vendor_username.toLowerCase();
       if (store_id) filter.store_id = store_id;
       if (query.is_active !== undefined) {
         filter.is_active = query.is_active === 'true';
@@ -130,8 +130,8 @@ export async function shippingZoneRoutes(fastify: FastifyInstance) {
         return reply.code(400).send({ error: 'Missing required field: flat_rate' });
       }
 
-      // Set vendor_email from authenticated user
-      body.vendor_email = user.email;
+      // Set vendor_username from authenticated user
+      body.vendor_username = user.username;
 
       // Validate flat_rate
       if (body.flat_rate < 0) {
@@ -178,7 +178,7 @@ export async function shippingZoneRoutes(fastify: FastifyInstance) {
       }
 
       // Check if user owns the zone
-      if (zone.vendor_email !== user.email) {
+      if (zone.vendor_username !== user.username) {
         return reply.code(403).send({ error: 'You can only update your own shipping zones' });
       }
 
@@ -243,7 +243,7 @@ export async function shippingZoneRoutes(fastify: FastifyInstance) {
       }
 
       // Check if user owns the zone
-      if (zone.vendor_email !== user.email) {
+      if (zone.vendor_username !== user.username) {
         return reply.code(403).send({ error: 'You can only delete your own shipping zones' });
       }
 
@@ -308,7 +308,7 @@ export async function shippingZoneRoutes(fastify: FastifyInstance) {
   fastify.get('/available/:countryCode', async (request, reply) => {
     try {
       const { countryCode } = request.params as { countryCode: string };
-      const { vendor_email, store_id } = request.query as any;
+      const { vendor_username, store_id } = request.query as any;
 
       const filter: any = {
         is_active: true,
@@ -318,7 +318,7 @@ export async function shippingZoneRoutes(fastify: FastifyInstance) {
         ]
       };
 
-      if (vendor_email) filter.vendor_email = vendor_email.toLowerCase();
+      if (vendor_username) filter.vendor_username = vendor_username.toLowerCase();
       if (store_id) filter.store_id = store_id;
 
       const zones = await ShippingZone

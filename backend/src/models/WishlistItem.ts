@@ -1,7 +1,6 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IWishlistItem extends Document {
-  user_email: string;
   user_username: string;
   product_id: string;
   product_title: string;
@@ -10,18 +9,12 @@ export interface IWishlistItem extends Document {
   compare_at_price?: number;
   store_id: string;
   store_name: string;
-  vendor_email: string;
   vendor_username: string;
   created_at: Date;
   updated_at: Date;
 }
 
 const WishlistItemSchema = new Schema<IWishlistItem>({
-  user_email: {
-    type: String,
-    required: true,
-    index: true
-  },
   user_username: {
     type: String,
     required: true,
@@ -56,11 +49,6 @@ const WishlistItemSchema = new Schema<IWishlistItem>({
   store_name: {
     type: String,
     required: true
-  },
-  vendor_email: {
-    type: String,
-    required: true,
-    index: true
   },
   vendor_username: {
     type: String,

@@ -57,9 +57,9 @@
     "store_name": {
       "type": "string"
     },
-    "vendor_email": {
+    "vendor_username": {
       "type": "string",
-      "description": "Email of the vendor"
+      "description": "Username of the vendor"
     },
     "inventory_count": {
       "type": "number",
@@ -96,6 +96,6 @@
   "required": [
     "title",
     "price",
-    "vendor_email"
+    "vendor_username"
   ]
 }

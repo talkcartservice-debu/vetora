@@ -93,7 +93,7 @@ export default function CreatePost() {
           })
           .filter(id => !!id && id !== "[object Object]"),
         visibility: visibility || "public",
-        author_email: currentUser?.email || undefined,
+        author_username: currentUser?.username || undefined,
         author_name: (currentUser?.full_name || currentUser?.display_name) || undefined,
       };
 

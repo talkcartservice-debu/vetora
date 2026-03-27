@@ -25,12 +25,12 @@ export default function Notifications() {
   const { user: currentUser } = useAuth();
 
   const { data: notifications = [], isLoading } = useQuery({
-    queryKey: ["notifications", currentUser?.email],
+    queryKey: ["notifications", currentUser?.username],
     queryFn: async () => {
-      const res = await notificationsAPI.list({ recipient_email: currentUser?.email, sort: "-created_date", limit: 50 });
+      const res = await notificationsAPI.list({ sort: "-created_date", limit: 50 });
       return res.data || [];
     },
-    enabled: !!currentUser?.email,
+    enabled: !!currentUser?.username,
   });
 
   const markAllRead = useMutation({

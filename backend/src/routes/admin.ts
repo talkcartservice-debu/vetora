@@ -119,7 +119,7 @@ export async function adminRoutes(fastify: FastifyInstance) {
       if (search) {
         query.$or = [
           { name: { $regex: search, $options: 'i' } },
-          { owner_email: { $regex: search, $options: 'i' } }
+          { owner_username: { $regex: search, $options: 'i' } }
         ];
       }
 
@@ -366,8 +366,8 @@ export async function adminRoutes(fastify: FastifyInstance) {
       if (status) query.status = status;
       if (search) {
         query.$or = [
-          { buyer_email: { $regex: search, $options: 'i' } },
-          { vendor_email: { $regex: search, $options: 'i' } },
+          { buyer_username: { $regex: search, $options: 'i' } },
+          { vendor_username: { $regex: search, $options: 'i' } },
           { store_name: { $regex: search, $options: 'i' } }
         ];
       }

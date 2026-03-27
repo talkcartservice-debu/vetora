@@ -5,7 +5,7 @@ import { User } from '../models/User';
 import { z } from 'zod';
 
 const createOrderSchema = z.object({
-  buyer_email: z.string().email(),
+  buyer_username: z.string().min(1).optional(),
   items: z.array(z.object({
     product_id: z.string(),
     product_title: z.string(),
@@ -18,7 +18,7 @@ const createOrderSchema = z.object({
   total: z.number().min(0),
   shipping_address: z.string().optional(),
   order_note: z.string().optional(),
-  affiliate_email: z.string().email().or(z.literal('')).optional(),
+  affiliate_username: z.string().min(1).or(z.literal('')).optional(),
   payment_method: z.enum(['card', 'paypal', 'crypto', 'bank_transfer', 'paystack']).default('paystack'),
 });
 
@@ -31,17 +31,11 @@ export async function orderRoutes(fastify: FastifyInstance) {
       const user = request.user as any;
       const { role = 'buyer', status, limit = 20, skip = 0 } = request.query as any;
 
-      // Get user info
-      const userData = await User.findOne({ email: user.email });
-      if (!userData) {
-        return reply.code(404).send({ error: 'User not found' });
-      }
-
       const filter: any = {};
       if (role === 'buyer') {
-        filter.buyer_username = userData.username;
+        filter.buyer_username = user.username;
       } else {
-        filter.vendor_username = userData.username;
+        filter.vendor_username = user.username;
       }
 
       if (status) filter.status = status;
@@ -77,12 +71,6 @@ export async function orderRoutes(fastify: FastifyInstance) {
       const { id } = request.params as { id: string };
       const user = request.user as any;
 
-      // Get user info
-      const userData = await User.findOne({ email: user.email });
-      if (!userData) {
-        return reply.code(404).send({ error: 'User not found' });
-      }
-
       const order = await Order.findById(id).lean();
 
       if (!order) {
@@ -90,8 +78,7 @@ export async function orderRoutes(fastify: FastifyInstance) {
       }
 
       // Check permissions
-      if (order.buyer_email !== user.email && order.vendor_email !== user.email && 
-          order.buyer_username !== userData.username && order.vendor_username !== userData.username) {
+      if (order.buyer_username !== user.username && order.vendor_username !== user.username) {
         return reply.code(403).send({ error: 'Unauthorized' });
       }
 
@@ -111,12 +98,6 @@ export async function orderRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     try {
       const user = request.user as any;
-      // Get user info
-      const userData = await User.findOne({ email: user.email });
-      if (!userData) {
-        return reply.code(404).send({ error: 'User not found' });
-      }
-
       const body = createOrderSchema.parse(request.body);
 
       // Get vendor_email and store_id from the first product
@@ -127,14 +108,12 @@ export async function orderRoutes(fastify: FastifyInstance) {
 
       const order = new Order({
         ...body,
-        buyer_email: user.email,
-        buyer_username: userData.username,
-        vendor_email: firstProduct.vendor_email,
+        buyer_username: user.username,
         vendor_username: firstProduct.vendor_username,
         store_id: firstProduct.store_id,
         store_name: firstProduct.store_name,
         order_note: body.order_note,
-        affiliate_email: body.affiliate_email || undefined,
+        affiliate_username: body.affiliate_username || undefined,
         status: 'pending',
         payment_status: 'pending',
         created_at: new Date(),
@@ -178,12 +157,12 @@ export async function orderRoutes(fastify: FastifyInstance) {
       }
 
       // Only vendor can update status to confirmed, processing, shipped, delivered
-      if (order.vendor_email !== user.email && status !== 'cancelled') {
+      if (order.vendor_username !== user.username && status !== 'cancelled') {
         return reply.code(403).send({ error: 'Unauthorized' });
       }
 
       // Only buyer can update status to cancelled if it's still pending
-      if (order.buyer_email === user.email && status === 'cancelled' && order.status !== 'pending') {
+      if (order.buyer_username === user.username && status === 'cancelled' && order.status !== 'pending') {
         return reply.code(400).send({ error: 'Cannot cancel order after it has been confirmed' });
       }
 

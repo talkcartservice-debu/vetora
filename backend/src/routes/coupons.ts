@@ -8,7 +8,7 @@ export async function couponRoutes(fastify: FastifyInstance) {
     try {
       const query = request.query as any;
       const {
-        vendor_email,
+        vendor_username,
         store_id,
         is_active = true,
         sort = '-created_at',
@@ -19,7 +19,7 @@ export async function couponRoutes(fastify: FastifyInstance) {
       // Build filter object
       const filter: any = {};
 
-      if (vendor_email) filter.vendor_email = vendor_email;
+      if (vendor_username) filter.vendor_username = vendor_username;
       if (store_id) filter.store_id = store_id;
       if (is_active !== undefined) filter.is_active = is_active === 'true';
 
@@ -140,7 +140,7 @@ export async function couponRoutes(fastify: FastifyInstance) {
       const coupon = new Coupon({
         ...body,
         code: body.code.toUpperCase(),
-        vendor_email: user.email,
+        vendor_username: user.username,
       });
 
       await coupon.save();
@@ -168,7 +168,7 @@ export async function couponRoutes(fastify: FastifyInstance) {
       }
 
       // Check if user owns the coupon
-      if (coupon.vendor_email !== user.email) {
+      if (coupon.vendor_username !== user.username) {
         return reply.code(403).send({ error: 'You can only update your own coupons' });
       }
 
@@ -225,7 +225,7 @@ export async function couponRoutes(fastify: FastifyInstance) {
       }
 
       // Check if user owns the coupon
-      if (coupon.vendor_email !== user.email) {
+      if (coupon.vendor_username !== user.username) {
         return reply.code(403).send({ error: 'You can only delete your own coupons' });
       }
 
@@ -354,7 +354,7 @@ export async function couponRoutes(fastify: FastifyInstance) {
       const { is_active, limit = 20, skip = 0 } = query;
       const user = request.user as any;
 
-      const filter: any = { vendor_email: user.email };
+      const filter: any = { vendor_username: user.username };
       if (is_active !== undefined) filter.is_active = is_active === 'true';
 
       const coupons = await Coupon

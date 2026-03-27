@@ -41,8 +41,8 @@ export default function ShareModal({ isOpen, onOpenChange, post, product, curren
 
   const sendMutation = useMutation({
     mutationFn: async (recipient) => {
-      const recipientEmail = recipient.email || recipient.owner_email;
-      if (!recipientEmail) throw new Error("Recipient email not found");
+      const recipientUsername = recipient.username || recipient.owner_username || recipient.display_name?.replace(/\s+/g, '_').toLowerCase();
+      if (!recipientUsername) throw new Error("Recipient username not found");
 
       // Increment share count if it's a post
       if (!isProduct) {
@@ -51,7 +51,7 @@ export default function ShareModal({ isOpen, onOpenChange, post, product, curren
 
       // Then send message
       return messagesAPI.send({
-        recipient_email: recipientEmail,
+        recipient_username: recipientUsername,
         content: `Check out this ${itemType.toLowerCase()}: ${itemUrl}`,
         message_type: isProduct ? "product_share" : "text",
         product_id: isProduct ? itemId : undefined,
@@ -90,7 +90,7 @@ export default function ShareModal({ isOpen, onOpenChange, post, product, curren
   };
 
   const recipients = [
-    ...(usersData?.data || usersData || []).filter(u => u.email !== currentUser?.email).map(u => ({ ...u, type: 'user' })),
+    ...(usersData?.data || usersData || []).filter(u => u.username !== currentUser?.username).map(u => ({ ...u, type: 'user' })),
     ...(storesData?.data || storesData || []).map(s => ({ ...s, type: 'vendor' }))
   ].slice(0, 10);
 
@@ -187,7 +187,7 @@ export default function ShareModal({ isOpen, onOpenChange, post, product, curren
                         {recipient.display_name || recipient.name || recipient.full_name || "User"}
                       </p>
                       <p className="text-xs text-slate-400 truncate">
-                        {recipient.type === 'vendor' ? (recipient.category || 'Vendor') : `@${recipient.display_name?.replace(/\s+/g, '_').toLowerCase() || recipient.email?.split('@')[0]}`}
+                        {recipient.type === 'vendor' ? (recipient.category || 'Vendor') : `@${recipient.username || recipient.display_name?.replace(/\s+/g, '_').toLowerCase()}`}
                       </p>
                     </div>
                     {selectedRecipient?.id === recipient.id && (

@@ -16,7 +16,7 @@ export default function Bookmarks() {
   const { user: currentUser } = useAuth();
 
   const { data: itemsResponse = {}, isLoading: itemsLoading, refetch } = useQuery({
-    queryKey: ["bookmarks", currentUser?.email, activeTab],
+    queryKey: ["bookmarks", currentUser?.username, activeTab],
     queryFn: async () => {
       if (activeTab === "posts") {
         const res = await bookmarksAPI.list({ target_type: "post" });
@@ -28,7 +28,7 @@ export default function Bookmarks() {
         }
         return { data: [] };
       } else {
-        const res = await wishlistAPI.list({ user_email: currentUser?.email, limit: 50 });
+        const res = await wishlistAPI.list({ user_username: currentUser?.username, limit: 50 });
         // Fetch full product details for each wishlist item if needed, 
         // but wishlist usually already contains enough info. 
         // Let's ensure we have full product objects for ProductCard.
@@ -40,7 +40,7 @@ export default function Bookmarks() {
         return { data: [] };
       }
     },
-    enabled: !!currentUser?.email,
+    enabled: !!currentUser?.username,
   });
 
   const items = Array.isArray(itemsResponse?.data) ? itemsResponse.data : [];

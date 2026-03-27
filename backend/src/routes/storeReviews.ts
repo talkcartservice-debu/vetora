@@ -89,14 +89,8 @@ export async function storeReviewRoutes(fastify: FastifyInstance) {
       const { reviewerUsername } = request.params as { reviewerUsername: string };
       const user = request.user as any;
 
-      // Get user info
-      const userData = await User.findOne({ email: user.email });
-      if (!userData) {
-        return reply.code(404).send({ error: 'User not found' });
-      }
-
       // Check if user is requesting their own reviews
-      if (userData.username !== reviewerUsername.toLowerCase()) {
+      if (user.username !== reviewerUsername.toLowerCase()) {
         return reply.code(403).send({ error: 'You can only view your own reviews' });
       }
 
@@ -208,12 +202,6 @@ export async function storeReviewRoutes(fastify: FastifyInstance) {
       // Validate rating
       if (body.rating < 1 || body.rating > 5) {
         return reply.code(400).send({ error: 'Rating must be between 1 and 5' });
-      }
-
-      // Get user info
-      const userData = await User.findOne({ email: user.email });
-      if (!userData) {
-        return reply.code(404).send({ error: 'User not found' });
       }
 
       // Set reviewer info from authenticated user

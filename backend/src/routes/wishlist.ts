@@ -17,14 +17,8 @@ export async function wishlistRoutes(fastify: FastifyInstance) {
         skip = 0
       } = query;
 
-      // Get user info
-      const userData = await User.findOne({ email: user.email });
-      if (!userData) {
-        return reply.code(404).send({ error: 'User not found' });
-      }
-
       // Build filter object
-      const filter: any = { user_username: userData.username };
+      const filter: any = { user_username: user.username };
       if (store_id) filter.store_id = store_id;
 
       // Build sort object
@@ -69,14 +63,8 @@ export async function wishlistRoutes(fastify: FastifyInstance) {
       const { productId } = request.params as { productId: string };
       const user = request.user as any;
 
-      // Get user info
-      const userData = await User.findOne({ email: user.email });
-      if (!userData) {
-        return reply.code(404).send({ error: 'User not found' });
-      }
-
       const item = await WishlistItem.findOne({
-        user_username: userData.username,
+        user_username: user.username,
         product_id: productId
       });
 
@@ -123,26 +111,12 @@ export async function wishlistRoutes(fastify: FastifyInstance) {
         return reply.code(400).send({ error: 'Missing required field: store_name' });
       }
 
-      if (!body.vendor_email) {
-        return reply.code(400).send({ error: 'Missing required field: vendor_email' });
+      if (!body.vendor_username) {
+        return reply.code(400).send({ error: 'Missing required field: vendor_username' });
       }
 
-      // Get user info
-      const userData = await User.findOne({ email: user.email });
-      if (!userData) {
-        return reply.code(404).send({ error: 'User not found' });
-      }
-
-      // Fetch vendor info to get username
-      const vendorData = await User.findOne({ email: body.vendor_email });
-      if (!vendorData) {
-        return reply.code(404).send({ error: 'Vendor not found' });
-      }
-
-      // Set user_email and usernames
-      body.user_email = user.email;
-      body.user_username = userData.username;
-      body.vendor_username = vendorData.username;
+      // Set usernames
+      body.user_username = user.username;
 
       const wishlistItem = new WishlistItem(body);
       await wishlistItem.save();
@@ -166,14 +140,8 @@ export async function wishlistRoutes(fastify: FastifyInstance) {
       const { productId } = request.params as { productId: string };
       const user = request.user as any;
 
-      // Get user info
-      const userData = await User.findOne({ email: user.email });
-      if (!userData) {
-        return reply.code(404).send({ error: 'User not found' });
-      }
-
       const result = await WishlistItem.findOneAndDelete({
-        user_username: userData.username,
+        user_username: user.username,
         product_id: productId
       });
 
@@ -200,14 +168,8 @@ export async function wishlistRoutes(fastify: FastifyInstance) {
       const body = request.body as Partial<IWishlistItem>;
       const user = request.user as any;
 
-      // Get user info
-      const userData = await User.findOne({ email: user.email });
-      if (!userData) {
-        return reply.code(404).send({ error: 'User not found' });
-      }
-
       const item = await WishlistItem.findOne({
-        user_username: userData.username,
+        user_username: user.username,
         product_id: productId
       });
 
@@ -250,14 +212,8 @@ export async function wishlistRoutes(fastify: FastifyInstance) {
     try {
       const user = request.user as any;
 
-      // Get user info
-      const userData = await User.findOne({ email: user.email });
-      if (!userData) {
-        return reply.code(404).send({ error: 'User not found' });
-      }
-
       const stats = await WishlistItem.aggregate([
-        { $match: { user_username: userData.username } },
+        { $match: { user_username: user.username } },
         {
           $group: {
             _id: null,
@@ -270,7 +226,7 @@ export async function wishlistRoutes(fastify: FastifyInstance) {
       ]);
 
       const storeBreakdown = await WishlistItem.aggregate([
-        { $match: { user_username: userData.username } },
+        { $match: { user_username: user.username } },
         {
           $group: {
             _id: '$store_id',
@@ -325,12 +281,6 @@ export async function wishlistRoutes(fastify: FastifyInstance) {
         return reply.code(400).send({ error: 'Cannot add more than 50 items at once' });
       }
 
-      // Get user info
-      const userData = await User.findOne({ email: user.email });
-      if (!userData) {
-        return reply.code(404).send({ error: 'User not found' });
-      }
-
       const results = [];
       const errors = [];
 
@@ -338,23 +288,14 @@ export async function wishlistRoutes(fastify: FastifyInstance) {
         try {
           // Validate required fields
           if (!itemData.product_id || !itemData.product_title || itemData.product_price === undefined ||
-              !itemData.store_id || !itemData.store_name || !itemData.vendor_email) {
+              !itemData.store_id || !itemData.store_name || !itemData.vendor_username) {
             errors.push({ product_id: itemData.product_id, error: 'Missing required fields' });
-            continue;
-          }
-
-          // Fetch vendor info to get username
-          const vendorData = await User.findOne({ email: itemData.vendor_email });
-          if (!vendorData) {
-            errors.push({ product_id: itemData.product_id, error: 'Vendor not found' });
             continue;
           }
 
           const wishlistItem = new WishlistItem({
             ...itemData,
-            user_email: user.email,
-            user_username: userData.username,
-            vendor_username: vendorData.username
+            user_username: user.username
           });
 
           await wishlistItem.save();
@@ -387,13 +328,7 @@ export async function wishlistRoutes(fastify: FastifyInstance) {
     try {
       const user = request.user as any;
 
-      // Get user info
-      const userData = await User.findOne({ email: user.email });
-      if (!userData) {
-        return reply.code(404).send({ error: 'User not found' });
-      }
-
-      const result = await WishlistItem.deleteMany({ user_username: userData.username });
+      const result = await WishlistItem.deleteMany({ user_username: user.username });
 
       reply.send({
         message: 'Wishlist cleared successfully',
@@ -423,7 +358,7 @@ export async function wishlistRoutes(fastify: FastifyInstance) {
             product_price: { $first: '$product_price' },
             store_id: { $first: '$store_id' },
             store_name: { $first: '$store_name' },
-            vendor_email: { $first: '$vendor_email' },
+            vendor_username: { $first: '$vendor_username' },
             wishlist_count: { $sum: 1 }
           }
         },

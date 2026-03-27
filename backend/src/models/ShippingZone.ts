@@ -1,7 +1,7 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IShippingZone extends Document {
-  vendor_email: string;
+  vendor_username: string;
   store_id?: string;
   zone_name: string; // e.g. Domestic, Europe, Asia-Pacific
   countries: string[]; // Country codes e.g. US, CA, GB
@@ -15,7 +15,7 @@ export interface IShippingZone extends Document {
 }
 
 const ShippingZoneSchema = new Schema<IShippingZone>({
-  vendor_email: {
+  vendor_username: {
     type: String,
     required: true,
     index: true
@@ -63,11 +63,11 @@ const ShippingZoneSchema = new Schema<IShippingZone>({
 });
 
 // Compound indexes for efficient queries
-ShippingZoneSchema.index({ vendor_email: 1, is_active: 1 });
+ShippingZoneSchema.index({ vendor_username: 1, is_active: 1 });
 ShippingZoneSchema.index({ store_id: 1, is_active: 1 });
 
 // Ensure zone names are unique per vendor/store
-ShippingZoneSchema.index({ vendor_email: 1, zone_name: 1 }, { unique: true });
+ShippingZoneSchema.index({ vendor_username: 1, zone_name: 1 }, { unique: true });
 ShippingZoneSchema.index({ store_id: 1, zone_name: 1 }, { unique: true, sparse: true });
 
 export const ShippingZone = mongoose.model<IShippingZone>('ShippingZone', ShippingZoneSchema);
