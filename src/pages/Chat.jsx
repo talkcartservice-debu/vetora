@@ -382,16 +382,16 @@ export default function Chat() {
                 <Send className="w-6 h-6 text-slate-400" />
               </div>
               <p className="text-sm font-medium text-slate-600">No conversations yet</p>
-              <p className="text-xs text-slate-400 mt-1">Start chatting with vendors or buyers</p>
+              <p className="text-xs text-slate-400 mt-1">Start chatting with creators or communities</p>
             </div>
           ) : (
             conversations
-              .filter(c => !search || c.name?.toLowerCase().includes(search.toLowerCase()) || c.email?.toLowerCase().includes(search.toLowerCase()))
+              .filter(c => !search || c.name?.toLowerCase().includes(search.toLowerCase()) || c.username?.toLowerCase().includes(search.toLowerCase()))
               .map(convo => (
                 <button
-                  key={convo.email}
-                  onClick={() => setSelectedConvo(convo.email)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition-colors text-left border-b border-slate-50 ${selectedConvo === convo.email ? "bg-indigo-50" : ""}`}
+                  key={convo.username}
+                  onClick={() => setSelectedConvo(convo.username)}
+                  className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition-colors text-left border-b border-slate-50 ${selectedConvo === convo.username ? "bg-indigo-50" : ""}`}
                 >
                   <div className="relative shrink-0">
                     <Avatar name={convo.name} size={11} />
@@ -458,9 +458,9 @@ export default function Chat() {
                 </div>
               )}
               {selectedMessages.map((msg, idx) => {
-                const isMine = msg.sender_email === currentUser?.email;
+                const isMine = msg.sender_username === currentUser?.username;
                 const prevMsg = selectedMessages[idx - 1];
-                const showAvatar = !prevMsg || prevMsg.sender_email !== msg.sender_email;
+                const showAvatar = !prevMsg || prevMsg.sender_username !== msg.sender_username;
                 return (
                   <MessageBubble
                     key={msg._id || msg.id || `msg-${idx}`}
@@ -598,14 +598,14 @@ export default function Chat() {
                     <h3 className="text-sm font-bold text-slate-900 mb-1">Forward Message</h3>
                     <p className="text-xs text-slate-500 mb-3 bg-slate-50 rounded-xl px-3 py-2 line-clamp-2">{forwardMsg.content}</p>
                     <input
-                      value={forwardToEmail}
-                      onChange={e => setForwardToEmail(e.target.value)}
-                      placeholder="Recipient email address..."
+                      value={forwardToUsername}
+                      onChange={e => setForwardToUsername(e.target.value)}
+                      placeholder="Recipient username..."
                       className="w-full text-sm border border-slate-200 rounded-xl px-3 py-2.5 outline-none focus:border-indigo-300 mb-3"
                     />
                     <div className="flex gap-2">
                       <Button onClick={() => setForwardMsg(null)} variant="outline" className="flex-1 rounded-xl" size="sm">Cancel</Button>
-                      <Button onClick={executeForward} disabled={!forwardToEmail.trim()} className="flex-1 bg-indigo-600 hover:bg-indigo-700 rounded-xl" size="sm">Forward</Button>
+                      <Button onClick={executeForward} disabled={!forwardToUsername.trim()} className="flex-1 bg-indigo-600 hover:bg-indigo-700 rounded-xl" size="sm">Forward</Button>
                     </div>
                   </motion.div>
                 </motion.div>

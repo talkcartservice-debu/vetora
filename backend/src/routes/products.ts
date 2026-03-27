@@ -14,16 +14,14 @@ export async function productRoutes(fastify: FastifyInstance) {
       const user = request.user as any;
       const { limit = 10 } = request.query as any;
 
-      // 1. Fetch user signals
-      const userData = await User.findOne({ email: user.email });
-      if (!userData) {
-        return reply.code(404).send({ error: 'User not found' });
+      if (!user?.username) {
+        return reply.code(401).send({ error: 'Unauthorized - invalid user data' });
       }
 
       const [likes, wishlist, orders] = await Promise.all([
-        Like.find({ user_username: userData.username, target_type: 'product' }).select('target_id'),
-        WishlistItem.find({ user_username: userData.username }).select('product_id'),
-        Order.find({ buyer_email: user.email }).select('items.product_id')
+        Like.find({ user_username: user.username, target_type: 'product' }).select('target_id'),
+        WishlistItem.find({ user_username: user.username }).select('product_id'),
+        Order.find({ $or: [{ buyer_email: user.email }, { buyer_username: user.username }] }).select('items.product_id')
       ]);
 
       const likedIds = likes.map(l => l.target_id);
@@ -150,23 +148,10 @@ export async function productRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     try {
       const productData = request.body as Partial<IProduct>;
-      const userPayload = request.user as { userId?: string; email?: string };
+      const user = request.user as any;
 
-      if (!userPayload.userId && !userPayload.email) {
+      if (!user?.username) {
         return reply.code(401).send({ error: 'Invalid user session' });
-      }
-
-      // Get user to set vendor_email - try by ID or email
-      let user = null;
-      if (userPayload.userId) {
-        user = await User.findById(userPayload.userId);
-      }
-      if (!user && userPayload.email) {
-        user = await User.findOne({ email: userPayload.email });
-      }
-
-      if (!user) {
-        return reply.code(404).send({ error: 'User not found' });
       }
 
       const product = new Product({
@@ -207,16 +192,14 @@ export async function productRoutes(fastify: FastifyInstance) {
     try {
       const { id } = request.params as { id: string };
       const updateData = request.body as Partial<IProduct>;
-      const { userId } = request.user as { userId: string };
+      const user = request.user as any;
 
-      // Get user to verify ownership
-      const user = await User.findById(userId);
-      if (!user) {
-        return reply.code(404).send({ error: 'User not found' });
+      if (!user?.username) {
+        return reply.code(401).send({ error: 'Unauthorized - invalid user data' });
       }
 
       const product = await Product.findOneAndUpdate(
-        { _id: id, $or: [{ vendor_email: user.email }, { vendor_username: user.username }] },
+        { _id: id, vendor_username: user.username },
         { ...updateData, updated_at: new Date() },
         { new: true }
       );
@@ -244,21 +227,15 @@ export async function productRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     try {
       const { id } = request.params as { id: string };
-      const { userId } = request.user as { userId: string };
+      const user = request.user as any;
 
-      if (!userId) {
+      if (!user?.username) {
         return reply.code(401).send({ error: 'Unauthorized - invalid user data' });
-      }
-
-      // Get user to verify ownership
-      const user = await User.findById(userId);
-      if (!user) {
-        return reply.code(404).send({ error: 'User not found' });
       }
 
       const product = await Product.findOneAndDelete({
         _id: id,
-        $or: [{ vendor_email: user.email }, { vendor_username: user.username }]
+        vendor_username: user.username
       });
 
       if (!product) {

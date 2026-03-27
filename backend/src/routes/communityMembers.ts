@@ -56,10 +56,10 @@ export async function communityMemberRoutes(fastify: FastifyInstance) {
     preHandler: fastify.authenticate
   }, async (request, reply) => {
     try {
-      const body = request.body as { community_id: string; member_email?: string; role?: string };
+      const body = request.body as { community_id: string; member_username?: string; role?: string };
       const user = request.user as any;
 
-      const { community_id, member_email = user.email, role = 'member' } = body;
+      const { community_id, member_username = user.username, role = 'member' } = body;
 
       // Check if community exists
       const community = await Community.findById(community_id);
@@ -70,7 +70,7 @@ export async function communityMemberRoutes(fastify: FastifyInstance) {
       // Check if user is already a member
       const existingMember = await CommunityMember.findOne({
         community_id,
-        member_email
+        member_username
       });
 
       if (existingMember) {
@@ -78,22 +78,22 @@ export async function communityMemberRoutes(fastify: FastifyInstance) {
       }
 
       // Check permissions for adding others
-      if (member_email !== user.email) {
+      if (member_username !== user.username) {
         // Only community owner or admin can add others
         const userMembership = await CommunityMember.findOne({
           community_id,
-          member_email: user.email,
+          member_username: user.username,
           role: { $in: ['admin', 'moderator'] }
         });
 
-        if (!userMembership && community.owner_email !== user.email) {
+        if (!userMembership && community.owner_username !== user.username) {
           return reply.code(403).send({ error: 'You do not have permission to add members to this community' });
         }
       }
 
       const member = new CommunityMember({
         community_id,
-        member_email,
+        member_username,
         role,
       });
 
@@ -104,13 +104,13 @@ export async function communityMemberRoutes(fastify: FastifyInstance) {
       await community.save();
 
       // Create notification for community owner
-      if (community.owner_email !== user.email) {
+      if (community.owner_username !== user.username) {
         const notification = new Notification({
-          recipient_email: community.owner_email,
+          recipient_username: community.owner_username,
           type: 'follow',
-          title: `${user.display_name || user.email} joined your community: ${community.name}`,
-          sender_email: user.email,
-          sender_name: user.display_name || user.email,
+          title: `${user.display_name || user.username} joined your community: ${community.name}`,
+          sender_username: user.username,
+          sender_name: user.display_name || user.username,
           link: `/community/${community._id}`,
           metadata: {
             community_id: community._id,
@@ -118,13 +118,13 @@ export async function communityMemberRoutes(fastify: FastifyInstance) {
           }
         });
         await notification.save();
-        fastify.io?.to(community.owner_email).emit('notification:new', notification);
+        fastify.io?.to(community.owner_username).emit('notification:new', notification);
       }
 
       // Emit real-time event
       fastify.io?.emit('community:member-joined', {
         community_id,
-        member_email,
+        member_username,
         role,
         member_count: community.member_count
       });
@@ -154,12 +154,12 @@ export async function communityMemberRoutes(fastify: FastifyInstance) {
       // Check if user has permission to update roles
       const userMembership = await CommunityMember.findOne({
         community_id: member.community_id,
-        member_email: user.email,
+        member_username: user.username,
         role: 'admin'
       });
 
       const community = await Community.findById(member.community_id);
-      const isOwner = community?.owner_email === user.email;
+      const isOwner = community?.owner_username === user.username;
 
       if (!userMembership && !isOwner) {
         return reply.code(403).send({ error: 'You do not have permission to update member roles' });
@@ -177,7 +177,7 @@ export async function communityMemberRoutes(fastify: FastifyInstance) {
       // Emit real-time event
       fastify.io?.emit('community:member-role-updated', {
         community_id: member.community_id,
-        member_email: member.member_email,
+        member_username: member.member_username,
         role: member.role
       });
 
@@ -203,13 +203,13 @@ export async function communityMemberRoutes(fastify: FastifyInstance) {
       }
 
       // Check permissions
-      const canRemove = member.member_email === user.email || // User can remove themselves
+      const canRemove = member.member_username === user.username || // User can remove themselves
         (await CommunityMember.findOne({ // Admins can remove others
           community_id: member.community_id,
-          member_email: user.email,
+          member_username: user.username,
           role: 'admin'
         })) ||
-        (await Community.findById(member.community_id))?.owner_email === user.email; // Owner can remove anyone
+        (await Community.findById(member.community_id))?.owner_username === user.username; // Owner can remove anyone
 
       if (!canRemove) {
         return reply.code(403).send({ error: 'You do not have permission to remove this member' });
@@ -227,7 +227,7 @@ export async function communityMemberRoutes(fastify: FastifyInstance) {
       // Emit real-time event
       fastify.io?.emit('community:member-left', {
         community_id: member.community_id,
-        member_email: member.member_email,
+        member_username: member.member_username,
         member_count: community?.member_count || 0
       });
 
@@ -253,7 +253,7 @@ export async function communityMemberRoutes(fastify: FastifyInstance) {
 
       const membership = await CommunityMember.findOne({
         community_id,
-        member_email: user.email
+        member_username: user.username
       });
 
       reply.send({
@@ -277,7 +277,7 @@ export async function communityMemberRoutes(fastify: FastifyInstance) {
       const user = request.user as any;
 
       const memberships = await CommunityMember
-        .find({ member_email: user.email })
+        .find({ member_username: user.username })
         .sort({ joined_at: -1 })
         .limit(parseInt(limit))
         .skip(parseInt(skip));
@@ -285,7 +285,7 @@ export async function communityMemberRoutes(fastify: FastifyInstance) {
       // community_id is a string, so we can't use .populate()
       // If we need community info, we would need to fetch it separately.
 
-      const total = await CommunityMember.countDocuments({ member_email: user.email });
+      const total = await CommunityMember.countDocuments({ member_username: user.username });
 
       reply.send({
         memberships,
@@ -307,10 +307,10 @@ export async function communityMemberRoutes(fastify: FastifyInstance) {
     preHandler: fastify.authenticate
   }, async (request, reply) => {
     try {
-      const body = request.body as { community_id: string; member_emails: string[] };
+      const body = request.body as { community_id: string; member_usernames: string[] };
       const user = request.user as any;
 
-      const { community_id, member_emails } = body;
+      const { community_id, member_usernames } = body;
 
       // Check if community exists
       const community = await Community.findById(community_id);
@@ -321,39 +321,39 @@ export async function communityMemberRoutes(fastify: FastifyInstance) {
       // Check if user is admin or owner
       const isAdmin = await CommunityMember.findOne({
         community_id,
-        member_email: user.email,
+        member_username: user.username,
         role: 'admin'
       });
 
-      if (community.owner_email !== user.email && !isAdmin) {
+      if (community.owner_username !== user.username && !isAdmin) {
         return reply.code(403).send({ error: 'You do not have permission to bulk add members' });
       }
 
       const results = [];
       let addedCount = 0;
 
-      for (const email of member_emails) {
+      for (const username of member_usernames) {
         try {
           // Check if already a member
           const existing = await CommunityMember.findOne({
             community_id,
-            member_email: email
+            member_username: username
           });
 
           if (!existing) {
             const member = new CommunityMember({
               community_id,
-              member_email: email,
+              member_username: username,
               role: 'member',
             });
             await member.save();
             addedCount++;
-            results.push({ email, status: 'added' });
+            results.push({ username, status: 'added' });
           } else {
-            results.push({ email, status: 'already_member' });
+            results.push({ username, status: 'already_member' });
           }
         } catch (error) {
-          results.push({ email, status: 'error', error: error instanceof Error ? error.message : 'Unknown error' });
+          results.push({ username, status: 'error', error: error instanceof Error ? error.message : 'Unknown error' });
         }
       }
 

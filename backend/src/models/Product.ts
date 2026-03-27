@@ -12,7 +12,6 @@ export interface IProduct extends Document {
   tags: string[];
   store_id: string;
   store_name?: string;
-  vendor_email: string;
   vendor_username: string;
   inventory_count: number;
   status: 'active' | 'draft' | 'sold_out' | 'archived';
@@ -68,12 +67,6 @@ const ProductSchema = new Schema<IProduct>({
     type: String,
     trim: true,
   },
-  vendor_email: {
-    type: String,
-    required: true,
-    lowercase: true,
-    trim: true,
-  },
   vendor_username: {
     type: String,
     required: true,
@@ -121,7 +114,6 @@ const ProductSchema = new Schema<IProduct>({
 
 // Indexes for performance
 ProductSchema.index({ vendor_username: 1, status: 1 });
-ProductSchema.index({ vendor_email: 1 });
 ProductSchema.index({ category: 1, status: 1 });
 ProductSchema.index({ store_id: 1 });
 ProductSchema.index({ status: 1, sales_count: -1 });

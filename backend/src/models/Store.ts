@@ -4,7 +4,6 @@ export interface IStore extends Document {
   _id: mongoose.Types.ObjectId;
   name: string;
   description?: string;
-  owner_email: string;
   owner_username: string;
   owner_name?: string;
   logo_url?: string;
@@ -48,12 +47,6 @@ const StoreSchema = new Schema<IStore>({
   },
   description: {
     type: String,
-    trim: true,
-  },
-  owner_email: {
-    type: String,
-    required: true,
-    lowercase: true,
     trim: true,
   },
   owner_username: {
@@ -136,7 +129,6 @@ const StoreSchema = new Schema<IStore>({
 });
 
 // Indexes for performance
-StoreSchema.index({ owner_email: 1 });
 StoreSchema.index({ owner_username: 1 });
 StoreSchema.index({ status: 1 });
 StoreSchema.index({ category: 1, status: 1 });

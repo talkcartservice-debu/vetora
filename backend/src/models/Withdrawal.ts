@@ -1,8 +1,7 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IWithdrawal extends Document {
-  vendor_email: string;
-  vendor_username?: string;
+  vendor_username: string;
   store_id?: string;
   store_name?: string;
   amount: number;
@@ -20,13 +19,9 @@ export interface IWithdrawal extends Document {
 }
 
 const WithdrawalSchema = new Schema<IWithdrawal>({
-  vendor_email: {
-    type: String,
-    required: true,
-    index: true
-  },
   vendor_username: {
     type: String,
+    required: true,
     index: true
   },
   store_id: {
@@ -78,8 +73,6 @@ const WithdrawalSchema = new Schema<IWithdrawal>({
 });
 
 // Compound indexes for efficient queries
-WithdrawalSchema.index({ vendor_email: 1, status: 1 });
-WithdrawalSchema.index({ vendor_email: 1, created_at: -1 });
 WithdrawalSchema.index({ vendor_username: 1, status: 1 });
 WithdrawalSchema.index({ vendor_username: 1, created_at: -1 });
 WithdrawalSchema.index({ status: 1, created_at: -1 });

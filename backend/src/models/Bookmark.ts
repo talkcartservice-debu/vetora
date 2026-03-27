@@ -2,7 +2,6 @@ import mongoose, { Document, Schema } from 'mongoose';
 
 export interface IBookmark extends Document {
   _id: mongoose.Types.ObjectId;
-  user_email: string;
   user_username: string;
   target_type: 'post' | 'product';
   target_id: string;
@@ -10,12 +9,6 @@ export interface IBookmark extends Document {
 }
 
 const BookmarkSchema = new Schema<IBookmark>({
-  user_email: {
-    type: String,
-    required: true,
-    lowercase: true,
-    trim: true,
-  },
   user_username: {
     type: String,
     required: true,
@@ -41,6 +34,5 @@ const BookmarkSchema = new Schema<IBookmark>({
 // Compound index for uniqueness
 BookmarkSchema.index({ user_username: 1, target_type: 1, target_id: 1 }, { unique: true });
 BookmarkSchema.index({ user_username: 1, created_at: -1 });
-BookmarkSchema.index({ user_email: 1 });
 
 export const Bookmark = mongoose.model<IBookmark>('Bookmark', BookmarkSchema);

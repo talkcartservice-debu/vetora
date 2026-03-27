@@ -11,7 +11,7 @@ export async function communityRoutes(fastify: FastifyInstance) {
       const query = request.query as any;
       const {
         category,
-        owner_email,
+        owner_username,
         is_public,
         search,
         sort = '-member_count',
@@ -23,7 +23,7 @@ export async function communityRoutes(fastify: FastifyInstance) {
       const filter: any = {};
 
       if (category) filter.category = category;
-      if (owner_email) filter.owner_email = owner_email;
+      if (owner_username) filter.owner_username = owner_username;
       
       // Default to public if not specified, otherwise filter by provided value
       if (is_public !== undefined) {
@@ -141,7 +141,7 @@ export async function communityRoutes(fastify: FastifyInstance) {
       const community = new Community({
         ...body,
         name: body.name.toLowerCase(),
-        owner_email: user.email,
+        owner_username: user.username,
         member_count: 1, // Owner is automatically a member
       });
 
@@ -150,7 +150,7 @@ export async function communityRoutes(fastify: FastifyInstance) {
       // Add owner as first member in CommunityMember collection
       const ownerMember = new CommunityMember({
         community_id: community._id,
-        member_email: user.email,
+        member_username: user.username,
         role: 'admin'
       });
       await ownerMember.save();
@@ -186,7 +186,7 @@ export async function communityRoutes(fastify: FastifyInstance) {
       }
 
       // Check if user is the owner
-      if (community.owner_email !== user.email) {
+      if (community.owner_username !== user.username) {
         return reply.code(403).send({ error: 'You can only update communities you own' });
       }
 
@@ -236,7 +236,7 @@ export async function communityRoutes(fastify: FastifyInstance) {
       }
 
       // Check if user is the owner
-      if (community.owner_email !== user.email) {
+      if (community.owner_username !== user.username) {
         return reply.code(403).send({ error: 'You can only delete communities you own' });
       }
 
@@ -271,10 +271,12 @@ export async function communityRoutes(fastify: FastifyInstance) {
       let filter: any = {};
 
       if (role === 'owner') {
-        filter.owner_email = user.email;
+        filter.owner_username = user.username;
       } else {
-        // TODO: Implement member lookup when CommunityMember model is ready
-        filter.owner_email = user.email; // Temporary fallback
+        // Find communities where user is a member
+        const memberships = await CommunityMember.find({ member_username: user.username });
+        const communityIds = memberships.map(m => m.community_id);
+        filter._id = { $in: communityIds };
       }
 
       const communities = await Community
@@ -324,7 +326,7 @@ export async function communityRoutes(fastify: FastifyInstance) {
       // Check if user is already a member
       const existingMember = await CommunityMember.findOne({
         community_id: id,
-        member_email: user.email
+        member_username: user.username
       });
 
       if (existingMember) {
@@ -334,7 +336,7 @@ export async function communityRoutes(fastify: FastifyInstance) {
       // Add user to CommunityMember collection
       const member = new CommunityMember({
         community_id: id,
-        member_email: user.email,
+        member_username: user.username,
         role: 'member'
       });
       await member.save();
@@ -344,13 +346,13 @@ export async function communityRoutes(fastify: FastifyInstance) {
       await community.save();
 
       // Create notification for community owner
-      if (community.owner_email !== user.email) {
+      if (community.owner_username !== user.username) {
         const notification = new Notification({
-          recipient_email: community.owner_email,
+          recipient_username: community.owner_username,
           type: 'follow',
-          title: `${user.display_name || user.email} joined your community: ${community.name}`,
-          sender_email: user.email,
-          sender_name: user.display_name || user.email,
+          title: `${user.display_name || user.username} joined your community: ${community.name}`,
+          sender_username: user.username,
+          sender_name: user.display_name || user.username,
           link: `/community/${community._id}`,
           metadata: {
             community_id: community._id,
@@ -358,13 +360,13 @@ export async function communityRoutes(fastify: FastifyInstance) {
           }
         });
         await notification.save();
-        fastify.io?.to(community.owner_email).emit('notification:new', notification);
+        fastify.io?.to(community.owner_username).emit('notification:new', notification);
       }
 
       // Emit real-time event
       fastify.io?.emit('community:joined', {
         community_id: id,
-        user_email: user.email,
+        user_username: user.username,
         member_count: community.member_count
       });
 
@@ -393,14 +395,14 @@ export async function communityRoutes(fastify: FastifyInstance) {
       }
 
       // Prevent owner from leaving
-      if (community.owner_email === user.email) {
+      if (community.owner_username === user.username) {
         return reply.code(400).send({ error: 'Community owner cannot leave the community' });
       }
 
       // Check if user is a member
       const membership = await CommunityMember.findOne({
         community_id: id,
-        member_email: user.email
+        member_username: user.username
       });
 
       if (!membership) {
@@ -419,7 +421,7 @@ export async function communityRoutes(fastify: FastifyInstance) {
       // Emit real-time event
       fastify.io?.emit('community:left', {
         community_id: id,
-        user_email: user.email,
+        user_username: user.username,
         member_count: community.member_count
       });
 

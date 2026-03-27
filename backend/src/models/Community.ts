@@ -7,7 +7,7 @@ export interface ICommunity extends Document {
   cover_image?: string;
   icon_url?: string;
   category?: 'fashion' | 'tech' | 'fitness' | 'food' | 'art' | 'music' | 'gaming' | 'travel' | 'diy' | 'other';
-  owner_email: string;
+  owner_username: string;
   member_count: number;
   post_count: number;
   featured_products: string[];
@@ -41,7 +41,7 @@ const CommunitySchema = new Schema<ICommunity>({
     type: String,
     enum: ['fashion', 'tech', 'fitness', 'food', 'art', 'music', 'gaming', 'travel', 'diy', 'other'],
   },
-  owner_email: {
+  owner_username: {
     type: String,
     required: true,
     lowercase: true,
@@ -80,7 +80,7 @@ const CommunitySchema = new Schema<ICommunity>({
 });
 
 // Indexes for performance
-CommunitySchema.index({ owner_email: 1 });
+CommunitySchema.index({ owner_username: 1 });
 CommunitySchema.index({ category: 1 });
 CommunitySchema.index({ is_public: 1 });
 CommunitySchema.index({ member_count: -1 });

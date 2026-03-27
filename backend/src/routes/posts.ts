@@ -13,7 +13,6 @@ const createPostSchema = z.object({
   community_id: z.string().optional().nullable(),
   visibility: z.enum(['public', 'followers', 'community']).default('public'),
   // Optional fields that can be provided but are not required
-  author_email: z.string().optional().nullable(),
   author_username: z.string().optional().nullable(),
   author_name: z.string().optional().nullable(),
   likes_count: z.number().default(0),
@@ -27,12 +26,10 @@ export async function postRoutes(fastify: FastifyInstance) {
     try {
       const query = request.query as any;
       const {
-        author_email,
         author_username,
         community_id,
         visibility = 'public',
         following_only,
-        user_email,
         user_username,
         search,
         limit = 20,
@@ -41,16 +38,13 @@ export async function postRoutes(fastify: FastifyInstance) {
       } = query;
 
       const filter: any = {};
-      if (author_email) filter.author_email = author_email;
       if (author_username) filter.author_username = author_username;
       if (community_id) filter.community_id = community_id;
       if (visibility) filter.visibility = visibility;
 
       // Handle following_only filter
-      if (following_only === 'true' && (user_email || user_username)) {
-        const followFilter: any = {};
-        if (user_email) followFilter.follower_email = user_email.toLowerCase();
-        if (user_username) followFilter.follower_username = user_username.toLowerCase();
+      if (following_only === 'true' && user_username) {
+        const followFilter = { follower_username: user_username.toLowerCase() };
         
         const follows = await Follow.find(followFilter).lean();
         const followingUsernames = follows.map(f => f.following_username).filter(Boolean);
@@ -123,22 +117,11 @@ export async function postRoutes(fastify: FastifyInstance) {
       
       const body = createPostSchema.parse(request.body);
 
-      // Get user info for author details
-      const userData = await User.findOne({ email: user.email });
-      
-      if (!userData) {
-        fastify.log.error(`User not found: ${user.email}`);
-        return reply.code(400).send({ error: 'User not found. Please complete your profile.' });
-      }
-
-      fastify.log.info(`User data found: ${userData.display_name || user.email}`);
-
       const post = new Post({
         ...body,
-        author_email: user.email,
-        author_username: userData.username,
-        author_name: userData?.display_name || user.email.split('@')[0],
-        author_avatar: userData?.avatar_url,
+        author_username: user.username,
+        author_name: user?.display_name || user?.full_name || user.username,
+        author_avatar: user?.avatar_url,
         created_at: new Date(),
         updated_at: new Date()
       });
@@ -169,24 +152,15 @@ export async function postRoutes(fastify: FastifyInstance) {
       const { id } = request.params as { id: string };
       const user = request.user as any;
 
-      if (!user?.email) {
+      if (!user?.username) {
         return reply.code(401).send({ error: 'Unauthorized - invalid user data' });
-      }
-
-      // Get user info for author details
-      const userData = await User.findOne({ email: user.email });
-      
-      if (!userData) {
-        fastify.log.error(`User not found: ${user.email}`);
-        return reply.code(400).send({ error: 'User not found. Please complete your profile.' });
       }
 
       // Check if already liked
       const existingLike = await Like.findOne({
-        $or: [
-          { user_email: user.email, target_id: id, target_type: 'post' },
-          { user_username: userData.username, target_id: id, target_type: 'post' }
-        ]
+        user_username: user.username, 
+        target_id: id, 
+        target_type: 'post'
       });
 
       if (existingLike) {
@@ -194,8 +168,7 @@ export async function postRoutes(fastify: FastifyInstance) {
       }
 
       const like = new Like({
-        user_email: user.email,
-        user_username: userData.username,
+        user_username: user.username,
         target_id: id,
         target_type: 'post'
       });
@@ -223,31 +196,20 @@ export async function postRoutes(fastify: FastifyInstance) {
       const { id } = request.params as { id: string };
       const user = request.user as any;
 
-      if (!user?.email) {
+      if (!user?.username) {
         return reply.code(401).send({ error: 'Unauthorized - invalid user data' });
       }
 
-      // Get user info for author details
-      const userData = await User.findOne({ email: user.email });
-      
-      if (!userData) {
-        fastify.log.error(`User not found: ${user.email}`);
-        return reply.code(400).send({ error: 'User not found. Please complete your profile.' });
-      }
-
-      fastify.log.info(`User ${user.email} unliking post ${id}`);
+      fastify.log.info(`User ${user.username} unliking post ${id}`);
 
       const result = await Like.deleteOne({
-        $or: [
-          { user_email: user.email.toLowerCase().trim() },
-          { user_username: userData.username }
-        ],
+        user_username: user.username,
         target_id: id,
         target_type: 'post'
       });
 
       if (result.deletedCount === 0) {
-        fastify.log.warn(`Like not found for user ${user.email} on post ${id}`);
+        fastify.log.warn(`Like not found for user ${user.username} on post ${id}`);
         // Return 200 anyway to keep frontend in sync if it thinks it's liked
         return { status: 'unliked', message: 'Like already removed or not found' };
       }
@@ -273,7 +235,7 @@ export async function postRoutes(fastify: FastifyInstance) {
       const { id } = request.params as { id: string };
       const user = request.user as any;
 
-      if (!user?.email) {
+      if (!user?.username) {
         return reply.code(401).send({ error: 'Unauthorized - invalid user data' });
       }
 
@@ -282,7 +244,7 @@ export async function postRoutes(fastify: FastifyInstance) {
         return reply.code(404).send({ error: 'Post not found' });
       }
 
-      if (post.author_email !== user.email) {
+      if (post.author_username !== user.username) {
         return reply.code(403).send({ error: 'Unauthorized' });
       }
 

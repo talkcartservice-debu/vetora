@@ -73,23 +73,23 @@ export async function withdrawalRoutes(fastify: FastifyInstance) {
     }
   });
 
-  // Get withdrawals for a vendor
-  fastify.get('/vendor/:vendorEmail', {
+  // Get withdrawals for a vendor by username
+  fastify.get('/vendor/:vendorUsername', {
     preHandler: fastify.authenticate
   }, async (request, reply) => {
     try {
-      const { vendorEmail } = request.params as { vendorEmail: string };
+      const { vendorUsername } = request.params as { vendorUsername: string };
       const query = request.query as any;
       const { status, sort = '-created_at', limit = 20, skip = 0 } = query;
       const user = request.user as any;
 
       // Check if user owns the vendor account
-      if (user.email !== vendorEmail.toLowerCase()) {
+      if (user.username !== vendorUsername.toLowerCase()) {
         return reply.code(403).send({ error: 'You can only view your own withdrawals' });
       }
 
       // Build filter object
-      const filter: any = { vendor_email: vendorEmail.toLowerCase() };
+      const filter: any = { vendor_username: vendorUsername.toLowerCase() };
       if (status) filter.status = status;
 
       // Build sort object
@@ -151,7 +151,7 @@ export async function withdrawalRoutes(fastify: FastifyInstance) {
     try {
       const query = request.query as any;
       const {
-        vendor_email,
+        vendor_username,
         store_id,
         status,
         min_amount,
@@ -164,7 +164,7 @@ export async function withdrawalRoutes(fastify: FastifyInstance) {
       // Build filter object
       const filter: any = {};
 
-      if (vendor_email) filter.vendor_email = vendor_email.toLowerCase();
+      if (vendor_username) filter.vendor_username = vendor_username.toLowerCase();
       if (store_id) filter.store_id = store_id;
       if (status) filter.status = status;
       if (min_amount !== undefined) filter.amount = { ...filter.amount, $gte: parseFloat(min_amount) };
@@ -216,7 +216,7 @@ export async function withdrawalRoutes(fastify: FastifyInstance) {
       }
 
       // Check if user owns the withdrawal or is admin
-      if (withdrawal.vendor_email !== user.email) {
+      if (withdrawal.vendor_username !== user.username) {
         return reply.code(403).send({ error: 'You can only view your own withdrawals' });
       }
 
@@ -264,8 +264,7 @@ export async function withdrawalRoutes(fastify: FastifyInstance) {
         }
       }
 
-      // Set vendor_email and vendor_username from authenticated user
-      body.vendor_email = user.email;
+      // Set vendor_username from authenticated user
       body.vendor_username = user.username;
       body.status = 'pending';
 
@@ -301,7 +300,7 @@ export async function withdrawalRoutes(fastify: FastifyInstance) {
       }
 
       // Check if user owns the withdrawal (vendors can only cancel their own pending withdrawals)
-      if (withdrawal.vendor_email === user.email) {
+      if (withdrawal.vendor_username === user.username) {
         if (status !== 'rejected' || withdrawal.status !== 'pending') {
           return reply.code(403).send({ error: 'Vendors can only cancel their own pending withdrawals' });
         }
@@ -340,7 +339,7 @@ export async function withdrawalRoutes(fastify: FastifyInstance) {
       }
 
       // Check if user owns the withdrawal
-      if (withdrawal.vendor_email !== user.email) {
+      if (withdrawal.vendor_username !== user.username) {
         return reply.code(403).send({ error: 'You can only update your own withdrawals' });
       }
 
@@ -396,7 +395,7 @@ export async function withdrawalRoutes(fastify: FastifyInstance) {
       }
 
       // Check if user owns the withdrawal
-      if (withdrawal.vendor_email !== user.email) {
+      if (withdrawal.vendor_username !== user.username) {
         return reply.code(403).send({ error: 'You can only delete your own withdrawals' });
       }
 

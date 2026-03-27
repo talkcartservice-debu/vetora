@@ -2,7 +2,6 @@ import mongoose, { Document, Schema } from 'mongoose';
 
 export interface ILiveSession extends Document {
   _id: mongoose.Types.ObjectId;
-  host_email: string;
   host_username: string;
   host_name?: string;
   store_id?: string;
@@ -20,6 +19,8 @@ export interface ILiveSession extends Document {
     price: number;
     image?: string;
   }>;
+  moderators: string[]; // List of usernames
+  banned_users: string[]; // List of usernames
   stream_key?: string;
   scheduled_at?: Date;
   started_at?: Date;
@@ -29,12 +30,6 @@ export interface ILiveSession extends Document {
 }
 
 const LiveSessionSchema = new Schema<ILiveSession>({
-  host_email: {
-    type: String,
-    required: true,
-    lowercase: true,
-    trim: true,
-  },
   host_username: {
     type: String,
     required: true,
@@ -103,6 +98,16 @@ const LiveSessionSchema = new Schema<ILiveSession>({
       type: String,
     },
   }],
+  moderators: [{
+    type: String,
+    lowercase: true,
+    trim: true,
+  }],
+  banned_users: [{
+    type: String,
+    lowercase: true,
+    trim: true,
+  }],
   stream_key: {
     type: String,
     unique: true,
@@ -125,7 +130,6 @@ const LiveSessionSchema = new Schema<ILiveSession>({
 });
 
 // Indexes for performance
-LiveSessionSchema.index({ host_email: 1, status: 1 });
 LiveSessionSchema.index({ host_username: 1, status: 1 });
 LiveSessionSchema.index({ status: 1, scheduled_at: 1 });
 LiveSessionSchema.index({ status: 1, started_at: -1 });

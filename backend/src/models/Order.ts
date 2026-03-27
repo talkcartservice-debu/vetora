@@ -10,10 +10,8 @@ export interface IOrderItem {
 
 export interface IOrder extends Document {
   _id: mongoose.Types.ObjectId;
-  buyer_email: string;
   buyer_username: string;
   buyer_name?: string;
-  vendor_email: string;
   vendor_username: string;
   store_id: string;
   store_name?: string;
@@ -25,7 +23,7 @@ export interface IOrder extends Document {
   shipping_address?: string;
   tracking_number?: string;
   order_note?: string;
-  affiliate_email?: string;
+  affiliate_username?: string;
   affiliate_commission: number;
   payment_method: 'card' | 'paypal' | 'crypto' | 'bank_transfer' | 'paystack';
   payment_status: 'pending' | 'paid' | 'failed' | 'refunded';
@@ -60,12 +58,6 @@ const OrderItemSchema = new Schema<IOrderItem>({
 }, { _id: false });
 
 const OrderSchema = new Schema<IOrder>({
-  buyer_email: {
-    type: String,
-    required: true,
-    lowercase: true,
-    trim: true,
-  },
   buyer_username: {
     type: String,
     required: true,
@@ -74,12 +66,6 @@ const OrderSchema = new Schema<IOrder>({
   },
   buyer_name: {
     type: String,
-    trim: true,
-  },
-  vendor_email: {
-    type: String,
-    required: true,
-    lowercase: true,
     trim: true,
   },
   vendor_username: {
@@ -127,7 +113,7 @@ const OrderSchema = new Schema<IOrder>({
     type: String,
     trim: true,
   },
-  affiliate_email: {
+  affiliate_username: {
     type: String,
     lowercase: true,
     trim: true,
@@ -166,11 +152,9 @@ const OrderSchema = new Schema<IOrder>({
 // Indexes for performance
 OrderSchema.index({ buyer_username: 1, created_at: -1 });
 OrderSchema.index({ vendor_username: 1, created_at: -1 });
-OrderSchema.index({ buyer_email: 1 });
-OrderSchema.index({ vendor_email: 1 });
 OrderSchema.index({ store_id: 1, created_at: -1 });
 OrderSchema.index({ status: 1, created_at: -1 });
 OrderSchema.index({ payment_status: 1 });
-OrderSchema.index({ affiliate_email: 1 });
+OrderSchema.index({ affiliate_username: 1 });
 
 export const Order = mongoose.model<IOrder>('Order', OrderSchema);

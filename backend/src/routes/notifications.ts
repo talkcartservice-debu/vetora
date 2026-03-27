@@ -14,11 +14,11 @@ export async function notificationRoutes(fastify: FastifyInstance) {
       const skip = parseInt(query.skip) || 0;
       const unread_only = query.unread_only === 'true';
 
-      if (!user?.email) {
+      if (!user?.username) {
         return reply.code(401).send({ error: 'Unauthorized - invalid user data' });
       }
 
-      const filter: any = { recipient_email: user.email.toLowerCase() };
+      const filter: any = { recipient_username: user.username };
       if (unread_only) {
         filter.is_read = false;
       }
@@ -31,7 +31,7 @@ export async function notificationRoutes(fastify: FastifyInstance) {
           .skip(skip)
           .lean(),
         NotificationModel.countDocuments(filter),
-        NotificationModel.countDocuments({ recipient_email: user.email.toLowerCase(), is_read: false })
+        NotificationModel.countDocuments({ recipient_username: user.username, is_read: false })
       ]);
 
       // Map _id to id for consistency
@@ -66,12 +66,12 @@ export async function notificationRoutes(fastify: FastifyInstance) {
       const { id } = request.params as { id: string };
       const user = request.user as any;
 
-      if (!user?.email) {
+      if (!user?.username) {
         return reply.code(401).send({ error: 'Unauthorized - invalid user data' });
       }
 
       const notification = await NotificationModel.findOneAndUpdate(
-        { _id: id, recipient_email: user.email.toLowerCase() },
+        { _id: id, recipient_username: user.username },
         { is_read: true },
         { new: true }
       );
@@ -97,12 +97,12 @@ export async function notificationRoutes(fastify: FastifyInstance) {
     try {
       const user = request.user as any;
 
-      if (!user?.email) {
+      if (!user?.username) {
         return reply.code(401).send({ error: 'Unauthorized - invalid user data' });
       }
 
       await NotificationModel.updateMany(
-        { recipient_email: user.email.toLowerCase(), is_read: false },
+        { recipient_username: user.username, is_read: false },
         { is_read: true }
       );
 
@@ -124,11 +124,11 @@ export async function notificationRoutes(fastify: FastifyInstance) {
       const { id } = request.params as { id: string };
       const user = request.user as any;
 
-      if (!user?.email) {
+      if (!user?.username) {
         return reply.code(401).send({ error: 'Unauthorized - invalid user data' });
       }
 
-      const result = await NotificationModel.deleteOne({ _id: id, recipient_email: user.email.toLowerCase() });
+      const result = await NotificationModel.deleteOne({ _id: id, recipient_username: user.username });
       if (result.deletedCount === 0) {
         return reply.code(404).send({ error: 'Notification not found' });
       }

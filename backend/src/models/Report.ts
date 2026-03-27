@@ -3,7 +3,7 @@ import mongoose, { Document, Schema } from 'mongoose';
 export interface IReport extends Document {
   reporter_id: mongoose.Types.ObjectId;
   target_id: mongoose.Types.ObjectId;
-  target_type: 'user' | 'store' | 'post' | 'product' | 'comment' | 'community';
+  target_type: 'user' | 'store' | 'post' | 'product' | 'comment' | 'community' | 'live_chat_message';
   reason: string;
   description?: string;
   status: 'pending' | 'resolved' | 'dismissed';
@@ -26,7 +26,7 @@ const ReportSchema = new Schema<IReport>({
   },
   target_type: {
     type: String,
-    enum: ['user', 'store', 'post', 'product', 'comment', 'community'],
+    enum: ['user', 'store', 'post', 'product', 'comment', 'community', 'live_chat_message'],
     required: true,
   },
   reason: {

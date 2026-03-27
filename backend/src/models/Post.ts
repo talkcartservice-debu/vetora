@@ -2,7 +2,6 @@ import mongoose, { Document, Schema } from 'mongoose';
 
 export interface IPost extends Document {
   _id: mongoose.Types.ObjectId;
-  author_email: string;
   author_username: string;
   author_name?: string;
   author_avatar?: string;
@@ -21,12 +20,6 @@ export interface IPost extends Document {
 }
 
 const PostSchema = new Schema<IPost>({
-  author_email: {
-    type: String,
-    required: true,
-    lowercase: true,
-    trim: true,
-  },
   author_username: {
     type: String,
     required: true,
@@ -98,7 +91,6 @@ PostSchema.virtual('id').get(function() {
 });
 
 // Indexes for performance
-PostSchema.index({ author_email: 1, created_at: -1 });
 PostSchema.index({ author_username: 1, created_at: -1 });
 PostSchema.index({ community_id: 1, created_at: -1 });
 PostSchema.index({ visibility: 1, created_at: -1 });

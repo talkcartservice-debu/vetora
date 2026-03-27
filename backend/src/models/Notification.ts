@@ -2,12 +2,12 @@ import mongoose, { Document, Schema } from 'mongoose';
 
 export interface INotification extends Document {
   _id: mongoose.Types.ObjectId;
-  recipient_email: string;
+  recipient_username: string;
   type: 'like' | 'comment' | 'follow' | 'order_update' | 'message' | 'mention' | 'community' | 'promotion' | 'offer';
   title: string;
   body?: string;
   link?: string;
-  sender_email?: string;
+  sender_username?: string;
   sender_name?: string;
   is_read: boolean;
   metadata?: Record<string, any>;
@@ -16,11 +16,12 @@ export interface INotification extends Document {
 }
 
 const NotificationSchema = new Schema<INotification>({
-  recipient_email: {
+  recipient_username: {
     type: String,
     required: true,
     lowercase: true,
     trim: true,
+    index: true,
   },
   type: {
     type: String,
@@ -39,7 +40,7 @@ const NotificationSchema = new Schema<INotification>({
   link: {
     type: String,
   },
-  sender_email: {
+  sender_username: {
     type: String,
     lowercase: true,
     trim: true,
@@ -63,9 +64,9 @@ const NotificationSchema = new Schema<INotification>({
 });
 
 // Indexes for performance
-NotificationSchema.index({ recipient_email: 1, created_at: -1 });
-NotificationSchema.index({ recipient_email: 1, is_read: 1 });
+NotificationSchema.index({ recipient_username: 1, created_at: -1 });
+NotificationSchema.index({ recipient_username: 1, is_read: 1 });
 NotificationSchema.index({ type: 1 });
-NotificationSchema.index({ sender_email: 1 });
+NotificationSchema.index({ sender_username: 1 });
 
 export const Notification = mongoose.model<INotification>('Notification', NotificationSchema);

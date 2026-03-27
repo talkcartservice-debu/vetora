@@ -121,14 +121,12 @@ export async function storeRoutes(fastify: FastifyInstance) {
     }
   });
 
-  // Get store by owner email or username
+  // Get store by owner identifier (username)
   fastify.get('/owner/:identifier', async (request, reply) => {
     try {
       const { identifier } = request.params as { identifier: string };
       
-      const filter = identifier.includes('@') 
-        ? { owner_email: identifier.toLowerCase() }
-        : { owner_username: identifier.toLowerCase() };
+      const filter = { owner_username: identifier.toLowerCase() };
 
       const store = await Store.findOne(filter).lean();
 
@@ -157,16 +155,13 @@ export async function storeRoutes(fastify: FastifyInstance) {
       const body = createStoreSchema.parse(request.body);
 
       // Check if user already has a store
-      const existingStore = await Store.findOne({ 
-        $or: [{ owner_email: user.email }, { owner_username: user.username }] 
-      });
+      const existingStore = await Store.findOne({ owner_username: user.username });
       if (existingStore) {
         return reply.code(400).send({ error: 'User already has a store' });
       }
 
       const store = new Store({
         ...body,
-        owner_email: user.email,
         owner_username: user.username,
         status: 'active', // In production, might be 'pending'
         created_at: new Date(),

@@ -10,7 +10,6 @@ export async function liveSessionRoutes(fastify: FastifyInstance) {
       const {
         status = 'active',
         category,
-        host_email,
         host_username,
         store_id,
         sort = '-started_at',
@@ -23,7 +22,6 @@ export async function liveSessionRoutes(fastify: FastifyInstance) {
 
       if (status) filter.status = status;
       if (category) filter.category = category;
-      if (host_email) filter.host_email = host_email;
       if (host_username) filter.host_username = host_username;
       if (store_id) filter.store_id = store_id;
 
@@ -111,9 +109,8 @@ export async function liveSessionRoutes(fastify: FastifyInstance) {
 
       const session = new LiveSession({
         ...body,
-        host_email: user.email,
         host_username: user.username,
-        host_name: user.display_name || user.username || user.email,
+        host_name: user.display_name || user.username,
         status: 'scheduled',
         stream_key: generateStreamKey(),
       });
@@ -151,7 +148,7 @@ export async function liveSessionRoutes(fastify: FastifyInstance) {
       }
 
       // Check if user is the host
-      if (session.host_email !== user.email) {
+      if (session.host_username !== user.username) {
         return reply.code(403).send({ error: 'You can only update your own live sessions' });
       }
 
@@ -205,7 +202,7 @@ export async function liveSessionRoutes(fastify: FastifyInstance) {
       }
 
       // Check if user is the host
-      if (session.host_email !== user.email) {
+      if (session.host_username !== user.username) {
         return reply.code(403).send({ error: 'You can only start your own live sessions' });
       }
 
@@ -247,7 +244,7 @@ export async function liveSessionRoutes(fastify: FastifyInstance) {
       }
 
       // Check if user is the host
-      if (session.host_email !== user.email) {
+      if (session.host_username !== user.username) {
         return reply.code(403).send({ error: 'You can only end your own live sessions' });
       }
 
@@ -362,7 +359,7 @@ export async function liveSessionRoutes(fastify: FastifyInstance) {
       }
 
       // Check if user is the host
-      if (session.host_email !== user.email) {
+      if (session.host_username !== user.username) {
         return reply.code(403).send({ error: 'You can only delete your own live sessions' });
       }
 

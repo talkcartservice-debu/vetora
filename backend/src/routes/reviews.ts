@@ -97,16 +97,10 @@ export async function reviewRoutes(fastify: FastifyInstance) {
         return reply.code(400).send({ error: 'Rating must be between 1 and 5' });
       }
 
-      // Get user info
-      const userData = await User.findOne({ email: user.email });
-      if (!userData) {
-        return reply.code(404).send({ error: 'User not found' });
-      }
-
       // Check if user already reviewed this product
       const existingReview = await Review.findOne({
         product_id: body.product_id,
-        reviewer_username: userData.username
+        reviewer_username: user.username
       });
 
       if (existingReview) {
@@ -115,9 +109,8 @@ export async function reviewRoutes(fastify: FastifyInstance) {
 
       const review = new Review({
         ...body,
-        reviewer_email: user.email,
-        reviewer_username: userData.username,
-        reviewer_name: userData.display_name || userData.username,
+        reviewer_username: user.username,
+        reviewer_name: user.display_name || user.full_name || user.username,
         is_verified_purchase: false // TODO: Implement purchase verification logic
       });
 
@@ -163,7 +156,7 @@ export async function reviewRoutes(fastify: FastifyInstance) {
       }
 
       // Check if user owns the review
-      if (review.reviewer_email !== user.email && review.reviewer_username !== user.username) {
+      if (review.reviewer_username !== user.username) {
         return reply.code(403).send({ error: 'You can only update your own reviews' });
       }
 
@@ -210,7 +203,7 @@ export async function reviewRoutes(fastify: FastifyInstance) {
       }
 
       // Check if user owns the review
-      if (review.reviewer_email !== user.email && review.reviewer_username !== user.username) {
+      if (review.reviewer_username !== user.username) {
         return reply.code(403).send({ error: 'You can only delete your own reviews' });
       }
 

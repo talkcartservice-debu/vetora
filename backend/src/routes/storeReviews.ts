@@ -217,9 +217,8 @@ export async function storeReviewRoutes(fastify: FastifyInstance) {
       }
 
       // Set reviewer info from authenticated user
-      body.reviewer_email = user.email;
-      body.reviewer_username = userData.username;
-      body.reviewer_name = userData.display_name || userData.username;
+      body.reviewer_username = user.username;
+      body.reviewer_name = user.display_name || user.username;
 
       const review = new StoreReview(body);
       await review.save();
@@ -251,7 +250,7 @@ export async function storeReviewRoutes(fastify: FastifyInstance) {
       }
 
       // Check if user owns the review
-      if (review.reviewer_email !== user.email && review.reviewer_username !== user.username) {
+      if (review.reviewer_username !== user.username) {
         return reply.code(403).send({ error: 'You can only update your own reviews' });
       }
 
@@ -299,7 +298,7 @@ export async function storeReviewRoutes(fastify: FastifyInstance) {
       }
 
       // Check if user is the vendor
-      if (review.vendor_email !== user.email && review.vendor_username !== user.username) {
+      if (review.vendor_username !== user.username) {
         return reply.code(403).send({ error: 'Only the store vendor can reply to reviews' });
       }
 
@@ -356,8 +355,7 @@ export async function storeReviewRoutes(fastify: FastifyInstance) {
       }
 
       // Check if user owns the review or is the vendor
-      if (review.reviewer_email !== user.email && review.reviewer_username !== user.username && 
-          review.vendor_email !== user.email && review.vendor_username !== user.username) {
+      if (review.reviewer_username !== user.username && review.vendor_username !== user.username) {
         return reply.code(403).send({ error: 'You can only delete your own reviews or reviews for your store' });
       }
 

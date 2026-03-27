@@ -113,7 +113,7 @@ export async function followRoutes(fastify: FastifyInstance) {
       // Update counts
       await User.findOneAndUpdate({ username: user.username }, { $inc: { following_count: 1 } });
       
-      let recipientEmail = targetUser?.email;
+      let recipientUsername = targetUser?.username;
       let title = `${user.display_name || user.username} started following you`;
       let link = `/profile?username=${user.username}`;
 
@@ -122,19 +122,19 @@ export async function followRoutes(fastify: FastifyInstance) {
       } else if (follow_type === 'store' && target_id) {
         const store = await Store.findByIdAndUpdate(target_id, { $inc: { follower_count: 1 } });
         if (store) {
-          recipientEmail = store.owner_email;
+          recipientUsername = store.owner_username;
           title = `${user.display_name || user.username} started following your store: ${store.name}`;
           link = `/store?id=${store._id}`;
         }
       }
 
       // Create notification for the target
-      if (recipientEmail && recipientEmail !== user.email) {
+      if (recipientUsername && recipientUsername !== user.username) {
         const notification = new Notification({
-          recipient_email: recipientEmail,
+          recipient_username: recipientUsername,
           type: 'follow',
           title,
-          sender_email: user.email,
+          sender_username: user.username,
           sender_name: user.display_name || user.username,
           link,
           metadata: {
@@ -146,7 +146,7 @@ export async function followRoutes(fastify: FastifyInstance) {
         await notification.save();
         
         // Emit notification via socket
-        fastify.io?.to(recipientEmail).emit('notification:new', notification);
+        fastify.io?.to(recipientUsername).emit('notification:new', notification);
       }
 
       // Emit real-time event
