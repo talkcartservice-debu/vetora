@@ -42,16 +42,18 @@ export async function postRoutes(fastify: FastifyInstance) {
       if (community_id) filter.community_id = community_id;
       if (visibility) filter.visibility = visibility;
 
-      // Handle following_only filter
-      if (following_only === 'true' && user_username) {
-        const followFilter = { follower_username: user_username.toLowerCase() };
-        
-        const follows = await Follow.find(followFilter).lean();
+      if (following_only === 'true' && user_username && typeof user_username === 'string') {
+        const follower_username = user_username.toLowerCase();
+        const follows = await Follow.find({ follower_username }).lean();
+        const followingEmails = follows.map((f: any) => f.following_email).filter(Boolean);
         const followingUsernames = follows.map(f => f.following_username).filter(Boolean);
         
         // If following no one, we should probably return empty array or handle it
-        if (followingUsernames.length > 0) {
-          filter.author_username = { $in: followingUsernames };
+        if (followingUsernames.length > 0 || followingEmails.length > 0) {
+          filter.$or = [
+            { author_username: { $in: followingUsernames } },
+            { author_email: { $in: followingEmails } }
+          ];
         } else {
           // Special case: following no one, so return empty list
           return { data: [], total: 0, limit: parseInt(limit), skip: parseInt(skip) };
@@ -120,7 +122,7 @@ export async function postRoutes(fastify: FastifyInstance) {
       const post = new Post({
         ...body,
         author_username: user.username,
-        author_name: user?.display_name || user?.full_name || user.username,
+        author_name: user?.display_name || user.username,
         author_avatar: user?.avatar_url,
         created_at: new Date(),
         updated_at: new Date()
@@ -267,12 +269,18 @@ export async function postRoutes(fastify: FastifyInstance) {
       const { id } = request.params as { id: string };
       const body = request.body as any;
 
-      const post = await Post.findByIdAndUpdate(id, body, { new: true });
+      const post = await Post.findById(id);
       if (!post) {
         return reply.code(404).send({ error: 'Post not found' });
       }
 
-      return post;
+      const user = request.user as any;
+      if (post.author_name !== user.name) {
+        return reply.code(403).send({ error: 'Unauthorized' });
+      }
+
+      const updatedPost = await Post.findByIdAndUpdate(id, body, { new: true });
+      return updatedPost;
     } catch (error: any) {
       fastify.log.error(error);
       return reply.code(500).send({ 

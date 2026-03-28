@@ -171,7 +171,7 @@ export async function messageRoutes(fastify: FastifyInstance) {
         ...body,
         conversation_id: conversationId,
         sender_username: user.username,
-        sender_name: user.display_name || user.full_name || user.username,
+        sender_name: user.display_name || user.username,
         receiver_username: body.recipient_username,
         created_at: new Date(),
         updated_at: new Date()

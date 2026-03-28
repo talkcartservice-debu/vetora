@@ -17,9 +17,9 @@ const loginSchema = z.object({
 
 const registerSchema = z.object({
   email: z.string().email(),
-  username: z.string().min(3).max(30).regex(/^[a-zA-Z0-9_]+$/).optional(),
+  username: z.string().min(3).max(30).regex(/^[a-zA-Z0-9_]+$/),
   password: z.string().min(6),
-  display_name: z.string().min(1).max(50).optional(),
+  display_name: z.string().min(1).max(50),
 });
 
 export async function authRoutes(fastify: FastifyInstance) {

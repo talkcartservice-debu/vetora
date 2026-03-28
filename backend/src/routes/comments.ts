@@ -97,7 +97,7 @@ export async function commentRoutes(fastify: FastifyInstance) {
       const comment = new Comment({
         ...body,
         author_username: user.username,
-        author_name: user.display_name || user.full_name || user.username,
+        author_name: user.display_name || user.username,
         author_avatar: user.avatar_url,
       });
 

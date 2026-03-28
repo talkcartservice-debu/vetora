@@ -50,6 +50,10 @@ const Register = () => {
       return setError('Passwords do not match');
     }
 
+    if (!formData.username || formData.username.length < 3) {
+      return setError('Username must be at least 3 characters');
+    }
+
     setIsLoading(true);
     try {
       await register({
@@ -162,6 +166,7 @@ const Register = () => {
                       className="w-full pl-12 pr-4 py-4 rounded-2xl border border-slate-100 bg-slate-50/50 text-slate-900 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 focus:bg-white outline-none transition-all duration-300 font-medium group-hover:border-slate-200"
                       placeholder="unique_handle"
                       required
+                      minLength={3}
                     />
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-slate-400 group-focus-within:text-indigo-600 transition-colors duration-300">@</span>
                   </div>

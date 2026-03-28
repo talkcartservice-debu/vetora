@@ -110,7 +110,7 @@ export async function reviewRoutes(fastify: FastifyInstance) {
       const review = new Review({
         ...body,
         reviewer_username: user.username,
-        reviewer_name: user.display_name || user.full_name || user.username,
+        reviewer_name: user.display_name || user.username,
         is_verified_purchase: false // TODO: Implement purchase verification logic
       });
 

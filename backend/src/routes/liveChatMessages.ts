@@ -99,7 +99,7 @@ export async function liveChatMessageRoutes(fastify: FastifyInstance) {
       const message = await LiveChatService.sendMessage({
         session_id: body.session_id,
         user_username: user.username,
-        user_name: user.display_name || user.full_name || user.username,
+        user_name: user.display_name || user.username,
         content: body.content,
         message_type: body.message_type as any,
         product_id: body.product_id,
