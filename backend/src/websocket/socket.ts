@@ -7,7 +7,19 @@ export function setupWebSocket(fastify: FastifyInstance) {
   // Create Socket.IO server
   io = new SocketIOServer(fastify.server, {
     cors: {
-      origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+      origin: (origin, callback) => {
+        const allowedOrigins = [
+          process.env.FRONTEND_URL,
+          'http://localhost:5173',
+          'http://127.0.0.1:5173'
+        ].filter(Boolean);
+        
+        if (!origin || allowedOrigins.includes(origin)) {
+          callback(null, true);
+        } else {
+          callback(new Error('Not allowed by CORS'));
+        }
+      },
       credentials: true,
     },
   });

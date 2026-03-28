@@ -89,7 +89,7 @@ function App() {
       <AuthProvider>
         <QueryClientProvider client={queryClientInstance}>
           <LanguageProvider>
-            <Router>
+            <Router future={{ v7_relativeSplatPath: true }}>
               <AppRoutes />
             </Router>
             <Toaster />
