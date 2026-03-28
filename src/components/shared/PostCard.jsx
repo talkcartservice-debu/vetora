@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { postsAPI, bookmarksAPI, followsAPI } from "@/api/apiClient";
-import { Heart, MessageCircle, Share2, ShoppingBag, MoreHorizontal, Bookmark, UserPlus, UserCheck } from "lucide-react";
+import { Heart, MessageCircle, Share2, ShoppingBag, MoreHorizontal, Bookmark } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/lib/utils";

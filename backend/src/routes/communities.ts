@@ -268,7 +268,7 @@ export async function communityRoutes(fastify: FastifyInstance) {
       const { role = 'owner', limit = 20, skip = 0 } = query; // role can be 'owner' or 'member'
       const user = request.user as any;
 
-      let filter: any = {};
+      const filter: any = {};
 
       if (role === 'owner') {
         filter.owner_username = user.username;

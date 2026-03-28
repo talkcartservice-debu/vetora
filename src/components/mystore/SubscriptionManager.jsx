@@ -3,8 +3,7 @@ import { vendorSubscriptionsAPI } from "@/api/apiClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Crown, Zap, Star, Check, Globe, TrendingUp, Image, Infinity, Loader2, X, Shield, BadgeCheck,
-  CreditCard, AlertCircle
+  Crown, Zap, Star, Check, Globe, TrendingUp, Image, Infinity, Loader2, X, Shield, BadgeCheck, AlertCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";

@@ -49,7 +49,6 @@ export async function authRoutes(fastify: FastifyInstance) {
       if (!user) {
         // Create new user if not exists
         const baseUsername = email.split('@')[0].toLowerCase().replace(/[^a-z0-9_]/g, '');
-        let username = baseUsername;
         let finalUser = null;
         let attempts = 0;
         

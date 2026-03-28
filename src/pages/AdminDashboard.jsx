@@ -49,8 +49,6 @@ import {
   Percent,
   Wallet,
   Eye,
-  Info,
-  ChevronRight,
   Filter
 } from 'lucide-react';
 import { 
@@ -59,7 +57,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogFooter
 } from '@/components/ui/dialog';
 import {
@@ -76,9 +73,7 @@ import {
   YAxis, 
   CartesianGrid, 
   Tooltip as RechartsTooltip, 
-  ResponsiveContainer,
-  LineChart,
-  Line
+  ResponsiveContainer
 } from 'recharts';
 import { 
   DropdownMenu, 
