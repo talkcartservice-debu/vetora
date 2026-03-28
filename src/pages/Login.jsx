@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/lib/AuthContext';
 import { Mail, Lock, Loader2, ShieldCheck, ArrowRight, ShoppingBag, Eye, EyeOff } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { GoogleLogin } from '@react-oauth/google';
 import { 
   InputOTP,
   InputOTPGroup,
@@ -19,8 +20,26 @@ const Login = () => {
   const [twoFactorToken, setTwoFactorToken] = useState(null);
   const [otpToken, setOtpToken] = useState('');
 
-  const { login, verify2FA } = useAuth();
+  const { login, googleLogin, verify2FA } = useAuth();
   const navigate = useNavigate();
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setIsLoading(true);
+    setError('');
+    try {
+      const res = await googleLogin(credentialResponse.credential);
+      const redirectPath = res.user?.role === 'super_admin' ? '/AdminDashboard' : '/';
+      navigate(redirectPath);
+    } catch (err) {
+      setError(err.message || 'Google login failed. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleError = () => {
+    setError('Google login failed. Please try again.');
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -192,6 +211,26 @@ const Login = () => {
                     )}
                   </button>
                 </form>
+
+                <div className="relative py-4">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t border-slate-100"></span>
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-white px-4 text-slate-400 font-bold">Or continue with</span>
+                  </div>
+                </div>
+
+                <div className="flex justify-center">
+                  <GoogleLogin
+                    onSuccess={handleGoogleSuccess}
+                    onError={handleGoogleError}
+                    useOneTap
+                    theme="outline"
+                    shape="pill"
+                    width="100%"
+                  />
+                </div>
 
                 <div className="pt-8 border-t border-slate-50 text-center">
                   <p className="text-slate-400 font-bold text-xs uppercase tracking-tight">

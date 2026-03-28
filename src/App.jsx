@@ -5,9 +5,12 @@ import { pagesConfig } from './pages.config'
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import { LanguageProvider } from '@/components/providers/LanguageContext';
 import Affiliate from './pages/Affiliate';
+
+const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -34,13 +37,13 @@ const AppRoutes = () => {
     <Routes>
       {/* Public routes (no layout) */}
       <Route path="/login" element={<Pages.Login />} />
-      <Route path="/Login" element={<Pages.Login />} />
+      <Route path="/Login" element={<Navigate to="/login" replace />} />
       <Route path="/register" element={<Pages.Register />} />
-      <Route path="/Register" element={<Pages.Register />} />
+      <Route path="/Register" element={<Navigate to="/register" replace />} />
       <Route path="/forgot-password" element={<Pages.ForgotPassword />} />
-      <Route path="/ForgotPassword" element={<Pages.ForgotPassword />} />
+      <Route path="/ForgotPassword" element={<Navigate to="/forgot-password" replace />} />
       <Route path="/reset-password" element={<Pages.ResetPassword />} />
-      <Route path="/ResetPassword" element={<Pages.ResetPassword />} />
+      <Route path="/ResetPassword" element={<Navigate to="/reset-password" replace />} />
 
       {/* Main app routes (with layout & auth check) */}
       <Route path="/" element={
@@ -82,16 +85,18 @@ const AppRoutes = () => {
 function App() {
 
   return (
-    <AuthProvider>
-      <QueryClientProvider client={queryClientInstance}>
-        <LanguageProvider>
-          <Router>
-            <AppRoutes />
-          </Router>
-          <Toaster />
-        </LanguageProvider>
-      </QueryClientProvider>
-    </AuthProvider>
+    <GoogleOAuthProvider clientId={googleClientId}>
+      <AuthProvider>
+        <QueryClientProvider client={queryClientInstance}>
+          <LanguageProvider>
+            <Router>
+              <AppRoutes />
+            </Router>
+            <Toaster />
+          </LanguageProvider>
+        </QueryClientProvider>
+      </AuthProvider>
+    </GoogleOAuthProvider>
   )
 }
 

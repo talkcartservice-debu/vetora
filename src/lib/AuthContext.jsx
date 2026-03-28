@@ -73,6 +73,20 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const googleLogin = async (idToken) => {
+    try {
+      setIsLoadingAuth(true);
+      const data = await authAPI.googleLogin(idToken);
+      setUser(data.user);
+      setIsAuthenticated(true);
+      setIsLoadingAuth(false);
+      return data;
+    } catch (error) {
+      setIsLoadingAuth(false);
+      throw error;
+    }
+  };
+
   const verify2FA = async (twoFactorToken, token) => {
     try {
       setIsLoadingAuth(true);
@@ -119,6 +133,7 @@ export const AuthProvider = ({ children }) => {
       isLoadingAuth,
       authError,
       login,
+      googleLogin,
       verify2FA,
       register,
       logout,

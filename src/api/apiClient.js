@@ -85,10 +85,7 @@ class APIClient {
       if (response.status === 401) {
         this.clearToken();
         localStorage.removeItem('vetora_token');
-        // If we are in the browser, redirect to login
-        if (typeof window !== 'undefined') {
-          window.location.href = '/login';
-        }
+        // We throw the error and let the AuthContext/UI handle the redirect if needed
         throw new Error('Unauthorized - Please login again');
       }
 
@@ -185,6 +182,14 @@ export const apiClient = new APIClient();
 export const authAPI = {
   login: async (email, password) => {
     const data = await apiClient.post('/auth/login', { email, password });
+    if (data.token) {
+      apiClient.setToken(data.token);
+      localStorage.setItem('vetora_token', data.token);
+    }
+    return data;
+  },
+  googleLogin: async (idToken) => {
+    const data = await apiClient.post('/auth/google-login', { idToken });
     if (data.token) {
       apiClient.setToken(data.token);
       localStorage.setItem('vetora_token', data.token);

@@ -30,6 +30,7 @@ export interface IUser extends Document {
   phone_verification_expiry?: Date;
   reset_token?: string;
   reset_token_expiry?: Date;
+  google_id?: string;
   role: 'user' | 'vendor' | 'super_admin';
   is_blocked: boolean;
   follower_count: number;
@@ -57,13 +58,20 @@ const UserSchema = new Schema<IUser>({
   },
   password: {
     type: String,
-    required: true,
+    required: function(this: any) {
+      return !this.google_id;
+    },
     select: false,
   },
   display_name: {
     type: String,
     trim: true,
     maxlength: 50,
+  },
+  google_id: {
+    type: String,
+    unique: true,
+    sparse: true,
   },
   bio: {
     type: String,

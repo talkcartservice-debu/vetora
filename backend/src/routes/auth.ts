@@ -1,11 +1,14 @@
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
-import { generateSecret, verify, generateURI } from 'otplib';
+import { generateSecret, generateURI, verifySync } from 'otplib';
 import QRCode from 'qrcode';
 import { randomInt, randomBytes } from 'crypto';
+import { OAuth2Client } from 'google-auth-library';
 import { User } from '../models/User';
 import { sendVerificationCode, sendWhatsAppVerification } from '../services/mailService';
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const loginSchema = z.object({
   email: z.string().min(3), // Could be email or username
@@ -20,6 +23,118 @@ const registerSchema = z.object({
 });
 
 export async function authRoutes(fastify: FastifyInstance) {
+  // Google Login
+  fastify.post('/google-login', async (request, reply) => {
+    try {
+      const { idToken } = z.object({
+        idToken: z.string(),
+      }).parse(request.body);
+
+      // Verify the ID token with Google
+      const ticket = await googleClient.verifyIdToken({
+        idToken,
+        audience: process.env.GOOGLE_CLIENT_ID,
+      });
+
+      const payload = ticket.getPayload();
+      if (!payload || !payload.email) {
+        return reply.code(401).send({ error: 'Invalid Google token' });
+      }
+
+      const { email, name, picture, sub: googleId } = payload;
+
+      // Find user by email
+      let user = await User.findOne({ email: email.toLowerCase() });
+
+      if (!user) {
+        // Create new user if not exists
+        const baseUsername = email.split('@')[0].toLowerCase().replace(/[^a-z0-9_]/g, '');
+        let username = baseUsername;
+        let finalUser = null;
+        let attempts = 0;
+        
+        while (!finalUser && attempts < 5) {
+          const suffix = attempts === 0 ? '' : randomInt(1000, 9999).toString();
+          const candidate = `${baseUsername}${suffix}`;
+          
+          try {
+            const newUser = new User({
+              email: email.toLowerCase(),
+              username: candidate,
+              display_name: name || baseUsername,
+              avatar_url: picture,
+              is_verified: true, // Google accounts are usually verified
+              google_id: googleId,
+            });
+            await newUser.save();
+            finalUser = newUser;
+          } catch (err: any) {
+            if (err.code === 11000 && (err.message.includes('username') || JSON.stringify(err.keyPattern).includes('username'))) {
+              attempts++;
+            } else {
+              throw err;
+            }
+          }
+        }
+
+        if (!finalUser) {
+          return reply.code(500).send({ error: 'Could not generate a unique username' });
+        }
+        user = finalUser;
+      } else {
+        // Account already exists
+        if (!user.google_id) {
+          // Check if the user has an existing account with the same email but different auth method
+          // For security, we don't automatically merge unless they are already linked.
+          return reply.code(409).send({ 
+            error: 'An account with this email already exists. Please sign in with your password and link your Google account in settings.' 
+          });
+        }
+        
+        // Already linked, update profile if needed
+        if (!user.avatar_url && picture) {
+          user.avatar_url = picture;
+          await user.save();
+        }
+      }
+
+      if (user.is_blocked) {
+        return reply.code(403).send({ error: 'Your account has been suspended' });
+      }
+
+      // Generate JWT token
+      const token = fastify.jwt.sign({
+        userId: user._id.toString(),
+        email: user.email,
+        username: user.username,
+        role: user.role,
+      });
+
+      return {
+        user: {
+          id: user._id,
+          username: user.username,
+          email: user.email,
+          display_name: user.display_name,
+          avatar_url: user.avatar_url,
+          banner_url: user.banner_url,
+          role: user.role,
+          is_blocked: user.is_blocked,
+          is_verified: user.is_verified,
+          is_2fa_enabled: user.is_2fa_enabled,
+          phone_number: user.phone_number,
+          is_phone_verified: user.is_phone_verified,
+          notifications: user.notifications,
+          preferences: user.preferences,
+        },
+        token,
+      };
+    } catch (error) {
+      fastify.log.error(error);
+      return reply.code(500).send({ error: 'Internal server error during Google login' });
+    }
+  });
+
   // Login
   fastify.post('/login', async (request, reply) => {
     try {
@@ -132,7 +247,7 @@ export async function authRoutes(fastify: FastifyInstance) {
         return reply.code(403).send({ error: 'Your account has been suspended' });
       }
 
-      const { valid: isValid } = await verify({ 
+      const { valid: isValid } = verifySync({ 
         token: otpToken, 
         secret: user.two_factor_secret 
       });
@@ -192,33 +307,63 @@ export async function authRoutes(fastify: FastifyInstance) {
         return reply.code(409).send({ error: 'User or email already exists' });
       }
 
-      // Generate username if not provided
-      let finalUsername = username;
-      if (!finalUsername) {
-        finalUsername = email.split('@')[0].toLowerCase().replace(/[^a-z0-9_]/g, '');
-        // Ensure uniqueness
-        let count = 0;
-        let candidate = finalUsername;
-        while (await User.findOne({ username: candidate })) {
-          count++;
-          candidate = `${finalUsername}${count}`;
-        }
-        finalUsername = candidate;
-      }
-
       // Hash password
       const hashedPassword = await bcrypt.hash(password, 12);
 
-      // Create user
-      const user = new User({
-        email,
-        username: finalUsername,
-        password: hashedPassword,
-        display_name,
-        is_verified: false
-      });
+      // Generate username logic
+      const baseUsername = (username || email.split('@')[0]).toLowerCase().replace(/[^a-z0-9_]/g, '');
+      let finalUser = null;
+      let attempts = 0;
 
-      await user.save();
+      while (!finalUser && attempts < 5) {
+        // If username was provided, try it exactly as is first.
+        // If not, or if it's taken, start adding suffixes.
+        const suffix = (attempts === 0) ? '' : randomInt(1000, 9999).toString();
+        const candidate = (attempts === 0 && username) ? username.toLowerCase() : `${baseUsername}${suffix}`;
+
+        try {
+          const newUser = new User({
+            email: email.toLowerCase(),
+            username: candidate,
+            password: hashedPassword,
+            display_name,
+            is_verified: false
+          });
+          await newUser.save();
+          finalUser = newUser;
+        } catch (err: any) {
+          if (err.code === 11000) {
+            // Check if it's a username conflict
+            const isUsernameConflict = err.message?.includes('username') || 
+                                      (err.keyPattern && err.keyPattern.username) ||
+                                      JSON.stringify(err).includes('username');
+            
+            if (isUsernameConflict) {
+              // If user provided a specific username and it's taken, return error
+              if (username && attempts === 0) {
+                return reply.code(409).send({ error: 'Username is already taken' });
+              }
+              attempts++;
+              continue;
+            }
+            
+            // If it's an email conflict
+            const isEmailConflict = err.message?.includes('email') || 
+                                   (err.keyPattern && err.keyPattern.email) ||
+                                   JSON.stringify(err).includes('email');
+            if (isEmailConflict) {
+              return reply.code(409).send({ error: 'Email already exists' });
+            }
+          }
+          throw err;
+        }
+      }
+
+      if (!finalUser) {
+        return reply.code(500).send({ error: 'Could not generate a unique username' });
+      }
+
+      const user = finalUser;
 
       // Generate JWT token
       const token = fastify.jwt.sign({
@@ -294,13 +439,18 @@ export async function authRoutes(fastify: FastifyInstance) {
       const email = user.email;
 
       // Generate a secure reset token
-      const resetToken = randomBytes(32).toString('hex').slice(0, 12).toUpperCase();
+      const resetToken = randomBytes(32).toString('hex');
       user.reset_token = resetToken;
       user.reset_token_expiry = new Date(Date.now() + 3600000); // 1 hour
       await user.save();
 
-      // Mock email sending
-      fastify.log.info(`Reset token for ${email}: ${resetToken}`);
+      // Send email
+      await sendVerificationCode(email, resetToken);
+
+      // In development, log the token
+      if (process.env.NODE_ENV === 'development') {
+        fastify.log.info(`[DEV] Reset token for ${email}: ${resetToken}`);
+      }
 
       return { 
         success: true, 
@@ -697,7 +847,7 @@ export async function authRoutes(fastify: FastifyInstance) {
         return reply.code(400).send({ error: '2FA setup not initiated' });
       }
 
-      const { valid: isValid } = await verify({ 
+      const isValid = verifySync({ 
         token, 
         secret: user.two_factor_secret 
       });
@@ -735,7 +885,7 @@ export async function authRoutes(fastify: FastifyInstance) {
         return reply.code(400).send({ error: '2FA is not enabled' });
       }
 
-      const { valid: isValid } = await verify({ 
+      const isValid = verifySync({ 
         token, 
         secret: user.two_factor_secret 
       });
