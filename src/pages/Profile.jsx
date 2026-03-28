@@ -610,7 +610,7 @@ export default function Profile() {
                 >
                   <div className="flex items-start justify-between mb-2">
                     <div>
-                      <p className="text-xs text-slate-400">#{order.id?.slice(-8)} · {new Date(order.created_date).toLocaleDateString()}</p>
+                      <p className="text-xs text-slate-400">#{order.id?.slice(-8)} · {new Date(order.created_at || order.created_date).toLocaleDateString()}</p>
                       <p className="text-sm font-semibold text-slate-800">{order.store_name || "Store"}</p>
                     </div>
                     <Badge className={`${cfg.color} border-0 text-[10px] gap-0.5`}>

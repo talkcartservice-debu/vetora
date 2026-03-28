@@ -231,7 +231,7 @@ export default function MessageBubble({ msg, isMine, showAvatar, senderName, onR
             {msg.content && <p className="leading-relaxed">{msg.content}</p>}
             {msg.is_edited && <span className={`text-[9px] italic ${isMine ? "text-indigo-200" : "text-slate-400"}`}> (edited)</span>}
             <div className={`flex items-center gap-1 mt-0.5 text-[10px] ${isMine ? "text-indigo-200 justify-end" : "text-slate-400"}`}>
-              {new Date(msg.created_date).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
+              {new Date(msg.created_at || msg.created_date).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
               {isMine && <CheckCheck className="w-3 h-3" />}
             </div>
           </div>

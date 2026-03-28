@@ -7,7 +7,7 @@ import {
 
 // Mocked tracking API — generates deterministic events based on order data
 function generateTrackingEvents(order) {
-  const created = new Date(order.created_date);
+  const created = new Date(order.created_at || order.created_date);
   const events = [];
 
   const addEvent = (hoursAfter, status, location, description) => {

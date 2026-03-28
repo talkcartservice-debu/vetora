@@ -14,7 +14,7 @@ export default function PinnedPost({ post }) {
         </div>
         <div>
           <span className="text-xs font-semibold text-slate-800">{post.author_name}</span>
-          <span className="text-[10px] text-slate-400 ml-2">{new Date(post.created_date).toLocaleDateString()}</span>
+          <span className="text-[10px] text-slate-400 ml-2">{new Date(post.created_at || post.created_date).toLocaleDateString()}</span>
         </div>
       </div>
       <p className="text-sm text-slate-700 line-clamp-3">{post.content}</p>

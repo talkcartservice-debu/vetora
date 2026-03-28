@@ -825,7 +825,7 @@ export default function MyStore() {
               return (
                 <div key={orderId} className="bg-white rounded-2xl border border-slate-100 p-5">
                   <div className="flex items-center justify-between mb-3">
-                    <p className="text-xs text-slate-400 font-medium">#{orderId?.slice(-8)} · {new Date(order.created_date || order.created_at).toLocaleDateString()}</p>
+                    <p className="text-xs text-slate-400 font-medium">#{orderId?.slice(-8)} · {new Date(order.created_at || order.created_date).toLocaleDateString()}</p>
                     <Select 
                       defaultValue={order.status} 
                       onValueChange={(status) => updateOrderStatusMutation.mutate({ id: orderId, status })}

@@ -158,7 +158,7 @@ export default function PostCard({ post, currentUser, userLikes = [] }) {
             </div>
             <p className="text-[10px] text-slate-400 font-medium mb-1">@{authorUsername}</p>
             <p className="text-[10px] text-slate-400">
-              {new Date(post.created_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+              {new Date(post.created_at || post.created_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
               {post.is_sponsored && (
                 <span className="ml-2 px-1.5 py-0.5 bg-amber-50 text-amber-600 rounded text-[10px] font-medium">Sponsored</span>
               )}

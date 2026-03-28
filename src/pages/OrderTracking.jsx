@@ -132,7 +132,7 @@ function OrderTrackCard({ order, defaultExpanded = false }) {
           )}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-xs text-slate-400">#{order.id?.slice(-8)} · {new Date(order.created_date).toLocaleDateString()}</p>
+          <p className="text-xs text-slate-400">#{order.id?.slice(-8)} · {new Date(order.created_at || order.created_date).toLocaleDateString()}</p>
           <p className="text-sm font-semibold text-slate-900 truncate">{order.store_name || "Store"}</p>
           <p className="text-xs text-slate-500">{order.items?.length || 0} item(s) · <span className="font-semibold text-slate-700">${order.total?.toFixed(2)}</span></p>
         </div>

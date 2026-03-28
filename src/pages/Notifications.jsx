@@ -107,7 +107,7 @@ export default function Notifications() {
                   <p className="text-sm text-slate-900 font-medium">{notif.title}</p>
                   {notif.body && <p className="text-xs text-slate-500 mt-0.5">{notif.body}</p>}
                   <p className="text-xs text-slate-400 mt-1">
-                    {new Date(notif.created_date).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                    {new Date(notif.created_at || notif.created_date).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
                   </p>
                 </div>
                 {!notif.is_read && <div className="w-2 h-2 rounded-full bg-indigo-500 mt-2 shrink-0" />}

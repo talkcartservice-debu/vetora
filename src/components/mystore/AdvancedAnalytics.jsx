@@ -57,7 +57,7 @@ export default function AdvancedAnalytics({ orders, products }) {
   const monthlyRevenue = useMemo(() => {
     const map = {};
     orders.forEach(o => {
-      const m = new Date(o.created_date).toLocaleString("default", { month: "short" });
+      const m = new Date(o.created_at || o.created_date).toLocaleString("default", { month: "short" });
       map[m] = (map[m] || 0) + (o.total || 0);
     });
     const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
