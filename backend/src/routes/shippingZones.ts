@@ -1,5 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { ShippingZone, IShippingZone } from '../models/ShippingZone';
+import { checkShippingZoneLimit } from '../middleware/subscription';
 
 export async function shippingZoneRoutes(fastify: FastifyInstance) {
   // Get shipping zones for a vendor
@@ -115,7 +116,7 @@ export async function shippingZoneRoutes(fastify: FastifyInstance) {
 
   // Create shipping zone
   fastify.post('/', {
-    preHandler: fastify.authenticate
+    preHandler: [fastify.authenticate, checkShippingZoneLimit]
   }, async (request, reply) => {
     try {
       const body = request.body as Partial<IShippingZone>;
@@ -164,7 +165,7 @@ export async function shippingZoneRoutes(fastify: FastifyInstance) {
 
   // Update shipping zone
   fastify.put('/:id', {
-    preHandler: fastify.authenticate
+    preHandler: [fastify.authenticate, checkShippingZoneLimit]
   }, async (request, reply) => {
     try {
       const { id } = request.params as { id: string };

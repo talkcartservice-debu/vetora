@@ -1,6 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import axios from 'axios';
 import { VendorSubscription, IVendorSubscription } from '../models/VendorSubscription';
+import { checkCustomDomainLimit } from '../middleware/subscription';
 
 const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY || 'sk_test_mock_key';
 
@@ -188,7 +189,7 @@ export async function vendorSubscriptionRoutes(fastify: FastifyInstance) {
 
   // Update vendor subscription
   fastify.put('/:id', {
-    preHandler: fastify.authenticate
+    preHandler: [fastify.authenticate, checkCustomDomainLimit]
   }, async (request, reply) => {
     try {
       const { id } = request.params as { id: string };
@@ -233,6 +234,7 @@ export async function vendorSubscriptionRoutes(fastify: FastifyInstance) {
           subscription.status = 'pending';
         } else if (body.plan === 'free') {
           subscription.status = 'active';
+          subscription.set('custom_domain', null); // explicit null marks path as modified for Mongoose
         }
       }
 
@@ -406,12 +408,14 @@ export async function vendorSubscriptionRoutes(fastify: FastifyInstance) {
     try {
       const plans = {
         free: {
-          name: 'Free',
+          name: 'Starter',
           price_monthly: 0,
           price_annual: 0,
           features: [
             'Up to 10 products',
+            '5 images per product',
             'Basic analytics',
+            'Standard search listing',
             'Community support'
           ]
         },
@@ -420,11 +424,13 @@ export async function vendorSubscriptionRoutes(fastify: FastifyInstance) {
           price_monthly: 29,
           price_annual: 276,
           features: [
-            'Unlimited products',
-            'Advanced analytics',
-            'Priority support',
-            'Custom domain',
-            'AI-powered insights'
+            'Up to 200 products',
+            '20 images + videos per product',
+            'Advanced analytics & CTR data',
+            'Priority search listing',
+            'Custom domain mapping',
+            'Shipping zone manager',
+            'Email support'
           ]
         },
         elite: {
@@ -432,11 +438,14 @@ export async function vendorSubscriptionRoutes(fastify: FastifyInstance) {
           price_monthly: 79,
           price_annual: 756,
           features: [
-            'All Pro features',
-            'White-label solution',
+            'Unlimited products',
+            'Unlimited images & videos',
+            'Full analytics suite',
+            'Top-tier search placement',
+            'Custom domain + SSL',
+            'Shipping zones + live rates',
             'Dedicated account manager',
-            'API access',
-            'Custom integrations'
+            'Affiliate program access'
           ]
         }
       };

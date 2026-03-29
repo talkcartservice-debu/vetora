@@ -4,6 +4,7 @@ import { User } from '../models/User';
 import { Like } from '../models/Like';
 import { WishlistItem } from '../models/WishlistItem';
 import { Order } from '../models/Order';
+import { checkProductCountLimit, checkProductMediaLimit } from '../middleware/subscription';
 
 export async function productRoutes(fastify: FastifyInstance) {
   // Get recommended products for the current user
@@ -144,7 +145,7 @@ export async function productRoutes(fastify: FastifyInstance) {
 
   // Create product
   fastify.post('/', {
-    preHandler: [fastify.authenticate],
+    preHandler: [fastify.authenticate, checkProductCountLimit, checkProductMediaLimit],
   }, async (request, reply) => {
     try {
       const productData = request.body as Partial<IProduct>;
@@ -186,7 +187,7 @@ export async function productRoutes(fastify: FastifyInstance) {
 
   // Update product
   fastify.patch('/:id', {
-    preHandler: [fastify.authenticate],
+    preHandler: [fastify.authenticate, checkProductMediaLimit],
   }, async (request, reply) => {
     try {
       const { id } = request.params as { id: string };

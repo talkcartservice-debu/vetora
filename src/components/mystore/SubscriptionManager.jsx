@@ -207,24 +207,6 @@ export default function SubscriptionManager({ store, vendorUsername }) {
   const queryClient = useQueryClient();
   const { user } = useAuth();
 
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const reference = params.get('reference') || params.get('trxref');
-    
-    if (reference && subscription && (subscription.id || subscription._id)) {
-      verifyMutation.mutate({ 
-        id: subscription.id || subscription._id, 
-        reference 
-      });
-      
-      // Clean up URL properly
-      params.delete('reference');
-      params.delete('trxref');
-      const search = params.toString() ? `?${params.toString()}` : '';
-      window.history.replaceState({}, '', window.location.pathname + search);
-    }
-  }, [subscription, verifyMutation]);
-
   const { data: subscription, isLoading } = useQuery({
     queryKey: ["vendorSubscription", vendorUsername],
     queryFn: async () => {
@@ -235,7 +217,7 @@ export default function SubscriptionManager({ store, vendorUsername }) {
     enabled: !!vendorUsername,
   });
 
-  const verifyMutation = useMutation({
+  const { mutate: verifyPayment } = useMutation({
     mutationFn: async ({ id, reference }) => {
       return vendorSubscriptionsAPI.verifyPayment(id, reference);
     },
@@ -287,7 +269,7 @@ export default function SubscriptionManager({ store, vendorUsername }) {
           email: user.email,
           order_id: `SUB-${data.sub.id || data.sub._id}`,
           onSuccess: (res) => {
-            verifyMutation.mutate({ 
+            verifyPayment({ 
               id: data.sub.id || data.sub._id, 
               reference: res.reference 
             });
@@ -297,6 +279,24 @@ export default function SubscriptionManager({ store, vendorUsername }) {
       }
     },
   });
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const reference = params.get('reference') || params.get('trxref');
+    
+    if (reference && subscription?.status === 'pending' && (subscription.id || subscription._id)) {
+      verifyPayment({ 
+        id: subscription.id || subscription._id, 
+        reference 
+      });
+      
+      // Clean up URL properly
+      params.delete('reference');
+      params.delete('trxref');
+      const search = params.toString() ? `?${params.toString()}` : '';
+      window.history.replaceState({}, '', window.location.pathname + search);
+    }
+  }, [subscription, verifyPayment]);
 
   const currentPlanInfo = PLANS.find(p => p.id === (subscription?.plan || "free"));
   const isPending = subscription?.status === "pending";
@@ -337,13 +337,14 @@ export default function SubscriptionManager({ store, vendorUsername }) {
               className="h-8 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 rounded-lg px-4 shadow-sm shadow-indigo-100"
               onClick={() => {
                 const plan = PLANS.find(p => p.id === subscription.plan);
+                if (!plan) return;
                 const price = subscription.billing_cycle === "annual" ? plan.priceAnnual * 12 : plan.price;
                 initializePaystackPayment({
                   amount: Math.round(price * 100),
                   email: user.email,
                   order_id: `SUB-${subscription.id || subscription._id}`,
                   onSuccess: (res) => {
-                    verifyMutation.mutate({ 
+                    verifyPayment({ 
                       id: subscription.id || subscription._id, 
                       reference: res.reference 
                     });
