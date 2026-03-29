@@ -23,7 +23,12 @@ export async function paymentRoutes(fastify: FastifyInstance) {
         return reply.code(400).send({ error: 'Invalid request data', details: error.errors });
       }
       fastify.log.error(error);
-      return reply.code(500).send({ error: 'Failed to initialize payment', message: error.message });
+      const statusCode = error.statusCode || 500;
+      return reply.code(statusCode).send({ 
+        error: 'Failed to initialize payment', 
+        message: error.message,
+        details: error.details 
+      });
     }
   });
 

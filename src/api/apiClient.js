@@ -94,7 +94,12 @@ class APIClient {
       
       if (contentType?.includes('application/json')) {
         const text = await response.text();
-        data = text ? JSON.parse(text) : {};
+        try {
+          data = text ? JSON.parse(text) : {};
+        } catch (e) {
+          console.error(`Failed to parse JSON from ${endpoint}:`, text);
+          data = { error: 'Invalid server response', message: text };
+        }
       } else {
         data = await response.text();
       }

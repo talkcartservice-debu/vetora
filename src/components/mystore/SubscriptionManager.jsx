@@ -263,9 +263,9 @@ export default function SubscriptionManager({ store, vendorUsername }) {
         const monthlyPrice = data.plan.price;
         const price = billing === "annual" ? annualPrice : monthlyPrice;
         
-        // Paystack uses kobo (kobo = price * 100)
+        // Backend expects amount in NGN/USD (converts to kobo itself)
         initializePaystackPayment({
-          amount: Math.round(price * 100),
+          amount: price,
           email: user.email,
           order_id: `SUB-${data.sub.id || data.sub._id}`,
           onSuccess: (res) => {
@@ -340,7 +340,7 @@ export default function SubscriptionManager({ store, vendorUsername }) {
                 if (!plan) return;
                 const price = subscription.billing_cycle === "annual" ? plan.priceAnnual * 12 : plan.price;
                 initializePaystackPayment({
-                  amount: Math.round(price * 100),
+                  amount: price,
                   email: user.email,
                   order_id: `SUB-${subscription.id || subscription._id}`,
                   onSuccess: (res) => {
