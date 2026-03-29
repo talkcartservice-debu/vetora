@@ -13,6 +13,8 @@ export interface IProduct extends Document {
   store_id: string;
   store_name?: string;
   vendor_username: string;
+  vendor_plan: 'free' | 'pro' | 'elite';
+  plan_priority: number;
   inventory_count: number;
   status: 'active' | 'draft' | 'sold_out' | 'archived';
   rating_avg: number;
@@ -73,6 +75,15 @@ const ProductSchema = new Schema<IProduct>({
     lowercase: true,
     trim: true,
   },
+  vendor_plan: {
+    type: String,
+    enum: ['free', 'pro', 'elite'],
+    default: 'free',
+  },
+  plan_priority: {
+    type: Number,
+    default: 0, // 0: free, 1: pro, 2: elite
+  },
   inventory_count: {
     type: Number,
     default: 0,
@@ -114,6 +125,7 @@ const ProductSchema = new Schema<IProduct>({
 
 // Indexes for performance
 ProductSchema.index({ vendor_username: 1, status: 1 });
+ProductSchema.index({ plan_priority: -1, status: 1 });
 ProductSchema.index({ category: 1, status: 1 });
 ProductSchema.index({ store_id: 1 });
 ProductSchema.index({ status: 1, sales_count: -1 });

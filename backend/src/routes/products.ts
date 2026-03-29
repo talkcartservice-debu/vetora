@@ -67,6 +67,7 @@ export async function productRoutes(fastify: FastifyInstance) {
         category,
         status = 'active',
         vendor_username,
+        vendor_plan,
         store_id,
         search,
         sort = '-sales_count',
@@ -80,6 +81,7 @@ export async function productRoutes(fastify: FastifyInstance) {
       if (status) filter.status = status;
       if (category) filter.category = category;
       if (vendor_username) filter.vendor_username = vendor_username;
+      if (vendor_plan) filter.vendor_plan = vendor_plan;
       if (store_id) filter.store_id = store_id;
 
       // Text search
@@ -92,7 +94,7 @@ export async function productRoutes(fastify: FastifyInstance) {
       }
 
       // Build sort object
-      const sortObj: any = {};
+      const sortObj: any = { plan_priority: -1 };
       if (sort.startsWith('-')) {
         sortObj[sort.substring(1)] = -1;
       } else {
@@ -158,6 +160,8 @@ export async function productRoutes(fastify: FastifyInstance) {
       const product = new Product({
         ...productData,
         vendor_username: user.username,
+        vendor_plan: (request as any).vendor_plan || 'free',
+        plan_priority: (request as any).vendor_priority || 0,
       });
 
       const savedProduct = await product.save();
@@ -191,7 +195,7 @@ export async function productRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     try {
       const { id } = request.params as { id: string };
-      const updateData = request.body as Partial<IProduct>;
+      const { vendor_plan, plan_priority, vendor_username, store_id, _id, ...safeUpdate } = request.body as Partial<IProduct>;
       const user = request.user as any;
 
       if (!user?.username) {
@@ -200,7 +204,7 @@ export async function productRoutes(fastify: FastifyInstance) {
 
       const product = await Product.findOneAndUpdate(
         { _id: id, vendor_username: user.username },
-        { ...updateData, updated_at: new Date() },
+        { ...safeUpdate, updated_at: new Date() },
         { new: true }
       );
 

@@ -26,24 +26,49 @@ export const PLAN_LIMITS = {
   }
 };
 
+export const PLAN_PRIORITY = {
+  free: 0,
+  pro: 1,
+  elite: 2
+};
+
 /**
  * Helper to get the active plan and its limits for a vendor
+ * Caches the plan in the request object if provided
  */
-async function getVendorPlan(username: string) {
+async function getVendorPlan(username: string, request?: FastifyRequest) {
   const normalizedUsername = username.toLowerCase();
   
+  // Check if already cached in request
+  if (request && (request as any).cached_vendor_plan) {
+    return (request as any).cached_vendor_plan;
+  }
+
   // Find active subscription
+  const now = new Date();
   const subscription = await VendorSubscription.findOne({
     vendor_username: normalizedUsername,
-    status: 'active'
+    status: 'active',
+    $or: [
+      { expires_at: null },
+      { expires_at: { $gt: now } }
+    ]
   });
 
-  const plan = subscription?.plan || 'free';
-  return {
+  const plan = (subscription?.plan || 'free') as keyof typeof PLAN_PRIORITY;
+  const vendorPlan = {
     plan,
-    limits: PLAN_LIMITS[plan as keyof typeof PLAN_LIMITS],
+    limits: PLAN_LIMITS[plan],
+    priority: PLAN_PRIORITY[plan],
     normalizedUsername
   };
+
+  // Cache in request if provided
+  if (request) {
+    (request as any).cached_vendor_plan = vendorPlan;
+  }
+
+  return vendorPlan;
 }
 
 /**
@@ -56,7 +81,9 @@ export async function checkProductCountLimit(request: FastifyRequest, reply: Fas
       return reply.code(401).send({ error: 'Unauthorized' });
     }
 
-    const { plan, limits, normalizedUsername } = await getVendorPlan(user.username);
+    const { plan, limits, priority, normalizedUsername } = await getVendorPlan(user.username, request);
+    (request as any).vendor_plan = plan;
+    (request as any).vendor_priority = priority;
 
     // Count existing products (exclude archived)
     const productCount = await Product.countDocuments({
@@ -89,7 +116,7 @@ export async function checkProductMediaLimit(request: FastifyRequest, reply: Fas
       return reply.code(401).send({ error: 'Unauthorized' });
     }
 
-    const { plan, limits } = await getVendorPlan(user.username);
+    const { plan, limits } = await getVendorPlan(user.username, request);
 
     // Check images/videos limit in body
     const body = request.body as any;
@@ -126,7 +153,7 @@ export async function checkCustomDomainLimit(request: FastifyRequest, reply: Fas
     // Only check if custom_domain is being set
     if (!body?.custom_domain) return;
 
-    const { plan, limits } = await getVendorPlan(user.username);
+    const { plan, limits } = await getVendorPlan(user.username, request);
 
     if (!limits.custom_domain) {
       return reply.code(403).send({ 
@@ -150,7 +177,7 @@ export async function checkShippingZoneLimit(request: FastifyRequest, reply: Fas
       return reply.code(401).send({ error: 'Unauthorized' });
     }
 
-    const { plan, limits } = await getVendorPlan(user.username);
+    const { plan, limits } = await getVendorPlan(user.username, request);
 
     if (!limits.shipping_zones) {
       return reply.code(403).send({ 

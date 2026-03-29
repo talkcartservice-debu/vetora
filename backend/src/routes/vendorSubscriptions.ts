@@ -1,7 +1,8 @@
 import { FastifyInstance } from 'fastify';
 import axios from 'axios';
 import { VendorSubscription, IVendorSubscription } from '../models/VendorSubscription';
-import { checkCustomDomainLimit } from '../middleware/subscription';
+import { Product } from '../models/Product';
+import { checkCustomDomainLimit, PLAN_PRIORITY } from '../middleware/subscription';
 
 const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY || 'sk_test_mock_key';
 
@@ -176,6 +177,21 @@ export async function vendorSubscriptionRoutes(fastify: FastifyInstance) {
       const subscription = new VendorSubscription(body);
       await subscription.save();
 
+      // If activated immediately (like 'free' plan), update products
+      if (subscription.status === 'active') {
+        try {
+          await Product.updateMany(
+            { vendor_username: subscription.vendor_username },
+            { 
+              vendor_plan: subscription.plan,
+              plan_priority: PLAN_PRIORITY[subscription.plan as keyof typeof PLAN_PRIORITY] || 0
+            }
+          );
+        } catch (err) {
+          fastify.log.error(err, 'Failed to sync product plans on creation:');
+        }
+      }
+
       reply.code(201).send(subscription);
     } catch (error) {
       if (error && typeof error === 'object' && 'code' in error && error.code === 11000) {
@@ -253,6 +269,21 @@ export async function vendorSubscriptionRoutes(fastify: FastifyInstance) {
 
       await subscription.save();
 
+      // Update products if plan/status changed
+      if (subscription.status === 'active') {
+        try {
+          await Product.updateMany(
+            { vendor_username: subscription.vendor_username },
+            { 
+              vendor_plan: subscription.plan,
+              plan_priority: PLAN_PRIORITY[subscription.plan as keyof typeof PLAN_PRIORITY] || 0
+            }
+          );
+        } catch (err) {
+          fastify.log.error(err, 'Failed to sync product plans on update:');
+        }
+      }
+
       reply.send(subscription);
     } catch (error) {
       if (error && typeof error === 'object' && 'code' in error && error.code === 11000) {
@@ -286,7 +317,19 @@ export async function vendorSubscriptionRoutes(fastify: FastifyInstance) {
       subscription.status = 'cancelled';
       await subscription.save();
 
-      reply.send(subscription);
+      // Reset product plan and priority
+      let syncWarning: string | undefined;
+      try {
+        await Product.updateMany(
+          { vendor_username: subscription.vendor_username },
+          { vendor_plan: 'free', plan_priority: 0 }
+        );
+      } catch (err) {
+        request.log.error(err, 'Failed to reset product plans on cancel:');
+        syncWarning = 'Subscription cancelled but product plan sync failed. Contact support.';
+      }
+
+      reply.send({ ...subscription.toObject(), warning: syncWarning });
     } catch (error) {
       fastify.log.error(error);
       reply.code(500).send({ error: 'Internal server error' });
@@ -326,7 +369,22 @@ export async function vendorSubscriptionRoutes(fastify: FastifyInstance) {
       subscription.status = 'active';
       await subscription.save();
 
-      reply.send(subscription);
+      // Sync product plan and priority
+      let syncWarning: string | undefined;
+      try {
+        await Product.updateMany(
+          { vendor_username: subscription.vendor_username },
+          { 
+            vendor_plan: subscription.plan, 
+            plan_priority: PLAN_PRIORITY[subscription.plan as keyof typeof PLAN_PRIORITY] || 0 
+          }
+        );
+      } catch (err) {
+        request.log.error(err, 'Failed to sync product plans on renew:');
+        syncWarning = 'Subscription renewed but product plan sync failed. Contact support.';
+      }
+
+      reply.send({ ...subscription.toObject(), warning: syncWarning });
     } catch (error) {
       fastify.log.error(error);
       reply.code(500).send({ error: 'Internal server error' });
@@ -522,6 +580,20 @@ export async function vendorSubscriptionRoutes(fastify: FastifyInstance) {
         }
 
         await subscription.save();
+
+        // Update all vendor's products with new plan and priority
+        try {
+          await Product.updateMany(
+            { vendor_username: subscription.vendor_username },
+            { 
+              vendor_plan: subscription.plan,
+              plan_priority: PLAN_PRIORITY[subscription.plan as keyof typeof PLAN_PRIORITY] || 0
+            }
+          );
+        } catch (prodUpdateErr) {
+          fastify.log.error(prodUpdateErr, 'Failed to update product plans on subscription activation:');
+          // Don't fail the request as the subscription itself is activated
+        }
 
         reply.send(subscription);
       } catch (paystackError) {

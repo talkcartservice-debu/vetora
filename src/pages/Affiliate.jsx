@@ -64,15 +64,19 @@ export default function Affiliate() {
   const { data: products = [] } = useQuery({
     queryKey: ["affiliateProducts", search],
     queryFn: async () => {
-      const res = await productsAPI.list({ status: "active", sort: "-sales_count", limit: 30 });
+      const res = await productsAPI.list({ 
+        status: "active", 
+        vendor_plan: "elite", // Only show products from elite vendors
+        search: search || undefined,
+        sort: "-sales_count", 
+        limit: 30 
+      });
       return res.data || [];
     },
     staleTime: 60000,
   });
 
-  const filteredProducts = search
-    ? products.filter(p => p.title?.toLowerCase().includes(search.toLowerCase()))
-    : products.slice(0, 12);
+  const filteredProducts = search ? products : products.slice(0, 12);
 
   const createLinkMutation = useMutation({
     mutationFn: async (product) => {

@@ -2,6 +2,8 @@ import { FastifyInstance } from 'fastify';
 import { AffiliateLink, IAffiliateLink } from '../models/AffiliateLink';
 import { Product } from '../models/Product';
 import { User } from '../models/User';
+import { VendorSubscription } from '../models/VendorSubscription';
+import { PLAN_LIMITS } from '../middleware/subscription';
 
 export async function affiliateLinkRoutes(fastify: FastifyInstance) {
   // List affiliate links with filtering
@@ -125,6 +127,22 @@ export async function affiliateLinkRoutes(fastify: FastifyInstance) {
       const product = await Product.findById(body.product_id);
       if (!product) {
         return reply.code(404).send({ error: 'Product not found' });
+      }
+
+      // Check if vendor has affiliate program enabled in their plan
+      // We can use the denormalized plan or check active subscription for reliability
+      const vendorSubscription = await VendorSubscription.findOne({
+        vendor_username: product.vendor_username,
+        status: 'active'
+      });
+      const vendorPlan = vendorSubscription?.plan || 'free';
+      const planLimits = PLAN_LIMITS[vendorPlan as keyof typeof PLAN_LIMITS];
+
+      if (!planLimits?.affiliate_program) {
+        return reply.code(403).send({ 
+          error: 'Affiliate program restricted', 
+          message: `The store owner (${product.vendor_username}) is on the ${vendorPlan.toUpperCase()} plan which does not support affiliate links. Only Elite stores can have affiliate programs.` 
+        });
       }
 
       // Generate unique ref code

@@ -15,16 +15,23 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
+import StoreAnalytics from "@/components/mystore/StoreAnalytics";
 import AdvancedAnalytics from "@/components/mystore/AdvancedAnalytics";
 import CouponManager from "@/components/mystore/CouponManager";
 import SubscriptionManager from "@/components/mystore/SubscriptionManager";
 import ShippingZoneManager from "@/components/mystore/ShippingZoneManager";
 import AIProductGenerator from "@/components/mystore/AIProductGenerator";
 import VendorFinance from "./VendorFinance";
-import { storesAPI, productsAPI, ordersAPI, filesAPI } from "@/api/apiClient";
+import { storesAPI, productsAPI, ordersAPI, filesAPI, vendorSubscriptionsAPI } from "@/api/apiClient";
 import { useAuth } from "@/lib/AuthContext";
 
 const CATEGORIES = ["fashion", "electronics", "home", "beauty", "sports", "food", "art", "books", "handmade", "other"];
+
+const PLAN_LIMITS = {
+  free: { products: 10, images: 5 },
+  pro: { products: 200, images: 20 },
+  elite: { products: Infinity, images: Infinity },
+};
 
 export default function MyStore() {
   const params = new URLSearchParams(window.location.search);
@@ -66,10 +73,17 @@ export default function MyStore() {
 
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
-    const validFiles = files.filter(f => f.type.startsWith("image/")).slice(0, 5 - productImages.length);
+    const maxImages = limits.images;
+    const remainingSlots = maxImages - productImages.length;
+    
+    const validFiles = files.filter(f => f.type.startsWith("image/")).slice(0, remainingSlots);
     
     if (validFiles.length < files.length) {
-      toast.error("Only images are allowed, max 5 per product");
+      if (remainingSlots <= 0) {
+        toast.error(`Your ${currentPlan} plan allows up to ${maxImages} images per product.`);
+      } else {
+        toast.error(`You can only add ${remainingSlots} more image(s). Your ${currentPlan} plan allows up to ${maxImages} images.`);
+      }
     }
 
     const newPreviews = validFiles.map(f => URL.createObjectURL(f));
@@ -124,6 +138,19 @@ export default function MyStore() {
     },
     enabled: !!(store?.id || store?._id),
   });
+
+  const { data: subscription } = useQuery({
+    queryKey: ["vendorSubscription", currentUser?.username],
+    queryFn: async () => {
+      const res = await vendorSubscriptionsAPI.list({ vendor_username: currentUser?.username });
+      const subs = res.subscriptions || res.data || (Array.isArray(res) ? res : []);
+      return subs.find(s => s.status === 'active') || null;
+    },
+    enabled: !!currentUser?.username,
+  });
+
+  const currentPlan = subscription?.plan || 'free';
+  const limits = PLAN_LIMITS[currentPlan];
 
   const { data: ordersResponse = {} } = useQuery({
     queryKey: ["storeOrders", currentUser?.username],
@@ -678,8 +705,14 @@ export default function MyStore() {
             <TabsTrigger value="products">Products</TabsTrigger>
             <TabsTrigger value="orders">Orders</TabsTrigger>
             <TabsTrigger value="coupons">Coupons</TabsTrigger>
-            <TabsTrigger value="analytics">Analytics</TabsTrigger>
-            <TabsTrigger value="shipping">Shipping</TabsTrigger>
+            <TabsTrigger value="analytics" className="gap-1.5">
+              Analytics 
+              {currentPlan === 'free' ? <Badge className="px-1 py-0 text-[8px] bg-indigo-100 text-indigo-600 border-0">Standard</Badge> : <Badge className="px-1 py-0 text-[8px] bg-amber-100 text-amber-600 border-0">Pro+</Badge>}
+            </TabsTrigger>
+            <TabsTrigger value="shipping" className="gap-1.5">
+              Shipping
+              {currentPlan === 'free' && <Badge className="px-1 py-0 text-[8px] bg-slate-100 text-slate-400 border-0">Pro+</Badge>}
+            </TabsTrigger>
             <TabsTrigger value="subscription">Plan</TabsTrigger>
             <TabsTrigger value="finance">Finance</TabsTrigger>
           </TabsList>
@@ -688,7 +721,16 @@ export default function MyStore() {
         {activeTab === "products" && (
           <Dialog open={showAddProduct} onOpenChange={setShowAddProduct}>
             <DialogTrigger asChild>
-              <Button className="bg-indigo-600 hover:bg-indigo-700 rounded-xl">
+              <Button 
+                onClick={(e) => {
+                  if (products.length >= limits.products) {
+                    e.preventDefault();
+                    toast.error(`Your ${currentPlan} plan allows up to ${limits.products === Infinity ? 'unlimited' : limits.products} products. Please upgrade to add more.`);
+                    return;
+                  }
+                }}
+                className="bg-indigo-600 hover:bg-indigo-700 rounded-xl"
+              >
                 <Plus className="w-4 h-4 mr-1.5" /> Add Product
               </Button>
             </DialogTrigger>
@@ -706,7 +748,7 @@ export default function MyStore() {
                 {/* Image Upload */}
                 <div className="space-y-2">
                   <label className="text-xs font-medium text-slate-500 flex items-center gap-1.5">
-                    <Camera className="w-3.5 h-3.5" /> Product Images (up to 5)
+                    <Camera className="w-3.5 h-3.5" /> Product Images (up to {limits.images === Infinity ? 'Unlimited' : limits.images})
                   </label>
                   <div className="flex flex-wrap gap-2">
                     {imagePreviews.map((url, i) => (
@@ -720,7 +762,7 @@ export default function MyStore() {
                         </button>
                       </div>
                     ))}
-                    {productImages.length < 5 && (
+                    {(limits.images === Infinity || productImages.length < limits.images) && (
                       <label className="w-20 h-20 rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/30 transition-all text-slate-400">
                         <Upload className="w-5 h-5" />
                         <span className="text-[10px] mt-1 font-medium">Upload</span>
@@ -791,7 +833,18 @@ export default function MyStore() {
 
       {/* Shipping Tab */}
       {activeTab === "shipping" && (
-        <ShippingZoneManager store={store} vendorUsername={currentUser?.username} />
+        currentPlan === 'free' ? (
+          <div className="bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200 p-12 text-center">
+             <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mx-auto mb-4">
+               <Package className="w-8 h-8 text-slate-300" />
+             </div>
+             <h3 className="text-lg font-bold text-slate-900 mb-2">Shipping Zones Restricted</h3>
+             <p className="text-slate-500 max-w-sm mx-auto mb-6">Upgrade to Pro or Elite to manage custom shipping zones and flat rates.</p>
+             <Button onClick={() => setActiveTab("subscription")} className="bg-indigo-600 hover:bg-indigo-700 rounded-xl">Upgrade Now</Button>
+          </div>
+        ) : (
+          <ShippingZoneManager store={store} vendorUsername={currentUser?.username} />
+        )
       )}
 
       {/* Subscription Tab */}
@@ -811,7 +864,11 @@ export default function MyStore() {
 
       {/* Analytics Tab */}
       {activeTab === "analytics" && (
-        <AdvancedAnalytics orders={orders} products={products} />
+        currentPlan === 'elite' || currentPlan === 'pro' ? (
+          <AdvancedAnalytics orders={orders} products={products} />
+        ) : (
+          <StoreAnalytics orders={orders} products={products} />
+        )
       )}
 
       {/* Orders Tab */}
