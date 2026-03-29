@@ -14,7 +14,10 @@ export default function PostCard({ post, currentUser, userLikes = [] }) {
   
   const postId = (post?.id || post?._id)?.toString();
   const authorUsername = post?.author_username;
-  const isLiked = userLikes.some(l => String(l.target_id) === String(postId) && l.target_type === "post");
+  const isLiked = userLikes.some(l => 
+    (String(l.target_id) === String(post?.id) || String(l.target_id) === String(post?._id)) && 
+    l.target_type === "post"
+  );
   const [optimisticLiked, setOptimisticLiked] = useState(isLiked);
   const [optimisticCount, setOptimisticCount] = useState(post?.likes_count || 0);
 

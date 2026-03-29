@@ -24,7 +24,7 @@ export async function likeRoutes(fastify: FastifyInstance) {
 
       if (target_type) filter.target_type = target_type;
       if (target_id) filter.target_id = target_id;
-      if (user_username) filter.user_username = user_username;
+      if (user_username) filter.user_username = user_username.toLowerCase();
 
       const likes = await Like
         .find(filter)

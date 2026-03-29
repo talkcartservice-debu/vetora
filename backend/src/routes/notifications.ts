@@ -29,19 +29,13 @@ export async function notificationRoutes(fastify: FastifyInstance) {
           .sort({ created_at: -1 })
           .limit(limit)
           .skip(skip)
-          .lean(),
+          .lean({ virtuals: true }),
         NotificationModel.countDocuments(filter),
         NotificationModel.countDocuments({ recipient_username: user.username, is_read: false })
       ]);
 
-      // Map _id to id for consistency
-      const formattedNotifications = notifications.map((n: any) => ({
-        ...n,
-        id: n._id.toString()
-      }));
-
       return {
-        data: formattedNotifications,
+        data: notifications,
         total,
         unreadCount,
         limit,

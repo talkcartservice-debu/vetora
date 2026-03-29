@@ -25,7 +25,7 @@ export async function bookmarkRoutes(fastify: FastifyInstance) {
         .sort({ created_at: -1 })
         .limit(parseInt(limit))
         .skip(parseInt(skip))
-        .lean();
+        .lean({ virtuals: true });
 
       const total = await Bookmark.countDocuments(filter);
 
