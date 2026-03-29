@@ -108,7 +108,7 @@ export default function PostDetail() {
       <div className="mt-6">
         <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
           Comments 
-          <span className="text-sm font-normal text-slate-400">({comments.length})</span>
+          <span className="text-sm font-normal text-slate-400">({comments.length || post?.comments_count || 0})</span>
         </h3>
 
         {/* Show comments error if any */}

@@ -68,7 +68,7 @@ export async function postRoutes(fastify: FastifyInstance) {
         .sort(sort)
         .limit(parseInt(limit))
         .skip(parseInt(skip))
-        .lean();
+        .lean({ virtuals: true });
 
       const total = await Post.countDocuments(filter);
 
@@ -91,7 +91,7 @@ export async function postRoutes(fastify: FastifyInstance) {
   fastify.get('/:id', async (request, reply) => {
     try {
       const { id } = request.params as { id: string };
-      const post = await Post.findById(id).lean();
+      const post = await Post.findById(id).lean({ virtuals: true });
 
       if (!post) {
         return reply.code(404).send({ error: 'Post not found' });

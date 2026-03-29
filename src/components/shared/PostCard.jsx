@@ -87,6 +87,7 @@ export default function PostCard({ post, currentUser, userLikes = [] }) {
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["posts"] });
       queryClient.invalidateQueries({ queryKey: ["userLikes"] });
+      queryClient.invalidateQueries({ queryKey: ["postDetail", postId] });
     },
   });
 
@@ -245,13 +246,13 @@ export default function PostCard({ post, currentUser, userLikes = [] }) {
               />
             </motion.div>
             <span className={`text-xs font-medium ${optimisticLiked ? "text-red-500" : "text-slate-400"}`}>
-              {optimisticCount > 0 ? optimisticCount : ""}
+              {optimisticCount}
             </span>
           </button>
 
           <Link to={createPageUrl("PostDetail") + `?id=${postId}`} className="flex items-center gap-1.5 group">
             <MessageCircle className="w-5 h-5 text-slate-400 group-hover:text-indigo-500 transition-colors" />
-            <span className="text-xs font-medium text-slate-400">{post.comments_count || ""}</span>
+            <span className="text-xs font-medium text-slate-400">{post.comments_count || 0}</span>
           </Link>
 
           <button 
@@ -259,7 +260,7 @@ export default function PostCard({ post, currentUser, userLikes = [] }) {
             className="flex items-center gap-1.5 group"
           >
             <Share2 className="w-5 h-5 text-slate-400 group-hover:text-indigo-500 transition-colors" />
-            <span className="text-xs font-medium text-slate-400">{post.shares_count || ""}</span>
+            <span className="text-xs font-medium text-slate-400">{post.shares_count || 0}</span>
           </button>
         </div>
 

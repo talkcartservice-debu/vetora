@@ -1,6 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { Comment, IComment } from '../models/Comment';
 import { User } from '../models/User';
+import { Post } from '../models/Post';
 
 export async function commentRoutes(fastify: FastifyInstance) {
   // List comments for a post with pagination
@@ -103,6 +104,11 @@ export async function commentRoutes(fastify: FastifyInstance) {
 
       await comment.save();
 
+      // Increment comments count on post if it's a top-level comment or directly on a post
+      if (body.post_id) {
+        await Post.findByIdAndUpdate(body.post_id, { $inc: { comments_count: 1 } });
+      }
+
       // Emit real-time event
       fastify.io?.emit('comment:created', {
         comment: comment.toObject(),
@@ -182,12 +188,24 @@ export async function commentRoutes(fastify: FastifyInstance) {
       }
 
       // Delete the comment and all its replies
+      const deletedCount = await Comment.countDocuments({
+        $or: [
+          { _id: id },
+          { parent_comment_id: id }
+        ]
+      });
+
       await Comment.deleteMany({
         $or: [
           { _id: id },
           { parent_comment_id: id }
         ]
       });
+
+      // Decrement comments count on post
+      if (comment.post_id) {
+        await Post.findByIdAndUpdate(comment.post_id, { $inc: { comments_count: -deletedCount } });
+      }
 
       // Emit real-time event
       fastify.io?.emit('comment:deleted', {

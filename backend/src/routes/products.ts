@@ -42,7 +42,7 @@ export async function productRoutes(fastify: FastifyInstance) {
       })
       .sort({ sales_count: -1, created_at: -1 })
       .limit(parseInt(limit))
-      .lean();
+      .lean({ virtuals: true });
 
       // 4. Boost logic: if a product is in wishlist or liked, it should probably be higher
       // but here we already have them. The client side was doing scoring.
@@ -103,7 +103,7 @@ export async function productRoutes(fastify: FastifyInstance) {
         .sort(sortObj)
         .limit(parseInt(limit))
         .skip(parseInt(skip))
-        .lean();
+        .lean({ virtuals: true });
 
       const total = await Product.countDocuments(filter);
 
@@ -126,7 +126,7 @@ export async function productRoutes(fastify: FastifyInstance) {
   fastify.get('/:id', async (request, reply) => {
     try {
       const { id } = request.params as { id: string };
-      const product = await Product.findById(id).lean();
+      const product = await Product.findById(id).lean({ virtuals: true });
 
       if (!product) {
         return reply.code(404).send({ error: 'Product not found' });
