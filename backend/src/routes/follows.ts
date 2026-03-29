@@ -72,16 +72,21 @@ export async function followRoutes(fastify: FastifyInstance) {
       // Check if target exists
       let targetUser = null;
       let targetExists = false;
+      let targetEntity: any = null;
+
       switch (follow_type) {
         case 'user':
           targetUser = await User.findOne({ username: following_username });
           targetExists = !!targetUser;
+          targetEntity = targetUser;
           break;
         case 'store':
-          targetExists = !!(await Store.findById(target_id));
+          targetEntity = await Store.findById(target_id);
+          targetExists = !!targetEntity;
           break;
         case 'community':
-          targetExists = !!(await Community.findById(target_id));
+          targetEntity = await Community.findById(target_id);
+          targetExists = !!targetEntity;
           break;
       }
 
@@ -110,21 +115,37 @@ export async function followRoutes(fastify: FastifyInstance) {
 
       await follow.save();
 
+      // Get current user's display name if not in token
+      let currentUserDisplayName = user.display_name;
+      if (!currentUserDisplayName) {
+        const currentUser = await User.findOne({ username: user.username });
+        currentUserDisplayName = currentUser?.display_name || user.username;
+      }
+
       // Update counts
       await User.findOneAndUpdate({ username: user.username }, { $inc: { following_count: 1 } });
       
       let recipientUsername = targetUser?.username;
-      let title = `${user.display_name || user.username} started following you`;
+      let title = `${currentUserDisplayName} started following you`;
       let link = `/profile?username=${user.username}`;
 
       if (follow_type === 'user') {
         await User.findOneAndUpdate({ username: following_username }, { $inc: { follower_count: 1 } });
       } else if (follow_type === 'store' && target_id) {
-        const store = await Store.findByIdAndUpdate(target_id, { $inc: { follower_count: 1 } });
+        const store = targetEntity || await Store.findById(target_id);
         if (store) {
+          await Store.findByIdAndUpdate(target_id, { $inc: { follower_count: 1 } });
           recipientUsername = store.owner_username;
-          title = `${user.display_name || user.username} started following your store: ${store.name}`;
+          title = `${currentUserDisplayName} started following your store: ${store.name}`;
           link = `/store?id=${store._id}`;
+        }
+      } else if (follow_type === 'community' && target_id) {
+        const community = targetEntity || await Community.findById(target_id);
+        if (community) {
+          await Community.findByIdAndUpdate(target_id, { $inc: { member_count: 1 } });
+          recipientUsername = community.owner_username;
+          title = `${currentUserDisplayName} joined your community: ${community.name}`;
+          link = `/communities/${community._id}`;
         }
       }
 
@@ -135,7 +156,7 @@ export async function followRoutes(fastify: FastifyInstance) {
           type: 'follow',
           title,
           sender_username: user.username,
-          sender_name: user.display_name || user.username,
+          sender_name: currentUserDisplayName,
           link,
           metadata: {
             follow_id: follow._id,
@@ -188,6 +209,8 @@ export async function followRoutes(fastify: FastifyInstance) {
         await User.findOneAndUpdate({ username: following_username }, { $inc: { follower_count: -1 } });
       } else if (follow_type === 'store' && target_id) {
         await Store.findByIdAndUpdate(target_id, { $inc: { follower_count: -1 } });
+      } else if (follow_type === 'community' && target_id) {
+        await Community.findByIdAndUpdate(target_id, { $inc: { member_count: -1 } });
       }
 
       // Emit real-time event
