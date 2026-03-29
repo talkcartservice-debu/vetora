@@ -5,18 +5,27 @@ import { Store } from '../models/Store';
 import { Community } from '../models/Community';
 import { Notification } from '../models/Notification';
 
+// Helper to parse pagination
+const getPagination = (query: any) => {
+  const limit = Math.min(parseInt(query.limit) || 20, 100);
+  const skip = Math.max(parseInt(query.skip) || 0, 0);
+  return { limit, skip };
+};
+
 export async function followRoutes(fastify: FastifyInstance) {
   // Get follows for a user
-  fastify.get('/', async (request, reply) => {
+  fastify.get('/', {
+    preHandler: fastify.authenticate
+  }, async (request, reply) => {
     try {
       const query = request.query as any;
       const {
         follower_username,
         following_username,
         follow_type,
-        limit = 50,
-        skip = 0
       } = query;
+
+      const { limit, skip } = getPagination(query);
 
       // Build filter object
       const filter: any = {};
@@ -28,8 +37,8 @@ export async function followRoutes(fastify: FastifyInstance) {
       const follows = await Follow
         .find(filter)
         .sort({ created_at: -1 })
-        .limit(parseInt(limit))
-        .skip(parseInt(skip));
+        .limit(limit)
+        .skip(skip);
 
       const total = await Follow.countDocuments(filter);
 
@@ -37,9 +46,9 @@ export async function followRoutes(fastify: FastifyInstance) {
         data: follows,
         pagination: {
           total,
-          limit: parseInt(limit),
-          skip: parseInt(skip),
-          hasMore: total > parseInt(skip) + parseInt(limit)
+          limit,
+          skip,
+          hasMore: total > skip + limit
         }
       });
     } catch (error) {
@@ -189,10 +198,19 @@ export async function followRoutes(fastify: FastifyInstance) {
         fastify.io?.to(recipientUsername).emit('notification:new', notification);
       }
 
-      // Emit real-time event
-      fastify.io?.emit('follow:created', {
-        follow: follow.toObject()
-      });
+      // Emit real-time events to relevant users only
+      if (fastify.io) {
+        // Emit to follower
+        fastify.io.to(user.username).emit('follow:created', {
+          follow: follow.toObject()
+        });
+        // Emit to followed user (if applicable)
+        if (recipientUsername) {
+          fastify.io.to(recipientUsername).emit('follow:created', {
+            follow: follow.toObject()
+          });
+        }
+      }
 
       reply.code(201).send(follow);
     } catch (error) {
@@ -220,8 +238,12 @@ export async function followRoutes(fastify: FastifyInstance) {
           if (targetEntity) {
             finalFollowingUsername = targetEntity.owner_username;
           }
-        } catch (err) {
-          // Ignore CastError here, it will just fail to find the follow relationship
+        } catch (err: any) {
+          // Handle invalid ObjectId format
+          if (err.name === 'CastError') {
+            return reply.code(400).send({ error: `Invalid target_id format: ${target_id}` });
+          }
+          throw err;
         }
       }
 
@@ -239,21 +261,34 @@ export async function followRoutes(fastify: FastifyInstance) {
       // Update counts
       await User.findOneAndUpdate({ username: user.username }, { $inc: { following_count: -1 } });
       
+      let recipientUsername = finalFollowingUsername;
       if (follow_type === 'user') {
         await User.findOneAndUpdate({ username: finalFollowingUsername }, { $inc: { follower_count: -1 } });
       } else if (follow_type === 'store' && target_id) {
-        await Store.findByIdAndUpdate(target_id, { $inc: { follower_count: -1 } });
+        const store = await Store.findByIdAndUpdate(target_id, { $inc: { follower_count: -1 } });
+        recipientUsername = store?.owner_username || finalFollowingUsername;
       } else if (follow_type === 'community' && target_id) {
-        await Community.findByIdAndUpdate(target_id, { $inc: { member_count: -1 } });
+        const community = await Community.findByIdAndUpdate(target_id, { $inc: { member_count: -1 } });
+        recipientUsername = community?.owner_username || finalFollowingUsername;
       }
 
-      // Emit real-time event
-      fastify.io?.emit('follow:deleted', {
-        follow_id: follow._id,
-        following_username,
-        follow_type,
-        target_id
-      });
+      // Emit real-time events to relevant users only
+      if (fastify.io) {
+        fastify.io.to(user.username).emit('follow:deleted', {
+          follow_id: follow._id,
+          following_username: finalFollowingUsername,
+          follow_type,
+          target_id
+        });
+        if (recipientUsername) {
+          fastify.io.to(recipientUsername).emit('follow:deleted', {
+            follow_id: follow._id,
+            following_username: finalFollowingUsername,
+            follow_type,
+            target_id
+          });
+        }
+      }
 
       reply.send({ message: 'Successfully unfollowed' });
     } catch (error) {
@@ -271,9 +306,13 @@ export async function followRoutes(fastify: FastifyInstance) {
       const { following_username, follow_type = 'user', target_id } = query;
       const user = request.user as any;
 
+      if (!following_username && !target_id) {
+        return reply.code(400).send({ error: 'following_username or target_id is required' });
+      }
+
       const follow = await Follow.findOne({
         follower_username: user.username,
-        following_username,
+        ...(following_username && { following_username }),
         follow_type,
         ...(target_id && { target_id })
       });
@@ -286,25 +325,30 @@ export async function followRoutes(fastify: FastifyInstance) {
   });
 
   // Get followers of a user/store/community
-  fastify.get('/followers', async (request, reply) => {
+  fastify.get('/followers', {
+    preHandler: fastify.authenticate
+  }, async (request, reply) => {
     try {
       const query = request.query as any;
-      const { following_username, follow_type = 'user', target_id, limit = 20, skip = 0 } = query;
+      const { following_username, follow_type = 'user', target_id } = query;
+
+      if (!following_username && !target_id) {
+        return reply.code(400).send({ error: 'following_username or target_id is required' });
+      }
+
+      const { limit, skip } = getPagination(query);
 
       const filter: any = {
-        following_username,
         follow_type,
+        ...(following_username && { following_username }),
         ...(target_id && { target_id })
       };
 
       const followers = await Follow
         .find(filter)
         .sort({ created_at: -1 })
-        .limit(parseInt(limit))
-        .skip(parseInt(skip));
-
-      // follower_username is a string, so we can't use .populate()
-      // If we need user info, we would need to fetch them separately by username.
+        .limit(limit)
+        .skip(skip);
 
       const total = await Follow.countDocuments(filter);
 
@@ -312,9 +356,9 @@ export async function followRoutes(fastify: FastifyInstance) {
         followers,
         pagination: {
           total,
-          limit: parseInt(limit),
-          skip: parseInt(skip),
-          hasMore: total > parseInt(skip) + parseInt(limit)
+          limit,
+          skip,
+          hasMore: total > skip + limit
         }
       });
     } catch (error) {
@@ -324,10 +368,18 @@ export async function followRoutes(fastify: FastifyInstance) {
   });
 
   // Get following list of a user
-  fastify.get('/following', async (request, reply) => {
+  fastify.get('/following', {
+    preHandler: fastify.authenticate
+  }, async (request, reply) => {
     try {
       const query = request.query as any;
-      const { follower_username, follow_type, limit = 20, skip = 0 } = query;
+      const { follower_username, follow_type } = query;
+
+      if (!follower_username) {
+        return reply.code(400).send({ error: 'follower_username is required' });
+      }
+
+      const { limit, skip } = getPagination(query);
 
       const filter: any = { follower_username };
       if (follow_type) filter.follow_type = follow_type;
@@ -335,8 +387,8 @@ export async function followRoutes(fastify: FastifyInstance) {
       const following = await Follow
         .find(filter)
         .sort({ created_at: -1 })
-        .limit(parseInt(limit))
-        .skip(parseInt(skip));
+        .limit(limit)
+        .skip(skip);
 
       const total = await Follow.countDocuments(filter);
 
@@ -344,9 +396,9 @@ export async function followRoutes(fastify: FastifyInstance) {
         following,
         pagination: {
           total,
-          limit: parseInt(limit),
-          skip: parseInt(skip),
-          hasMore: total > parseInt(skip) + parseInt(limit)
+          limit,
+          skip,
+          hasMore: total > skip + limit
         }
       });
     } catch (error) {
@@ -356,14 +408,20 @@ export async function followRoutes(fastify: FastifyInstance) {
   });
 
   // Get follow counts for a user/store/community
-  fastify.get('/counts', async (request, reply) => {
+  fastify.get('/counts', {
+    preHandler: fastify.authenticate
+  }, async (request, reply) => {
     try {
       const query = request.query as any;
       const { following_username, follow_type = 'user', target_id } = query;
 
+      if (!following_username && !target_id) {
+        return reply.code(400).send({ error: 'following_username or target_id is required' });
+      }
+
       const filter: any = {
-        following_username,
         follow_type,
+        ...(following_username && { following_username }),
         ...(target_id && { target_id })
       };
 
@@ -371,7 +429,7 @@ export async function followRoutes(fastify: FastifyInstance) {
 
       // For user follows, also get following count
       let followingCount = 0;
-      if (follow_type === 'user') {
+      if (follow_type === 'user' && following_username) {
         followingCount = await Follow.countDocuments({
           follower_username: following_username,
           follow_type: 'user'
@@ -394,8 +452,10 @@ export async function followRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     try {
       const query = request.query as any;
-      const { follow_type, limit = 20, skip = 0 } = query;
       const user = request.user as any;
+      const { follow_type } = query;
+
+      const { limit, skip } = getPagination(query);
 
       const filter: any = { follower_username: user.username };
       if (follow_type) filter.follow_type = follow_type;
@@ -403,8 +463,8 @@ export async function followRoutes(fastify: FastifyInstance) {
       const following = await Follow
         .find(filter)
         .sort({ created_at: -1 })
-        .limit(parseInt(limit))
-        .skip(parseInt(skip));
+        .limit(limit)
+        .skip(skip);
 
       const total = await Follow.countDocuments(filter);
 
@@ -412,9 +472,9 @@ export async function followRoutes(fastify: FastifyInstance) {
         following,
         pagination: {
           total,
-          limit: parseInt(limit),
-          skip: parseInt(skip),
-          hasMore: total > parseInt(skip) + parseInt(limit)
+          limit,
+          skip,
+          hasMore: total > skip + limit
         }
       });
     } catch (error) {
@@ -429,8 +489,10 @@ export async function followRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     try {
       const query = request.query as any;
-      const { follow_type = 'user', limit = 20, skip = 0 } = query;
       const user = request.user as any;
+      const { follow_type = 'user' } = query;
+
+      const { limit, skip } = getPagination(query);
 
       const filter: any = {
         following_username: user.username,
@@ -440,11 +502,8 @@ export async function followRoutes(fastify: FastifyInstance) {
       const followers = await Follow
         .find(filter)
         .sort({ created_at: -1 })
-        .limit(parseInt(limit))
-        .skip(parseInt(skip));
-
-      // follower_username is a string, so we can't use .populate()
-      // If we need user info, we would need to fetch them separately by username.
+        .limit(limit)
+        .skip(skip);
 
       const total = await Follow.countDocuments(filter);
 
@@ -452,9 +511,9 @@ export async function followRoutes(fastify: FastifyInstance) {
         followers,
         pagination: {
           total,
-          limit: parseInt(limit),
-          skip: parseInt(skip),
-          hasMore: total > parseInt(skip) + parseInt(limit)
+          limit,
+          skip,
+          hasMore: total > skip + limit
         }
       });
     } catch (error) {

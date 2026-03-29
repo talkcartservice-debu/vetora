@@ -39,8 +39,9 @@ const FollowSchema = new Schema<IFollow>({
 });
 
 // Compound indexes for performance and uniqueness
-FollowSchema.index({ follower_username: 1, following_username: 1, follow_type: 1 }, { unique: true });
+FollowSchema.index({ follower_username: 1, following_username: 1, follow_type: 1, target_id: 1 }, { unique: true });
 FollowSchema.index({ following_username: 1, follow_type: 1, created_at: -1 });
 FollowSchema.index({ follower_username: 1, created_at: -1 });
+FollowSchema.index({ target_id: 1 }, { sparse: true });
 
 export const Follow = mongoose.model<IFollow>('Follow', FollowSchema);
