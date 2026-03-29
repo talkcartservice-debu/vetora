@@ -17,9 +17,8 @@ export default function StoryViewer({ stories = [], startIndex = 0, onClose, onN
   // When stories array changes (e.g. next group), reset state
   useEffect(() => {
     setCurrent(startIndex >= stories.length ? 0 : startIndex);
-    setProgress(0);
-    setLiked(false);
     setReplyText("");
+    setIsPaused(false);
   }, [stories, startIndex]);
 
   const { data: currentUser } = useQuery({
@@ -35,7 +34,7 @@ export default function StoryViewer({ stories = [], startIndex = 0, onClose, onN
 
   const story = stories[current];
   const isOwner = currentUser?.username && story?.author_username ? currentUser.username === story.author_username : false;
-  const isLoadingUser = !currentUser && !isOwner;
+  const isLoadingUser = !currentUser;
 
   useEffect(() => {
     if (story?._id || story?.id) {
@@ -51,11 +50,15 @@ export default function StoryViewer({ stories = [], startIndex = 0, onClose, onN
 
   // Handle auto-progress timer
   useEffect(() => {
-    if (isPaused || !story) return;
+    const isVideo = story?.media_type === "video" && story?.media_url;
+    if (isPaused || !story || isVideo) return;
 
     const timer = setInterval(() => {
       setProgress(p => {
-        if (p >= 100) return 100;
+        if (p >= 100) {
+          clearInterval(timer);
+          return 100;
+        }
         return p + 1;
       });
     }, 50);
@@ -64,14 +67,14 @@ export default function StoryViewer({ stories = [], startIndex = 0, onClose, onN
   }, [current, isPaused, story]);
 
   useEffect(() => {
-    if (progress >= 100) {
-      if (current < stories.length - 1) {
-        setCurrent(c => c + 1);
-        setProgress(0);
-      } else {
-        if (onNext) onNext();
-        else onClose();
-      }
+    if (progress < 100) return;
+
+    if (current < stories.length - 1) {
+      setCurrent(c => c + 1);
+      setProgress(0);
+    } else {
+      if (onNext) onNext();
+      else onClose();
     }
   }, [progress, current, stories.length, onNext, onClose]);
 
@@ -178,6 +181,7 @@ export default function StoryViewer({ stories = [], startIndex = 0, onClose, onN
                     muted={false}
                     onPlay={() => setIsPaused(false)}
                     onEnded={() => {
+                      setProgress(100);
                       if (current < stories.length - 1) {
                         setCurrent(c => c + 1);
                         setProgress(0);
