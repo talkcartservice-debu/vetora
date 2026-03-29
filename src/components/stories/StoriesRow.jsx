@@ -7,7 +7,7 @@ import StoryViewer from "./StoryViewer";
 import CreateStoryModal from "./CreateStoryModal";
 
 export default function StoriesRow({ currentUser }) {
-  const [viewingGroup, setViewingGroup] = useState(null); // { stories, startIndex }
+  const [viewingGroup, setViewingGroup] = useState(null); // { stories, startIndex, groupIndex }
   const [showCreate, setShowCreate] = useState(false);
 
   const { data: response } = useQuery({
@@ -40,6 +40,19 @@ export default function StoriesRow({ currentUser }) {
   // Check if current user has a story
   const myStory = groups.find(g => g.username === currentUser?.username);
 
+  // Helper to change groups
+  const playGroup = (index) => {
+    if (index >= 0 && index < groups.length) {
+      setViewingGroup({ 
+        stories: groups[index].stories, 
+        startIndex: 0,
+        groupIndex: index 
+      });
+    } else {
+      setViewingGroup(null);
+    }
+  };
+
   return (
     <>
       <div className="py-3 -mx-4 px-4 overflow-x-auto hide-scrollbar">
@@ -48,7 +61,8 @@ export default function StoriesRow({ currentUser }) {
           <button
             onClick={() => {
               if (myStory) {
-                setViewingGroup({ stories: myStory.stories, startIndex: 0 });
+                const myIndex = groups.findIndex(g => g.username === currentUser?.username);
+                playGroup(myIndex);
               } else {
                 setShowCreate(true);
               }
@@ -123,7 +137,10 @@ export default function StoriesRow({ currentUser }) {
             return (
               <button
                 key={group.username}
-                onClick={() => setViewingGroup({ stories: group.stories, startIndex: 0 })}
+                onClick={() => {
+                  const idx = groups.findIndex(g => g.username === group.username);
+                  playGroup(idx);
+                }}
                 className="shrink-0 flex flex-col items-center gap-1.5"
               >
                 <div className="w-14 h-14 rounded-full p-0.5 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 shadow-sm relative">
@@ -172,6 +189,8 @@ export default function StoriesRow({ currentUser }) {
           <StoryViewer
             stories={viewingGroup.stories}
             startIndex={viewingGroup.startIndex}
+            onNext={() => playGroup(viewingGroup.groupIndex + 1)}
+            onPrev={() => playGroup(viewingGroup.groupIndex - 1)}
             onClose={() => setViewingGroup(null)}
           />
         )}

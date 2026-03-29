@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Heart, Send } from "lucide-react";
 import { storiesAPI } from "@/api/apiClient";
@@ -6,12 +6,21 @@ import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import { authAPI } from "@/api/apiClient";
 
-export default function StoryViewer({ stories = [], startIndex = 0, onClose }) {
+export default function StoryViewer({ stories = [], startIndex = 0, onClose, onNext, onPrev }) {
   const [current, setCurrent] = useState(startIndex >= stories.length ? 0 : startIndex);
   const [progress, setProgress] = useState(0);
   const [liked, setLiked] = useState(false);
   const [replyText, setReplyText] = useState("");
   const [isPaused, setIsPaused] = useState(false);
+  const inputRef = useRef(null);
+
+  // When stories array changes (e.g. next group), reset state
+  useEffect(() => {
+    setCurrent(startIndex >= stories.length ? 0 : startIndex);
+    setProgress(0);
+    setLiked(false);
+    setReplyText("");
+  }, [stories, startIndex]);
 
   const { data: currentUser } = useQuery({
     queryKey: ["currentUser"],
@@ -34,14 +43,23 @@ export default function StoryViewer({ stories = [], startIndex = 0, onClose }) {
     }
   }, [story?._id, story?.id]);
 
+  // Reset progress and liked status only when the story actually changes
   useEffect(() => {
     setProgress(0);
     setLiked(false);
+  }, [current, story?._id, story?.id]);
+
+  // Handle auto-progress timer
+  useEffect(() => {
     if (isPaused || !story) return;
 
     const timer = setInterval(() => {
-      setProgress(p => p + 1);
+      setProgress(p => {
+        if (p >= 100) return 100;
+        return p + 1;
+      });
     }, 50);
+
     return () => clearInterval(timer);
   }, [current, isPaused, story]);
 
@@ -51,10 +69,11 @@ export default function StoryViewer({ stories = [], startIndex = 0, onClose }) {
         setCurrent(c => c + 1);
         setProgress(0);
       } else {
-        onClose();
+        if (onNext) onNext();
+        else onClose();
       }
     }
-  }, [progress, current, stories.length, onClose]);
+  }, [progress, current, stories.length, onNext, onClose]);
 
   const handleLike = async () => {
     if (liked) return;
@@ -75,6 +94,7 @@ export default function StoryViewer({ stories = [], startIndex = 0, onClose }) {
       toast.success("Reply sent!");
       setReplyText("");
       setIsPaused(false);
+      inputRef.current?.blur();
     } catch (error) {
       toast.error(error.message || "Failed to send reply");
     }
@@ -162,7 +182,8 @@ export default function StoryViewer({ stories = [], startIndex = 0, onClose }) {
                         setCurrent(c => c + 1);
                         setProgress(0);
                       } else {
-                        onClose();
+                        if (onNext) onNext();
+                        else onClose();
                       }
                     }}
                   />
@@ -190,6 +211,7 @@ export default function StoryViewer({ stories = [], startIndex = 0, onClose }) {
           {!isOwner && !isLoadingUser ? (
             <form onSubmit={handleReply} className="flex-1 flex items-center gap-2">
               <input
+                ref={inputRef}
                 type="text"
                 value={replyText}
                 onChange={(e) => setReplyText(e.target.value)}
@@ -225,11 +247,28 @@ export default function StoryViewer({ stories = [], startIndex = 0, onClose }) {
         {!isPaused && (
           <>
             <button
-              onClick={() => current > 0 ? setCurrent(c => c - 1) : onClose()}
+              onClick={() => {
+                if (current > 0) {
+                  setCurrent(c => c - 1);
+                } else if (onPrev) {
+                  onPrev();
+                } else {
+                  setProgress(0);
+                  setLiked(false);
+                }
+              }}
               className="absolute left-0 top-20 w-1/4 h-3/4 z-20 opacity-0 cursor-default"
             />
             <button
-              onClick={() => current < stories.length - 1 ? setCurrent(c => c + 1) : onClose()}
+              onClick={() => {
+                if (current < stories.length - 1) {
+                  setCurrent(c => c + 1);
+                } else if (onNext) {
+                  onNext();
+                } else {
+                  onClose(); // Close if it's the last story
+                }
+              }}
               className="absolute right-0 top-20 w-1/4 h-3/4 z-20 opacity-0 cursor-default"
             />
           </>
