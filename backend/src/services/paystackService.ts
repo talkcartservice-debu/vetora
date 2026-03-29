@@ -45,7 +45,12 @@ export const paystackService = {
       const errorData = error.response?.data;
       console.error('Paystack Initialization Error:', errorData || error.message);
       
-      const errorMessage = errorData?.message || error.message || 'Failed to initialize Paystack transaction';
+      let errorMessage = errorData?.message || error.message || 'Failed to initialize Paystack transaction';
+      
+      if (error.response?.status === 401) {
+        errorMessage = 'Paystack authentication failed. Please check if your PAYSTACK_SECRET_KEY is valid.';
+      }
+
       const newError: any = new Error(errorMessage);
       newError.details = errorData;
       newError.statusCode = error.response?.status || 500;

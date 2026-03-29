@@ -75,7 +75,7 @@ export async function vendorSubscriptionRoutes(fastify: FastifyInstance) {
       } = query;
 
       // Check if user owns the vendor account (unless admin)
-      if (vendor_username && user.username !== vendor_username.toLowerCase() && user.role !== 'admin') {
+      if (vendor_username && user.username !== vendor_username.toLowerCase() && user.role !== 'super_admin') {
         return reply.code(403).send({ error: 'You can only view your own subscriptions' });
       }
 
@@ -84,7 +84,7 @@ export async function vendorSubscriptionRoutes(fastify: FastifyInstance) {
 
       if (vendor_username) {
         filter.vendor_username = vendor_username.toLowerCase();
-      } else if (user.role !== 'admin') {
+      } else if (user.role !== 'super_admin') {
         // Force filter to own username for non-admins
         filter.vendor_username = user.username;
       }

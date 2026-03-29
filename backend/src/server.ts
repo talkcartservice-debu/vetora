@@ -78,6 +78,15 @@ fastify.register(jwt, {
 // Add authentication decorator
 fastify.decorate('authenticate', authenticate);
 
+// Add Socket.IO decorator
+fastify.decorate('io', null);
+
+// Setup WebSocket
+setupWebSocket(fastify);
+
+// Set the io instance on fastify
+fastify.io = io;
+
 // Add maintenance mode check
 fastify.addHook('preHandler', checkMaintenance);
 
@@ -138,15 +147,6 @@ process.on('uncaughtException', (error) => {
 process.on('unhandledRejection', (reason, promise) => {
   console.error('💥 Unhandled Rejection at:', promise, 'reason:', reason);
 });
-
-// Add Socket.IO decorator
-fastify.decorate('io', null);
-
-// Setup WebSocket
-setupWebSocket(fastify);
-
-// Set the io instance on fastify
-fastify.io = io;
 
 // Health check
 fastify.get('/api/health', async () => {

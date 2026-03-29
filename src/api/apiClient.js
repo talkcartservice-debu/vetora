@@ -104,7 +104,7 @@ class APIClient {
         data = await response.text();
       }
 
-      const error = new Error(data?.error || data?.message || `API Error: ${response.status}`);
+      const error = new Error(data?.message || data?.error || `API Error: ${response.status}`);
       error.status = response.status;
       error.details = data?.details; // Save validation details
       

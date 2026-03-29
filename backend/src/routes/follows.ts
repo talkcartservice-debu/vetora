@@ -66,6 +66,8 @@ export async function followRoutes(fastify: FastifyInstance) {
       const user = request.user as any;
 
       const { following_username, follow_type = 'user', target_id } = body;
+      
+      fastify.log.info({ follow_type, following_username, target_id, user: user.username }, 'Processing follow request');
 
       // Validate follow_type
       const validTypes = ['user', 'store', 'community'];
@@ -107,6 +109,7 @@ export async function followRoutes(fastify: FastifyInstance) {
             break;
         }
       } catch (err: any) {
+        fastify.log.error(err, 'Error finding follow target');
         // Handle invalid ObjectId format
         if (err.name === 'CastError') {
           return reply.code(400).send({ error: `Invalid target_id format: ${target_id}` });
@@ -129,14 +132,19 @@ export async function followRoutes(fastify: FastifyInstance) {
       // Ensure finalFollowingUsername is lowercased (it should be already if from DB, but just in case)
       if (finalFollowingUsername) {
         finalFollowingUsername = finalFollowingUsername.toLowerCase();
+      } else if (follow_type === 'user') {
+         // This should not happen if lowerFollowingUsername was present
+         return reply.code(400).send({ error: 'following_username is required' });
       }
+
+      fastify.log.info({ finalFollowingUsername }, 'Target resolved');
 
       // Check if already following
       const existingFollow = await Follow.findOne({
         follower_username: user.username,
         following_username: finalFollowingUsername,
         follow_type,
-        ...(target_id && { target_id })
+        target_id: target_id || null
       });
 
       if (existingFollow) {
@@ -147,10 +155,11 @@ export async function followRoutes(fastify: FastifyInstance) {
         follower_username: user.username,
         following_username: finalFollowingUsername,
         follow_type,
-        target_id,
+        target_id: target_id || null,
       });
 
       await follow.save();
+      fastify.log.info({ follow_id: follow._id }, 'Follow saved');
 
       // Get current user's display name if not in token
       let currentUserDisplayName = user.display_name;
@@ -160,78 +169,88 @@ export async function followRoutes(fastify: FastifyInstance) {
       }
 
       // Update counts
-      await User.findOneAndUpdate({ username: user.username }, { $inc: { following_count: 1 } });
-      
-      let recipientUsername = targetUser?.username;
-      let title = `${currentUserDisplayName} started following you`;
-      let link = `/profile?username=${user.username}`;
+      try {
+        await User.findOneAndUpdate({ username: user.username }, { $inc: { following_count: 1 } });
+        
+        let recipientUsername = targetUser?.username;
+        let title = `${currentUserDisplayName} started following you`;
+        let link = `/profile?username=${user.username}`;
 
-      if (follow_type === 'user') {
-        await User.findOneAndUpdate({ username: finalFollowingUsername }, { $inc: { follower_count: 1 } });
-      } else if (follow_type === 'store' && target_id) {
-        if (targetEntity) {
-          await Store.findByIdAndUpdate(target_id, { $inc: { follower_count: 1 } });
-          recipientUsername = targetEntity.owner_username;
-          title = `${currentUserDisplayName} started following your store: ${targetEntity.name}`;
-          link = `/store?id=${targetEntity._id}`;
+        if (follow_type === 'user') {
+          await User.findOneAndUpdate({ username: finalFollowingUsername }, { $inc: { follower_count: 1 } });
+          recipientUsername = finalFollowingUsername;
+        } else if (follow_type === 'store' && target_id) {
+          if (targetEntity) {
+            await Store.findByIdAndUpdate(target_id, { $inc: { follower_count: 1 } });
+            recipientUsername = targetEntity.owner_username;
+            title = `${currentUserDisplayName} started following your store: ${targetEntity.name}`;
+            link = `/store?id=${targetEntity._id}`;
+          }
+        } else if (follow_type === 'community' && target_id) {
+          if (targetEntity) {
+            await Community.findByIdAndUpdate(target_id, { $inc: { member_count: 1 } });
+            recipientUsername = targetEntity.owner_username;
+            title = `${currentUserDisplayName} joined your community: ${targetEntity.name}`;
+            link = `/communities/${targetEntity._id}`;
+          }
         }
-      } else if (follow_type === 'community' && target_id) {
-        if (targetEntity) {
-          await Community.findByIdAndUpdate(target_id, { $inc: { member_count: 1 } });
-          recipientUsername = targetEntity.owner_username;
-          title = `${currentUserDisplayName} joined your community: ${targetEntity.name}`;
-          link = `/communities/${targetEntity._id}`;
-        }
-      }
 
-      // Create notification for the target
-      if (recipientUsername && recipientUsername !== user.username) {
-        try {
-          const notification = new Notification({
-            recipient_username: recipientUsername,
-            type: 'follow',
-            title,
-            sender_username: user.username,
-            sender_name: currentUserDisplayName,
-            link,
-            metadata: {
-              follow_id: follow._id,
-              follow_type,
-              target_id
+        fastify.log.info({ recipientUsername }, 'Updating notification');
+
+        // Create notification for the target
+        if (recipientUsername && recipientUsername !== user.username) {
+          try {
+            const notification = new Notification({
+              recipient_username: recipientUsername,
+              type: 'follow',
+              title,
+              sender_username: user.username,
+              sender_name: currentUserDisplayName,
+              link,
+              metadata: {
+                follow_id: follow._id,
+                follow_type,
+                target_id
+              }
+            });
+            await notification.save();
+            
+            // Emit notification via socket
+            if (fastify.io) {
+              fastify.io.to(`user:${recipientUsername}`).emit('notification:new', notification);
             }
-          });
-          await notification.save();
-          
-          // Emit notification via socket
-          fastify.io?.to(`user:${recipientUsername}`).emit('notification:new', notification);
-        } catch (notifErr: any) {
-          fastify.log.error(notifErr, 'Failed to create/emit notification');
-          // Don't fail the whole request if notification fails
+          } catch (notifErr: any) {
+            fastify.log.error(notifErr, 'Failed to create/emit notification');
+            // Don't fail the whole request if notification fails
+          }
         }
-      }
 
-      // Emit real-time events to relevant users only
-      if (fastify.io) {
-        try {
-          // Emit to follower
-          fastify.io.to(`user:${user.username}`).emit('follow:created', {
-            follow: follow.toObject()
-          });
-          // Emit to followed user (if applicable)
-          if (recipientUsername) {
-            fastify.io.to(`user:${recipientUsername}`).emit('follow:created', {
+        // Emit real-time events to relevant users only
+        if (fastify.io) {
+          try {
+            // Emit to follower
+            fastify.io.to(`user:${user.username}`).emit('follow:created', {
               follow: follow.toObject()
             });
+            // Emit to followed user (if applicable)
+            if (recipientUsername) {
+              fastify.io.to(`user:${recipientUsername}`).emit('follow:created', {
+                follow: follow.toObject()
+              });
+            }
+          } catch (socketErr: any) {
+            fastify.log.error(socketErr, 'Failed to emit socket events');
           }
-        } catch (socketErr: any) {
-          fastify.log.error(socketErr, 'Failed to emit socket events');
         }
+      } catch (countErr: any) {
+        fastify.log.error(countErr, 'Error updating counts or notifications');
+        // We already saved the follow, so we might want to continue or at least log it
       }
 
       reply.code(201).send(follow);
     } catch (error) {
-      fastify.log.error(error);
-      reply.code(500).send({ error: 'Internal server error' });
+      fastify.log.error(error, 'Follow handler failed');
+      reply.code(500).send({ error: 'Internal server error', message: (error as Error).message });
     }
   });
 
@@ -269,7 +288,7 @@ export async function followRoutes(fastify: FastifyInstance) {
         follower_username: user.username,
         following_username: finalFollowingUsername,
         follow_type,
-        ...(target_id && { target_id })
+        target_id: target_id || null
       });
 
       if (!follow) {
