@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Heart, Send } from "lucide-react";
-import { storiesAPI, messagesAPI } from "@/api/apiClient";
+import { storiesAPI } from "@/api/apiClient";
 import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
+import { authAPI } from "@/api/apiClient";
 
 export default function StoryViewer({ stories = [], startIndex = 0, onClose }) {
   const [current, setCurrent] = useState(startIndex >= stories.length ? 0 : startIndex);
@@ -11,6 +13,11 @@ export default function StoryViewer({ stories = [], startIndex = 0, onClose }) {
   const [replyText, setReplyText] = useState("");
   const [isPaused, setIsPaused] = useState(false);
 
+  const { data: currentUser } = useQuery({
+    queryKey: ["currentUser"],
+    queryFn: () => authAPI.me(),
+  });
+
   useEffect(() => {
     if (!stories || stories.length === 0) {
       onClose();
@@ -18,6 +25,8 @@ export default function StoryViewer({ stories = [], startIndex = 0, onClose }) {
   }, [stories, onClose]);
 
   const story = stories[current];
+  const isOwner = currentUser?.username && story?.author_username ? currentUser.username === story.author_username : false;
+  const isLoadingUser = !currentUser && !isOwner;
 
   useEffect(() => {
     if (story?._id || story?.id) {
@@ -59,19 +68,15 @@ export default function StoryViewer({ stories = [], startIndex = 0, onClose }) {
 
   const handleReply = async (e) => {
     e.preventDefault();
-    if (!replyText.trim()) return;
+    if (!replyText.trim() || isOwner) return;
 
     try {
-      await messagesAPI.send({
-        recipient_username: story.author_username,
-        content: `Replied to your story: "${replyText}"`,
-        message_type: 'text'
-      });
+      await storiesAPI.reply(story._id || story.id, replyText);
       toast.success("Reply sent!");
       setReplyText("");
       setIsPaused(false);
     } catch (error) {
-      toast.error("Failed to send reply");
+      toast.error(error.message || "Failed to send reply");
     }
   };
 
@@ -182,23 +187,31 @@ export default function StoryViewer({ stories = [], startIndex = 0, onClose }) {
 
         {/* Bottom actions */}
         <div className="absolute bottom-6 left-0 right-0 px-4 flex items-center gap-3 z-30">
-          <form onSubmit={handleReply} className="flex-1 flex items-center gap-2">
-            <input
-              type="text"
-              value={replyText}
-              onChange={(e) => setReplyText(e.target.value)}
-              onFocus={() => setIsPaused(true)}
-              onBlur={() => setIsPaused(false)}
-              placeholder="Send message..."
-              className="flex-1 bg-black/40 hover:bg-black/60 focus:bg-black/70 backdrop-blur-xl border border-white/20 rounded-full h-12 px-5 text-white text-sm outline-none transition-all placeholder:text-white/40 shadow-inner"
-            />
-            {replyText.trim() && (
-              <button type="submit" className="w-12 h-12 rounded-full bg-indigo-600 flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all">
-                <Send className="w-5 h-5 text-white" />
-              </button>
-            )}
-          </form>
-          {!replyText.trim() && (
+          {!isOwner && !isLoadingUser ? (
+            <form onSubmit={handleReply} className="flex-1 flex items-center gap-2">
+              <input
+                type="text"
+                value={replyText}
+                onChange={(e) => setReplyText(e.target.value)}
+                onFocus={() => setIsPaused(true)}
+                onBlur={() => setIsPaused(false)}
+                placeholder="Send message..."
+                className="flex-1 bg-black/40 hover:bg-black/60 focus:bg-black/70 backdrop-blur-xl border border-white/20 rounded-full h-12 px-5 text-white text-sm outline-none transition-all placeholder:text-white/40 shadow-inner"
+              />
+              {replyText.trim() && (
+                <button type="submit" className="w-12 h-12 rounded-full bg-indigo-600 flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all">
+                  <Send className="w-5 h-5 text-white" />
+                </button>
+              )}
+            </form>
+          ) : isOwner ? (
+            <div className="flex-1 flex items-center justify-center py-3 bg-black/20 backdrop-blur-md rounded-full border border-white/10">
+               <p className="text-white/60 text-xs font-medium italic">Viewing your own story</p>
+            </div>
+          ) : (
+            <div className="flex-1 h-12" /> // Loading placeholder
+          )}
+          {!isOwner && !isLoadingUser && !replyText.trim() && (
             <button 
               onClick={handleLike} 
               className={`w-12 h-12 rounded-full backdrop-blur-xl border border-white/20 flex items-center justify-center transition-all ${liked ? 'bg-red-500/20 border-red-500/50 scale-110 shadow-[0_0_20px_rgba(239,68,68,0.3)]' : 'bg-black/40 hover:bg-black/60 active:scale-90'}`}

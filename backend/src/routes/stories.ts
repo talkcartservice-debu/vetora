@@ -2,6 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { Story, IStory } from '../models/Story';
 import { User } from '../models/User';
 import { Follow } from '../models/Follow';
+import { Message } from '../models/Message';
 
 export async function storyRoutes(fastify: FastifyInstance) {
   // Get active stories feed (from users you follow + your own)
@@ -342,8 +343,13 @@ export async function storyRoutes(fastify: FastifyInstance) {
       const { text } = request.body as { text: string };
       const user = request.user as any;
       
-      if (!text) {
+      const trimmedText = text?.trim();
+      if (!trimmedText) {
         return reply.code(400).send({ error: 'Reply text is required' });
+      }
+
+      if (trimmedText.length > 1000) {
+        return reply.code(400).send({ error: 'Reply text is too long (max 1000 characters)' });
       }
       
       const story = await Story.findById(id);
@@ -351,12 +357,42 @@ export async function storyRoutes(fastify: FastifyInstance) {
       if (!story) {
         return reply.code(404).send({ error: 'Story not found' });
       }
+
+      // Check if story is active and not expired
+      if (!story.is_active || story.expires_at <= new Date()) {
+        return reply.code(400).send({ error: 'Story is no longer active' });
+      }
+
+      // Check if user is replying to their own story
+      if (story.author_username === user.username) {
+        return reply.code(403).send({ error: 'You cannot reply to your own story' });
+      }
       
       // We'll treat story replies as direct messages
-      // This would normally be handled by a message service
-      // For now, we'll just log it or you can integrate with messages route
+      // Standardize conversation_id to match messages.ts: chat_user1_user2
+      const usernames = [user.username, story.author_username].sort();
+      const conversationId = `chat_${usernames[0]}_${usernames[1]}`;
+
+      const message = new Message({
+        conversation_id: conversationId,
+        sender_username: user.username,
+        sender_name: user.display_name || user.username,
+        receiver_username: story.author_username,
+        content: `Replied to your story: "${trimmedText}"`,
+        message_type: 'text',
+        created_at: new Date(),
+        updated_at: new Date()
+      });
+
+      await message.save();
       
-      reply.send({ message: 'Reply sent successfully' });
+      // Emit real-time event via Socket.IO if available
+      // Use toObject() for clean serialization
+      if (story.author_username) {
+        fastify.io?.to(`user:${story.author_username}`).emit('new-message', message.toObject());
+      }
+      
+      reply.send({ message: 'Reply sent successfully', data: message });
     } catch (error: any) {
       fastify.log.error(error);
       return reply.code(500).send({ 

@@ -50,14 +50,18 @@ export function setupWebSocket(fastify: FastifyInstance) {
 
   io.on('connection', (socket) => {
     const userId = socket.data.user.userId;
-    console.log(`User ${userId} connected`);
+    const username = socket.data.user.username;
+    console.log(`User ${username || userId} connected`);
 
-    // Join user-specific room for notifications
+    // Join user-specific rooms for notifications and messages
     socket.join(`user:${userId}`);
+    if (username) {
+      socket.join(`user:${username}`);
+    }
 
     // Handle disconnection
     socket.on('disconnect', () => {
-      console.log(`User ${userId} disconnected`);
+      console.log(`User ${username || userId} disconnected`);
     });
 
     // Example: Join conversation room

@@ -181,7 +181,7 @@ export async function messageRoutes(fastify: FastifyInstance) {
       
       // Emit real-time event via Socket.IO if available
       if (body.recipient_username) {
-        fastify.io?.to(`user:${body.recipient_username}`).emit('new-message', message);
+        fastify.io?.to(`user:${body.recipient_username}`).emit('new-message', message.toObject());
       }
 
       return message;

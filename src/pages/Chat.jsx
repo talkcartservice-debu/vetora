@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo } from "react";
+import React, { useState, useRef, useEffect, useMemo, useCallback } from "react";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import MessageBubble from "@/components/chat/MessageBubble";
 import ChatImageUpload from "@/components/chat/ChatImageUpload";
 import { authAPI, productsAPI, messagesAPI, ordersAPI } from "@/api/apiClient";
+import { useSocket } from "@/lib/SocketContext";
 
 const EMOJI_QUICK = ["❤️", "😂", "🔥", "👍", "😍", "💯", "🎉", "😎", "✨", "🙌", "🤔", "👏", "🚀", "💡", "✅", "❌"];
 
@@ -141,6 +142,7 @@ export default function Chat() {
   const [pendingImageUrl, setPendingImageUrl] = useState(null);
   const messagesEndRef = useRef(null);
   const queryClient = useQueryClient();
+  const { on } = useSocket();
 
   const { data: currentUser } = useQuery({
     queryKey: ["currentUser"],
@@ -169,6 +171,33 @@ export default function Chat() {
   
   const allMessages = Array.isArray(allMessagesResponse?.data) ? allMessagesResponse.data : [];
   const receivedMessages = Array.isArray(receivedMessagesResponse?.data) ? receivedMessagesResponse.data : [];
+
+  const markAsRead = useCallback(async () => {
+    if (!selectedConvo) return;
+    const unread = receivedMessages.filter(m => m.sender_username === selectedConvo && !m.is_read);
+    for (const m of unread) {
+      const messageId = m._id || m.id;
+      if (messageId) {
+        await messagesAPI.markAsRead(messageId);
+      }
+    }
+    queryClient.invalidateQueries({ queryKey: ["receivedMessages"] });
+  }, [selectedConvo, receivedMessages, queryClient]);
+
+  useEffect(() => {
+    // Listen for new messages in real-time
+    const unsubscribe = on("new-message", (msg) => {
+      // Refresh the queries to show the new message
+      queryClient.invalidateQueries({ queryKey: ["allMessages"] });
+      queryClient.invalidateQueries({ queryKey: ["receivedMessages"] });
+      
+      // If it's for the selected conversation, mark as read
+      if (selectedConvo && (msg.sender_username === selectedConvo || msg.receiver_username === selectedConvo)) {
+        markAsRead();
+      }
+    });
+    return unsubscribe;
+  }, [on, queryClient, selectedConvo, markAsRead]);
 
   // Real-time subscription replaced by refetchInterval
 
@@ -231,7 +260,7 @@ export default function Chat() {
       }
       
       await messagesAPI.send({
-        conversation_id: [currentUser.username, recipient].sort().join("_"),
+        conversation_id: `chat_${[currentUser.username, recipient].sort().join("_")}`,
         sender_username: currentUser.username,
         sender_name: currentUser.display_name || currentUser.full_name,
         recipient_username: recipient,
@@ -272,7 +301,7 @@ export default function Chat() {
     if (!forwardToUsername.trim() || !forwardMsg || !currentUser?.username) return;
     try {
       await messagesAPI.send({
-        conversation_id: [currentUser.username, forwardToUsername].sort().join("_"),
+        conversation_id: `chat_${[currentUser.username, forwardToUsername].sort().join("_")}`,
         sender_username: currentUser.username,
         sender_name: currentUser.display_name || currentUser.full_name,
         recipient_username: forwardToUsername.trim(),
@@ -329,18 +358,6 @@ export default function Chat() {
     } catch (error) {
       toast.error("Failed to create offer");
     }
-  };
-
-  const markAsRead = async () => {
-    if (!selectedConvo) return;
-    const unread = receivedMessages.filter(m => m.sender_username === selectedConvo && !m.is_read);
-    for (const m of unread) {
-      const messageId = m._id || m.id;
-      if (messageId) {
-        await messagesAPI.markAsRead(messageId);
-      }
-    }
-    queryClient.invalidateQueries({ queryKey: ["receivedMessages"] });
   };
 
   useEffect(() => {
