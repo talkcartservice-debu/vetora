@@ -19,8 +19,10 @@ export const paystackService = {
    * Initialize a Paystack transaction
    */
   async initializeTransaction(email: string, amount: number, orderId: string, currency: string = 'NGN'): Promise<PaystackInitializeResponse> {
-    if (!PAYSTACK_SECRET_KEY || PAYSTACK_SECRET_KEY === 'your_paystack_secret_key') {
-      throw new Error('Paystack secret key is not configured. Please check your environment variables.');
+    if (!PAYSTACK_SECRET_KEY || PAYSTACK_SECRET_KEY === 'your_paystack_secret_key' || PAYSTACK_SECRET_KEY === '') {
+      const error: any = new Error('Paystack secret key is not configured. Please set PAYSTACK_SECRET_KEY in your environment variables.');
+      error.statusCode = 503;
+      throw error;
     }
     try {
       const response = await axios.post(
