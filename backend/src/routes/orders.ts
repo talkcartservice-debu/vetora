@@ -24,7 +24,7 @@ const createOrderSchema = z.object({
   shipping_address: z.string().optional(),
   order_note: z.string().optional(),
   affiliate_username: z.string().min(1).or(z.literal('')).optional(),
-  payment_method: z.enum(['card', 'paypal', 'crypto', 'bank_transfer', 'paystack']).default('paystack'),
+  payment_method: z.enum(['card', 'paypal', 'crypto', 'bank_transfer', 'paystack', 'mobile_money']).default('paystack'),
 });
 
 export async function orderRoutes(fastify: FastifyInstance) {

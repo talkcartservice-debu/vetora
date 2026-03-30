@@ -113,21 +113,25 @@ export default function Checkout() {
       }
       
       // If Paystack, initialize payment
-      if (paymentMethod === "paystack") {
+      const isPaystackMethod = ["paystack", "card", "mobile_money"].includes(paymentMethod);
+      if (isPaystackMethod) {
         // Pass all order IDs to Paystack for reconciliation
         const orderIds = orders.map(o => o._id).join(",");
         
+        let channels = [];
+        if (paymentMethod === "card") channels = ["card"];
+        if (paymentMethod === "mobile_money") channels = ["mobile_money", "ussd", "qr"];
+
         try {
           await initializePaystackPayment({
             amount: total, // Still passed but server now verifies against DB
             email: currentUser.email,
-            order_id: orderIds
+            order_id: orderIds,
+            channels: channels.length > 0 ? channels : undefined
           });
           
-          // Clear cart ONLY IF redirect is successful (this code might not run due to redirect)
-          // Actually, we'll clear it here just before redirect to be safe
-          await cartAPI.clear();
-          queryClient.invalidateQueries({ queryKey: ["cart"] });
+          // cartAPI.clear() removed from here to avoid race condition during redirect.
+          // It is now handled in PaymentSuccess.jsx after verification.
         } catch (paystackError) {
           console.error("Payment initialization failed:", paystackError);
           // If paystack fails to initialize, don't clear the cart
@@ -141,7 +145,8 @@ export default function Checkout() {
       return orders;
     },
     onSuccess: (orders) => {
-      if (paymentMethod === "paystack") {
+      const isPaystackMethod = ["paystack", "card", "mobile_money"].includes(paymentMethod);
+      if (isPaystackMethod) {
         // Redirection happens in initializePaystackPayment
         return;
       }
@@ -217,8 +222,9 @@ export default function Checkout() {
           <CheckoutStep number="2" title="Payment Method" active={step === 2} completed={step > 2}>
             <div className="space-y-3">
               {[
-                { id: "paystack", name: "Paystack (Secure Payment)", icon: Zap },
-                { id: "card", name: "Credit/Debit Card", icon: CreditCard, disabled: true },
+                { id: "paystack", name: "Paystack (All Methods)", icon: Zap },
+                { id: "card", name: "Credit/Debit Card", icon: CreditCard },
+                { id: "mobile_money", name: "Mobile/Airtel Money", icon: Wallet },
                 { id: "wallet", name: "Vetora Wallet", icon: Wallet, disabled: true },
                 { id: "crypto", name: "Cryptocurrency", icon: Zap, disabled: true }
               ].map(method => (
@@ -266,8 +272,9 @@ export default function Checkout() {
                 <div>
                   <h4 className="text-sm font-bold text-slate-900">Payment Method</h4>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    {paymentMethod === "paystack" ? "Paystack Secure Payment" : 
-                     paymentMethod === "card" ? "Credit Card •••• 4242" : 
+                    {paymentMethod === "paystack" ? "Paystack (All Methods)" : 
+                     paymentMethod === "card" ? "Credit/Debit Card (via Paystack)" : 
+                     paymentMethod === "mobile_money" ? "Mobile/Airtel Money (via Paystack)" :
                      paymentMethod}
                   </p>
                 </div>

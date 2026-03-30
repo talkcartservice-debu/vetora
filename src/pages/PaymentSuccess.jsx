@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { CheckCircle2, XCircle, Loader2, ArrowRight, ShoppingBag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { verifyPayment } from '@/lib/paystack';
+import { cartAPI } from '@/api/apiClient';
 import { createPageUrl } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -11,6 +13,7 @@ export default function PaymentSuccess() {
   const reference = searchParams.get('reference');
   const [status, setStatus] = useState('verifying'); // verifying, success, error
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     const verify = async () => {
@@ -22,6 +25,10 @@ export default function PaymentSuccess() {
       try {
         const response = await verifyPayment(reference);
         if (response.status && response.data.status === 'success') {
+          // Clear cart on success
+          await cartAPI.clear();
+          queryClient.invalidateQueries({ queryKey: ['cart'] });
+          
           setStatus('success');
           toast.success('Payment verified successfully!');
         } else {

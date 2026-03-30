@@ -85,7 +85,7 @@ export default function Orders() {
                 <div className="flex items-start justify-between mb-3">
                   <div>
                     <p className="text-xs text-slate-400">
-                      Order #{orderId?.slice(-8)} · {new Date(order.created_at).toLocaleDateString()}
+                      Order #{orderId?.slice(-8)} · {new Date(order.created_at).toLocaleDateString()} · <span className="capitalize">{order.payment_method?.replaceAll('_', ' ') || 'card'}</span>
                     </p>
                     <p className="text-sm font-semibold text-slate-900 mt-0.5">{order.store_name || "Store"}</p>
                     {order.order_note && (

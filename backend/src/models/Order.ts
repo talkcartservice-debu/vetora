@@ -25,7 +25,7 @@ export interface IOrder extends Document {
   order_note?: string;
   affiliate_username?: string;
   affiliate_commission: number;
-  payment_method: 'card' | 'paypal' | 'crypto' | 'bank_transfer' | 'paystack';
+  payment_method: 'card' | 'paypal' | 'crypto' | 'bank_transfer' | 'paystack' | 'mobile_money';
   payment_status: 'pending' | 'paid' | 'failed' | 'refunded';
   payment_reference?: string;
   payment_provider?: 'stripe' | 'paystack';
@@ -125,7 +125,7 @@ const OrderSchema = new Schema<IOrder>({
   },
   payment_method: {
     type: String,
-    enum: ['card', 'paypal', 'crypto', 'bank_transfer', 'paystack'],
+    enum: ['card', 'paypal', 'crypto', 'bank_transfer', 'paystack', 'mobile_money'],
     default: 'paystack',
   },
   payment_status: {

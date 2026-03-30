@@ -3,11 +3,14 @@ import { z } from 'zod';
 import { paystackService } from '../services/paystackService';
 import { Order } from '../models/Order';
 
+const VALID_PAYSTACK_CHANNELS = ['card', 'bank', 'ussd', 'mobile_money', 'bank_transfer', 'qr'] as const;
+
 const initializePaymentSchema = z.object({
   amount: z.number().min(1).optional(), // Optional since we verify against DB
   email: z.string().email(),
   order_id: z.string(),
   currency: z.string().default('NGN'),
+  channels: z.array(z.enum(VALID_PAYSTACK_CHANNELS)).optional(),
 });
 
 export async function paymentRoutes(fastify: FastifyInstance) {
@@ -16,7 +19,7 @@ export async function paymentRoutes(fastify: FastifyInstance) {
     preHandler: [fastify.authenticate],
   }, async (request, reply) => {
     try {
-      const { amount: clientAmount, email, order_id, currency } = initializePaymentSchema.parse(request.body);
+      const { amount: clientAmount, email, order_id, currency, channels } = initializePaymentSchema.parse(request.body);
       
       // Calculate total from all orders (comma-separated IDs)
       const orderIds = order_id.split(',');
@@ -29,7 +32,7 @@ export async function paymentRoutes(fastify: FastifyInstance) {
       const totalAmount = orders.reduce((sum, order) => sum + order.total, 0);
       
       // Use the server-side total amount
-      const data = await paystackService.initializeTransaction(email, totalAmount, order_id, currency);
+      const data = await paystackService.initializeTransaction(email, totalAmount, order_id, currency, channels);
       return data;
     } catch (error: any) {
       if (error instanceof z.ZodError) {

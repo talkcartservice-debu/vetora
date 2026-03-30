@@ -6,16 +6,18 @@ import { paymentAPI } from '@/api/apiClient';
  * @param {number} options.amount - Amount in kobo
  * @param {string} options.email - Customer email
  * @param {string} options.order_id - Order ID for metadata
+ * @param {string[]} options.channels - Payment channels (optional)
  * @param {Function} options.onSuccess - Callback on success
  * @param {Function} options.onClose - Callback on close
  */
-export const initializePaystackPayment = async ({ amount, email, order_id, onSuccess, onClose }) => {
+export const initializePaystackPayment = async ({ amount, email, order_id, channels, onSuccess, onClose }) => {
   try {
     // 1. Initialize on backend to get authorization URL or reference
     const response = await paymentAPI.paystack.initialize({
       amount,
       email,
-      order_id
+      order_id,
+      channels
     });
 
     if (response.status && response.data.authorization_url) {

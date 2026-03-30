@@ -461,6 +461,10 @@ export default function VendorFinance() {
                             <span>Net payout</span>
                             <span className="text-green-600">${(order.total * 0.9).toFixed(2)}</span>
                           </div>
+                          <div className="flex justify-between text-[10px] text-slate-400 pt-1 capitalize">
+                            <span>Payment Method</span>
+                            <span>{order.payment_method?.replaceAll('_', ' ') || 'card'}</span>
+                          </div>
                           <button
                             onClick={() => downloadTaxInvoice(order)}
                             className="w-full flex items-center justify-center gap-1.5 mt-2 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors"
