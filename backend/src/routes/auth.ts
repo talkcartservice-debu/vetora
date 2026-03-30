@@ -125,6 +125,7 @@ export async function authRoutes(fastify: FastifyInstance) {
           is_phone_verified: user.is_phone_verified,
           notifications: user.notifications,
           preferences: user.preferences,
+          unread_messages_count: user.unread_messages_count || 0,
         },
         token,
       };
@@ -198,6 +199,7 @@ export async function authRoutes(fastify: FastifyInstance) {
           is_phone_verified: user.is_phone_verified,
           notifications: user.notifications,
           preferences: user.preferences,
+          unread_messages_count: user.unread_messages_count || 0,
         },
         token,
       };
@@ -279,6 +281,7 @@ export async function authRoutes(fastify: FastifyInstance) {
           is_phone_verified: user.is_phone_verified,
           notifications: user.notifications,
           preferences: user.preferences,
+          unread_messages_count: user.unread_messages_count || 0,
         },
         token: jwtToken,
       };
@@ -388,6 +391,7 @@ export async function authRoutes(fastify: FastifyInstance) {
           is_phone_verified: user.is_phone_verified,
           notifications: user.notifications,
           preferences: user.preferences,
+          unread_messages_count: user.unread_messages_count || 0,
         },
         token,
       };
@@ -519,6 +523,7 @@ export async function authRoutes(fastify: FastifyInstance) {
         is_blocked: user.is_blocked,
         notifications: user.notifications,
         preferences: user.preferences,
+        unread_messages_count: user.unread_messages_count || 0,
         created_at: user.created_at,
         updated_at: user.updated_at,
       };
@@ -583,6 +588,7 @@ export async function authRoutes(fastify: FastifyInstance) {
         is_blocked: user.is_blocked,
         notifications: user.notifications,
         preferences: user.preferences,
+        unread_messages_count: user.unread_messages_count || 0,
         created_at: user.created_at,
         updated_at: user.updated_at,
       };

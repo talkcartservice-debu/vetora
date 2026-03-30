@@ -149,6 +149,13 @@ export default function Chat() {
     queryFn: () => authAPI.me(),
   });
 
+  const { data: conversations = [] } = useQuery({
+    queryKey: ["unreadMessages", currentUser?.email],
+    queryFn: () => messagesAPI.listConversations().then(res => res.data || res || []),
+    enabled: !!currentUser?.email,
+    refetchInterval: 5000,
+  });
+
   const { data: allMessagesResponse = {} } = useQuery({
     queryKey: ["allMessages", currentUser?.username],
     queryFn: async () => {
@@ -173,16 +180,20 @@ export default function Chat() {
   const receivedMessages = Array.isArray(receivedMessagesResponse?.data) ? receivedMessagesResponse.data : [];
 
   const markAsRead = useCallback(async () => {
-    if (!selectedConvo) return;
-    const unread = receivedMessages.filter(m => m.sender_username === selectedConvo && !m.is_read);
-    for (const m of unread) {
-      const messageId = m._id || m.id;
-      if (messageId) {
-        await messagesAPI.markAsRead(messageId);
-      }
+    if (!selectedConvo || !currentUser?.username) return;
+    
+    // Find conversation_id
+    const usernames = [currentUser.username, selectedConvo].sort();
+    const conversationId = `chat_${usernames[0]}_${usernames[1]}`;
+    
+    try {
+      await messagesAPI.markConversationAsRead(conversationId);
+      queryClient.invalidateQueries({ queryKey: ["receivedMessages"] });
+      queryClient.invalidateQueries({ queryKey: ["unreadMessages"] });
+    } catch (error) {
+      console.error("Failed to mark conversation as read:", error);
     }
-    queryClient.invalidateQueries({ queryKey: ["receivedMessages"] });
-  }, [selectedConvo, receivedMessages, queryClient]);
+  }, [selectedConvo, currentUser, queryClient]);
 
   useEffect(() => {
     // Listen for new messages in real-time
@@ -190,6 +201,7 @@ export default function Chat() {
       // Refresh the queries to show the new message
       queryClient.invalidateQueries({ queryKey: ["allMessages"] });
       queryClient.invalidateQueries({ queryKey: ["receivedMessages"] });
+      queryClient.invalidateQueries({ queryKey: ["unreadMessages"] });
       
       // If it's for the selected conversation, mark as read
       if (selectedConvo && (msg.sender_username === selectedConvo || msg.receiver_username === selectedConvo)) {
@@ -200,33 +212,6 @@ export default function Chat() {
   }, [on, queryClient, selectedConvo, markAsRead]);
 
   // Real-time subscription replaced by refetchInterval
-
-  const conversations = useMemo(() => {
-    const allMsgs = [...allMessages, ...receivedMessages];
-    const convoMap = {};
-    allMsgs.forEach(msg => {
-      const otherUsername = msg.sender_username === currentUser?.username ? msg.receiver_username : msg.sender_username;
-      let otherName = msg.sender_username === currentUser?.username ? msg.receiver_username : msg.sender_name;
-      
-      // If name is missing, use username
-      if (!otherName) {
-        otherName = `@${otherUsername}`;
-      }
-      
-      const msgDate = msg.created_at || msg.created_date;
-      if (!convoMap[otherUsername] || new Date(msgDate) > new Date(convoMap[otherUsername].lastDate)) {
-        convoMap[otherUsername] = {
-          username: otherUsername,
-          name: otherName,
-          lastMessage: msg.content,
-          lastDate: msgDate,
-          unread: msg.receiver_username === currentUser?.username && !msg.is_read,
-          messageType: msg.message_type,
-        };
-      }
-    });
-    return Object.values(convoMap).sort((a, b) => new Date(b.lastDate) - new Date(a.lastDate));
-  }, [allMessages, receivedMessages, currentUser]);
 
   const selectedMessages = useMemo(() => {
     if (!selectedConvo) return [];
@@ -365,9 +350,9 @@ export default function Chat() {
     if (selectedConvo) markAsRead();
   }, [selectedMessages, selectedConvo]);
 
-  const selectedConvoData = conversations.find(c => c.username === selectedConvo);
-  const selectedConvoName = selectedConvoData?.name || selectedConvo;
-  const unreadTotal = conversations.filter(c => c.unread).length;
+  const selectedConvoData = conversations.find(c => c.other_user_username === selectedConvo);
+  const selectedConvoName = selectedConvoData?.other_user_name || selectedConvo;
+  const unreadTotal = conversations.reduce((acc, c) => acc + (c.unread_count || 0), 0);
 
   return (
     <div className="h-[calc(100vh-3.5rem)] lg:h-screen flex bg-white">
@@ -403,29 +388,33 @@ export default function Chat() {
             </div>
           ) : (
             conversations
-              .filter(c => !search || c.name?.toLowerCase().includes(search.toLowerCase()) || c.username?.toLowerCase().includes(search.toLowerCase()))
+              .filter(c => !search || c.other_user_name?.toLowerCase().includes(search.toLowerCase()) || c.other_user_username?.toLowerCase().includes(search.toLowerCase()))
               .map(convo => (
                 <button
-                  key={convo.username}
-                  onClick={() => setSelectedConvo(convo.username)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition-colors text-left border-b border-slate-50 ${selectedConvo === convo.username ? "bg-indigo-50" : ""}`}
+                  key={convo.other_user_username}
+                  onClick={() => setSelectedConvo(convo.other_user_username)}
+                  className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition-colors text-left border-b border-slate-50 ${selectedConvo === convo.other_user_username ? "bg-indigo-50" : ""}`}
                 >
                   <div className="relative shrink-0">
-                    <Avatar name={convo.name} size={11} />
+                    <Avatar name={convo.other_user_name} size={11} />
                     <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-400 border-2 border-white rounded-full" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-center">
-                      <p className={`text-sm truncate ${convo.unread ? "font-bold text-slate-900" : "font-semibold text-slate-700"}`}>{convo.name}</p>
+                      <p className={`text-sm truncate ${convo.unread_count > 0 ? "font-bold text-slate-900" : "font-semibold text-slate-700"}`}>{convo.other_user_name}</p>
                       <span className="text-[10px] text-slate-400 shrink-0 ml-1">
-                        {new Date(convo.lastDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                        {new Date(convo.last_message_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                       </span>
                     </div>
-                    <p className={`text-xs truncate ${convo.unread ? "text-slate-700 font-medium" : "text-slate-400"}`}>
-                      {convo.messageType === "product_share" ? "📦 Shared a product" : convo.messageType === "offer" ? "💰 Price offer" : convo.lastMessage}
+                    <p className={`text-xs truncate ${convo.unread_count > 0 ? "text-slate-700 font-medium" : "text-slate-400"}`}>
+                      {convo.last_message_type === "product_share" ? "📦 Shared a product" : convo.last_message_type === "offer" ? "💰 Price offer" : convo.last_message_content}
                     </p>
                   </div>
-                  {convo.unread && <div className="w-2.5 h-2.5 rounded-full bg-indigo-500 shrink-0" />}
+                  {convo.unread_count > 0 && (
+                    <div className="bg-indigo-500 text-white text-[10px] rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 font-bold">
+                      {convo.unread_count > 9 ? "9+" : convo.unread_count}
+                    </div>
+                  )}
                 </button>
               ))
           )}

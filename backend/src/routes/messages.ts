@@ -102,9 +102,22 @@ export async function messageRoutes(fastify: FastifyInstance) {
             _id: "$conversation_id",
             last_message_content: { $first: "$content" },
             last_message_at: { $first: "$created_at" },
+            last_message_type: { $first: "$message_type" },
             other_user_username: { 
               $first: {
                 $cond: [{ $eq: ["$sender_username", user.username] }, "$receiver_username", "$sender_username"]
+              }
+            },
+            unread_count: {
+              $sum: {
+                $cond: [
+                  { $and: [
+                    { $eq: ["$receiver_username", user.username] },
+                    { $eq: ["$is_read", false] }
+                  ]},
+                  1,
+                  0
+                ]
               }
             }
           }
@@ -114,16 +127,27 @@ export async function messageRoutes(fastify: FastifyInstance) {
         }
       ]);
 
-      // Populate other user's info
-      const populatedConversations = await Promise.all(conversations.map(async (conv) => {
-        const otherUser = await User.findOne({ username: conv.other_user_username }, 'display_name avatar_url username');
+      // Populate other user's info with a single batch query
+      const otherUsernames = conversations.map(c => c.other_user_username);
+      const otherUsers = await User.find(
+        { username: { $in: otherUsernames } },
+        'display_name avatar_url username'
+      ).lean();
+      
+      const userMap = otherUsers.reduce((acc: any, u) => {
+        acc[u.username] = u;
+        return acc;
+      }, {});
+      
+      const populatedConversations = conversations.map((conv) => {
+        const otherUser = userMap[conv.other_user_username];
         return {
           ...conv,
           other_user_name: otherUser?.display_name || otherUser?.username,
           other_user_avatar: otherUser?.avatar_url,
           other_user_username: otherUser?.username
         };
-      }));
+      });
 
       return populatedConversations;
     } catch (error: any) {
@@ -178,6 +202,14 @@ export async function messageRoutes(fastify: FastifyInstance) {
       });
 
       await message.save();
+
+      // Increment recipient's unread count
+      if (body.recipient_username) {
+        await User.updateOne(
+          { username: body.recipient_username },
+          { $inc: { unread_messages_count: 1 } }
+        );
+      }
       
       // Emit real-time event via Socket.IO if available
       if (body.recipient_username) {
@@ -232,14 +264,25 @@ export async function messageRoutes(fastify: FastifyInstance) {
       const user = request.user as any;
 
       const message = await Message.findOneAndUpdate(
-        { _id: id, receiver_username: user.username },
+        { _id: id, receiver_username: user.username, is_read: false },
         { is_read: true, read_at: new Date(), updated_at: new Date() },
         { new: true }
       );
 
       if (!message) {
+        // Check if message exists but is already read
+        const existingMessage = await Message.findOne({ _id: id, receiver_username: user.username });
+        if (existingMessage) {
+          return existingMessage;
+        }
         return reply.code(404).send({ error: 'Message not found or unauthorized' });
       }
+
+      // Decrement user's unread count
+      await User.updateOne(
+        { username: user.username },
+        { $inc: { unread_messages_count: -1 } }
+      );
 
       return message;
     } catch (error: any) {
@@ -259,12 +302,20 @@ export async function messageRoutes(fastify: FastifyInstance) {
       const { conversationId } = request.params as { conversationId: string };
       const user = request.user as any;
 
-      await Message.updateMany(
+      const result = await Message.updateMany(
         { conversation_id: conversationId, receiver_username: user.username, is_read: false },
         { is_read: true, read_at: new Date(), updated_at: new Date() }
       );
 
-      return { success: true };
+      if (result.modifiedCount > 0) {
+        // Decrement user's unread count by the number of messages marked as read
+        await User.updateOne(
+          { username: user.username },
+          { $inc: { unread_messages_count: -result.modifiedCount } }
+        );
+      }
+
+      return { success: true, count: result.modifiedCount };
     } catch (error: any) {
       fastify.log.error(error);
       return reply.code(500).send({ 
@@ -282,7 +333,7 @@ export async function messageRoutes(fastify: FastifyInstance) {
       const { id } = request.params as { id: string };
       const user = request.user as any;
 
-      const result = await Message.deleteOne({
+      const message = await Message.findOne({
         _id: id,
         $or: [
           { sender_username: user.username },
@@ -290,8 +341,20 @@ export async function messageRoutes(fastify: FastifyInstance) {
         ]
       });
 
-      if (result.deletedCount === 0) {
+      if (!message) {
         return reply.code(404).send({ error: 'Message not found or unauthorized' });
+      }
+
+      const wasUnread = !message.is_read;
+
+      await Message.deleteOne({ _id: id });
+
+      if (wasUnread) {
+        // Decrement recipient's count (could be me OR the other user)
+        await User.updateOne(
+          { username: message.receiver_username },
+          { $inc: { unread_messages_count: -1 } }
+        );
       }
 
       return { success: true };

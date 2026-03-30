@@ -35,6 +35,7 @@ export interface IUser extends Document {
   is_blocked: boolean;
   follower_count: number;
   following_count: number;
+  unread_messages_count: number;
   created_at: Date;
   updated_at: Date;
 }
@@ -152,6 +153,11 @@ const UserSchema = new Schema<IUser>({
     min: 0,
   },
   following_count: {
+    type: Number,
+    default: 0,
+    min: 0,
+  },
+  unread_messages_count: {
     type: Number,
     default: 0,
     min: 0,

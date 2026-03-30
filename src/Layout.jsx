@@ -97,7 +97,7 @@ export default function Layout({ children, currentPageName }) {
   }
 
   const unreadCount = unreadNotifs.length;
-  const unreadMsgCount = unreadMessages.length;
+  const unreadMsgCount = unreadMessages.reduce((acc, conv) => acc + (conv.unread_count || 0), 0);
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
