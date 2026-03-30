@@ -3,9 +3,14 @@ import { Order, IOrder } from '../models/Order';
 import { Product } from '../models/Product';
 import { User } from '../models/User';
 import { z } from 'zod';
+import mongoose from 'mongoose';
 
 const createOrderSchema = z.object({
   buyer_username: z.string().min(1).optional(),
+  buyer_name: z.string().optional(),
+  vendor_username: z.string().optional(),
+  store_id: z.string().optional(),
+  store_name: z.string().optional(),
   items: z.array(z.object({
     product_id: z.string(),
     product_title: z.string(),
@@ -15,6 +20,7 @@ const createOrderSchema = z.object({
   })),
   subtotal: z.number().min(0),
   shipping_fee: z.number().default(0),
+  shipping: z.number().optional(), // Allow frontend to send 'shipping'
   total: z.number().min(0),
   shipping_address: z.string().optional(),
   order_note: z.string().optional(),
@@ -100,7 +106,18 @@ export async function orderRoutes(fastify: FastifyInstance) {
       const user = request.user as any;
       const body = createOrderSchema.parse(request.body);
 
-      // Get vendor_email and store_id from the first product
+      // Map 'shipping' to 'shipping_fee' if needed
+      const shipping_fee = body.shipping_fee || body.shipping || 0;
+
+      // Get vendor and store details from the first product
+      if (!body.items || body.items.length === 0) {
+        return reply.code(400).send({ error: 'Order must contain at least one item' });
+      }
+
+      if (!mongoose.isValidObjectId(body.items[0].product_id)) {
+        return reply.code(400).send({ error: 'Invalid product ID format' });
+      }
+
       const firstProduct = await Product.findById(body.items[0].product_id);
       if (!firstProduct) {
         return reply.code(400).send({ error: 'Invalid product' });
@@ -108,6 +125,7 @@ export async function orderRoutes(fastify: FastifyInstance) {
 
       const order = new Order({
         ...body,
+        shipping_fee,
         buyer_username: user.username,
         vendor_username: firstProduct.vendor_username,
         store_id: firstProduct.store_id,
@@ -124,21 +142,29 @@ export async function orderRoutes(fastify: FastifyInstance) {
       
       // Update product sales count and inventory
       for (const item of body.items) {
-        await Product.findByIdAndUpdate(item.product_id, {
-          $inc: { 
-            sales_count: item.quantity,
-            inventory_count: -item.quantity
-          }
-        });
+        try {
+          await Product.findByIdAndUpdate(item.product_id, {
+            $inc: { 
+              sales_count: item.quantity,
+              inventory_count: -item.quantity
+            }
+          });
+        } catch (updateError: any) {
+          fastify.log.error(updateError, `Failed to update product ${item.product_id} sales/inventory`);
+          // Don't fail the whole order if inventory update fails, just log it
+        }
       }
 
       return order;
-    } catch (error) {
+    } catch (error: any) {
       if (error instanceof z.ZodError) {
         return reply.code(400).send({ error: 'Invalid request data', details: error.errors });
       }
       fastify.log.error(error);
-      return reply.code(500).send({ error: 'Internal server error' });
+      return reply.code(500).send({ 
+        error: 'Internal server error',
+        message: process.env.NODE_ENV === 'development' ? error.message : 'Something went wrong while creating your order'
+      });
     }
   });
 

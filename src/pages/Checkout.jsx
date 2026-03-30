@@ -100,7 +100,7 @@ export default function Checkout() {
           store_name: group.store_name,
           items: orderItems,
           subtotal: groupSubtotal,
-          shipping: groupShipping,
+          shipping_fee: groupShipping,
           total: groupSubtotal + groupShipping,
           shipping_address: fullAddress,
           affiliate_username: group.items[0]?.affiliate_username,
