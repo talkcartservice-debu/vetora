@@ -35,6 +35,7 @@ export default function VendorFinance() {
   const [withdrawOpen, setWithdrawOpen] = useState(false);
   const [withdrawForm, setWithdrawForm] = useState({
     amount: "", 
+    payment_method: "bank_transfer",
     bank_name: "", 
     bank_account_name: "", 
     bank_account_number: "", 
@@ -107,7 +108,7 @@ export default function VendorFinance() {
     onSuccess: () => {
       toast.success("Withdrawal request submitted!");
       setWithdrawOpen(false);
-      setWithdrawForm({ amount: "", bank_name: "", bank_account_name: "", bank_account_number: "", routing_number: "", paypal_email: "", mobile_money_number: "" });
+      setWithdrawForm({ amount: "", payment_method: store?.payment_method || "bank_transfer", bank_name: store?.bank_name || "", bank_account_name: store?.bank_account_name || "", bank_account_number: store?.bank_account_number || "", routing_number: store?.routing_number || "", paypal_email: store?.paypal_email || "", mobile_money_number: store?.mobile_money_number || "" });
       queryClient.invalidateQueries({ queryKey: ["withdrawals"] });
     },
   });
@@ -332,6 +333,13 @@ export default function VendorFinance() {
                   </button>
                   <button 
                     type="button"
+                    onClick={() => setWithdrawForm(p => ({ ...p, payment_method: "paystack" }))}
+                    className={`flex-1 py-2 px-3 rounded-lg border text-xs font-medium transition-colors ${withdrawForm.payment_method === "paystack" ? "bg-indigo-50 border-indigo-200 text-indigo-700" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}`}
+                  >
+                    Paystack
+                  </button>
+                  <button 
+                    type="button"
                     onClick={() => setWithdrawForm(p => ({ ...p, payment_method: "mobile_money" }))}
                     className={`flex-1 py-2 px-3 rounded-lg border text-xs font-medium transition-colors ${withdrawForm.payment_method === "mobile_money" ? "bg-indigo-50 border-indigo-200 text-indigo-700" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}`}
                   >
@@ -340,7 +348,7 @@ export default function VendorFinance() {
                 </div>
               </div>
 
-              {withdrawForm.payment_method === "bank_transfer" && (
+              {(withdrawForm.payment_method === "bank_transfer" || withdrawForm.payment_method === "paystack") && (
                 <div className="space-y-4">
                   <div>
                     <label className="text-xs font-medium text-slate-600 mb-1 block">Bank Name *</label>
@@ -388,7 +396,7 @@ export default function VendorFinance() {
                 disabled={
                   withdrawMutation.isPending ||
                   !withdrawForm.amount || 
-                  (withdrawForm.payment_method === "bank_transfer" && (!withdrawForm.bank_name || !withdrawForm.bank_account_name || !withdrawForm.bank_account_number)) ||
+                  ((withdrawForm.payment_method === "bank_transfer" || withdrawForm.payment_method === "paystack") && (!withdrawForm.bank_name || !withdrawForm.bank_account_name || !withdrawForm.bank_account_number)) ||
                   (withdrawForm.payment_method === "paypal" && !withdrawForm.paypal_email) ||
                   (withdrawForm.payment_method === "mobile_money" && !withdrawForm.mobile_money_number) ||
                   parseFloat(withdrawForm.amount) < 20 ||

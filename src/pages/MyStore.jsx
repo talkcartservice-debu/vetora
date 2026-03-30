@@ -563,7 +563,7 @@ export default function MyStore() {
                           <SelectContent>
                             <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
                             <SelectItem value="paypal">PayPal</SelectItem>
-                            <SelectItem value="stripe">Stripe</SelectItem>
+                            <SelectItem value="paystack">Paystack</SelectItem>
                             <SelectItem value="mobile_money">Mobile Money (Paystack)</SelectItem>
                           </SelectContent>
                         </Select>

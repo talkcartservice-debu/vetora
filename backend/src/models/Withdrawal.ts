@@ -5,7 +5,7 @@ export interface IWithdrawal extends Document {
   store_id?: string;
   store_name?: string;
   amount: number;
-  payment_method: 'bank_transfer' | 'paypal' | 'mobile_money';
+  payment_method: 'bank_transfer' | 'paypal' | 'mobile_money' | 'paystack';
   bank_account_name?: string;
   bank_account_number?: string;
   bank_name?: string;
@@ -39,7 +39,7 @@ const WithdrawalSchema = new Schema<IWithdrawal>({
   },
   payment_method: {
     type: String,
-    enum: ['bank_transfer', 'paypal', 'mobile_money'],
+    enum: ['bank_transfer', 'paypal', 'mobile_money', 'paystack'],
     default: 'bank_transfer',
     required: true
   },

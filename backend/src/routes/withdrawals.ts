@@ -1,5 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { Withdrawal, IWithdrawal } from '../models/Withdrawal';
+import { Order } from '../models/Order';
 
 export async function withdrawalRoutes(fastify: FastifyInstance) {
   // Get withdrawals for a vendor by username
@@ -266,11 +267,48 @@ export async function withdrawalRoutes(fastify: FastifyInstance) {
         if (!body.mobile_money_number) {
           return reply.code(400).send({ error: 'Missing required field: mobile_money_number' });
         }
+      } else if (body.payment_method === 'paystack') {
+        // For Paystack, we might need a bank account or email
+        // We'll assume for now it uses the same fields as bank_transfer if it's a payout
+        if (!body.bank_account_number || !body.bank_name) {
+          return reply.code(400).send({ error: 'Missing required bank details for Paystack payout' });
+        }
       }
 
       // Set vendor_username from authenticated user
       body.vendor_username = user.username;
       body.status = 'pending';
+
+      // Validate balance
+      const PAYOUT_RATE = 0.9;
+      
+      const paidOrders = await Order.find({ 
+        vendor_username: user.username, 
+        payment_status: 'paid' 
+      });
+      
+      const totalEarned = (paidOrders as any[]).reduce((s, o) => s + (o.total || 0), 0) * PAYOUT_RATE;
+      
+      const previousWithdrawals = await Withdrawal.find({ 
+        vendor_username: user.username 
+      });
+      
+      const totalWithdrawn = previousWithdrawals
+        .filter(w => w.status === 'completed')
+        .reduce((s, w) => s + (w.amount || 0), 0);
+        
+      const pendingWithdrawals = previousWithdrawals
+        .filter(w => (w.status as string) === 'pending' || (w.status as string) === 'processing')
+        .reduce((s, w) => s + (w.amount || 0), 0);
+        
+      const availableBalance = Math.max(0, totalEarned - totalWithdrawn - pendingWithdrawals);
+      
+      if (body.amount > availableBalance) {
+        return reply.code(400).send({ 
+          error: 'Insufficient balance', 
+          details: { available: availableBalance, requested: body.amount } 
+        });
+      }
 
       const withdrawal = new Withdrawal(body);
       await withdrawal.save();

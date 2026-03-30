@@ -12,7 +12,7 @@ const createStoreSchema = z.object({
   owner_name: z.string().optional(),
   
   // Payment Settings
-  payment_method: z.enum(['bank_transfer', 'paypal', 'stripe', 'mobile_money', 'other']).optional(),
+  payment_method: z.enum(['bank_transfer', 'paypal', 'paystack', 'mobile_money', 'other']).optional(),
   bank_name: z.string().optional(),
   bank_account_name: z.string().optional(),
   bank_account_number: z.string().optional(),
