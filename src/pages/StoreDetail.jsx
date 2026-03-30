@@ -31,19 +31,25 @@ export default function StoreDetail() {
     retry: false,
   });
 
-  const { data: isFollowing = false } = useQuery({
-    queryKey: ["isFollowing", currentUser?.username, storeId],
+  const { data: followStatus = { is_following: false, is_followed_by: false } } = useQuery({
+    queryKey: ["followStatus", currentUser?.username, storeId],
     queryFn: async () => {
-      if (!currentUser?.username || !storeId) return false;
+      if (!currentUser?.username || !storeId) return { is_following: false, is_followed_by: false };
       const res = await followsAPI.check({ 
         follower_username: currentUser.username, 
         target_id: storeId,
         follow_type: 'store'
       });
-      return !!res.is_following;
+      return {
+        is_following: !!res.is_following,
+        is_followed_by: !!res.is_followed_by
+      };
     },
     enabled: !!currentUser?.username && !!storeId && isValidId,
   });
+
+  const isFollowing = followStatus.is_following;
+  const isFollowedBy = followStatus.is_followed_by;
 
   const followMutation = useMutation({
     mutationFn: async () => {
@@ -61,7 +67,7 @@ export default function StoreDetail() {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["isFollowing", currentUser?.username, storeId] });
+      queryClient.invalidateQueries({ queryKey: ["followStatus", currentUser?.username, storeId] });
       queryClient.invalidateQueries({ queryKey: ["storeDetail", storeId] });
       toast.success(isFollowing ? "Unfollowed" : "Following Store!");
     },
@@ -194,6 +200,8 @@ export default function StoreDetail() {
                 >
                   {isFollowing ? (
                     <><UserCheck className="w-4 h-4" /> Following</>
+                  ) : isFollowedBy ? (
+                    <><UserPlus className="w-4 h-4" /> Follow Back</>
                   ) : (
                     <><UserPlus className="w-4 h-4" /> Follow Store</>
                   )}

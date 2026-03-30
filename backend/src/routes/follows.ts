@@ -395,7 +395,18 @@ export async function followRoutes(fastify: FastifyInstance) {
         target_id: target_id || null
       });
 
-      reply.send({ is_following: !!follow });
+      // Check if target is following current user back
+      let is_followed_by = false;
+      if (follow_type === 'user' && following_username) {
+        const backFollow = await Follow.findOne({
+          follower_username: following_username.toLowerCase(),
+          following_username: user.username.toLowerCase(),
+          follow_type: 'user'
+        });
+        is_followed_by = !!backFollow;
+      }
+
+      reply.send({ is_following: !!follow, is_followed_by });
     } catch (error: any) {
       fastify.log.error(error, 'Check follow handler failed');
       reply.code(500).send({ error: 'Internal server error', message: error.message });

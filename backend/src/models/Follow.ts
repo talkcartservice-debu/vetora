@@ -45,3 +45,12 @@ FollowSchema.index({ follower_username: 1, created_at: -1 });
 FollowSchema.index({ target_id: 1 }, { sparse: true });
 
 export const Follow = mongoose.model<IFollow>('Follow', FollowSchema);
+
+// Drop legacy index if it exists to fix duplicate key error on null fields
+if (mongoose.connection.readyState === 1) {
+  Follow.collection.dropIndex('follower_1_following_1').catch(() => {});
+} else {
+  mongoose.connection.once('open', () => {
+    Follow.collection.dropIndex('follower_1_following_1').catch(() => {});
+  });
+}

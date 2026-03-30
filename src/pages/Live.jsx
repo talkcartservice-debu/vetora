@@ -107,22 +107,28 @@ function LiveStreamViewer({ session: initialSession, onBack }) {
   }, [session, session.viewer_count, session.likes]);
 
   // Follow Status
-  const { data: followStatus } = useQuery({
+  const { data: followStatus = { is_following: false, is_followed_by: false } } = useQuery({
     queryKey: ["followStatus", session.host_username],
     queryFn: async () => {
-      if (!currentUser?.username || !session.host_username) return null;
+      if (!currentUser?.username || !session.host_username) return { is_following: false, is_followed_by: false };
       try {
         const res = await followsAPI.check({ 
           follower_username: currentUser.username, 
           following_username: session.host_username 
         });
-        return res.is_following;
+        return {
+          is_following: !!res.is_following,
+          is_followed_by: !!res.is_followed_by
+        };
       } catch (e) {
-        return false;
+        return { is_following: false, is_followed_by: false };
       }
     },
     enabled: !!currentUser?.username && !!session.host_username,
   });
+
+  const isFollowing = followStatus.is_following;
+  const isFollowedBy = followStatus.is_followed_by;
 
   const followMutation = useMutation({
     mutationFn: () => {
@@ -254,14 +260,14 @@ function LiveStreamViewer({ session: initialSession, onBack }) {
                 }}
                 disabled={followMutation.isPending || unfollowMutation.isPending}
                 className={`ml-auto px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
-                  followStatus 
+                  isFollowing 
                     ? "bg-white/20 text-white hover:bg-white/30 backdrop-blur-sm" 
-                    : "bg-indigo-600 text-white hover:bg-indigo-500 shadow-lg shadow-indigo-600/20"
+                    : isFollowedBy ? "bg-indigo-100 text-indigo-700 hover:bg-indigo-200" : "bg-indigo-600 text-white hover:bg-indigo-500 shadow-lg shadow-indigo-600/20"
                 }`}
               >
                 {followMutation.isPending || unfollowMutation.isPending 
                   ? "..." 
-                  : followStatus ? "Following" : "Follow"}
+                  : isFollowing ? "Following" : isFollowedBy ? "Follow Back" : "Follow"}
               </button>
             )}
           </div>

@@ -28,19 +28,25 @@ export default function PostCard({ post, currentUser }) {
   }, [post?.likes_count]);
 
   // Follow state
-  const { data: isFollowing = false } = useQuery({
-    queryKey: ["isFollowing", currentUser?.username, authorUsername],
+  const { data: followStatus = { is_following: false, is_followed_by: false } } = useQuery({
+    queryKey: ["followStatus", currentUser?.username, authorUsername],
     queryFn: async () => {
-      if (!currentUser?.username || !authorUsername || currentUser.username === authorUsername) return false;
+      if (!currentUser?.username || !authorUsername || currentUser.username === authorUsername) return { is_following: false, is_followed_by: false };
       const res = await followsAPI.check({ 
         follower_username: currentUser.username, 
         following_username: authorUsername,
         follow_type: 'user'
       });
-      return !!res.is_following;
+      return {
+        is_following: !!res.is_following,
+        is_followed_by: !!res.is_followed_by
+      };
     },
     enabled: !!currentUser?.username && !!authorUsername && currentUser.username !== authorUsername,
   });
+
+  const isFollowing = followStatus.is_following;
+  const isFollowedBy = followStatus.is_followed_by;
 
   const followMutation = useMutation({
     mutationFn: async () => {
@@ -59,7 +65,7 @@ export default function PostCard({ post, currentUser }) {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["isFollowing", currentUser?.username, authorUsername] });
+      queryClient.invalidateQueries({ queryKey: ["followStatus", currentUser?.username, authorUsername] });
       toast.success(isFollowing ? "Unfollowed" : `Following ${post.author_name || authorUsername}`);
     },
   });
@@ -150,10 +156,10 @@ export default function PostCard({ post, currentUser }) {
                   className={`text-[11px] font-bold px-2 py-0.5 rounded-full transition-colors ${
                     isFollowing 
                       ? "text-slate-400 hover:text-slate-600 bg-slate-50" 
-                      : "text-indigo-600 hover:text-indigo-700 bg-indigo-50"
+                      : isFollowedBy ? "text-indigo-700 bg-indigo-100" : "text-indigo-600 hover:text-indigo-700 bg-indigo-50"
                   }`}
                 >
-                  {isFollowing ? "Following" : "Follow"}
+                  {isFollowing ? "Following" : isFollowedBy ? "Follow Back" : "Follow"}
                 </button>
               )}
             </div>

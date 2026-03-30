@@ -170,15 +170,21 @@ export default function Profile() {
   const followersCount = followCounts?.follower_count || profileUser?.follower_count || 0;
   const followingCount = followCounts?.following_count || profileUser?.following_count || 0;
 
-  const { data: isFollowing = false } = useQuery({
-    queryKey: ["isFollowing", currentUser?.username, targetUsername],
+  const { data: followStatus = { is_following: false, is_followed_by: false } } = useQuery({
+    queryKey: ["followStatus", currentUser?.username, targetUsername],
     queryFn: async () => {
-      if (!currentUser?.username) return false;
+      if (!currentUser?.username) return { is_following: false, is_followed_by: false };
       const res = await followsAPI.check({ follower_username: currentUser.username, following_username: targetUsername });
-      return !!res.is_following || !!res.following;
+      return { 
+        is_following: !!res.is_following || !!res.following,
+        is_followed_by: !!res.is_followed_by
+      };
     },
     enabled: !!currentUser?.username && !isOwnProfile,
   });
+
+  const isFollowing = followStatus.is_following;
+  const isFollowedBy = followStatus.is_followed_by;
 
   const { data: likedPosts = [], isLoading: likedPostsLoading } = useQuery({
     queryKey: ["likedPosts", targetUsername],
@@ -243,7 +249,7 @@ export default function Profile() {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["isFollowing", currentUser?.username, targetUsername] });
+      queryClient.invalidateQueries({ queryKey: ["followStatus", currentUser?.username, targetUsername] });
       queryClient.invalidateQueries({ queryKey: ["followCounts", targetUsername] });
       toast.success(isFollowing ? "Unfollowed" : "Following!");
     },
@@ -351,6 +357,8 @@ export default function Profile() {
                   >
                     {isFollowing ? (
                       <><UserCheck className="w-3.5 h-3.5 mr-1.5" />Following</>
+                    ) : isFollowedBy ? (
+                      <><UserPlus className="w-3.5 h-3.5 mr-1.5" />Follow Back</>
                     ) : (
                       <><UserPlus className="w-3.5 h-3.5 mr-1.5" />Follow</>
                     )}
@@ -375,6 +383,9 @@ export default function Profile() {
               <h1 className="text-xl font-extrabold text-slate-900 tracking-tight">{displayName}</h1>
               {isOwnProfile && (
                 <Badge variant="secondary" className="bg-indigo-50 text-indigo-600 border-0 text-[10px] font-bold py-0 px-1.5 h-4 uppercase tracking-wider">YOU</Badge>
+              )}
+              {!isOwnProfile && isFollowedBy && (
+                <Badge variant="secondary" className="bg-slate-100 text-slate-500 border-0 text-[9px] font-bold py-0 px-1.5 h-4 uppercase tracking-wider">Follows you</Badge>
               )}
             </div>
             <p className="text-xs text-slate-400 font-medium mb-2">@{profileUser?.username || profileUser?.display_name?.replace(/\s+/g, '_').toLowerCase() || profileUser?.email?.split('@')[0]}</p>
