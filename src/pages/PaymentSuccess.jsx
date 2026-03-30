@@ -43,7 +43,7 @@ export default function PaymentSuccess() {
     };
 
     verify();
-  }, [reference]);
+  }, [reference, queryClient]);
 
   return (
     <div className="min-h-[70vh] flex items-center justify-center px-4">

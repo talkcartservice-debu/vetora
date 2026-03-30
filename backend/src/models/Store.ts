@@ -17,12 +17,13 @@ export interface IStore extends Document {
   rating_avg: number;
   
   // Payment Settings
-  payment_method?: 'bank_transfer' | 'paypal' | 'stripe' | 'other';
+  payment_method?: 'bank_transfer' | 'paypal' | 'stripe' | 'mobile_money' | 'other';
   bank_name?: string;
   bank_account_name?: string;
   bank_account_number?: string;
   routing_number?: string;
   paypal_email?: string;
+  mobile_money_number?: string;
   
   // Additional Store Info
   phone_number?: string;
@@ -102,7 +103,7 @@ const StoreSchema = new Schema<IStore>({
   // Payment Settings
   payment_method: {
     type: String,
-    enum: ['bank_transfer', 'paypal', 'stripe', 'other'],
+    enum: ['bank_transfer', 'paypal', 'stripe', 'mobile_money', 'other'],
     default: 'bank_transfer',
   },
   bank_name: { type: String },
@@ -110,6 +111,7 @@ const StoreSchema = new Schema<IStore>({
   bank_account_number: { type: String },
   routing_number: { type: String },
   paypal_email: { type: String },
+  mobile_money_number: { type: String },
   
   // Additional Store Info
   phone_number: { type: String },

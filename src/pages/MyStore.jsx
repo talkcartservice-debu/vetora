@@ -53,6 +53,7 @@ export default function MyStore() {
     bank_account_number: "",
     routing_number: "",
     paypal_email: "",
+    mobile_money_number: "",
     // Additional Info
     phone_number: "",
     address: "",
@@ -380,6 +381,7 @@ export default function MyStore() {
                     <SelectContent>
                       <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
                       <SelectItem value="paypal">PayPal</SelectItem>
+                      <SelectItem value="mobile_money">Mobile Money (Paystack)</SelectItem>
                     </SelectContent>
                   </Select>
 
@@ -397,6 +399,13 @@ export default function MyStore() {
                   {storeForm.payment_method === 'paypal' && (
                     <div className="space-y-3 border-l-2 border-indigo-100 pl-4">
                       <Input type="email" placeholder="PayPal Email Address" value={storeForm.paypal_email} onChange={e => setStoreForm(p => ({ ...p, paypal_email: e.target.value }))} />
+                    </div>
+                  )}
+
+                  {storeForm.payment_method === 'mobile_money' && (
+                    <div className="space-y-3 border-l-2 border-indigo-100 pl-4">
+                      <Input placeholder="Mobile Money Number (e.g. 07XXXXXXXX)" value={storeForm.mobile_money_number} onChange={e => setStoreForm(p => ({ ...p, mobile_money_number: e.target.value }))} />
+                      <p className="text-[10px] text-slate-400">Specify your registered mobile money number for Payouts.</p>
                     </div>
                   )}
                 </TabsContent>
@@ -448,6 +457,7 @@ export default function MyStore() {
                     bank_account_number: store.bank_account_number || "",
                     routing_number: store.routing_number || "",
                     paypal_email: store.paypal_email || "",
+                    mobile_money_number: store.mobile_money_number || "",
                     phone_number: store.phone_number || "",
                     address: store.address || "",
                     website_url: store.website_url || "",
@@ -554,6 +564,7 @@ export default function MyStore() {
                             <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
                             <SelectItem value="paypal">PayPal</SelectItem>
                             <SelectItem value="stripe">Stripe</SelectItem>
+                            <SelectItem value="mobile_money">Mobile Money (Paystack)</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -585,6 +596,13 @@ export default function MyStore() {
                         <div className="space-y-2 border-l-2 border-indigo-100 pl-4 py-1 mt-4">
                           <label className="text-sm font-medium text-slate-600">PayPal Email Address</label>
                           <Input type="email" placeholder="email@example.com" value={storeForm.paypal_email} onChange={e => setStoreForm(p => ({ ...p, paypal_email: e.target.value }))} />
+                        </div>
+                      )}
+
+                      {storeForm.payment_method === 'mobile_money' && (
+                        <div className="space-y-2 border-l-2 border-indigo-100 pl-4 py-1 mt-4">
+                          <label className="text-sm font-medium text-slate-600">Mobile Money Number</label>
+                          <Input placeholder="07XXXXXXXX" value={storeForm.mobile_money_number} onChange={e => setStoreForm(p => ({ ...p, mobile_money_number: e.target.value }))} />
                         </div>
                       )}
                     </TabsContent>

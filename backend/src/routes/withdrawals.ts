@@ -262,6 +262,10 @@ export async function withdrawalRoutes(fastify: FastifyInstance) {
         if (!body.paypal_email) {
           return reply.code(400).send({ error: 'Missing required field: paypal_email' });
         }
+      } else if (body.payment_method === 'mobile_money') {
+        if (!body.mobile_money_number) {
+          return reply.code(400).send({ error: 'Missing required field: mobile_money_number' });
+        }
       }
 
       // Set vendor_username from authenticated user
@@ -356,7 +360,8 @@ export async function withdrawalRoutes(fastify: FastifyInstance) {
         'bank_account_number',
         'bank_name',
         'routing_number',
-        'paypal_email'
+        'paypal_email',
+        'mobile_money_number'
       ];
 
       allowedUpdates.forEach(field => {

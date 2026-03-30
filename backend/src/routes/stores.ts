@@ -12,12 +12,13 @@ const createStoreSchema = z.object({
   owner_name: z.string().optional(),
   
   // Payment Settings
-  payment_method: z.enum(['bank_transfer', 'paypal', 'stripe', 'other']).optional(),
+  payment_method: z.enum(['bank_transfer', 'paypal', 'stripe', 'mobile_money', 'other']).optional(),
   bank_name: z.string().optional(),
   bank_account_name: z.string().optional(),
   bank_account_number: z.string().optional(),
   routing_number: z.string().optional(),
   paypal_email: z.string().email().optional().or(z.literal('')),
+  mobile_money_number: z.string().optional(),
   
   // Additional Info
   phone_number: z.string().optional(),
@@ -200,7 +201,7 @@ export async function storeRoutes(fastify: FastifyInstance) {
       // Update allowed fields
       const allowedUpdates = [
         'name', 'description', 'logo_url', 'banner_url', 'category',
-        'payment_method', 'bank_name', 'bank_account_name', 'bank_account_number', 'routing_number', 'paypal_email',
+        'payment_method', 'bank_name', 'bank_account_name', 'bank_account_number', 'routing_number', 'paypal_email', 'mobile_money_number',
         'phone_number', 'address', 'website_url', 'social_links'
       ];
       allowedUpdates.forEach(field => {

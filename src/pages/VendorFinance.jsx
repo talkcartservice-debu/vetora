@@ -34,7 +34,13 @@ const PAYOUT_RATE = 0.9; // 90% after platform fee
 export default function VendorFinance() {
   const [withdrawOpen, setWithdrawOpen] = useState(false);
   const [withdrawForm, setWithdrawForm] = useState({
-    amount: "", bank_name: "", bank_account_name: "", bank_account_number: "", routing_number: "", paypal_email: ""
+    amount: "", 
+    bank_name: "", 
+    bank_account_name: "", 
+    bank_account_number: "", 
+    routing_number: "", 
+    paypal_email: "",
+    mobile_money_number: ""
   });
   const [expandedOrder, setExpandedOrder] = useState(null);
   const queryClient = useQueryClient();
@@ -44,7 +50,7 @@ export default function VendorFinance() {
     queryKey: ["myStore", currentUser?.username],
     queryFn: async () => {
       const res = await storesAPI.getByOwnerUsername(currentUser?.username);
-      if (res && !withdrawForm.bank_name && !withdrawForm.paypal_email) {
+      if (res && !withdrawForm.bank_name && !withdrawForm.paypal_email && !withdrawForm.mobile_money_number) {
         setWithdrawForm(prev => ({
           ...prev,
           payment_method: res.payment_method || "bank_transfer",
@@ -53,6 +59,7 @@ export default function VendorFinance() {
           bank_account_number: res.bank_account_number || "",
           routing_number: res.routing_number || "",
           paypal_email: res.paypal_email || "",
+          mobile_money_number: res.mobile_money_number || "",
         }));
       }
       return res;
@@ -94,12 +101,13 @@ export default function VendorFinance() {
       bank_name: withdrawForm.bank_name,
       routing_number: withdrawForm.routing_number,
       paypal_email: withdrawForm.paypal_email,
+      mobile_money_number: withdrawForm.mobile_money_number,
       status: "pending",
     }),
     onSuccess: () => {
       toast.success("Withdrawal request submitted!");
       setWithdrawOpen(false);
-      setWithdrawForm({ amount: "", bank_name: "", bank_account_name: "", bank_account_number: "", routing_number: "", paypal_email: "" });
+      setWithdrawForm({ amount: "", bank_name: "", bank_account_name: "", bank_account_number: "", routing_number: "", paypal_email: "", mobile_money_number: "" });
       queryClient.invalidateQueries({ queryKey: ["withdrawals"] });
     },
   });
@@ -313,7 +321,7 @@ export default function VendorFinance() {
                     onClick={() => setWithdrawForm(p => ({ ...p, payment_method: "bank_transfer" }))}
                     className={`flex-1 py-2 px-3 rounded-lg border text-xs font-medium transition-colors ${withdrawForm.payment_method === "bank_transfer" ? "bg-indigo-50 border-indigo-200 text-indigo-700" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}`}
                   >
-                    Bank Transfer
+                    Bank
                   </button>
                   <button 
                     type="button"
@@ -322,10 +330,17 @@ export default function VendorFinance() {
                   >
                     PayPal
                   </button>
+                  <button 
+                    type="button"
+                    onClick={() => setWithdrawForm(p => ({ ...p, payment_method: "mobile_money" }))}
+                    className={`flex-1 py-2 px-3 rounded-lg border text-xs font-medium transition-colors ${withdrawForm.payment_method === "mobile_money" ? "bg-indigo-50 border-indigo-200 text-indigo-700" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}`}
+                  >
+                    M-Money
+                  </button>
                 </div>
               </div>
 
-              {withdrawForm.payment_method === "bank_transfer" ? (
+              {withdrawForm.payment_method === "bank_transfer" && (
                 <div className="space-y-4">
                   <div>
                     <label className="text-xs font-medium text-slate-600 mb-1 block">Bank Name *</label>
@@ -346,13 +361,25 @@ export default function VendorFinance() {
                     </div>
                   </div>
                 </div>
-              ) : (
+              )}
+
+              {withdrawForm.payment_method === "paypal" && (
                 <div className="space-y-4">
                   <div>
                     <label className="text-xs font-medium text-slate-600 mb-1 block">PayPal Email *</label>
                     <Input type="email" placeholder="your-paypal@email.com" value={withdrawForm.paypal_email} onChange={e => setWithdrawForm(p => ({ ...p, paypal_email: e.target.value }))} />
                   </div>
                   <p className="text-[10px] text-slate-400">Payouts will be sent to this PayPal address within 1-3 business days.</p>
+                </div>
+              )}
+
+              {withdrawForm.payment_method === "mobile_money" && (
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-xs font-medium text-slate-600 mb-1 block">Mobile Money Number *</label>
+                    <Input placeholder="07XXXXXXXX" value={withdrawForm.mobile_money_number} onChange={e => setWithdrawForm(p => ({ ...p, mobile_money_number: e.target.value }))} />
+                  </div>
+                  <p className="text-[10px] text-slate-400">Payouts will be sent to this Mobile Money number via Paystack.</p>
                 </div>
               )}
 
@@ -363,6 +390,7 @@ export default function VendorFinance() {
                   !withdrawForm.amount || 
                   (withdrawForm.payment_method === "bank_transfer" && (!withdrawForm.bank_name || !withdrawForm.bank_account_name || !withdrawForm.bank_account_number)) ||
                   (withdrawForm.payment_method === "paypal" && !withdrawForm.paypal_email) ||
+                  (withdrawForm.payment_method === "mobile_money" && !withdrawForm.mobile_money_number) ||
                   parseFloat(withdrawForm.amount) < 20 ||
                   parseFloat(withdrawForm.amount) > availableBalance
                 }
@@ -508,7 +536,9 @@ export default function VendorFinance() {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-slate-900">${w.amount?.toFixed(2)}</p>
                     <p className="text-xs text-slate-400">
-                      {w.bank_name} · {new Date(w.created_at || w.created_date).toLocaleDateString()}
+                      {w.payment_method === 'mobile_money'
+                        ? (w.mobile_money_number || 'Mobile Money')
+                        : (w.bank_name || w.payment_method)} · {new Date(w.created_at || w.created_date).toLocaleDateString()}
                     </p>
                   </div>
                   <Badge className={`${statusColors[w.status]} border-0 text-xs capitalize`}>
