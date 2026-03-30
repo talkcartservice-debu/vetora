@@ -38,9 +38,7 @@ const CheckoutStep = ({ number, title, active, completed, children }) => (
 export default function Checkout() {
   const [step, setStep] = useState(1);
   const [address, setAddress] = useState({ street: "", city: "", state: "", zip: "" });
-  const [cardData, setCardData] = useState({ number: "", expiry: "", cvc: "" });
   const [paymentMethod, setPaymentMethod] = useState("paystack");
-  const [placing, setPlacing] = useState(false);
   const [orderNote, setOrderNote] = useState("");
   
   const navigate = useNavigate();
@@ -67,7 +65,6 @@ export default function Checkout() {
 
   const placeOrderMutation = useMutation({
     mutationFn: async () => {
-      setPlacing(true);
       const fullAddress = `${address.street}, ${address.city}, ${address.state} ${address.zip}`;
       
       // Group items by store for separate order records
@@ -79,7 +76,10 @@ export default function Checkout() {
       });
 
       const orders = [];
-      for (const group of Object.values(storeGroups)) {
+      const groups = Object.values(storeGroups);
+      
+      for (let i = 0; i < groups.length; i++) {
+        const group = groups[i];
         const orderItems = group.items.map(item => ({
           product_id: item.product_id,
           product_title: item.product_title,
@@ -88,17 +88,20 @@ export default function Checkout() {
           price: item.product_price,
         }));
         
-        const groupSubtotal = orderItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
+        const groupSubtotal = orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+        // Apply shipping cost only to the first order to avoid double charging in records
+        const groupShipping = i === 0 ? shipping : 0;
 
         const order = await ordersAPI.create({
           buyer_username: currentUser.username,
-          buyer_name: currentUser.display_name || currentUser.full_name,
+          buyer_name: currentUser.display_name || currentUser.full_name || currentUser.username,
           vendor_username: group.items[0]?.vendor_username,
           store_id: group.items[0]?.store_id,
           store_name: group.store_name,
           items: orderItems,
           subtotal: groupSubtotal,
-          total: groupSubtotal,
+          shipping: groupShipping,
+          total: groupSubtotal + groupShipping,
           shipping_address: fullAddress,
           affiliate_username: group.items[0]?.affiliate_username,
           order_note: orderNote,
@@ -126,7 +129,6 @@ export default function Checkout() {
       return orders;
     },
     onSuccess: (orders) => {
-      setPlacing(false);
       if (paymentMethod === "paystack") {
         // Redirection happens in initializePaystackPayment
         return;
@@ -137,7 +139,6 @@ export default function Checkout() {
     },
     onError: (err) => {
       toast.error(err.message || "Failed to place order");
-      setPlacing(false);
     }
   });
 
@@ -183,10 +184,10 @@ export default function Checkout() {
               <Button 
                 type="button"
                 onClick={() => {
-                  const isStreetValid = address.street && address.street.trim();
-                  const isCityValid = address.city && address.city.trim();
-                  const isStateValid = address.state && address.state.trim();
-                  const isZipValid = address.zip && address.zip.trim();
+                  const isStreetValid = address.street.trim().length > 0;
+                  const isCityValid = address.city.trim().length > 0;
+                  const isStateValid = address.state.trim().length > 0;
+                  const isZipValid = address.zip.trim().length > 0;
 
                   if (!isStreetValid || !isCityValid || !isStateValid || !isZipValid) {
                     toast.error("Please fill in all required shipping fields");
@@ -226,43 +227,6 @@ export default function Checkout() {
                 </button>
               ))}
               
-              {paymentMethod === "card" && (
-                <div className="mt-6 p-5 bg-white border border-slate-100 rounded-3xl space-y-4">
-                  <div>
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">Card Number</label>
-                    <div className="relative">
-                      <Input 
-                        value={cardData.number}
-                        onChange={e => setCardData({...cardData, number: e.target.value})}
-                        placeholder="0000 0000 0000 0000" 
-                        className="rounded-xl h-11 pl-11 border-slate-200" 
-                      />
-                      <CreditCard className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">Expiry Date</label>
-                      <Input 
-                        value={cardData.expiry}
-                        onChange={e => setCardData({...cardData, expiry: e.target.value})}
-                        placeholder="MM/YY" 
-                        className="rounded-xl h-11 border-slate-200" 
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">CVC</label>
-                      <Input 
-                        value={cardData.cvc}
-                        onChange={e => setCardData({...cardData, cvc: e.target.value})}
-                        placeholder="123" 
-                        className="rounded-xl h-11 border-slate-200" 
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
               <div className="flex gap-3 mt-8">
                 <Button type="button" variant="outline" onClick={() => setStep(1)} className="flex-1 h-12 rounded-xl font-bold border-slate-200">Back</Button>
                 <Button type="button" onClick={() => setStep(3)} className="flex-1 bg-indigo-600 hover:bg-indigo-700 h-12 rounded-xl font-bold">Review Order</Button>
@@ -308,10 +272,10 @@ export default function Checkout() {
               <Button 
                 type="button"
                 onClick={() => placeOrderMutation.mutate()} 
-                disabled={placing}
+                disabled={placeOrderMutation.isPending}
                 className="w-full bg-slate-900 hover:bg-black h-14 rounded-2xl font-black text-lg tracking-tight mt-4 transition-all hover:scale-[1.01] active:scale-[0.99]"
               >
-                {placing ? <><Loader2 className="w-5 h-5 animate-spin mr-3" /> Processing...</> : <><Lock className="w-5 h-5 mr-3" /> Place Order • ${total.toFixed(2)}</>}
+                {placeOrderMutation.isPending ? <><Loader2 className="w-5 h-5 animate-spin mr-3" /> Processing...</> : <><Lock className="w-5 h-5 mr-3" /> Place Order • ${total.toFixed(2)}</>}
               </Button>
             </div>
           </CheckoutStep>
