@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { notificationsAPI } from "@/api/apiClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/lib/utils";
 import { Bell, MessageCircle, Package, DollarSign, Heart, UserPlus, CheckCheck, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -17,17 +17,19 @@ const TYPE_CONFIG = {
 
 export default function NotificationBell({ userEmail }) {
   const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
   const ref = useRef(null);
   const queryClient = useQueryClient();
 
   const { data: notifications = [] } = useQuery({
-    queryKey: ["notifications"],
+    queryKey: ["notifications", userEmail],
     queryFn: async () => {
       const response = await notificationsAPI.list({
         limit: 20,
       });
       return response.data || [];
     },
+    enabled: !!userEmail,
     refetchInterval: 15000,
   });
 
@@ -42,12 +44,22 @@ export default function NotificationBell({ userEmail }) {
     mutationFn: () => notificationsAPI.markAllAsRead(),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      queryClient.invalidateQueries({ queryKey: ["unreadNotifs"] });
+    },
+    onError: (error) => {
+      console.error("Failed to mark all as read:", error);
     },
   });
 
   const markOneMutation = useMutation({
     mutationFn: (id) => notificationsAPI.markAsRead(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["notifications"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      queryClient.invalidateQueries({ queryKey: ["unreadNotifs"] });
+    },
+    onError: (error) => {
+      console.error("Failed to mark notification as read:", error);
+    },
   });
 
   const unread = notifications.filter(notif => !notif.is_read).length;
@@ -113,7 +125,11 @@ export default function NotificationBell({ userEmail }) {
                   return (
                     <button
                       key={notif.id || notif._id}
-                      onClick={() => { if (!notif.is_read) markOneMutation.mutate(notif.id || notif._id); }}
+                      onClick={() => {
+                        if (!notif.is_read) markOneMutation.mutate(notif.id || notif._id);
+                        if (notif.link && notif.link.startsWith("/")) navigate(notif.link);
+                        setOpen(false);
+                      }}
                       className={`w-full flex items-start gap-3 px-4 py-3 hover:bg-slate-50 transition-colors text-left border-b border-slate-50 last:border-0 ${!notif.is_read ? "bg-indigo-50/40" : ""}`}
                     >
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${cfg.color}`}>
@@ -123,7 +139,7 @@ export default function NotificationBell({ userEmail }) {
                         <p className="text-xs font-semibold text-slate-800 leading-snug">{notif.title}</p>
                         {notif.body && <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-2">{notif.body}</p>}
                         <p className="text-[10px] text-slate-400 mt-1">
-                          {new Date(notif.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                          {new Date(notif.created_at || notif.created_date).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
                         </p>
                       </div>
                       {!notif.is_read && <div className="w-2 h-2 rounded-full bg-indigo-500 mt-1.5 shrink-0" />}

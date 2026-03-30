@@ -1,5 +1,6 @@
 import React from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import EmptyState from "@/components/shared/EmptyState";
 import {
   Bell, Heart, MessageCircle, UserPlus, Package, Users, Megaphone, CheckCheck
@@ -22,6 +23,7 @@ const TYPE_ICONS = {
 
 export default function Notifications() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const { user: currentUser } = useAuth();
 
   const { data: notifications = [], isLoading } = useQuery({
@@ -33,6 +35,19 @@ export default function Notifications() {
     enabled: !!currentUser?.username,
   });
 
+  const markRead = useMutation({
+    mutationFn: async (id) => {
+      await notificationsAPI.markAsRead(id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      queryClient.invalidateQueries({ queryKey: ["unreadNotifs"] });
+    },
+    onError: (error) => {
+      console.error("Failed to mark notification as read:", error);
+    },
+  });
+
   const markAllRead = useMutation({
     mutationFn: async () => {
       await notificationsAPI.markAllAsRead();
@@ -41,7 +56,19 @@ export default function Notifications() {
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
       queryClient.invalidateQueries({ queryKey: ["unreadNotifs"] });
     },
+    onError: (error) => {
+      console.error("Failed to mark all as read:", error);
+    },
   });
+
+  const handleNotificationClick = (notif) => {
+    if (!notif.is_read) {
+      markRead.mutate(notif.id || notif._id);
+    }
+    if (notif.link && notif.link.startsWith("/")) {
+      navigate(notif.link);
+    }
+  };
 
   const unreadCount = notifications.filter(n => !n.is_read).length;
 
@@ -96,9 +123,10 @@ export default function Notifications() {
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: i * 0.03 }}
-                className={`flex items-start gap-3 p-3 rounded-xl transition-colors ${
-                  notif.is_read ? "bg-white" : "bg-indigo-50/50"
+                className={`flex items-start gap-3 p-3 rounded-xl transition-colors cursor-pointer ${
+                  notif.is_read ? "bg-white hover:bg-slate-50" : "bg-indigo-50/50 hover:bg-indigo-50"
                 }`}
+                onClick={() => handleNotificationClick(notif)}
               >
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${typeConfig.color}`}>
                   <Icon className="w-4 h-4" />
