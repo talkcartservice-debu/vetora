@@ -1,9 +1,10 @@
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { paystackService } from '../services/paystackService';
+import { Order } from '../models/Order';
 
 const initializePaymentSchema = z.object({
-  amount: z.number().min(1), // Total amount in NGN/USD
+  amount: z.number().min(1).optional(), // Optional since we verify against DB
   email: z.string().email(),
   order_id: z.string(),
   currency: z.string().default('NGN'),
@@ -15,8 +16,20 @@ export async function paymentRoutes(fastify: FastifyInstance) {
     preHandler: [fastify.authenticate],
   }, async (request, reply) => {
     try {
-      const { amount, email, order_id, currency } = initializePaymentSchema.parse(request.body);
-      const data = await paystackService.initializeTransaction(email, amount, order_id, currency);
+      const { amount: clientAmount, email, order_id, currency } = initializePaymentSchema.parse(request.body);
+      
+      // Calculate total from all orders (comma-separated IDs)
+      const orderIds = order_id.split(',');
+      const orders = await Order.find({ _id: { $in: orderIds } });
+      
+      if (orders.length === 0) {
+        return reply.code(404).send({ error: 'Orders not found' });
+      }
+
+      const totalAmount = orders.reduce((sum, order) => sum + order.total, 0);
+      
+      // Use the server-side total amount
+      const data = await paystackService.initializeTransaction(email, totalAmount, order_id, currency);
       return data;
     } catch (error: any) {
       if (error instanceof z.ZodError) {

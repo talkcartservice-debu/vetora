@@ -116,12 +116,24 @@ export default function Checkout() {
       if (paymentMethod === "paystack") {
         // Pass all order IDs to Paystack for reconciliation
         const orderIds = orders.map(o => o._id).join(",");
-        await initializePaystackPayment({
-          amount: total, // Total for all orders in the cart
-          email: currentUser.email,
-          order_id: orderIds
-        });
-        // This will redirect, so the code below won't run immediately
+        
+        try {
+          await initializePaystackPayment({
+            amount: total, // Still passed but server now verifies against DB
+            email: currentUser.email,
+            order_id: orderIds
+          });
+          
+          // Clear cart ONLY IF redirect is successful (this code might not run due to redirect)
+          // Actually, we'll clear it here just before redirect to be safe
+          await cartAPI.clear();
+          queryClient.invalidateQueries({ queryKey: ["cart"] });
+        } catch (paystackError) {
+          console.error("Payment initialization failed:", paystackError);
+          // If paystack fails to initialize, don't clear the cart
+          throw paystackError;
+        }
+
         return orders;
       }
       
