@@ -15,8 +15,9 @@ export const connectDB = async () => {
     try {
       const db = mongoose.connection.db;
       if (db) {
-        const collections = await db.listCollections({ name: 'users' }).toArray();
-        if (collections.length > 0) {
+        // Drop users collection stale index
+        const userCollections = await db.listCollections({ name: 'users' }).toArray();
+        if (userCollections.length > 0) {
           const usersCollection = db.collection('users');
           const indexes = await usersCollection.indexes();
           const hasUsernameIndex = indexes.some(idx => idx.name === 'username_1');
@@ -27,9 +28,23 @@ export const connectDB = async () => {
             console.log('✅ Successfully dropped username_1 index');
           }
         }
+
+        // Drop follows collection stale index
+        const followCollections = await db.listCollections({ name: 'follows' }).toArray();
+        if (followCollections.length > 0) {
+          const followsCollection = db.collection('follows');
+          const followsIndexes = await followsCollection.indexes();
+          const hasFollowerFollowingIndex = followsIndexes.some(idx => idx.name === 'follower_1_following_1');
+          
+          if (hasFollowerFollowingIndex) {
+            console.log('⚠️  Found stale follower_1_following_1 index, dropping...');
+            await followsCollection.dropIndex('follower_1_following_1');
+            console.log('✅ Successfully dropped follower_1_following_1 index');
+          }
+        }
       }
     } catch (indexError) {
-      console.warn('⚠️  Could not drop username_1 index (it might not exist):', indexError);
+      console.warn('⚠️  Could not drop stale indexes:', indexError);
     }
   } catch (error) {
     console.error('❌ MongoDB connection error:', error);
