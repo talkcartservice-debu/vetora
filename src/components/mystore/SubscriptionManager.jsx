@@ -141,6 +141,7 @@ function CustomDomainManager({ subscription, vendorUsername }) {
   const queryClient = useQueryClient();
 
   const canUseDomain = subscription?.plan === "pro" || subscription?.plan === "elite";
+  const isElite = subscription?.plan === "elite";
 
   const save = async () => {
     if (!subscription?.id && !subscription?._id) return;
@@ -173,14 +174,17 @@ function CustomDomainManager({ subscription, vendorUsername }) {
     <div className="bg-white rounded-2xl border border-slate-100 p-5">
       <div className="flex items-center gap-2 mb-3">
         <Globe className="w-5 h-5 text-indigo-500" />
-        <h4 className="text-sm font-semibold text-slate-900">Custom Domain</h4>
+        <h4 className="text-sm font-semibold text-slate-900">Custom Domain {isElite && "& SSL"}</h4>
         {subscription?.custom_domain ? (
           <Badge className="ml-auto bg-green-100 text-green-700 border-0 text-xs">Active</Badge>
         ) : (
           <Badge className="ml-auto bg-slate-100 text-slate-500 border-0 text-xs">Not configured</Badge>
         )}
       </div>
-      <p className="text-xs text-slate-500 mb-3">Point your domain to Vetora to use a branded store URL.</p>
+      <p className="text-xs text-slate-500 mb-3">
+        Point your domain to Vetora to use a branded store URL.
+        {isElite && " Elite stores include free automatic SSL encryption."}
+      </p>
       <div className="flex gap-2">
         <Input
           value={domain}

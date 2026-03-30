@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { createPageUrl } from "@/lib/utils";
 import {
   Store, Plus, Package, DollarSign, ShoppingCart, Trash2, Loader2, BarChart3, Eye,
-  X, Upload, Camera, CheckCircle2
+  X, Upload, Camera, CheckCircle2, Play
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,9 +28,9 @@ import { useAuth } from "@/lib/AuthContext";
 const CATEGORIES = ["fashion", "electronics", "home", "beauty", "sports", "food", "art", "books", "handmade", "other"];
 
 const PLAN_LIMITS = {
-  free: { products: 10, images: 5 },
-  pro: { products: 200, images: 20 },
-  elite: { products: Infinity, images: Infinity },
+  free: { products: 10, images: 5, videos: 0, media: 5 },
+  pro: { products: 200, images: 20, videos: 20, media: 20 },
+  elite: { products: Infinity, images: Infinity, videos: Infinity, media: Infinity },
 };
 
 export default function MyStore() {
@@ -73,16 +73,38 @@ export default function MyStore() {
 
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
-    const maxImages = limits.images;
-    const remainingSlots = maxImages - productImages.length;
+    const maxMedia = limits.media;
+    const currentImages = productImages.filter(f => f.type.startsWith("image/")).length;
+    const currentVideos = productImages.filter(f => f.type.startsWith("video/")).length;
     
-    const validFiles = files.filter(f => f.type.startsWith("image/")).slice(0, remainingSlots);
-    
-    if (validFiles.length < files.length) {
-      if (remainingSlots <= 0) {
-        toast.error(`Your ${currentPlan} plan allows up to ${maxImages} images per product.`);
-      } else {
-        toast.error(`You can only add ${remainingSlots} more image(s). Your ${currentPlan} plan allows up to ${maxImages} images.`);
+    let validFiles = [];
+    let tempImagesCount = currentImages;
+    let tempVideosCount = currentVideos;
+
+    for (const file of files) {
+      if (validFiles.length + productImages.length >= maxMedia) {
+        toast.error(`Your ${currentPlan} plan allows up to ${maxMedia} total media files.`);
+        break;
+      }
+
+      if (file.type.startsWith("image/")) {
+        if (tempImagesCount >= limits.images) {
+          toast.error(`Your ${currentPlan} plan allows up to ${limits.images} images.`);
+          continue;
+        }
+        tempImagesCount++;
+        validFiles.push(file);
+      } else if (file.type.startsWith("video/")) {
+        if (limits.videos === 0) {
+          toast.error(`Video uploads are not available on the ${currentPlan} plan.`);
+          continue;
+        }
+        if (tempVideosCount >= limits.videos) {
+          toast.error(`Your ${currentPlan} plan allows up to ${limits.videos} videos.`);
+          continue;
+        }
+        tempVideosCount++;
+        validFiles.push(file);
       }
     }
 
@@ -190,13 +212,20 @@ export default function MyStore() {
     mutationFn: async () => {
       setUploading(true);
       let imageUrls = [];
+      let videoUrls = [];
       try {
         for (const file of productImages) {
           const res = await filesAPI.upload(file);
-          if (res.url) imageUrls.push(res.url);
+          if (res.url) {
+            if (file.type.startsWith("video/")) {
+              videoUrls.push(res.url);
+            } else {
+              imageUrls.push(res.url);
+            }
+          }
         }
       } catch (err) {
-        toast.error("Failed to upload images");
+        toast.error("Failed to upload assets");
         throw err;
       } finally {
         setUploading(false);
@@ -207,6 +236,7 @@ export default function MyStore() {
       return productsAPI.create({
         ...productForm,
         images: imageUrls,
+        videos: videoUrls,
         price: parseFloat(productForm.price),
         compare_at_price: productForm.compare_at_price ? parseFloat(productForm.compare_at_price) : undefined,
         inventory_count: parseInt(productForm.inventory_count) || 0,
@@ -748,25 +778,37 @@ export default function MyStore() {
                 {/* Image Upload */}
                 <div className="space-y-2">
                   <label className="text-xs font-medium text-slate-500 flex items-center gap-1.5">
-                    <Camera className="w-3.5 h-3.5" /> Product Images (up to {limits.images === Infinity ? 'Unlimited' : limits.images})
+                    <Camera className="w-3.5 h-3.5" /> Product Media (up to {limits.images === Infinity ? 'Unlimited' : limits.images})
                   </label>
                   <div className="flex flex-wrap gap-2">
-                    {imagePreviews.map((url, i) => (
-                      <div key={`preview-${i}-${url}`} className="relative w-20 h-20 rounded-xl overflow-hidden border border-slate-100 bg-slate-50 group">
-                        <img src={url} alt="" className="w-full h-full object-cover" />
-                        <button
-                          onClick={() => removeImage(i)}
-                          className="absolute top-1 right-1 w-6 h-6 bg-black/60 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    ))}
+                    {imagePreviews.map((url, i) => {
+                      const isVideo = productImages[i]?.type?.startsWith("video/");
+                      return (
+                        <div key={`preview-${i}-${url}`} className="relative w-20 h-20 rounded-xl overflow-hidden border border-slate-100 bg-slate-50 group">
+                          {isVideo ? (
+                            <div className="w-full h-full flex items-center justify-center bg-slate-200">
+                              <video src={url} className="w-full h-full object-cover" />
+                              <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                                <Play className="w-6 h-6 text-white fill-white" />
+                              </div>
+                            </div>
+                          ) : (
+                            <img src={url} alt="" className="w-full h-full object-cover" />
+                          )}
+                          <button
+                            onClick={() => removeImage(i)}
+                            className="absolute top-1 right-1 w-6 h-6 bg-black/60 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      );
+                    })}
                     {(limits.images === Infinity || productImages.length < limits.images) && (
                       <label className="w-20 h-20 rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/30 transition-all text-slate-400">
                         <Upload className="w-5 h-5" />
                         <span className="text-[10px] mt-1 font-medium">Upload</span>
-                        <input type="file" accept="image/*" multiple className="hidden" onChange={handleFileChange} />
+                        <input type="file" accept={limits.videos === 0 ? "image/*" : "image/*,video/*"} multiple className="hidden" onChange={handleFileChange} />
                       </label>
                     )}
                   </div>
@@ -791,7 +833,7 @@ export default function MyStore() {
                   className="w-full bg-indigo-600 hover:bg-indigo-700 h-11 rounded-xl font-bold"
                 >
                   {addProductMutation.isPending || uploading ? (
-                    <><Loader2 className="w-4 h-4 animate-spin mr-2" /> {uploading ? "Uploading images..." : "Adding product..."}</>
+                    <><Loader2 className="w-4 h-4 animate-spin mr-2" /> {uploading ? "Uploading media..." : "Adding product..."}</>
                   ) : "Add Product"}
                 </Button>
               </div>
@@ -843,7 +885,7 @@ export default function MyStore() {
              <Button onClick={() => setActiveTab("subscription")} className="bg-indigo-600 hover:bg-indigo-700 rounded-xl">Upgrade Now</Button>
           </div>
         ) : (
-          <ShippingZoneManager store={store} vendorUsername={currentUser?.username} />
+          <ShippingZoneManager store={store} vendorUsername={currentUser?.username} plan={currentPlan} />
         )
       )}
 
@@ -865,7 +907,7 @@ export default function MyStore() {
       {/* Analytics Tab */}
       {activeTab === "analytics" && (
         currentPlan === 'elite' || currentPlan === 'pro' ? (
-          <AdvancedAnalytics orders={orders} products={products} />
+          <AdvancedAnalytics orders={orders} products={products} plan={currentPlan} />
         ) : (
           <StoreAnalytics orders={orders} products={products} />
         )

@@ -46,7 +46,8 @@ function KpiCard({ icon: Icon, label, value, change, color, sub }) {
   );
 }
 
-export default function AdvancedAnalytics({ orders, products }) {
+export default function AdvancedAnalytics({ orders, products, plan = 'free' }) {
+  const isElite = plan === 'elite';
   // Derived real data
   const totalRevenue = orders.reduce((s, o) => s + (o.total || 0), 0);
   const avgOrderValue = orders.length ? totalRevenue / orders.length : 0;
@@ -232,7 +233,17 @@ export default function AdvancedAnalytics({ orders, products }) {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl border border-slate-100 p-5">
+        <div className="bg-white rounded-2xl border border-slate-100 p-5 relative overflow-hidden">
+          {!isElite && (
+            <div className="absolute inset-0 bg-white/80 backdrop-blur-[1px] z-10 flex flex-col items-center justify-center p-6 text-center">
+              <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center mb-3">
+                <Star className="w-5 h-5 text-amber-600" />
+              </div>
+              <h4 className="text-sm font-bold text-slate-900 mb-1">Elite Analytics Feature</h4>
+              <p className="text-[11px] text-slate-500 mb-4 max-w-[180px]">Detailed audience demographics are only available on the Elite plan.</p>
+              <Button size="sm" variant="outline" className="h-8 text-[10px] rounded-lg border-amber-200 text-amber-700 hover:bg-amber-50">Upgrade to Elite</Button>
+            </div>
+          )}
           <h3 className="text-sm font-semibold text-slate-900 mb-1">Audience Demographics</h3>
           <p className="text-xs text-slate-400 mb-3">Age groups & device breakdown</p>
           <div className="flex items-center gap-3 mb-4">
@@ -295,7 +306,17 @@ export default function AdvancedAnalytics({ orders, products }) {
           <p className="text-xs text-slate-400 mt-3">Overall conversion: <span className="text-indigo-600 font-semibold">{conversionRate}%</span></p>
         </div>
 
-        <div className="bg-white rounded-2xl border border-slate-100 p-5">
+        <div className="bg-white rounded-2xl border border-slate-100 p-5 relative overflow-hidden">
+          {!isElite && (
+            <div className="absolute inset-0 bg-white/80 backdrop-blur-[1px] z-10 flex flex-col items-center justify-center p-6 text-center">
+              <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center mb-3">
+                <Star className="w-5 h-5 text-amber-600" />
+              </div>
+              <h4 className="text-sm font-bold text-slate-900 mb-1">Elite Analytics Feature</h4>
+              <p className="text-[11px] text-slate-500 mb-4 max-w-[180px]">Customer location data is only available on the Elite plan.</p>
+              <Button size="sm" variant="outline" className="h-8 text-[10px] rounded-lg border-amber-200 text-amber-700 hover:bg-amber-50">Upgrade to Elite</Button>
+            </div>
+          )}
           <h3 className="text-sm font-semibold text-slate-900 mb-1 flex items-center gap-1.5">
             <MapPin className="w-4 h-4 text-red-500" /> Top Locations
           </h3>

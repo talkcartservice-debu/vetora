@@ -6,6 +6,8 @@ export const PLAN_LIMITS = {
   free: { 
     products: 10, 
     images_per_product: 5,
+    videos_per_product: 0,
+    media_per_product: 5,
     custom_domain: false,
     shipping_zones: false,
     affiliate_program: false
@@ -13,6 +15,8 @@ export const PLAN_LIMITS = {
   pro: { 
     products: 200, 
     images_per_product: 20,
+    videos_per_product: 20,
+    media_per_product: 20,
     custom_domain: true,
     shipping_zones: true,
     affiliate_program: false
@@ -20,6 +24,8 @@ export const PLAN_LIMITS = {
   elite: { 
     products: Infinity, 
     images_per_product: Infinity,
+    videos_per_product: Infinity,
+    media_per_product: Infinity,
     custom_domain: true,
     shipping_zones: true,
     affiliate_program: true
@@ -122,15 +128,48 @@ export async function checkProductMediaLimit(request: FastifyRequest, reply: Fas
     const body = request.body as any;
     if (!body) return; // No body, nothing to check
 
-    const imagesCount = (body.images?.length || 0) + (body.videos?.length || 0);
+    const imagesCount = body.images?.length || 0;
+    const videosCount = body.videos?.length || 0;
+    const totalMedia = imagesCount + videosCount;
     
-    if (imagesCount > limits.images_per_product) {
-       const limitDisplay = limits.images_per_product === Infinity ? 'unlimited' : limits.images_per_product;
-       return reply.code(403).send({ 
+    // 1. Check if plan allows videos at all
+    if (videosCount > 0 && limits.videos_per_product === 0) {
+      return reply.code(403).send({ 
+        error: 'Subscription feature restricted', 
+        message: `Video uploads are not available on the ${plan} plan. Please upgrade to Pro or Elite.`
+      });
+    }
+
+    // 2. Check independent video limit
+    if (videosCount > limits.videos_per_product) {
+      const limitDisplay = limits.videos_per_product === Infinity ? 'unlimited' : limits.videos_per_product;
+      return reply.code(403).send({ 
         error: 'Subscription limit reached', 
-        message: `Your ${plan} plan allows up to ${limitDisplay} media files per product. Please upgrade to add more.`,
+        message: `Your ${plan} plan allows up to ${limitDisplay} videos per product.`,
+        limit: limits.videos_per_product,
+        current: videosCount
+      });
+    }
+
+    // 3. Check independent image limit
+    if (imagesCount > limits.images_per_product) {
+      const limitDisplay = limits.images_per_product === Infinity ? 'unlimited' : limits.images_per_product;
+      return reply.code(403).send({ 
+        error: 'Subscription limit reached', 
+        message: `Your ${plan} plan allows up to ${limitDisplay} images per product.`,
         limit: limits.images_per_product,
         current: imagesCount
+      });
+    }
+
+    // 4. Check total media limit (if different from individual limits)
+    if (totalMedia > (limits as any).media_per_product) {
+       const limitDisplay = (limits as any).media_per_product === Infinity ? 'unlimited' : (limits as any).media_per_product;
+       return reply.code(403).send({ 
+        error: 'Subscription limit reached', 
+        message: `Your ${plan} plan allows up to ${limitDisplay} total media files per product.`,
+        limit: (limits as any).media_per_product,
+        current: totalMedia
       });
     }
   } catch (err: any) {

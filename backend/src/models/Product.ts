@@ -8,6 +8,7 @@ export interface IProduct extends Document {
   compare_at_price?: number;
   currency: string;
   images: string[];
+  videos: string[];
   category: string;
   tags: string[];
   store_id: string;
@@ -50,6 +51,9 @@ const ProductSchema = new Schema<IProduct>({
     uppercase: true,
   },
   images: [{
+    type: String,
+  }],
+  videos: [{
     type: String,
   }],
   category: {

@@ -139,10 +139,12 @@ function ZoneForm({ initial = BLANK_ZONE, onSave, onCancel, saving }) {
   );
 }
 
-export default function ShippingZoneManager({ store, vendorUsername }) {
+export default function ShippingZoneManager({ store, vendorUsername, plan = 'free' }) {
   const [showAdd, setShowAdd] = useState(false);
   const [editId, setEditId] = useState(null);
   const queryClient = useQueryClient();
+
+  const isElite = plan === 'elite';
 
   const { data: zonesResponse = {}, isLoading } = useQuery({
     queryKey: ["shippingZones", vendorUsername],
@@ -265,6 +267,36 @@ export default function ShippingZoneManager({ store, vendorUsername }) {
           ))}
         </div>
       )}
+
+      {/* Live Rates - Elite only */}
+      <div className={`mt-8 p-5 rounded-2xl border-2 border-dashed transition-all ${isElite ? "bg-amber-50/30 border-amber-100" : "bg-slate-50 border-slate-200"}`}>
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-1">
+              <h4 className={`text-sm font-bold ${isElite ? "text-amber-900" : "text-slate-900"}`}>Calculated Live Rates</h4>
+              <Badge className={isElite ? "bg-amber-500 text-white border-0" : "bg-slate-200 text-slate-500 border-0"}>Elite</Badge>
+            </div>
+            <p className="text-xs text-slate-500 leading-relaxed max-w-md">
+              Automatically calculate shipping costs at checkout based on carrier rates (UPS, FedEx, DHL, etc.) and package weight.
+            </p>
+          </div>
+          <Truck className={`w-8 h-8 ${isElite ? "text-amber-500" : "text-slate-300"} shrink-0`} />
+        </div>
+        
+        {!isElite ? (
+          <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between">
+            <span className="text-[11px] text-slate-400 font-medium">Upgrade to Elite to unlock live carrier rates</span>
+            <Button size="sm" variant="outline" className="h-8 text-[10px] rounded-lg border-amber-200 text-amber-700 hover:bg-amber-50">
+              Explore Elite Plan
+            </Button>
+          </div>
+        ) : (
+          <div className="mt-4 p-3 bg-white rounded-xl border border-amber-100 text-center">
+            <p className="text-xs font-semibold text-amber-700">Live rates integration is being prepared for your store.</p>
+            <p className="text-[10px] text-amber-500 mt-0.5">Contact your dedicated account manager to enable early access.</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
