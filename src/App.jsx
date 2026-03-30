@@ -5,6 +5,7 @@ import { pagesConfig } from './pages.config'
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
+import { SocketProvider } from '@/lib/SocketContext';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import { LanguageProvider } from '@/components/providers/LanguageContext';
@@ -87,14 +88,16 @@ function App() {
   return (
     <GoogleOAuthProvider clientId={googleClientId}>
       <AuthProvider>
-        <QueryClientProvider client={queryClientInstance}>
-          <LanguageProvider>
-            <Router future={{ v7_relativeSplatPath: true }}>
-              <AppRoutes />
-            </Router>
-            <Toaster />
-          </LanguageProvider>
-        </QueryClientProvider>
+        <SocketProvider>
+          <QueryClientProvider client={queryClientInstance}>
+            <LanguageProvider>
+              <Router future={{ v7_relativeSplatPath: true }}>
+                <AppRoutes />
+              </Router>
+              <Toaster />
+            </LanguageProvider>
+          </QueryClientProvider>
+        </SocketProvider>
       </AuthProvider>
     </GoogleOAuthProvider>
   )
