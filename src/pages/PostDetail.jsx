@@ -36,13 +36,6 @@ export default function PostDetail() {
   // Ensure comments is always an array - backend returns { comments: [...], pagination: {...} }
   const comments = Array.isArray(commentsData) ? commentsData : commentsData?.comments || [];
 
-  const { data: userLikesResponse = [] } = useQuery({
-    queryKey: ["userLikes", currentUser?.username],
-    queryFn: () => likesAPI.list({ user_username: currentUser?.username }),
-    enabled: !!currentUser?.username,
-  });
-  const userLikes = Array.isArray(userLikesResponse) ? userLikesResponse : userLikesResponse?.data || [];
-
   const addCommentMutation = useMutation({
     mutationFn: async () => {
       await commentsAPI.create({
@@ -102,7 +95,7 @@ export default function PostDetail() {
         <ArrowLeft className="w-4 h-4" /> Back
       </Link>
 
-      <PostCard post={post} currentUser={currentUser} userLikes={userLikes} />
+      <PostCard post={post} currentUser={currentUser} />
 
       {/* Comments */}
       <div className="mt-6">

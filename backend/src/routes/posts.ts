@@ -22,7 +22,9 @@ const createPostSchema = z.object({
 
 export async function postRoutes(fastify: FastifyInstance) {
   // List posts with filtering and pagination
-  fastify.get('/', async (request, reply) => {
+  fastify.get('/', {
+    preHandler: [fastify.authenticateOptional],
+  }, async (request, reply) => {
     try {
       const query = request.query as any;
       const {
@@ -72,8 +74,35 @@ export async function postRoutes(fastify: FastifyInstance) {
 
       const total = await Post.countDocuments(filter);
 
+      // Add is_liked field and sync counts
+      const user = request.user as any;
+      const postsWithLikeStatus = await Promise.all(posts.map(async (post: any) => {
+        let is_liked = false;
+        if (user?.username) {
+          const like = await Like.findOne({
+            user_username: user.username.toLowerCase(),
+            target_id: post._id.toString(),
+            target_type: 'post'
+          }).lean();
+          is_liked = !!like;
+        }
+
+        // Sync count if needed (optional but good for consistency)
+        const actualCount = await Like.countDocuments({ 
+          target_id: post._id.toString(), 
+          target_type: 'post' 
+        });
+        
+        if (actualCount !== post.likes_count) {
+          await Post.findByIdAndUpdate(post._id, { likes_count: actualCount });
+          post.likes_count = actualCount;
+        }
+
+        return { ...post, is_liked };
+      }));
+
       return {
-        data: posts,
+        data: postsWithLikeStatus,
         total,
         limit: parseInt(limit),
         skip: parseInt(skip),
@@ -88,16 +117,41 @@ export async function postRoutes(fastify: FastifyInstance) {
   });
 
   // Get post by ID
-  fastify.get('/:id', async (request, reply) => {
+  fastify.get('/:id', {
+    preHandler: [fastify.authenticateOptional],
+  }, async (request, reply) => {
     try {
       const { id } = request.params as { id: string };
-      const post = await Post.findById(id).lean({ virtuals: true });
+      const post = await Post.findById(id).lean({ virtuals: true }) as any;
 
       if (!post) {
         return reply.code(404).send({ error: 'Post not found' });
       }
 
-      return post;
+      // Add is_liked field and sync count
+      const user = request.user as any;
+      let is_liked = false;
+      if (user?.username) {
+        const like = await Like.findOne({
+          user_username: user.username.toLowerCase(),
+          target_id: id,
+          target_type: 'post'
+        }).lean();
+        is_liked = !!like;
+      }
+
+      // Sync count
+      const actualCount = await Like.countDocuments({ 
+        target_id: id, 
+        target_type: 'post' 
+      });
+      
+      if (actualCount !== post.likes_count) {
+        await Post.findByIdAndUpdate(id, { likes_count: actualCount });
+        post.likes_count = actualCount;
+      }
+
+      return { ...post, is_liked };
     } catch (error: any) {
       fastify.log.error(error);
       return reply.code(500).send({ 
@@ -160,7 +214,7 @@ export async function postRoutes(fastify: FastifyInstance) {
 
       // Check if already liked
       const existingLike = await Like.findOne({
-        user_username: user.username, 
+        user_username: user.username.toLowerCase(), 
         target_id: id, 
         target_type: 'post'
       });
@@ -170,7 +224,7 @@ export async function postRoutes(fastify: FastifyInstance) {
       }
 
       const like = new Like({
-        user_username: user.username,
+        user_username: user.username.toLowerCase(),
         target_id: id,
         target_type: 'post'
       });
@@ -178,9 +232,37 @@ export async function postRoutes(fastify: FastifyInstance) {
       await like.save();
 
       // Increment likes count on post
-      await Post.findByIdAndUpdate(id, { $inc: { likes_count: 1 } });
+      const updatedPost = await Post.findByIdAndUpdate(
+        id, 
+        { $inc: { likes_count: 1 } },
+        { new: true }
+      );
 
-      return { status: 'liked' };
+      // Notify author and broadcast update in background
+      if (updatedPost) {
+        const io = (fastify as any).io;
+        if (io) {
+          io.emit('post_updated', {
+            type: 'like',
+            post_id: id,
+            likes_count: updatedPost.likes_count,
+            user_username: user.username
+          });
+        }
+
+        // Optional: Create notification for author
+        // We do this in a try-catch to not fail the like if notification fails
+        try {
+          if (updatedPost.author_username && updatedPost.author_username !== user.username) {
+            // Check if Notification model is available or use a generic approach
+            // For now, just logging or using a dedicated service if available
+          }
+        } catch (err: any) {
+          fastify.log.error(`Failed to create notification for like: ${err.message}`);
+        }
+      }
+
+      return { status: 'liked', likes_count: updatedPost?.likes_count || 0 };
     } catch (error: any) {
       fastify.log.error(error);
       return reply.code(500).send({ 
@@ -205,7 +287,7 @@ export async function postRoutes(fastify: FastifyInstance) {
       fastify.log.info(`User ${user.username} unliking post ${id}`);
 
       const result = await Like.deleteOne({
-        user_username: user.username,
+        user_username: user.username.toLowerCase(),
         target_id: id,
         target_type: 'post'
       });
@@ -217,9 +299,24 @@ export async function postRoutes(fastify: FastifyInstance) {
       }
 
       // Decrement likes count on post
-      await Post.findByIdAndUpdate(id, { $inc: { likes_count: -1 } });
+      const updatedPost = await Post.findByIdAndUpdate(
+        id, 
+        { $inc: { likes_count: -1 } },
+        { new: true }
+      );
 
-      return { status: 'unliked' };
+      // Broadcast update
+      const io = (fastify as any).io;
+      if (io) {
+        io.emit('post_updated', {
+          type: 'unlike',
+          post_id: id,
+          likes_count: updatedPost?.likes_count || 0,
+          user_username: user.username
+        });
+      }
+
+      return { status: 'unliked', likes_count: updatedPost?.likes_count || 0 };
     } catch (error: any) {
       fastify.log.error(error);
       return reply.code(500).send({ 

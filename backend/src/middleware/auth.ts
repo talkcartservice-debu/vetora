@@ -10,6 +10,14 @@ export async function authenticate(request: FastifyRequest, reply: FastifyReply)
   }
 }
 
+export async function authenticateOptional(request: FastifyRequest, reply: FastifyReply) {
+  try {
+    await request.jwtVerify();
+  } catch (err) {
+    // Silently fail, user remains undefined on request
+  }
+}
+
 export async function isAdmin(request: FastifyRequest, reply: FastifyReply) {
   try {
     const decoded = request.user as any;

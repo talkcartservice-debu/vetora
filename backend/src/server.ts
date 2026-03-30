@@ -35,7 +35,7 @@ import { wishlistRoutes } from './routes/wishlist';
 import { bookmarkRoutes } from './routes/bookmarks';
 import { adminRoutes } from './routes/admin';
 import { setupWebSocket, io } from './websocket/socket';
-import { authenticate, checkMaintenance } from './middleware/auth';
+import { authenticate, authenticateOptional, checkMaintenance } from './middleware/auth';
 
 const fastify = Fastify({
   logger: {
@@ -77,6 +77,7 @@ fastify.register(jwt, {
 
 // Add authentication decorator
 fastify.decorate('authenticate', authenticate);
+fastify.decorate('authenticateOptional', authenticateOptional);
 
 // Add Socket.IO decorator
 fastify.decorate('io', null);

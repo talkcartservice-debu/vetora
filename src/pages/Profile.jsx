@@ -180,16 +180,6 @@ export default function Profile() {
     enabled: !!currentUser?.username && !isOwnProfile,
   });
 
-  const { data: userLikesResponse } = useQuery({
-    queryKey: ["userLikes", currentUser?.username],
-    queryFn: async () => {
-      const res = await likesAPI.list({ user_username: currentUser?.username });
-      return res;
-    },
-    enabled: !!currentUser?.username,
-  });
-  const userLikes = Array.isArray(userLikesResponse?.data) ? userLikesResponse.data : [];
-
   const { data: likedPosts = [], isLoading: likedPostsLoading } = useQuery({
     queryKey: ["likedPosts", targetUsername],
     queryFn: async () => {
@@ -552,7 +542,6 @@ export default function Profile() {
                   key={post.id || post._id || `profile-post-${idx}`} 
                   post={post} 
                   currentUser={currentUser} 
-                  userLikes={userLikes} 
                 />
               ))}
           {!postsLoading && posts.length === 0 && (
@@ -646,7 +635,6 @@ export default function Profile() {
                   key={post.id || post._id || `liked-post-${idx}`} 
                   post={post} 
                   currentUser={currentUser} 
-                  userLikes={userLikes} 
                 />
               ))}
           {!likedPostsLoading && likedPosts.length === 0 && (

@@ -37,13 +37,6 @@ export default function Home() {
   });
   const trendingProducts = trendingProductsResponse?.data || [];
 
-  const { data: userLikesResponse = [] } = useQuery({
-    queryKey: ["userLikes", currentUser?.username],
-    queryFn: () => likesAPI.list({ user_username: currentUser?.username }),
-    enabled: !!currentUser?.username,
-  });
-  const userLikes = Array.isArray(userLikesResponse) ? userLikesResponse : userLikesResponse?.data || [];
-
   const tabs = [
     { id: "for_you", label: "For You", icon: Sparkles },
     { id: "trending", label: "Trending", icon: Flame },
@@ -130,7 +123,6 @@ export default function Home() {
               key={post.id || post._id || `home-post-${idx}`} 
               post={post} 
               currentUser={currentUser} 
-              userLikes={userLikes} 
             />
           ))
         )}

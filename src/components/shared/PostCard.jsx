@@ -8,16 +8,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import ShareModal from "./ShareModal";
 
-export default function PostCard({ post, currentUser, userLikes = [] }) {
+export default function PostCard({ post, currentUser }) {
   const queryClient = useQueryClient();
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   
   const postId = (post?.id || post?._id)?.toString();
   const authorUsername = post?.author_username;
-  const isLiked = userLikes.some(l => 
-    (String(l.target_id) === String(post?.id) || String(l.target_id) === String(post?._id)) && 
-    l.target_type === "post"
-  );
+  const isLiked = !!post?.is_liked;
   const [optimisticLiked, setOptimisticLiked] = useState(isLiked);
   const [optimisticCount, setOptimisticCount] = useState(post?.likes_count || 0);
 
