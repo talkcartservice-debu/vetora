@@ -10,7 +10,7 @@ import { createPageUrl } from "@/lib/utils";
 import { Flame, TrendingUp, Sparkles, ChevronRight, PenSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import RecommendedSection from "@/components/home/RecommendedSection";
-import { postsAPI, productsAPI, likesAPI } from "@/api/apiClient";
+import { postsAPI, productsAPI } from "@/api/apiClient";
 import { useAuth } from "@/lib/AuthContext";
 
 export default function Home() {

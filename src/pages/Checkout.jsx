@@ -117,11 +117,12 @@ export default function Checkout() {
       
       // If Paystack, initialize payment
       if (paymentMethod === "paystack") {
-        const orderId = orders[0]._id; // For simplicity, we use the first order ID for the payment transaction
+        // Pass all order IDs to Paystack for reconciliation
+        const orderIds = orders.map(o => o._id).join(",");
         await initializePaystackPayment({
           amount: total, // Total for all orders in the cart
           email: currentUser.email,
-          order_id: orderId
+          order_id: orderIds
         });
         // This will redirect, so the code below won't run immediately
         return orders;
@@ -131,6 +132,7 @@ export default function Checkout() {
       return orders;
     },
     onSuccess: (orders) => {
+      setPlacing(false);
       if (paymentMethod === "paystack") {
         // Redirection happens in initializePaystackPayment
         return;
@@ -168,6 +170,10 @@ export default function Checkout() {
                 <Input value={address.city} onChange={e => setAddress({...address, city: e.target.value})} placeholder="New York" className="rounded-xl h-11 border-slate-200" />
               </div>
               <div>
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">State / Province</label>
+                <Input value={address.state} onChange={e => setAddress({...address, state: e.target.value})} placeholder="NY" className="rounded-xl h-11 border-slate-200" />
+              </div>
+              <div className="col-span-2 sm:col-span-1">
                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">ZIP Code</label>
                 <Input value={address.zip} onChange={e => setAddress({...address, zip: e.target.value})} placeholder="10001" className="rounded-xl h-11 border-slate-200" />
               </div>
@@ -180,7 +186,17 @@ export default function Checkout() {
                   className="rounded-xl min-h-[80px] border-slate-200 resize-none" 
                 />
               </div>
-              <Button onClick={() => setStep(2)} disabled={!address.street || !address.city || !address.zip} className="col-span-2 mt-4 bg-indigo-600 hover:bg-indigo-700 h-12 rounded-xl font-bold">
+              <Button 
+                type="button"
+                onClick={() => {
+                  if (!address.street.trim() || !address.city.trim() || !address.state.trim() || !address.zip.trim()) {
+                    toast.error("Please fill in all required shipping fields");
+                    return;
+                  }
+                  setStep(2);
+                }} 
+                className="col-span-2 mt-4 bg-indigo-600 hover:bg-indigo-700 h-12 rounded-xl font-bold transition-all active:scale-[0.98]"
+              >
                 Continue to Payment
               </Button>
             </div>
@@ -249,8 +265,8 @@ export default function Checkout() {
               )}
 
               <div className="flex gap-3 mt-8">
-                <Button variant="outline" onClick={() => setStep(1)} className="flex-1 h-12 rounded-xl font-bold border-slate-200">Back</Button>
-                <Button onClick={() => setStep(3)} className="flex-1 bg-indigo-600 hover:bg-indigo-700 h-12 rounded-xl font-bold">Review Order</Button>
+                <Button type="button" variant="outline" onClick={() => setStep(1)} className="flex-1 h-12 rounded-xl font-bold border-slate-200">Back</Button>
+                <Button type="button" onClick={() => setStep(3)} className="flex-1 bg-indigo-600 hover:bg-indigo-700 h-12 rounded-xl font-bold">Review Order</Button>
               </div>
             </div>
           </CheckoutStep>
@@ -263,9 +279,9 @@ export default function Checkout() {
                 </div>
                 <div>
                   <h4 className="text-sm font-bold text-slate-900">Delivery Address</h4>
-                  <p className="text-xs text-slate-500 mt-0.5">{address.street}, {address.city}, {address.zip}</p>
+                  <p className="text-xs text-slate-500 mt-0.5">{address.street}, {address.city}, {address.state} {address.zip}</p>
                 </div>
-                <button onClick={() => setStep(1)} className="ml-auto text-xs font-bold text-indigo-600 hover:underline">Edit</button>
+                <button type="button" onClick={() => setStep(1)} className="ml-auto text-xs font-bold text-indigo-600 hover:underline">Edit</button>
               </div>
 
               <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-start gap-4">
@@ -280,7 +296,7 @@ export default function Checkout() {
                      paymentMethod}
                   </p>
                 </div>
-                <button onClick={() => setStep(2)} className="ml-auto text-xs font-bold text-indigo-600 hover:underline">Edit</button>
+                <button type="button" onClick={() => setStep(2)} className="ml-auto text-xs font-bold text-indigo-600 hover:underline">Edit</button>
               </div>
 
               <div className="bg-amber-50 p-4 rounded-2xl border border-amber-100 flex gap-3">
@@ -291,6 +307,7 @@ export default function Checkout() {
               </div>
 
               <Button 
+                type="button"
                 onClick={() => placeOrderMutation.mutate()} 
                 disabled={placing}
                 className="w-full bg-slate-900 hover:bg-black h-14 rounded-2xl font-black text-lg tracking-tight mt-4 transition-all hover:scale-[1.01] active:scale-[0.99]"
@@ -307,8 +324,8 @@ export default function Checkout() {
             <h3 className="text-xl font-black text-slate-900 mb-6 tracking-tight">Order Summary</h3>
             
             <div className="max-h-[300px] overflow-y-auto pr-2 mb-6 space-y-4 custom-scrollbar">
-              {cartItems.map((item, idx) => (
-                <div key={idx} className="flex gap-4">
+              {cartItems.map((item) => (
+                <div key={item._id || item.product_id} className="flex gap-4">
                   <div className="w-16 h-16 rounded-2xl bg-slate-100 overflow-hidden shrink-0 border border-slate-50">
                     <img src={item.product_image} alt="" className="w-full h-full object-cover" />
                   </div>

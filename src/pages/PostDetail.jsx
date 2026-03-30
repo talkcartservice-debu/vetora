@@ -7,7 +7,7 @@ import { ArrowLeft, Send, Loader2, MessageCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
-import { postsAPI, commentsAPI, likesAPI } from "@/api/apiClient";
+import { postsAPI, commentsAPI } from "@/api/apiClient";
 import { useAuth } from "@/lib/AuthContext";
 
 export default function PostDetail() {
