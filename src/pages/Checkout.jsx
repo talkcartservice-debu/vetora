@@ -11,13 +11,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { motion, AnimatePresence } from "framer-motion";
 import { cartAPI, ordersAPI } from "@/api/apiClient";
 import { useAuth } from "@/lib/AuthContext";
 import { initializePaystackPayment } from "@/lib/paystack";
 
 const CheckoutStep = ({ number, title, active, completed, children }) => (
-  <div className={`bg-white rounded-3xl border ${active ? "border-indigo-500 shadow-xl shadow-indigo-100/50 scale-[1.02]" : "border-slate-100"} p-6 mb-4 transition-all duration-300`}>
+  <div 
+    className={`bg-white rounded-3xl border ${active ? "border-indigo-500 shadow-xl shadow-indigo-100/50" : "border-slate-100"} p-6 mb-4 transition-all duration-300`}
+  >
     <div className="flex items-center gap-4 mb-4">
       <div className={`w-10 h-10 rounded-2xl flex items-center justify-center font-black text-sm transition-colors ${
         completed ? "bg-green-500 text-white" : active ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-400"
@@ -26,18 +27,11 @@ const CheckoutStep = ({ number, title, active, completed, children }) => (
       </div>
       <h2 className={`text-lg font-black tracking-tight ${active ? "text-slate-900" : "text-slate-400"}`}>{title}</h2>
     </div>
-    <AnimatePresence>
-      {active && (
-        <motion.div
-          initial={{ height: 0, opacity: 0 }}
-          animate={{ height: "auto", opacity: 1 }}
-          exit={{ height: 0, opacity: 0 }}
-          className="overflow-hidden"
-        >
-          {children}
-        </motion.div>
-      )}
-    </AnimatePresence>
+    {active && (
+      <div className="overflow-hidden">
+        {children}
+      </div>
+    )}
   </div>
 );
 
@@ -189,7 +183,12 @@ export default function Checkout() {
               <Button 
                 type="button"
                 onClick={() => {
-                  if (!address.street.trim() || !address.city.trim() || !address.state.trim() || !address.zip.trim()) {
+                  const isStreetValid = address.street && address.street.trim();
+                  const isCityValid = address.city && address.city.trim();
+                  const isStateValid = address.state && address.state.trim();
+                  const isZipValid = address.zip && address.zip.trim();
+
+                  if (!isStreetValid || !isCityValid || !isStateValid || !isZipValid) {
                     toast.error("Please fill in all required shipping fields");
                     return;
                   }
