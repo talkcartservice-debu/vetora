@@ -331,7 +331,7 @@ export const postsAPI = {
   update: (id, data) => apiClient.patch(`/posts/${id}`, data),
   delete: (id) => apiClient.delete(`/posts/${id}`),
   like: (id) => apiClient.post(`/posts/${id}/like`, {}),
-  unlike: (id) => apiClient.delete(`/posts/${id}/like`),
+  unlike: (id) => apiClient.delete(`/posts/${id}/like`, {}),
   share: (id) => apiClient.patch(`/posts/${id}`, { $inc: { shares_count: 1 } }), // Direct increment for simplicity
 };
 

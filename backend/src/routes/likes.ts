@@ -1,4 +1,5 @@
 import { FastifyInstance } from 'fastify';
+import mongoose from 'mongoose';
 import { Like, ILike } from '../models/Like';
 import { Post } from '../models/Post';
 import { Comment } from '../models/Comment';
@@ -274,10 +275,10 @@ async function updateLikesCount(target_type: string, target_id: string, incremen
   try {
     switch (target_type) {
       case 'post':
-        await Post.findByIdAndUpdate(target_id, { $inc: { likes_count: increment } });
+        await Post.updateOne({ _id: new mongoose.Types.ObjectId(target_id) }, { $inc: { likes_count: increment } });
         break;
       case 'comment':
-        await Comment.findByIdAndUpdate(target_id, { $inc: { likes_count: increment } });
+        await Comment.updateOne({ _id: new mongoose.Types.ObjectId(target_id) }, { $inc: { likes_count: increment } });
         break;
       case 'product':
         // Products might not have likes_count field, skip for now

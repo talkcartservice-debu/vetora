@@ -1,4 +1,5 @@
 import { FastifyInstance } from 'fastify';
+import mongoose from 'mongoose';
 import { Post, IPost } from '../models/Post';
 import { User } from '../models/User';
 import { Like } from '../models/Like';
@@ -203,6 +204,15 @@ export async function postRoutes(fastify: FastifyInstance) {
         return reply.code(401).send({ error: 'Unauthorized - invalid user data' });
       }
 
+      fastify.log.info(`User ${user.username} liking post ${id}`);
+
+      // Check if post exists first
+      const post = await Post.findById(id);
+      if (!post) {
+        fastify.log.error(`Post ${id} not found during like attempt`);
+        return reply.code(404).send({ error: 'Post not found' });
+      }
+
       // Check if already liked
       const existingLike = await Like.findOne({
         user_username: user.username.toLowerCase(), 
@@ -211,6 +221,7 @@ export async function postRoutes(fastify: FastifyInstance) {
       });
 
       if (existingLike) {
+        fastify.log.warn(`Post ${id} already liked by user ${user.username}`);
         return reply.code(400).send({ error: 'Post already liked' });
       }
 
@@ -221,15 +232,21 @@ export async function postRoutes(fastify: FastifyInstance) {
       });
 
       await like.save();
+      fastify.log.info(`Like saved for post ${id} by user ${user.username}`);
 
-      // Increment likes count on post
-      const updatedPost = await Post.findByIdAndUpdate(
-        id, 
-        { $inc: { likes_count: 1 } },
-        { new: true }
-      ).lean();
+      // Increment likes count on post using direct update
+      const updateResult = await Post.updateOne(
+        { _id: new mongoose.Types.ObjectId(id) },
+        { $inc: { likes_count: 1 } }
+      );
+      
+      const updatedPost = await Post.findById(id).lean();
 
-      fastify.log.info(`Post ${id} like count incremented to ${updatedPost?.likes_count}`);
+      if (updateResult.modifiedCount === 0) {
+        fastify.log.error(`Failed to update likes_count for post ${id} after saving like`);
+      } else {
+        fastify.log.info(`Post ${id} like count updated to ${updatedPost?.likes_count}`);
+      }
 
       // Notify author and broadcast update in background
       if (updatedPost) {
@@ -295,12 +312,17 @@ export async function postRoutes(fastify: FastifyInstance) {
         return { status: 'unliked', message: 'Like already removed or not found' };
       }
 
-      // Decrement likes count on post
-      const updatedPost = await Post.findByIdAndUpdate(
-        id, 
-        { $inc: { likes_count: -1 } },
-        { new: true }
+      // Decrement likes count on post using direct update
+      const updateResult = await Post.updateOne(
+        { _id: new mongoose.Types.ObjectId(id) },
+        { $inc: { likes_count: -1 } }
       );
+      
+      const updatedPost = await Post.findById(id).lean();
+
+      if (updateResult.modifiedCount === 0) {
+        fastify.log.warn(`Failed to decrement likes_count for post ${id}`);
+      }
 
       // Broadcast update
       const io = (fastify as any).io;
