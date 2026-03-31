@@ -54,10 +54,10 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const login = async (email, password) => {
+  const login = async (email, password, rememberMe = false) => {
     try {
       setIsLoadingAuth(true);
-      const data = await authAPI.login(email, password);
+      const data = await authAPI.login(email, password, rememberMe);
       
       if (data.two_factor_required) {
         setIsLoadingAuth(false);

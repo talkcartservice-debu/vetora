@@ -195,7 +195,7 @@ const Register = () => {
                 </div>
 
                 <div className="space-y-2.5">
-                  <Label htmlFor="password" name="password" className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1 opacity-60">Password</Label>
+                  <Label htmlFor="password" className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1 opacity-60">Password</Label>
                   <div className="relative group">
                     <Input
                       id="password"
@@ -222,7 +222,7 @@ const Register = () => {
                 </div>
 
                 <div className="space-y-2.5">
-                  <Label htmlFor="confirm_password" name="confirm_password" className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1 opacity-60">Confirm</Label>
+                  <Label htmlFor="confirm_password" className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1 opacity-60">Confirm</Label>
                   <div className="relative group">
                     <Input
                       id="confirm_password"

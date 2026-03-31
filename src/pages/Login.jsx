@@ -70,7 +70,7 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      const res = await login(identifier, password);
+      const res = await login(identifier, password, rememberMe);
       if (res.two_factor_required) {
         setTwoFactorToken(res.two_factor_token);
         setShow2FA(true);
@@ -194,7 +194,7 @@ const Login = () => {
 
                   <div className="space-y-2.5">
                     <div className="flex justify-between items-center ml-1">
-                      <Label htmlFor="password" name="password" className="text-xs font-black text-slate-800 uppercase tracking-widest opacity-60">Password</Label>
+                      <Label htmlFor="password" className="text-xs font-black text-slate-800 uppercase tracking-widest opacity-60">Password</Label>
                       <Link to="/ForgotPassword" title="Reset your password" className="text-[10px] uppercase tracking-tighter text-indigo-600 hover:text-indigo-700 font-black transition-colors">
                         Forgot Password?
                       </Link>

@@ -21,6 +21,7 @@ const origin = process.env.FRONTEND_URL || 'http://localhost:5173';
 const loginSchema = z.object({
   email: z.string().min(3), // Could be email or username
   password: z.string().min(6),
+  rememberMe: z.boolean().optional(),
 });
 
 const registerSchema = z.object({
@@ -115,7 +116,7 @@ export async function authRoutes(fastify: FastifyInstance) {
         email: user.email,
         username: user.username,
         role: user.role,
-      });
+      }, { expiresIn: '7d' });
 
       return {
         user: {
@@ -147,7 +148,7 @@ export async function authRoutes(fastify: FastifyInstance) {
   // Login
   fastify.post('/login', async (request, reply) => {
     try {
-      const { email: identifier, password } = loginSchema.parse(request.body);
+      const { email: identifier, password, rememberMe } = loginSchema.parse(request.body);
 
       // Support login by email OR username
       const user = await User.findOne({ 
@@ -176,6 +177,7 @@ export async function authRoutes(fastify: FastifyInstance) {
         const twoFactorToken = fastify.jwt.sign({
           userId: user._id.toString(),
           pending_2fa: true,
+          remember_me: !!rememberMe,
         }, { expiresIn: '5m' });
 
         return { 
@@ -190,7 +192,7 @@ export async function authRoutes(fastify: FastifyInstance) {
         email: user.email,
         username: user.username,
         role: user.role,
-      });
+      }, { expiresIn: rememberMe ? '30d' : '1d' });
 
       return {
         user: {
@@ -242,7 +244,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       }).parse(request.body);
 
       // Verify the 2FA challenge token
-      const decoded = fastify.jwt.verify(two_factor_token) as { userId: string, pending_2fa: boolean };
+      const decoded = fastify.jwt.verify(two_factor_token) as { userId: string, pending_2fa: boolean, remember_me?: boolean };
       
       if (!decoded.pending_2fa) {
         return reply.code(400).send({ error: 'Invalid challenge' });
@@ -273,7 +275,7 @@ export async function authRoutes(fastify: FastifyInstance) {
         email: user.email,
         username: user.username,
         role: user.role,
-      });
+      }, { expiresIn: decoded.remember_me ? '30d' : '1d' });
 
       return {
         user: {
@@ -710,7 +712,11 @@ export async function authRoutes(fastify: FastifyInstance) {
         ...(process.env.NODE_ENV === 'development' ? { dev_token: resetToken } : {})
       };
     } catch (error) {
-      return reply.code(400).send({ error: 'Invalid request' });
+      fastify.log.error('Forgot Password Error:', error);
+      if (error instanceof z.ZodError) {
+        return reply.code(400).send({ error: 'Invalid request data', details: error.errors });
+      }
+      return reply.code(500).send({ error: 'Internal server error' });
     }
   });
 
@@ -739,7 +745,11 @@ export async function authRoutes(fastify: FastifyInstance) {
 
       return { success: true, message: 'Password has been reset successfully.' };
     } catch (error) {
-      return reply.code(400).send({ error: 'Invalid request' });
+      fastify.log.error('Forgot Password Error:', error);
+      if (error instanceof z.ZodError) {
+        return reply.code(400).send({ error: 'Invalid request data', details: error.errors });
+      }
+      return reply.code(500).send({ error: 'Internal server error' });
     }
   });
 

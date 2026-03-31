@@ -130,7 +130,7 @@ export default function ResetPassword() {
                 </div>
 
                 <div className="space-y-2.5 text-left">
-                  <Label htmlFor="newPassword" name="password" className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1 opacity-60">New Password</Label>
+                  <Label htmlFor="newPassword" className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1 opacity-60">New Password</Label>
                   <div className="relative group">
                     <Input 
                       id="newPassword"
@@ -155,7 +155,7 @@ export default function ResetPassword() {
                 </div>
 
                 <div className="space-y-2.5 text-left">
-                  <Label htmlFor="confirmPassword" name="confirm_password" className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1 opacity-60">Confirm Password</Label>
+                  <Label htmlFor="confirmPassword" className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1 opacity-60">Confirm Password</Label>
                   <div className="relative group">
                     <Input 
                       id="confirmPassword"

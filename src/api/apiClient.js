@@ -185,8 +185,8 @@ export const apiClient = new APIClient();
 
 // Export individual entity API modules
 export const authAPI = {
-  login: async (email, password) => {
-    const data = await apiClient.post('/auth/login', { email, password });
+  login: async (email, password, rememberMe = false) => {
+    const data = await apiClient.post('/auth/login', { email, password, rememberMe });
     if (data.token) {
       apiClient.setToken(data.token);
       localStorage.setItem('vetora_token', data.token);
