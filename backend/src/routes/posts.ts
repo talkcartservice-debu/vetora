@@ -16,9 +16,9 @@ const createPostSchema = z.object({
   // Optional fields that can be provided but are not required
   author_username: z.string().optional().nullable(),
   author_name: z.string().optional().nullable(),
-  likes_count: z.number().default(0),
-  comments_count: z.number().default(0),
-  shares_count: z.number().default(0),
+  likes_count: z.number().optional(),
+  comments_count: z.number().optional(),
+  shares_count: z.number().optional(),
 });
 
 export async function postRoutes(fastify: FastifyInstance) {
@@ -87,7 +87,7 @@ export async function postRoutes(fastify: FastifyInstance) {
           target_id: { $in: postIds }
         }).select('target_id').lean();
         
-        userLikesSet = new Set(likes.map((l: any) => l.target_id));
+        userLikesSet = new Set(likes.map((l: any) => l.target_id.toString()));
       }
 
       // Add is_liked field to each post
@@ -170,6 +170,9 @@ export async function postRoutes(fastify: FastifyInstance) {
         author_username: user.username,
         author_name: user?.display_name || user.username,
         author_avatar: user?.avatar_url,
+        likes_count: body.likes_count ?? 0,
+        comments_count: body.comments_count ?? 0,
+        shares_count: body.shares_count ?? 0,
         created_at: new Date(),
         updated_at: new Date()
       });
@@ -235,17 +238,25 @@ export async function postRoutes(fastify: FastifyInstance) {
       fastify.log.info(`Like saved for post ${id} by user ${user.username}`);
 
       // Increment likes count on post using direct update
-      const updateResult = await Post.updateOne(
-        { _id: new mongoose.Types.ObjectId(id) },
-        { $inc: { likes_count: 1 } }
-      );
-      
-      const updatedPost = await Post.findById(id).lean();
+      let updatedPost;
+      try {
+        const objId = new mongoose.Types.ObjectId(id);
+        const updateResult = await Post.updateOne(
+          { _id: objId },
+          { $inc: { likes_count: 1 } }
+        );
+        
+        updatedPost = await Post.findById(objId).lean();
 
-      if (updateResult.modifiedCount === 0) {
-        fastify.log.error(`Failed to update likes_count for post ${id} after saving like`);
-      } else {
-        fastify.log.info(`Post ${id} like count updated to ${updatedPost?.likes_count}`);
+        if (updateResult.modifiedCount === 0) {
+          fastify.log.error(`Failed to update likes_count for post ${id} after saving like`);
+        } else {
+          fastify.log.info(`Post ${id} like count updated to ${updatedPost?.likes_count}`);
+        }
+      } catch (err: any) {
+        fastify.log.error(`Error during like update for post ${id}: ${err.message}`);
+        // Still try to return something if findById works with string
+        updatedPost = await Post.findById(id).lean();
       }
 
       // Notify author and broadcast update in background
@@ -313,15 +324,22 @@ export async function postRoutes(fastify: FastifyInstance) {
       }
 
       // Decrement likes count on post using direct update
-      const updateResult = await Post.updateOne(
-        { _id: new mongoose.Types.ObjectId(id) },
-        { $inc: { likes_count: -1 } }
-      );
-      
-      const updatedPost = await Post.findById(id).lean();
+      let updatedPost;
+      try {
+        const objId = new mongoose.Types.ObjectId(id);
+        const updateResult = await Post.updateOne(
+          { _id: objId },
+          { $inc: { likes_count: -1 } }
+        );
+        
+        updatedPost = await Post.findById(objId).lean();
 
-      if (updateResult.modifiedCount === 0) {
-        fastify.log.warn(`Failed to decrement likes_count for post ${id}`);
+        if (updateResult.modifiedCount === 0) {
+          fastify.log.warn(`Failed to decrement likes_count for post ${id}`);
+        }
+      } catch (err: any) {
+        fastify.log.error(`Error during unlike update for post ${id}: ${err.message}`);
+        updatedPost = await Post.findById(id).lean();
       }
 
       // Broadcast update
@@ -395,11 +413,14 @@ export async function postRoutes(fastify: FastifyInstance) {
       }
 
       const user = request.user as any;
-      if (post.author_name !== user.name) {
+      if (post.author_username !== user.username) {
         return reply.code(403).send({ error: 'Unauthorized' });
       }
 
-      const updatedPost = await Post.findByIdAndUpdate(id, body, { new: true });
+      // Filter body to only allow safe updates, NOT counters
+      const { likes_count, comments_count, shares_count, author_username, ...safeBody } = body;
+      
+      const updatedPost = await Post.findByIdAndUpdate(id, safeBody, { new: true });
       return updatedPost;
     } catch (error: any) {
       fastify.log.error(error);

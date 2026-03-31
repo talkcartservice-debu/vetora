@@ -273,12 +273,13 @@ export async function likeRoutes(fastify: FastifyInstance) {
 // Helper function to update likes count on target documents
 async function updateLikesCount(target_type: string, target_id: string, increment: number) {
   try {
+    const objId = new mongoose.Types.ObjectId(target_id);
     switch (target_type) {
       case 'post':
-        await Post.updateOne({ _id: new mongoose.Types.ObjectId(target_id) }, { $inc: { likes_count: increment } });
+        await Post.updateOne({ _id: objId }, { $inc: { likes_count: increment } });
         break;
       case 'comment':
-        await Comment.updateOne({ _id: new mongoose.Types.ObjectId(target_id) }, { $inc: { likes_count: increment } });
+        await Comment.updateOne({ _id: objId }, { $inc: { likes_count: increment } });
         break;
       case 'product':
         // Products might not have likes_count field, skip for now
