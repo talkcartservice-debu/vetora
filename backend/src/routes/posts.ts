@@ -74,32 +74,26 @@ export async function postRoutes(fastify: FastifyInstance) {
 
       const total = await Post.countDocuments(filter);
 
-      // Add is_liked field and sync counts
+      // Get current user's likes in bulk for the fetched posts
       const user = request.user as any;
-      const postsWithLikeStatus = await Promise.all(posts.map(async (post: any) => {
-        let is_liked = false;
-        if (user?.username) {
-          const like = await Like.findOne({
-            user_username: user.username.toLowerCase(),
-            target_id: post._id.toString(),
-            target_type: 'post'
-          }).lean();
-          is_liked = !!like;
-        }
+      let userLikesSet = new Set<string>();
 
-        // Sync count if needed (optional but good for consistency)
-        const actualCount = await Like.countDocuments({ 
-          target_id: post._id.toString(), 
-          target_type: 'post' 
-        });
+      if (user?.username) {
+        const postIds = posts.map((p: any) => p._id.toString());
+        const likes = await Like.find({
+          user_username: user.username.toLowerCase(),
+          target_type: 'post',
+          target_id: { $in: postIds }
+        }).select('target_id').lean();
         
-        if (actualCount !== post.likes_count) {
-          await Post.findByIdAndUpdate(post._id, { likes_count: actualCount });
-          post.likes_count = actualCount;
-        }
+        userLikesSet = new Set(likes.map((l: any) => l.target_id));
+      }
 
+      // Add is_liked field to each post
+      const postsWithLikeStatus = posts.map((post: any) => {
+        const is_liked = userLikesSet.has(post._id.toString());
         return { ...post, is_liked };
-      }));
+      });
 
       return {
         data: postsWithLikeStatus,
@@ -128,7 +122,7 @@ export async function postRoutes(fastify: FastifyInstance) {
         return reply.code(404).send({ error: 'Post not found' });
       }
 
-      // Add is_liked field and sync count
+      // Add is_liked field
       const user = request.user as any;
       let is_liked = false;
       if (user?.username) {
@@ -138,17 +132,6 @@ export async function postRoutes(fastify: FastifyInstance) {
           target_type: 'post'
         }).lean();
         is_liked = !!like;
-      }
-
-      // Sync count
-      const actualCount = await Like.countDocuments({ 
-        target_id: id, 
-        target_type: 'post' 
-      });
-      
-      if (actualCount !== post.likes_count) {
-        await Post.findByIdAndUpdate(id, { likes_count: actualCount });
-        post.likes_count = actualCount;
       }
 
       return { ...post, is_liked };
@@ -236,7 +219,9 @@ export async function postRoutes(fastify: FastifyInstance) {
         id, 
         { $inc: { likes_count: 1 } },
         { new: true }
-      );
+      ).lean();
+
+      fastify.log.info(`Post ${id} like count incremented to ${updatedPost?.likes_count}`);
 
       // Notify author and broadcast update in background
       if (updatedPost) {

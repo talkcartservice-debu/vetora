@@ -81,17 +81,24 @@ export default function PostCard({ post, currentUser }) {
   const likeMutation = useMutation({
     mutationFn: async () => {
       if (optimisticLiked) {
-        await postsAPI.unlike(postId);
+        return await postsAPI.unlike(postId);
       } else {
-        await postsAPI.like(postId);
+        return await postsAPI.like(postId);
       }
     },
     onMutate: () => {
       setOptimisticLiked(!optimisticLiked);
-      setOptimisticCount(prev => optimisticLiked ? prev - 1 : prev + 1);
+      setOptimisticCount(prev => optimisticLiked ? Math.max(0, prev - 1) : prev + 1);
+    },
+    onSuccess: (data) => {
+      if (data && data.likes_count !== undefined) {
+        setOptimisticCount(data.likes_count);
+      }
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["posts"] });
+      queryClient.invalidateQueries({ queryKey: ["userPosts"] });
+      queryClient.invalidateQueries({ queryKey: ["likedPosts"] });
       queryClient.invalidateQueries({ queryKey: ["userLikes"] });
       queryClient.invalidateQueries({ queryKey: ["postDetail", postId] });
     },

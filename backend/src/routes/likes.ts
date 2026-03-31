@@ -67,7 +67,7 @@ export async function likeRoutes(fastify: FastifyInstance) {
       }
 
       const like = await Like.findOne({
-        user_username: user.username,
+        user_username: user.username.toLowerCase(),
         target_type,
         target_id
       });
@@ -121,7 +121,7 @@ export async function likeRoutes(fastify: FastifyInstance) {
 
       // Check if user already liked this target
       const existingLike = await Like.findOne({
-        user_username: user.username,
+        user_username: user.username.toLowerCase(),
         target_type,
         target_id
       });
@@ -131,7 +131,7 @@ export async function likeRoutes(fastify: FastifyInstance) {
       }
 
       const like = new Like({
-        user_username: user.username,
+        user_username: user.username.toLowerCase(),
         target_type,
         target_id
       });
@@ -172,7 +172,7 @@ export async function likeRoutes(fastify: FastifyInstance) {
       }
 
       const like = await Like.findOneAndDelete({
-        user_username: user.username,
+        user_username: user.username.toLowerCase(),
         target_type,
         target_id
       });
@@ -237,7 +237,7 @@ export async function likeRoutes(fastify: FastifyInstance) {
       const user = request.user as any;
 
       const filter: any = { 
-        user_username: user.username
+        user_username: user.username.toLowerCase()
       };
       if (target_type) filter.target_type = target_type;
 
