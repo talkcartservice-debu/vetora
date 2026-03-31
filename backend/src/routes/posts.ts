@@ -92,7 +92,11 @@ export async function postRoutes(fastify: FastifyInstance) {
       // Add is_liked field to each post
       const postsWithLikeStatus = posts.map((post: any) => {
         const is_liked = userLikesSet.has(post._id.toString());
-        return { ...post, is_liked };
+        return { 
+          ...post, 
+          id: post._id.toString(), // Ensure string ID is always present for frontend
+          is_liked 
+        };
       });
 
       return {
@@ -134,7 +138,11 @@ export async function postRoutes(fastify: FastifyInstance) {
         is_liked = !!like;
       }
 
-      return { ...post, is_liked };
+      return { 
+        ...post, 
+        id: post._id.toString(), 
+        is_liked 
+      };
     } catch (error: any) {
       fastify.log.error(error);
       return reply.code(500).send({ 
@@ -247,7 +255,11 @@ export async function postRoutes(fastify: FastifyInstance) {
         }
       }
 
-      return { status: 'liked', likes_count: updatedPost?.likes_count || 0 };
+      return { 
+        status: 'liked', 
+        likes_count: updatedPost?.likes_count || 0,
+        is_liked: true
+      };
     } catch (error: any) {
       fastify.log.error(error);
       return reply.code(500).send({ 
@@ -301,7 +313,11 @@ export async function postRoutes(fastify: FastifyInstance) {
         });
       }
 
-      return { status: 'unliked', likes_count: updatedPost?.likes_count || 0 };
+      return { 
+        status: 'unliked', 
+        likes_count: updatedPost?.likes_count || 0,
+        is_liked: false
+      };
     } catch (error: any) {
       fastify.log.error(error);
       return reply.code(500).send({ 

@@ -94,6 +94,9 @@ export default function PostCard({ post, currentUser }) {
       if (data && data.likes_count !== undefined) {
         setOptimisticCount(data.likes_count);
       }
+      if (data && data.is_liked !== undefined) {
+        setOptimisticLiked(data.is_liked);
+      }
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["posts"] });
