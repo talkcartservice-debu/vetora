@@ -80,6 +80,7 @@ export default function PostCard({ post, currentUser }) {
 
   const likeMutation = useMutation({
     mutationFn: async () => {
+      console.log(`Liking/Unliking post: ${postId}, current state: ${optimisticLiked}`);
       if (optimisticLiked) {
         return await postsAPI.unlike(postId);
       } else {
@@ -91,12 +92,20 @@ export default function PostCard({ post, currentUser }) {
       setOptimisticCount(prev => optimisticLiked ? Math.max(0, prev - 1) : prev + 1);
     },
     onSuccess: (data) => {
+      console.log("Like mutation success, server data:", data);
       if (data && data.likes_count !== undefined) {
         setOptimisticCount(data.likes_count);
       }
       if (data && data.is_liked !== undefined) {
         setOptimisticLiked(data.is_liked);
       }
+    },
+    onError: (error) => {
+      console.error("Like mutation failed:", error);
+      toast.error("Failed to update like");
+      // Revert optimistic state
+      setOptimisticLiked(isLiked);
+      setOptimisticCount(post?.likes_count || 0);
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["posts"] });

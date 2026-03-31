@@ -276,10 +276,18 @@ async function updateLikesCount(target_type: string, target_id: string, incremen
     const objId = new mongoose.Types.ObjectId(target_id);
     switch (target_type) {
       case 'post':
-        await Post.updateOne({ _id: objId }, { $inc: { likes_count: increment } });
+        if (increment < 0) {
+          await Post.updateOne({ _id: objId, likes_count: { $gt: 0 } }, { $inc: { likes_count: increment } });
+        } else {
+          await Post.updateOne({ _id: objId }, { $inc: { likes_count: increment } });
+        }
         break;
       case 'comment':
-        await Comment.updateOne({ _id: objId }, { $inc: { likes_count: increment } });
+        if (increment < 0) {
+          await Comment.updateOne({ _id: objId, likes_count: { $gt: 0 } }, { $inc: { likes_count: increment } });
+        } else {
+          await Comment.updateOne({ _id: objId }, { $inc: { likes_count: increment } });
+        }
         break;
       case 'product':
         // Products might not have likes_count field, skip for now

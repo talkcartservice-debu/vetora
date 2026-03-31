@@ -16,9 +16,6 @@ const createPostSchema = z.object({
   // Optional fields that can be provided but are not required
   author_username: z.string().optional().nullable(),
   author_name: z.string().optional().nullable(),
-  likes_count: z.number().optional(),
-  comments_count: z.number().optional(),
-  shares_count: z.number().optional(),
 });
 
 export async function postRoutes(fastify: FastifyInstance) {
@@ -77,12 +74,13 @@ export async function postRoutes(fastify: FastifyInstance) {
 
       // Get current user's likes in bulk for the fetched posts
       const user = request.user as any;
+      const effectiveUsername = user?.username || user_username;
       let userLikesSet = new Set<string>();
 
-      if (user?.username) {
+      if (effectiveUsername && typeof effectiveUsername === 'string') {
         const postIds = posts.map((p: any) => p._id.toString());
         const likes = await Like.find({
-          user_username: user.username.toLowerCase(),
+          user_username: effectiveUsername.toLowerCase(),
           target_type: 'post',
           target_id: { $in: postIds }
         }).select('target_id').lean();
@@ -129,10 +127,14 @@ export async function postRoutes(fastify: FastifyInstance) {
 
       // Add is_liked field
       const user = request.user as any;
+      const query = request.query as any;
+      const user_username = query?.user_username;
+      const effectiveUsername = user?.username || user_username;
+      
       let is_liked = false;
-      if (user?.username) {
+      if (effectiveUsername && typeof effectiveUsername === 'string') {
         const like = await Like.findOne({
-          user_username: user.username.toLowerCase(),
+          user_username: effectiveUsername.toLowerCase(),
           target_id: id,
           target_type: 'post'
         }).lean();
@@ -170,9 +172,9 @@ export async function postRoutes(fastify: FastifyInstance) {
         author_username: user.username,
         author_name: user?.display_name || user.username,
         author_avatar: user?.avatar_url,
-        likes_count: body.likes_count ?? 0,
-        comments_count: body.comments_count ?? 0,
-        shares_count: body.shares_count ?? 0,
+        likes_count: 0,
+        comments_count: 0,
+        shares_count: 0,
         created_at: new Date(),
         updated_at: new Date()
       });
@@ -241,14 +243,13 @@ export async function postRoutes(fastify: FastifyInstance) {
       let updatedPost;
       try {
         const objId = new mongoose.Types.ObjectId(id);
-        const updateResult = await Post.updateOne(
-          { _id: objId },
-          { $inc: { likes_count: 1 } }
+        updatedPost = await Post.findByIdAndUpdate(
+          objId,
+          { $inc: { likes_count: 1 } },
+          { new: true, lean: true }
         );
-        
-        updatedPost = await Post.findById(objId).lean();
 
-        if (updateResult.modifiedCount === 0) {
+        if (!updatedPost) {
           fastify.log.error(`Failed to update likes_count for post ${id} after saving like`);
         } else {
           fastify.log.info(`Post ${id} like count updated to ${updatedPost?.likes_count}`);
@@ -327,15 +328,15 @@ export async function postRoutes(fastify: FastifyInstance) {
       let updatedPost;
       try {
         const objId = new mongoose.Types.ObjectId(id);
-        const updateResult = await Post.updateOne(
-          { _id: objId },
-          { $inc: { likes_count: -1 } }
+        updatedPost = await Post.findOneAndUpdate(
+          { _id: objId, likes_count: { $gt: 0 } },
+          { $inc: { likes_count: -1 } },
+          { new: true, lean: true }
         );
         
-        updatedPost = await Post.findById(objId).lean();
-
-        if (updateResult.modifiedCount === 0) {
-          fastify.log.warn(`Failed to decrement likes_count for post ${id}`);
+        if (!updatedPost) {
+          fastify.log.warn(`Failed to decrement likes_count for post ${id} (possibly already 0)`);
+          updatedPost = await Post.findById(id).lean();
         }
       } catch (err: any) {
         fastify.log.error(`Error during unlike update for post ${id}: ${err.message}`);
@@ -406,13 +407,24 @@ export async function postRoutes(fastify: FastifyInstance) {
     try {
       const { id } = request.params as { id: string };
       const body = request.body as any;
+      const user = request.user as any;
 
       const post = await Post.findById(id);
       if (!post) {
         return reply.code(404).send({ error: 'Post not found' });
       }
 
-      const user = request.user as any;
+      // Handle share count increment separately (anyone can share)
+      if (body.$inc && body.$inc.shares_count === 1) {
+        const updatedPost = await Post.findByIdAndUpdate(
+          id, 
+          { $inc: { shares_count: 1 } }, 
+          { new: true }
+        );
+        return updatedPost;
+      }
+
+      // Other updates require ownership
       if (post.author_username !== user.username) {
         return reply.code(403).send({ error: 'Unauthorized' });
       }

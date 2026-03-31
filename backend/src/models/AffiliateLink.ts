@@ -33,7 +33,6 @@ const AffiliateLinkSchema = new Schema<IAffiliateLink>({
     required: true,
     lowercase: true,
     trim: true,
-    index: true,
   },
   influencer_name: {
     type: String,

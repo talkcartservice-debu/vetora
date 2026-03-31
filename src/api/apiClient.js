@@ -356,6 +356,7 @@ export const commentsAPI = {
   update: (id, data) => apiClient.put(`/comments/${id}`, data),
   delete: (id) => apiClient.delete(`/comments/${id}`),
   like: (id) => apiClient.post(`/comments/${id}/like`, {}),
+  unlike: (id) => apiClient.delete(`/comments/${id}/like`, {}),
 };
 
 export const likesAPI = {

@@ -3,12 +3,99 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/lib/utils";
 import PostCard from "@/components/shared/PostCard";
-import { ArrowLeft, Send, Loader2, MessageCircle } from "lucide-react";
+import { ArrowLeft, Send, Loader2, MessageCircle, Heart } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { postsAPI, commentsAPI } from "@/api/apiClient";
 import { useAuth } from "@/lib/AuthContext";
+
+function CommentItem({ comment, currentUser }) {
+  const queryClient = useQueryClient();
+  const commentId = (comment.id || comment._id)?.toString();
+  const [isLiked, setIsLiked] = useState(!!comment.is_liked);
+  const [likesCount, setLikesCount] = useState(comment.likes_count || 0);
+
+  // Sync with props
+  React.useEffect(() => {
+    setIsLiked(!!comment.is_liked);
+  }, [comment.is_liked]);
+
+  React.useEffect(() => {
+    setLikesCount(comment.likes_count || 0);
+  }, [comment.likes_count]);
+
+  const likeMutation = useMutation({
+    mutationFn: async () => {
+      if (isLiked) {
+        return await commentsAPI.unlike(commentId);
+      } else {
+        return await commentsAPI.like(commentId);
+      }
+    },
+    onMutate: () => {
+      const newIsLiked = !isLiked;
+      setIsLiked(newIsLiked);
+      setLikesCount(prev => newIsLiked ? prev + 1 : Math.max(0, prev - 1));
+    },
+    onSuccess: (data) => {
+      if (data) {
+        if (data.likes_count !== undefined) setLikesCount(data.likes_count);
+        if (data.is_liked !== undefined) setIsLiked(data.is_liked);
+      }
+    },
+    onError: () => {
+      // Revert on error
+      setIsLiked(!!comment.is_liked);
+      setLikesCount(comment.likes_count || 0);
+    },
+    onSettled: () => {
+      // Don't invalidate every time to avoid jarring refetches while user is interacting
+      // but maybe invalidate after some time or on specific actions
+    }
+  });
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="flex gap-3 group"
+    >
+      <div className="w-9 h-9 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 text-xs font-bold shrink-0 border border-white shadow-sm">
+        {comment.author_avatar ? (
+          <img src={comment.author_avatar} alt="" className="w-full h-full rounded-full object-cover" />
+        ) : (
+          comment.author_name?.[0]?.toUpperCase() || "U"
+        )}
+      </div>
+      <div className="flex-1">
+        <div className="bg-white border border-slate-100 rounded-2xl rounded-tl-sm p-4 hover:shadow-md hover:shadow-slate-100 transition-all">
+          <div className="flex items-center justify-between mb-1.5">
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm font-bold text-slate-900">{comment.author_name || "User"}</span>
+              <span className="text-[10px] text-slate-400 font-medium">@{comment.author_username || "anonymous"}</span>
+            </div>
+            <span className="text-[10px] font-medium text-slate-400">
+              {new Date(comment.created_at || comment.created_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+            </span>
+          </div>
+          <p className="text-sm text-slate-600 leading-relaxed mb-2">{comment.content}</p>
+          
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={() => currentUser && likeMutation.mutate()}
+              className={`flex items-center gap-1 text-[10px] font-bold transition-colors ${isLiked ? "text-red-500" : "text-slate-400 hover:text-red-400"}`}
+            >
+              <Heart className={`w-3 h-3 ${isLiked ? "fill-current" : ""}`} />
+              {likesCount > 0 && likesCount} {isLiked ? 'Liked' : 'Like'}
+            </button>
+            <button className="text-[10px] font-bold text-slate-400 hover:text-indigo-600">Reply</button>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
 
 export default function PostDetail() {
   const params = new URLSearchParams(window.location.search);
@@ -168,35 +255,11 @@ export default function PostDetail() {
             </div>
           ) : (
             comments.map((comment, i) => (
-              <motion.div
-                key={comment.id || comment._id || i}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.05 }}
-                className="flex gap-3 group"
-              >
-                <div className="w-9 h-9 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 text-xs font-bold shrink-0 border border-white shadow-sm">
-                  {comment.author_avatar ? (
-                    <img src={comment.author_avatar} alt="" className="w-full h-full rounded-full object-cover" />
-                  ) : (
-                    comment.author_name?.[0]?.toUpperCase() || "U"
-                  )}
-                </div>
-                <div className="flex-1">
-                  <div className="bg-white border border-slate-100 rounded-2xl rounded-tl-sm p-4 hover:shadow-md hover:shadow-slate-100 transition-all">
-                    <div className="flex items-center justify-between mb-1.5">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-sm font-bold text-slate-900">{comment.author_name || "User"}</span>
-                        <span className="text-[10px] text-slate-400 font-medium">@{comment.author_username || "anonymous"}</span>
-                      </div>
-                      <span className="text-[10px] font-medium text-slate-400">
-                        {new Date(comment.created_at || comment.created_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                      </span>
-                    </div>
-                    <p className="text-sm text-slate-600 leading-relaxed">{comment.content}</p>
-                  </div>
-                </div>
-              </motion.div>
+              <CommentItem 
+                key={comment.id || comment._id || i} 
+                comment={comment} 
+                currentUser={currentUser} 
+              />
             ))
           )}
         </div>
