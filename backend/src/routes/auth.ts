@@ -5,10 +5,18 @@ import { generateSecret, generateURI, verifySync } from 'otplib';
 import QRCode from 'qrcode';
 import { randomInt, randomBytes } from 'crypto';
 import { OAuth2Client } from 'google-auth-library';
+import {
+  generateRegistrationOptions,
+  verifyRegistrationResponse,
+  generateAuthenticationOptions,
+  verifyAuthenticationResponse,
+} from '@simplewebauthn/server';
 import { User } from '../models/User';
 import { sendVerificationCode, sendWhatsAppVerification } from '../services/mailService';
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const rpID = process.env.RP_ID || 'localhost';
+const origin = process.env.FRONTEND_URL || 'http://localhost:5173';
 
 const loginSchema = z.object({
   email: z.string().min(3), // Could be email or username
@@ -126,6 +134,7 @@ export async function authRoutes(fastify: FastifyInstance) {
           notifications: user.notifications,
           preferences: user.preferences,
           unread_messages_count: user.unread_messages_count || 0,
+          authenticators: user.authenticators,
         },
         token,
       };
@@ -200,6 +209,7 @@ export async function authRoutes(fastify: FastifyInstance) {
           notifications: user.notifications,
           preferences: user.preferences,
           unread_messages_count: user.unread_messages_count || 0,
+          authenticators: user.authenticators,
         },
         token,
       };
@@ -282,6 +292,7 @@ export async function authRoutes(fastify: FastifyInstance) {
           notifications: user.notifications,
           preferences: user.preferences,
           unread_messages_count: user.unread_messages_count || 0,
+          authenticators: user.authenticators,
         },
         token: jwtToken,
       };
@@ -291,6 +302,242 @@ export async function authRoutes(fastify: FastifyInstance) {
       }
       fastify.log.error(error);
       return reply.code(500).send({ error: 'Internal server error' });
+    }
+  });
+
+  // WebAuthn Registration Options
+  fastify.get('/webauthn/register-options', {
+    preHandler: [async (request, reply) => {
+      try {
+        await request.jwtVerify();
+      } catch (err) {
+        return reply.code(401).send({ error: 'Unauthorized' });
+      }
+    }]
+  }, async (request, reply) => {
+    try {
+      const user = await User.findById((request.user as any).userId);
+      if (!user) return reply.code(404).send({ error: 'User not found' });
+
+      const options = await generateRegistrationOptions({
+        rpName: 'Vetora',
+        rpID,
+        userID: Buffer.from(user._id.toString()),
+        userName: user.username,
+        attestationType: 'none',
+        excludeCredentials: user.authenticators.map(auth => ({
+          id: auth.credentialID,
+          type: 'public-key',
+          transports: auth.transports as any[],
+        })),
+        authenticatorSelection: {
+          residentKey: 'preferred',
+          userVerification: 'preferred',
+          authenticatorAttachment: 'platform',
+        },
+      });
+
+      user.current_challenge = options.challenge;
+      user.current_challenge_expires_at = new Date(Date.now() + 5 * 60 * 1000); // 5 min
+      await user.save();
+
+      return options;
+    } catch (error) {
+      fastify.log.error(error);
+      return reply.code(500).send({ error: 'Failed to generate registration options' });
+    }
+  });
+
+  // WebAuthn Registration Verify
+  fastify.post('/webauthn/register-verify', {
+    preHandler: [async (request, reply) => {
+      try {
+        await request.jwtVerify();
+      } catch (err) {
+        return reply.code(401).send({ error: 'Unauthorized' });
+      }
+    }]
+  }, async (request, reply) => {
+    try {
+      const body = z.object({
+        id: z.string(),
+        rawId: z.string(),
+        response: z.object({
+          clientDataJSON: z.string(),
+          attestationObject: z.string(),
+          transports: z.array(z.string()).optional(),
+        }),
+        type: z.literal('public-key'),
+        clientExtensionResults: z.any().optional(),
+        authenticatorAttachment: z.string().optional(),
+      }).parse(request.body);
+
+      const user = await User.findById((request.user as any).userId).select('+current_challenge +current_challenge_expires_at');
+      if (!user) return reply.code(404).send({ error: 'User not found' });
+
+      if (!user.current_challenge || !user.current_challenge_expires_at || user.current_challenge_expires_at < new Date()) {
+        return reply.code(400).send({ error: 'Challenge expired or not found' });
+      }
+
+      const expectedChallenge = user.current_challenge;
+      
+      // Always clear challenge after one attempt
+      user.current_challenge = undefined;
+      user.current_challenge_expires_at = undefined;
+      await user.save();
+
+      const verification = await verifyRegistrationResponse({
+        response: body as any,
+        expectedChallenge,
+        expectedOrigin: origin,
+        expectedRPID: rpID,
+      });
+
+      if (verification.verified && (verification as any).registrationInfo) {
+        const { credentialID, credentialPublicKey, counter, credentialDeviceType, credentialBackedUp } = (verification as any).registrationInfo;
+
+        user.authenticators.push({
+          credentialID: Buffer.from(credentialID).toString('base64url'),
+          credentialPublicKey: Buffer.from(credentialPublicKey).toString('base64url'),
+          counter,
+          credentialDeviceType,
+          credentialBackedUp,
+          transports: body.response.transports,
+        });
+
+        await user.save();
+
+        return { verified: true };
+      }
+
+      return reply.code(400).send({ verified: false, error: 'Verification failed' });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return reply.code(400).send({ error: 'Invalid registration response format', details: error.errors });
+      }
+      fastify.log.error(error);
+      return reply.code(500).send({ error: 'Failed to verify registration' });
+    }
+  });
+
+  // WebAuthn Authentication Options
+  fastify.post('/webauthn/login-options', async (request, reply) => {
+    try {
+      const { email: identifier } = z.object({ email: z.string() }).parse(request.body);
+      const user = await User.findOne({ 
+        $or: [{ email: identifier.toLowerCase() }, { username: identifier.toLowerCase() }] 
+      });
+
+      if (!user || user.authenticators.length === 0) {
+        return reply.code(400).send({ error: 'Biometric authentication not set up for this user' });
+      }
+
+      const options = await generateAuthenticationOptions({
+        rpID,
+        allowCredentials: user.authenticators.map(auth => ({
+          id: auth.credentialID,
+          type: 'public-key',
+          transports: auth.transports as any[],
+        })),
+        userVerification: 'preferred',
+      });
+
+      user.current_challenge = options.challenge;
+      user.current_challenge_expires_at = new Date(Date.now() + 5 * 60 * 1000); // 5 min
+      await user.save();
+
+      return options;
+    } catch (error) {
+      fastify.log.error(error);
+      return reply.code(500).send({ error: 'Failed to generate authentication options' });
+    }
+  });
+
+  // WebAuthn Authentication Verify
+  fastify.post('/webauthn/login-verify', async (request, reply) => {
+    try {
+      const { email: identifier, response } = z.object({
+        email: z.string(),
+        response: z.any()
+      }).parse(request.body);
+
+      const user = await User.findOne({ 
+        $or: [{ email: identifier.toLowerCase() }, { username: identifier.toLowerCase() }] 
+      }).select('+current_challenge +current_challenge_expires_at +password');
+
+      if (!user || !user.current_challenge || !user.current_challenge_expires_at || user.current_challenge_expires_at < new Date()) {
+        return reply.code(400).send({ error: 'User, challenge expired or not found' });
+      }
+
+      if (user.is_blocked) {
+        return reply.code(403).send({ error: 'Your account has been suspended' });
+      }
+
+      const authenticator = user.authenticators.find(auth => auth.credentialID === response.id);
+      if (!authenticator) {
+        return reply.code(400).send({ error: 'Authenticator not found' });
+      }
+
+      const expectedChallenge = user.current_challenge;
+
+      // Always clear challenge after one attempt
+      user.current_challenge = undefined;
+      user.current_challenge_expires_at = undefined;
+      await user.save();
+
+      const verification = await verifyAuthenticationResponse({
+        response,
+        expectedChallenge,
+        expectedOrigin: origin,
+        expectedRPID: rpID,
+        credential: {
+          id: authenticator.credentialID,
+          publicKey: Buffer.from(authenticator.credentialPublicKey, 'base64url'),
+          counter: authenticator.counter,
+          transports: authenticator.transports as any[],
+        },
+      });
+
+      if (verification.verified) {
+        // Update counter
+        authenticator.counter = verification.authenticationInfo.newCounter;
+        await user.save();
+
+        // Generate JWT token
+        const token = fastify.jwt.sign({
+          userId: user._id.toString(),
+          email: user.email,
+          username: user.username,
+          role: user.role,
+        });
+
+        return {
+          user: {
+            id: user._id,
+            username: user.username,
+            email: user.email,
+            display_name: user.display_name,
+            avatar_url: user.avatar_url,
+            banner_url: user.banner_url,
+            role: user.role,
+            is_blocked: user.is_blocked,
+            is_verified: user.is_verified,
+            is_2fa_enabled: user.is_2fa_enabled,
+            phone_number: user.phone_number,
+            is_phone_verified: user.is_phone_verified,
+            notifications: user.notifications,
+            preferences: user.preferences,
+            unread_messages_count: user.unread_messages_count || 0,
+            authenticators: user.authenticators,
+          },
+          token,
+        };
+      }
+
+      return reply.code(400).send({ verified: false, error: 'Authentication failed' });
+    } catch (error) {
+      fastify.log.error(error);
+      return reply.code(500).send({ error: 'Failed to verify authentication' });
     }
   });
 
@@ -392,6 +639,7 @@ export async function authRoutes(fastify: FastifyInstance) {
           notifications: user.notifications,
           preferences: user.preferences,
           unread_messages_count: user.unread_messages_count || 0,
+          authenticators: user.authenticators,
         },
         token,
       };
@@ -524,6 +772,7 @@ export async function authRoutes(fastify: FastifyInstance) {
         notifications: user.notifications,
         preferences: user.preferences,
         unread_messages_count: user.unread_messages_count || 0,
+        authenticators: user.authenticators,
         created_at: user.created_at,
         updated_at: user.updated_at,
       };
@@ -589,6 +838,7 @@ export async function authRoutes(fastify: FastifyInstance) {
         notifications: user.notifications,
         preferences: user.preferences,
         unread_messages_count: user.unread_messages_count || 0,
+        authenticators: user.authenticators,
         created_at: user.created_at,
         updated_at: user.updated_at,
       };

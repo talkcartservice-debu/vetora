@@ -10,4 +10,8 @@ export function createPageUrl(pageName) {
   return `/${pageName}`;
 }
 
+export function getRedirectPath(user) {
+  return user?.role === 'super_admin' ? '/AdminDashboard' : '/';
+}
+
 export const isIframe = window.self !== window.top;

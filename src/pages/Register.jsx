@@ -1,9 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/lib/AuthContext';
+import { getRedirectPath } from '@/lib/utils';
 import { Mail, Lock, User, Loader2, ShoppingBag, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { GoogleLogin } from '@react-oauth/google';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -25,8 +29,7 @@ const Register = () => {
     setError('');
     try {
       const res = await googleLogin(credentialResponse.credential);
-      const redirectPath = res.user?.role === 'super_admin' ? '/AdminDashboard' : '/';
-      navigate(redirectPath);
+      navigate(getRedirectPath(res.user));
     } catch (err) {
       setError(err.message || 'Google login failed. Please try again.');
     } finally {
@@ -56,13 +59,13 @@ const Register = () => {
 
     setIsLoading(true);
     try {
-      await register({
+      const res = await register({
         email: formData.email,
         username: formData.username,
         password: formData.password,
         display_name: formData.display_name
       });
-      navigate('/');
+      navigate(getRedirectPath(res.user));
     } catch (err) {
       setError(err.message || 'Failed to create account. Please try again.');
     } finally {
@@ -71,7 +74,7 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen w-full relative flex items-center justify-center bg-[#fdfdfd] overflow-hidden p-6 selection:bg-indigo-100 selection:text-indigo-900">
+    <div className="min-h-screen w-full relative flex flex-col items-center justify-center bg-[#fdfdfd] py-12 px-6 selection:bg-indigo-100 selection:text-indigo-900 overflow-x-hidden">
       {/* Decorative Background Elements */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
         <motion.div 
@@ -140,14 +143,15 @@ const Register = () => {
             <form onSubmit={handleSubmit} className="space-y-7">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div className="space-y-2.5">
-                  <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1 opacity-60">Full Name</label>
+                  <Label htmlFor="display_name" className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1 opacity-60">Full Name</Label>
                   <div className="relative group">
-                    <input
+                    <Input
+                      id="display_name"
                       type="text"
                       name="display_name"
                       value={formData.display_name}
                       onChange={handleChange}
-                      className="w-full pl-12 pr-4 py-4 rounded-2xl border border-slate-100 bg-slate-50/50 text-slate-900 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 focus:bg-white outline-none transition-all duration-300 font-medium group-hover:border-slate-200"
+                      className="w-full pl-12 pr-4 py-7 rounded-2xl border border-slate-100 bg-slate-50/50 text-slate-900 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 focus:bg-white outline-none transition-all duration-300 font-medium group-hover:border-slate-200"
                       placeholder=""
                       required
                     />
@@ -156,14 +160,15 @@ const Register = () => {
                 </div>
 
                 <div className="space-y-2.5">
-                  <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1 opacity-60">Username</label>
+                  <Label htmlFor="username" className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1 opacity-60">Username</Label>
                   <div className="relative group">
-                    <input
+                    <Input
+                      id="username"
                       type="text"
                       name="username"
                       value={formData.username}
                       onChange={(e) => setFormData({ ...formData, username: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '') })}
-                      className="w-full pl-12 pr-4 py-4 rounded-2xl border border-slate-100 bg-slate-50/50 text-slate-900 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 focus:bg-white outline-none transition-all duration-300 font-medium group-hover:border-slate-200"
+                      className="w-full pl-12 pr-4 py-7 rounded-2xl border border-slate-100 bg-slate-50/50 text-slate-900 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 focus:bg-white outline-none transition-all duration-300 font-medium group-hover:border-slate-200"
                       placeholder="unique_handle"
                       required
                       minLength={3}
@@ -173,14 +178,15 @@ const Register = () => {
                 </div>
 
                 <div className="space-y-2.5">
-                  <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1 opacity-60">Email Address</label>
+                  <Label htmlFor="email" className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1 opacity-60">Email Address</Label>
                   <div className="relative group">
-                    <input
+                    <Input
+                      id="email"
                       type="email"
                       name="email"
                       value={formData.email}
                       onChange={handleChange}
-                      className="w-full pl-12 pr-4 py-4 rounded-2xl border border-slate-100 bg-slate-50/50 text-slate-900 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 focus:bg-white outline-none transition-all duration-300 font-medium group-hover:border-slate-200"
+                      className="w-full pl-12 pr-4 py-7 rounded-2xl border border-slate-100 bg-slate-50/50 text-slate-900 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 focus:bg-white outline-none transition-all duration-300 font-medium group-hover:border-slate-200"
                       placeholder=""
                       required
                     />
@@ -189,57 +195,64 @@ const Register = () => {
                 </div>
 
                 <div className="space-y-2.5">
-                  <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1 opacity-60">Password</label>
+                  <Label htmlFor="password" name="password" className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1 opacity-60">Password</Label>
                   <div className="relative group">
-                    <input
+                    <Input
+                      id="password"
                       type={showPassword ? "text" : "password"}
                       name="password"
                       value={formData.password}
                       onChange={handleChange}
-                      className="w-full pl-12 pr-12 py-4 rounded-2xl border border-slate-100 bg-slate-50/50 text-slate-900 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 focus:bg-white outline-none transition-all duration-300 font-medium group-hover:border-slate-200"
+                      className="w-full pl-12 pr-12 py-7 rounded-2xl border border-slate-100 bg-slate-50/50 text-slate-900 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 focus:bg-white outline-none transition-all duration-300 font-medium group-hover:border-slate-200"
                       placeholder="••••••••"
                       required
                       minLength={6}
                     />
                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-indigo-600 transition-colors duration-300" />
-                    <button
+                    <Button
                       type="button"
+                      variant="ghost"
+                      size="icon"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-indigo-600 transition-colors duration-300 focus:outline-none"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-indigo-600 transition-colors duration-300 focus:outline-none h-10 w-10"
                     >
                       {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                    </button>
+                    </Button>
                   </div>
                 </div>
 
                 <div className="space-y-2.5">
-                  <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1 opacity-60">Confirm</label>
+                  <Label htmlFor="confirm_password" name="confirm_password" className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1 opacity-60">Confirm</Label>
                   <div className="relative group">
-                    <input
+                    <Input
+                      id="confirm_password"
                       type={showConfirmPassword ? "text" : "password"}
                       name="confirm_password"
                       value={formData.confirm_password}
                       onChange={handleChange}
-                      className="w-full pl-12 pr-12 py-4 rounded-2xl border border-slate-100 bg-slate-50/50 text-slate-900 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 focus:bg-white outline-none transition-all duration-300 font-medium group-hover:border-slate-200"
+                      className="w-full pl-12 pr-12 py-7 rounded-2xl border border-slate-100 bg-slate-50/50 text-slate-900 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 focus:bg-white outline-none transition-all duration-300 font-medium group-hover:border-slate-200"
                       placeholder="••••••••"
                       required
+                      minLength={6}
                     />
                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-indigo-600 transition-colors duration-300" />
-                    <button
+                    <Button
                       type="button"
+                      variant="ghost"
+                      size="icon"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-indigo-600 transition-colors duration-300 focus:outline-none"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-indigo-600 transition-colors duration-300 focus:outline-none h-10 w-10"
                     >
                       {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                    </button>
+                    </Button>
                   </div>
                 </div>
               </div>
 
-              <button
+              <Button
                 type="submit"
                 disabled={isLoading}
-                className="group w-full bg-slate-900 text-white py-4.5 rounded-[1.25rem] font-black text-sm uppercase tracking-widest hover:bg-slate-800 active:scale-[0.98] transition-all duration-300 flex items-center justify-center disabled:opacity-70 disabled:active:scale-100 shadow-[0_20px_40px_-10px_rgba(15,23,42,0.3)] mt-8"
+                className="group w-full bg-slate-900 text-white py-8 rounded-[1.25rem] font-black text-sm uppercase tracking-widest hover:bg-slate-800 active:scale-[0.98] transition-all duration-300 flex items-center justify-center disabled:opacity-70 disabled:active:scale-100 shadow-[0_20px_40px_-10px_rgba(15,23,42,0.3)] mt-8"
               >
                 {isLoading ? (
                   <Loader2 className="h-5 w-5 animate-spin text-white" />
@@ -248,7 +261,7 @@ const Register = () => {
                     Establish Identity <ArrowRight className="h-4 w-4 group-hover:translate-x-1.5 transition-transform duration-300" />
                   </span>
                 )}
-              </button>
+              </Button>
             </form>
 
             <div className="relative py-4">

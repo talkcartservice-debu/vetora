@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { authAPI } from '@/api/apiClient';
+import { startRegistration, startAuthentication } from '@simplewebauthn/browser';
 
 const AuthContext = createContext();
 
@@ -115,15 +116,54 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const registerBiometrics = async () => {
+    try {
+      const options = await authAPI.getWebAuthnRegisterOptions();
+      const attResp = await startRegistration(options);
+      const verification = await authAPI.verifyWebAuthnRegister(attResp);
+      
+      if (verification.verified) {
+        // Refresh user data to include new authenticators
+        await checkUserAuth();
+      }
+      return verification;
+    } catch (error) {
+      console.error('Biometric registration failed:', error);
+      throw error;
+    }
+  };
+
+  const loginBiometrics = async (email) => {
+    try {
+      setIsLoadingAuth(true);
+      const options = await authAPI.getWebAuthnLoginOptions(email);
+      const asseResp = await startAuthentication(options);
+      const data = await authAPI.verifyWebAuthnLogin(email, asseResp);
+      
+      setUser(data.user);
+      setIsAuthenticated(true);
+      setIsLoadingAuth(false);
+      return data;
+    } catch (error) {
+      setIsLoadingAuth(false);
+      console.error('Biometric login failed:', error);
+      throw error;
+    }
+  };
+
   const logout = () => {
     authAPI.logout();
     setUser(null);
     setIsAuthenticated(false);
-    window.location.href = '/login';
+    window.location.href = '/Login';
   };
 
   const navigateToLogin = () => {
-    window.location.href = '/login';
+    window.location.href = '/Login';
+  };
+
+  const clearAuthError = () => {
+    setAuthError(null);
   };
 
   return (
@@ -132,10 +172,13 @@ export const AuthProvider = ({ children }) => {
       isAuthenticated, 
       isLoadingAuth,
       authError,
+      clearAuthError,
       login,
       googleLogin,
       verify2FA,
       register,
+      registerBiometrics,
+      loginBiometrics,
       logout,
       navigateToLogin,
       checkUserAuth

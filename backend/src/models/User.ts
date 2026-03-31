@@ -36,6 +36,16 @@ export interface IUser extends Document {
   follower_count: number;
   following_count: number;
   unread_messages_count: number;
+  current_challenge?: string;
+  current_challenge_expires_at?: Date;
+  authenticators: Array<{
+    credentialID: string;
+    credentialPublicKey: string;
+    counter: number;
+    credentialDeviceType: string;
+    credentialBackedUp: boolean;
+    transports?: string[];
+  }>;
   created_at: Date;
   updated_at: Date;
 }
@@ -162,6 +172,22 @@ const UserSchema = new Schema<IUser>({
     default: 0,
     min: 0,
   },
+  current_challenge: {
+    type: String,
+    select: false,
+  },
+  current_challenge_expires_at: {
+    type: Date,
+    select: false,
+  },
+  authenticators: [{
+    credentialID: { type: String, required: true },
+    credentialPublicKey: { type: String, required: true },
+    counter: { type: Number, required: true },
+    credentialDeviceType: { type: String, required: true },
+    credentialBackedUp: { type: Boolean, required: true },
+    transports: [String],
+  }],
 }, {
   timestamps: {
     createdAt: 'created_at',

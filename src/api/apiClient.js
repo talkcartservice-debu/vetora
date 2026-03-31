@@ -222,6 +222,19 @@ export const authAPI = {
   verify2FALogin: (twoFactorToken, token) => apiClient.post('/auth/login/2fa', { two_factor_token: twoFactorToken, token }),
   forgotPassword: (email) => apiClient.post('/auth/forgot-password', { email }),
   resetPassword: (token, newPassword) => apiClient.post('/auth/reset-password', { token, newPassword }),
+  // WebAuthn
+  getWebAuthnRegisterOptions: () => apiClient.get('/auth/webauthn/register-options'),
+  verifyWebAuthnRegister: (response) => apiClient.post('/auth/webauthn/register-verify', response),
+  getWebAuthnLoginOptions: (email) => apiClient.post('/auth/webauthn/login-options', { email }),
+  verifyWebAuthnLogin: (email, response) => {
+    return apiClient.post('/auth/webauthn/login-verify', { email, response }).then(data => {
+      if (data.token) {
+        apiClient.setToken(data.token);
+        localStorage.setItem('vetora_token', data.token);
+      }
+      return data;
+    });
+  },
   logout: () => {
     apiClient.clearToken();
     localStorage.removeItem('vetora_token');

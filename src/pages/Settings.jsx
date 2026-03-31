@@ -57,7 +57,7 @@ function SettingSection({ icon: Icon, title, description, children, active, onCl
 }
 
 export default function Settings() {
-  const { user: currentUser, logout, checkUserAuth } = useAuth();
+  const { user: currentUser, logout, checkUserAuth, registerBiometrics } = useAuth();
   const { lang: currentLang, setLang, SUPPORTED_LANGS, currentLangInfo } = useLang();
   const [activeSection, setActiveSection] = useState("profile");
   const queryClient = useQueryClient();
@@ -271,6 +271,23 @@ export default function Settings() {
     onError: (err) => toast.error(err.message || "Invalid verification code"),
   });
 
+  const [isRegisteringBiometrics, setIsRegisteringBiometrics] = useState(false);
+
+  const handleRegisterBiometrics = async () => {
+    setIsRegisteringBiometrics(true);
+    try {
+      const result = await registerBiometrics();
+      if (result.verified) {
+        toast.success("Biometric authentication registered successfully!");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error(err.message || "Failed to register biometrics. Your browser may not support it or it was cancelled.");
+    } finally {
+      setIsRegisteringBiometrics(false);
+    }
+  };
+
   const handleFileUpload = async (e, type) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -478,6 +495,34 @@ export default function Settings() {
               >
                 {currentUser?.is_2fa_enabled ? "Disable 2FA" : "Enable 2FA"}
               </Button>
+            </div>
+          </div>
+
+          <div className="p-4 bg-violet-50 dark:bg-violet-900/10 rounded-2xl border border-violet-100 dark:border-violet-900/30 flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-800 flex items-center justify-center text-violet-600 dark:text-violet-400 shadow-sm shrink-0">
+              <Smartphone className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="text-sm font-bold text-violet-900 dark:text-violet-100">Biometric Authentication</h4>
+              <p className="text-xs text-violet-600/70 dark:text-violet-400/70 mb-2 leading-relaxed">Login faster and more securely using FaceID, TouchID, or Windows Hello.</p>
+              <div className="flex flex-col gap-2">
+                <Button 
+                  size="sm" 
+                  onClick={handleRegisterBiometrics}
+                  disabled={isRegisteringBiometrics}
+                  className="bg-violet-600 hover:bg-violet-700 text-white rounded-lg h-8 text-[10px] font-bold px-3 w-fit"
+                >
+                  {isRegisteringBiometrics ? (
+                    <Loader2 className="w-3 h-3 animate-spin mr-2" />
+                  ) : null}
+                  Register Biometrics
+                </Button>
+                {currentUser?.authenticators?.length > 0 && (
+                  <p className="text-[10px] text-emerald-600 font-bold flex items-center gap-1">
+                    <Shield className="w-3 h-3" /> {currentUser.authenticators.length} biometric method(s) registered
+                  </p>
+                )}
+              </div>
             </div>
           </div>
         </div>
