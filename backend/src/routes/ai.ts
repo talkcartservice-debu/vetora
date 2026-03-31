@@ -166,7 +166,7 @@ export async function aiRoutes(fastify: FastifyInstance) {
       try {
         return JSON.parse(result.response);
       } catch (e) {
-        fastify.log.error('Failed to parse AI response as JSON:', result.response);
+        fastify.log.error({ response: result.response }, 'Failed to parse AI response as JSON');
         return { title: 'Product', description: 'Description', tags: [], seo_title: 'Product' };
       }
     } catch (error: any) {
@@ -192,7 +192,7 @@ export async function aiRoutes(fastify: FastifyInstance) {
       try {
         return JSON.parse(result.response);
       } catch (e) {
-        fastify.log.error('Failed to parse sentiment JSON:', result.response);
+        fastify.log.error({ response: result.response }, 'Failed to parse sentiment JSON');
         return { overall_sentiment: 'neutral', sentiment_score: 50, summary_text: 'Analysis failed', pros: [], cons: [] };
       }
     } catch (error: any) {
@@ -217,7 +217,7 @@ export async function aiRoutes(fastify: FastifyInstance) {
         const translations = JSON.parse(result.response);
         return Array.isArray(translations) ? { translations } : { translations: texts };
       } catch (e) {
-        fastify.log.error('Failed to parse translation JSON:', result.response);
+        fastify.log.error({ response: result.response }, 'Failed to parse translation JSON');
         return { translations: texts };
       }
     } catch (error: any) {

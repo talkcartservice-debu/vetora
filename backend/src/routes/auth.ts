@@ -650,7 +650,7 @@ export async function authRoutes(fastify: FastifyInstance) {
         return reply.code(400).send({ error: 'Invalid request data', details: error.errors });
       }
       
-      fastify.log.error('Registration Error:', error);
+      fastify.log.error(error, 'Registration Error:');
 
       // Check for connection errors specifically
       if (error.name === 'MongooseServerSelectionError' || error.name === 'MongooseError' || error.message?.includes('ECONNREFUSED') || error.message?.includes('buffering timed out')) {
@@ -712,7 +712,7 @@ export async function authRoutes(fastify: FastifyInstance) {
         ...(process.env.NODE_ENV === 'development' ? { dev_token: resetToken } : {})
       };
     } catch (error) {
-      fastify.log.error('Forgot Password Error:', error);
+      fastify.log.error(error as any, 'Forgot Password Error:');
       if (error instanceof z.ZodError) {
         return reply.code(400).send({ error: 'Invalid request data', details: error.errors });
       }
@@ -745,7 +745,7 @@ export async function authRoutes(fastify: FastifyInstance) {
 
       return { success: true, message: 'Password has been reset successfully.' };
     } catch (error) {
-      fastify.log.error('Forgot Password Error:', error);
+      fastify.log.error(error as any, 'Reset Password Error:');
       if (error instanceof z.ZodError) {
         return reply.code(400).send({ error: 'Invalid request data', details: error.errors });
       }
