@@ -19,14 +19,6 @@ const CheckoutStep = ({ number, title, active, completed, children }) => (
   <div 
     className={`bg-white rounded-3xl border ${active ? "border-indigo-500 shadow-xl shadow-indigo-100/50" : "border-slate-100"} p-6 mb-4 transition-all duration-300`}
   >
-    <div className="flex items-center gap-4 mb-4">
-      <div className={`w-10 h-10 rounded-2xl flex items-center justify-center font-black text-sm transition-colors ${
-        completed ? "bg-green-500 text-white" : active ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-400"
-      }`}>
-        {completed ? <CheckCircle2 className="w-5 h-5" /> : number}
-      </div>
-      <h2 className={`text-lg font-black tracking-tight ${active ? "text-slate-900" : "text-slate-400"}`}>{title}</h2>
-    </div>
     {active && (
       <div className="overflow-hidden">
         {children}
@@ -37,8 +29,8 @@ const CheckoutStep = ({ number, title, active, completed, children }) => (
 
 export default function Checkout() {
   const [step, setStep] = useState(1);
-  const [address, setAddress] = useState({ street: "", city: "", state: "", zip: "" });
-  const [paymentMethod, setPaymentMethod] = useState("paystack");
+  const [address, setAddress] = useState({ street: "", city: "", state: "", zip: "", phone: "" });
+  const [paymentMethod, setPaymentMethod] = useState("card");
   const [orderNote, setOrderNote] = useState("");
   
   const navigate = useNavigate();
@@ -99,6 +91,8 @@ export default function Checkout() {
         const order = await ordersAPI.create({
           buyer_username: currentUser.username,
           buyer_name: currentUser.display_name || currentUser.full_name || currentUser.username,
+          buyer_email: currentUser.email,
+          buyer_phone: address.phone,
           vendor_username: group.items[0]?.vendor_username,
           store_id: group.items[0]?.store_id,
           store_name: group.store_name,
@@ -132,6 +126,7 @@ export default function Checkout() {
           await initializePaystackPayment({
             amount: total, // Still passed but server now verifies against DB
             email: currentUser.email,
+            phone: address.phone,
             order_id: orderIds,
             channels: channels.length > 0 ? channels : undefined
           });
@@ -197,6 +192,10 @@ export default function Checkout() {
                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">ZIP Code</label>
                 <Input value={address.zip} onChange={e => setAddress({...address, zip: e.target.value})} placeholder="10001" className="rounded-xl h-11 border-slate-200" />
               </div>
+              <div className="col-span-2 sm:col-span-1">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">Phone Number</label>
+                <Input value={address.phone} onChange={e => setAddress({...address, phone: e.target.value})} placeholder="+1 (555) 000-0000" className="rounded-xl h-11 border-slate-200" />
+              </div>
               <div className="col-span-2">
                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">Order Note (Optional)</label>
                 <Textarea 
@@ -213,9 +212,10 @@ export default function Checkout() {
                   const isCityValid = address.city.trim().length > 0;
                   const isStateValid = address.state.trim().length > 0;
                   const isZipValid = address.zip.trim().length > 0;
+                  const isPhoneValid = address.phone.trim().length > 5;
 
-                  if (!isStreetValid || !isCityValid || !isStateValid || !isZipValid) {
-                    toast.error("Please fill in all required shipping fields");
+                  if (!isStreetValid || !isCityValid || !isStateValid || !isZipValid || !isPhoneValid) {
+                    toast.error("Please fill in all required shipping fields correctly");
                     return;
                   }
                   setStep(2);
@@ -230,11 +230,8 @@ export default function Checkout() {
           <CheckoutStep number="2" title="Payment Method" active={step === 2} completed={step > 2}>
             <div className="space-y-3">
               {[
-                { id: "paystack", name: "Paystack (All Methods)", icon: Zap },
                 { id: "card", name: "Credit/Debit Card", icon: CreditCard },
-                { id: "mobile_money", name: "Mobile/Airtel Money", icon: Wallet },
-                { id: "wallet", name: "Vetora Wallet", icon: Wallet, disabled: true },
-                { id: "crypto", name: "Cryptocurrency", icon: Zap, disabled: true }
+                { id: "mobile_money", name: "Mobile/Airtel Money", icon: Wallet }
               ].map(method => (
                 <button
                   key={method.id}
@@ -252,6 +249,61 @@ export default function Checkout() {
                   {paymentMethod === method.id && <div className="w-5 h-5 rounded-full bg-indigo-600 flex items-center justify-center"><CheckCircle2 className="w-3.5 h-3.5 text-white" /></div>}
                 </button>
               ))}
+
+              {/* Payment Details Input/Notice based on method */}
+              <div className="mt-6 pt-6 border-t border-slate-100">
+                {paymentMethod === "mobile_money" && (
+                  <div className="p-5 bg-indigo-50/50 rounded-[1.5rem] border border-indigo-100/50">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center">
+                        <Wallet className="w-4 h-4" />
+                      </div>
+                      <h4 className="text-sm font-black text-slate-900 tracking-tight uppercase">Mobile Money Details</h4>
+                    </div>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">Mobile Number for Payment</label>
+                    <Input 
+                      value={address.phone} 
+                      onChange={e => setAddress({...address, phone: e.target.value})} 
+                      placeholder="e.g. +234 800 000 0000" 
+                      className="rounded-xl h-11 border-slate-200 bg-white" 
+                    />
+                    <p className="text-[11px] text-indigo-600/70 mt-3 font-medium flex items-start gap-2">
+                      <Info className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                      A secure payment prompt will be sent to this mobile number after you place your order.
+                    </p>
+                  </div>
+                )}
+
+                {paymentMethod === "card" && (
+                  <div className="p-5 bg-indigo-50/50 rounded-[1.5rem] border border-indigo-100/50">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center">
+                        <Lock className="w-4 h-4" />
+                      </div>
+                      <h4 className="text-sm font-black text-slate-900 tracking-tight uppercase">Secure Card Payment</h4>
+                    </div>
+                    
+                    <p className="text-[13px] text-slate-600 leading-relaxed font-medium">
+                      You will be securely redirected to <strong>Paystack</strong> to enter your card details and complete the 3D secure authentication. 
+                    </p>
+                    
+                    <div className="mt-4 flex items-center gap-2 p-3 bg-white/50 rounded-xl border border-indigo-100/50">
+                      <Shield className="w-4 h-4 text-indigo-600" />
+                      <span className="text-[11px] font-bold text-indigo-900 uppercase tracking-wider">PCI-DSS Compliant Payment</span>
+                    </div>
+                    
+                    <p className="text-[11px] text-slate-500 mt-3 font-medium flex items-start gap-2">
+                      <Info className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                      Vetora does not store your card details. All transactions are processed securely by Paystack.
+                    </p>
+                    <div className="mt-4 flex gap-2 opacity-50 grayscale">
+                      <div className="h-6 w-10 bg-white rounded border border-slate-200 flex items-center justify-center text-[8px] font-bold">VISA</div>
+                      <div className="h-6 w-10 bg-white rounded border border-slate-200 flex items-center justify-center text-[8px] font-bold">MC</div>
+                      <div className="h-6 w-10 bg-white rounded border border-slate-200 flex items-center justify-center text-[8px] font-bold">AMEX</div>
+                    </div>
+                  </div>
+                )}
+              </div>
               
               <div className="flex gap-3 mt-8">
                 <Button type="button" variant="outline" onClick={() => setStep(1)} className="flex-1 h-12 rounded-xl font-bold border-slate-200">Back</Button>
@@ -269,6 +321,7 @@ export default function Checkout() {
                 <div>
                   <h4 className="text-sm font-bold text-slate-900">Delivery Address</h4>
                   <p className="text-xs text-slate-500 mt-0.5">{address.street}, {address.city}, {address.state} {address.zip}</p>
+                  <p className="text-xs text-slate-500 mt-0.5">{address.phone}</p>
                 </div>
                 <button type="button" onClick={() => setStep(1)} className="ml-auto text-xs font-bold text-indigo-600 hover:underline">Edit</button>
               </div>
@@ -280,10 +333,7 @@ export default function Checkout() {
                 <div>
                   <h4 className="text-sm font-bold text-slate-900">Payment Method</h4>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    {paymentMethod === "paystack" ? "Paystack (All Methods)" : 
-                     paymentMethod === "card" ? "Credit/Debit Card (via Paystack)" : 
-                     paymentMethod === "mobile_money" ? "Mobile/Airtel Money (via Paystack)" :
-                     paymentMethod}
+                    {paymentMethod === "paystack" ? "Paystack (All Methods)" : paymentMethod}
                   </p>
                 </div>
                 <button type="button" onClick={() => setStep(2)} className="ml-auto text-xs font-bold text-indigo-600 hover:underline">Edit</button>

@@ -18,7 +18,7 @@ export const paystackService = {
   /**
    * Initialize a Paystack transaction
    */
-  async initializeTransaction(email: string, amount: number, orderId: string, currency: string = 'NGN', channels: string[] = []): Promise<PaystackInitializeResponse> {
+  async initializeTransaction(email: string, amount: number, orderId: string, currency: string = 'NGN', channels: string[] = [], phone?: string): Promise<PaystackInitializeResponse> {
     if (!PAYSTACK_SECRET_KEY || PAYSTACK_SECRET_KEY === 'your_paystack_secret_key' || PAYSTACK_SECRET_KEY === '') {
       const error: any = new Error('Paystack secret key is not configured. Please set PAYSTACK_SECRET_KEY in your environment variables.');
       error.statusCode = 503;
@@ -33,6 +33,10 @@ export const paystackService = {
           order_id: orderId,
         },
       };
+
+      if (phone) {
+        data.metadata.phone = phone;
+      }
 
       if (channels && channels.length > 0) {
         data.channels = channels;
@@ -112,15 +116,23 @@ export const paystackService = {
   /**
    * Handle successful payment
    */
-  async handleSuccessfulPayment(orderId: string, reference: string) {
+  async handleSuccessfulPayment(orderIdsString: string, reference: string) {
     try {
-      const order = await Order.findById(orderId);
-      if (order && order.payment_status !== 'paid') {
-        order.payment_status = 'paid';
-        order.payment_reference = reference;
-        order.status = 'confirmed';
-        await order.save();
-        console.log(`✅ Order ${orderId} marked as PAID via Paystack (Ref: ${reference})`);
+      const orderIds = orderIdsString.split(',').filter(id => id.trim() !== '');
+      const result = await Order.updateMany(
+        { _id: { $in: orderIds }, payment_status: { $ne: 'paid' } },
+        { 
+          $set: { 
+            payment_status: 'paid',
+            payment_reference: reference,
+            status: 'confirmed',
+            updated_at: new Date()
+          }
+        }
+      );
+      
+      if (result.modifiedCount > 0) {
+        console.log(`✅ ${result.modifiedCount} Order(s) [${orderIds.join(', ')}] marked as PAID via Paystack (Ref: ${reference})`);
       }
     } catch (error) {
       console.error('Error updating order after Paystack payment:', error);

@@ -12,6 +12,8 @@ export interface IOrder extends Document {
   _id: mongoose.Types.ObjectId;
   buyer_username: string;
   buyer_name?: string;
+  buyer_email?: string;
+  buyer_phone?: string;
   vendor_username: string;
   store_id: string;
   store_name?: string;
@@ -65,6 +67,15 @@ const OrderSchema = new Schema<IOrder>({
     trim: true,
   },
   buyer_name: {
+    type: String,
+    trim: true,
+  },
+  buyer_email: {
+    type: String,
+    lowercase: true,
+    trim: true,
+  },
+  buyer_phone: {
     type: String,
     trim: true,
   },

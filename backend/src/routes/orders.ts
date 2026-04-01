@@ -9,6 +9,8 @@ import mongoose from 'mongoose';
 const createOrderSchema = z.object({
   buyer_username: z.string().min(1).optional(),
   buyer_name: z.string().optional(),
+  buyer_email: z.string().email().optional(),
+  buyer_phone: z.string().optional(),
   vendor_username: z.string().optional(),
   store_id: z.string().optional(),
   store_name: z.string().optional(),
@@ -234,6 +236,9 @@ export async function orderRoutes(fastify: FastifyInstance) {
             subtotal: computedSubtotal,
             total: computedTotal,
             buyer_username: user.username,
+            buyer_name: body.buyer_name || user.display_name || user.full_name || user.username,
+            buyer_email: body.buyer_email || user.email,
+            buyer_phone: body.buyer_phone,
             vendor_username: firstProduct.vendor_username,
             store_id: firstProduct.store_id,
             store_name: firstProduct.store_name,
