@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useTheme } from "next-themes";
 import { createPageUrl } from "@/lib/utils";
-import { notificationsAPI, messagesAPI } from "@/api/apiClient";
+import { notificationsAPI, messagesAPI, cartAPI } from "@/api/apiClient";
 import { useAuth } from "@/lib/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
@@ -43,7 +43,7 @@ const NAV_ITEMS = [
   { name: "Home", icon: Home, page: "Home" },
   { name: "Explore", icon: Search, page: "Explore" },
   { name: "Create", icon: Plus, action: "create", accent: true },
-  { name: "Live", icon: Radio, page: "Live" },
+  { name: "Cart", icon: ShoppingBag, page: "Cart" },
   { name: "Profile", icon: User, page: "Profile" },
 ];
 
@@ -62,6 +62,7 @@ const SIDEBAR_ITEMS = [
   { name: "Profile", icon: User, page: "Profile" },
   { name: "Explore", icon: Search, page: "Explore" },
   { name: "Marketplace", icon: ShoppingBag, page: "Marketplace" },
+  { name: "Cart", icon: ShoppingBag, page: "Cart" },
   { name: "Live Shopping", icon: Radio, page: "Live" },
   { name: "Communities", icon: Users, page: "Communities" },
   { name: "Messages", icon: MessageCircle, page: "Chat" },
@@ -141,12 +142,19 @@ export default function Layout({ children, currentPageName }) {
     refetchInterval: 10000,
   });
 
+  const { data: cartResponse = {} } = useQuery({
+    queryKey: ["cart", currentUser?.username],
+    queryFn: () => cartAPI.get(),
+    enabled: !!currentUser?.username,
+  });
+
   if (HIDE_LAYOUT_PAGES.includes(currentPageName)) {
     return <>{children}</>;
   }
 
   const unreadCount = unreadNotifs.length;
   const unreadMsgCount = unreadMessages.reduce((acc, conv) => acc + (conv.unread_count || 0), 0);
+  const cartItemCount = Array.isArray(cartResponse?.items) ? cartResponse.items.length : 0;
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
@@ -227,10 +235,17 @@ export default function Layout({ children, currentPageName }) {
                         {unreadMsgCount > 9 ? "9+" : unreadMsgCount}
                       </span>
                     )}
+                    {item.name === "Cart" && cartItemCount > 0 && (
+                      <span className="ml-auto bg-indigo-600 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[18px] text-center">
+                        {cartItemCount}
+                      </span>
+                    )}
                   </>
                 )}
                 {!sidebarOpen && !isMobile && (
-                  (item.name === "Notifications" && unreadCount > 0) || (item.name === "Messages" && unreadMsgCount > 0)
+                  (item.name === "Notifications" && unreadCount > 0) || 
+                  (item.name === "Messages" && unreadMsgCount > 0) ||
+                  (item.name === "Cart" && cartItemCount > 0)
                 ) && (
                   <div className="absolute top-1 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-slate-900" />
                 )}
@@ -334,13 +349,18 @@ export default function Layout({ children, currentPageName }) {
               <Link
                 key={item.name}
                 to={createPageUrl(item.page)}
-                className="flex flex-col items-center gap-0.5"
+                className="flex flex-col items-center gap-0.5 relative"
               >
                 <item.icon
                   className={`w-5 h-5 transition-colors ${
                     isActive ? "text-indigo-600 dark:text-indigo-400" : "text-slate-400 dark:text-slate-500"
                   }`}
                 />
+                {item.name === "Cart" && cartItemCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-indigo-600 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center border border-white dark:border-slate-900">
+                    {cartItemCount}
+                  </span>
+                )}
                 <span
                   className={`text-[10px] font-medium ${
                     isActive ? "text-indigo-600 dark:text-indigo-400" : "text-slate-400 dark:text-slate-500"
