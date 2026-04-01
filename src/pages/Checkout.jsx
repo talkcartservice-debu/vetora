@@ -5,7 +5,7 @@ import { createPageUrl } from "@/lib/utils";
 import { 
   ArrowLeft, CreditCard, Shield, Truck, 
   MapPin, CheckCircle2, Loader2,
-  Lock, Zap, Info, Wallet
+  Lock, Info, Wallet
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

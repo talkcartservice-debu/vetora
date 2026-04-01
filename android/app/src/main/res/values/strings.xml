@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">vetora</string>
+    <string name="title_activity_main">vetora</string>
+    <string name="package_name">com.vetora.app</string>
+    <string name="custom_url_scheme">com.vetora.app</string>
+</resources>
