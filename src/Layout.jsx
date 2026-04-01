@@ -5,6 +5,7 @@ import { useTheme } from "next-themes";
 import { createPageUrl } from "@/lib/utils";
 import { notificationsAPI, messagesAPI } from "@/api/apiClient";
 import { useAuth } from "@/lib/AuthContext";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   Home,
   Search,
@@ -27,7 +28,11 @@ import {
   Shield,
   CreditCard,
   Sun,
-  Moon
+  Moon,
+  Menu,
+  ChevronLeft,
+  ChevronRight,
+  X
 } from "lucide-react";
 import LanguagePicker from "@/components/layout/LanguagePicker";
 import NotificationBell from "@/components/layout/NotificationBell";
@@ -77,6 +82,7 @@ const SIDEBAR_ITEMS = [
 const HIDE_LAYOUT_PAGES = [];
 
 export default function Layout({ children, currentPageName }) {
+  const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -86,7 +92,13 @@ export default function Layout({ children, currentPageName }) {
 
   useEffect(() => {
     setMounted(true);
+    // Initial state based on screen size
+    if (window.innerWidth >= 1024) { // lg breakpoint
+      setSidebarOpen(true);
+    }
   }, []);
+
+  const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
 
   const toggleTheme = () => {
     setTheme(theme === "dark" ? "light" : "dark");
@@ -138,16 +150,41 @@ export default function Layout({ children, currentPageName }) {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
-      {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex fixed left-0 top-0 bottom-0 w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex-col z-40">
-        <div className="p-6">
-          <Link to={createPageUrl(currentUser?.role === 'super_admin' ? "AdminDashboard" : "Home")} className="flex items-center gap-2 mb-4">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center">
-              <span className="text-white font-bold text-lg">V</span>
-            </div>
-            <span className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">Vetora</span>
-          </Link>
-          {currentUser?.role !== 'super_admin' && <GlobalSearch />}
+      {/* Mobile Sidebar Overlay */}
+      {isMobile && sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside className={`fixed left-0 top-0 bottom-0 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col z-50 transition-all duration-300
+        ${isMobile 
+          ? (sidebarOpen ? "translate-x-0 w-64" : "-translate-x-full w-64") 
+          : (sidebarOpen ? "w-64" : "w-20")
+        }`}
+      >
+        <div className="p-4 flex flex-col gap-4">
+          <div className="flex items-center justify-between">
+            <Link 
+              to={createPageUrl(currentUser?.role === 'super_admin' ? "AdminDashboard" : "Home")} 
+              onClick={() => isMobile && setSidebarOpen(false)}
+              className={`flex items-center gap-2 ${!sidebarOpen && !isMobile && "justify-center w-full"}`}
+            >
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center shrink-0">
+                <span className="text-white font-bold text-lg">V</span>
+              </div>
+              {(sidebarOpen || isMobile) && <span className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">Vetora</span>}
+            </Link>
+            <button
+              onClick={toggleSidebar}
+              className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 transition-colors"
+            >
+              {isMobile ? <X className="w-5 h-5" /> : (sidebarOpen ? <ChevronLeft className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />)}
+            </button>
+          </div>
+          {(sidebarOpen || isMobile) && currentUser?.role !== 'super_admin' && <GlobalSearch />}
         </div>
 
         <nav className="flex-1 px-3 space-y-1 overflow-y-auto hide-scrollbar">
@@ -168,40 +205,82 @@ export default function Layout({ children, currentPageName }) {
               <Link
                 key={item.name}
                 to={createPageUrl(item.page) + (item.params || "")}
+                onClick={() => isMobile && setSidebarOpen(false)}
+                title={!sidebarOpen && !isMobile ? item.name : ""}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
                   isActive
                     ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400"
                     : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white"
-                }`}
+                } ${!sidebarOpen && !isMobile ? "justify-center" : ""}`}
               >
-                <item.icon className={`w-5 h-5 ${isActive ? "text-indigo-600 dark:text-indigo-400" : ""}`} />
-                {item.name}
-                {item.name === "Notifications" && unreadCount > 0 && (
-                  <span className="ml-auto bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[18px] text-center">
-                    {unreadCount > 9 ? "9+" : unreadCount}
-                  </span>
+                <item.icon className={`w-5 h-5 shrink-0 ${isActive ? "text-indigo-600 dark:text-indigo-400" : ""}`} />
+                {(sidebarOpen || isMobile) && (
+                  <>
+                    <span className="truncate">{item.name}</span>
+                    {item.name === "Notifications" && unreadCount > 0 && (
+                      <span className="ml-auto bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[18px] text-center">
+                        {unreadCount > 9 ? "9+" : unreadCount}
+                      </span>
+                    )}
+                    {item.name === "Messages" && unreadMsgCount > 0 && (
+                      <span className="ml-auto bg-indigo-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                        {unreadMsgCount > 9 ? "9+" : unreadMsgCount}
+                      </span>
+                    )}
+                  </>
                 )}
-                {item.name === "Messages" && unreadMsgCount > 0 && (
-                  <span className="ml-auto bg-indigo-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                    {unreadMsgCount > 9 ? "9+" : unreadMsgCount}
-                  </span>
+                {!sidebarOpen && !isMobile && (
+                  (item.name === "Notifications" && unreadCount > 0) || (item.name === "Messages" && unreadMsgCount > 0)
+                ) && (
+                  <div className="absolute top-1 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-slate-900" />
                 )}
               </Link>
             );
           })}
         </nav>
 
-        <BottomSection />
+        <div className={`p-4 border-t border-slate-100 dark:border-slate-800 space-y-2 ${!sidebarOpen && !isMobile && "flex flex-col items-center"}`}>
+          {currentUser?.role !== 'super_admin' && (
+            <button
+              onClick={() => {
+                setShowCreate(true);
+                if (isMobile) setSidebarOpen(false);
+              }}
+              className={`flex items-center justify-center gap-2 w-full py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-medium text-sm hover:shadow-lg hover:shadow-indigo-200 dark:hover:shadow-indigo-900/40 transition-all ${!sidebarOpen && !isMobile && "aspect-square p-0"}`}
+            >
+              <Plus className="w-4 h-4" />
+              {(sidebarOpen || isMobile) && <span>Create</span>}
+            </button>
+          )}
+          <div className={`flex items-center gap-2 ${!sidebarOpen && !isMobile ? "flex-col" : "justify-center"}`}>
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+              title="Toggle Theme"
+            >
+              {mounted && (theme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />)}
+            </button>
+            <LanguagePicker compact={!sidebarOpen && !isMobile} />
+          </div>
+        </div>
       </aside>
 
       {/* Mobile Top Bar */}
       <header className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-b border-slate-200/60 dark:border-slate-800/60 flex items-center justify-between px-4 z-40">
-        <Link to={createPageUrl(currentUser?.role === 'super_admin' ? "AdminDashboard" : "Home")} className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center">
-            <span className="text-white font-bold text-sm">V</span>
-          </div>
-          <span className="text-lg font-bold text-slate-900 dark:text-white">Vetora</span>
-        </Link>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="p-2 -ml-2 text-slate-600 dark:text-slate-400"
+          >
+            <Menu className="w-6 h-6" />
+          </button>
+          <Link to={createPageUrl(currentUser?.role === 'super_admin' ? "AdminDashboard" : "Home")} className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center">
+              <span className="text-white font-bold text-sm">V</span>
+            </div>
+            <span className="text-lg font-bold text-slate-900 dark:text-white">Vetora</span>
+          </Link>
+        </div>
         <div className="flex items-center gap-1">
           <button
             onClick={toggleTheme}
@@ -231,7 +310,7 @@ export default function Layout({ children, currentPageName }) {
       </header>
 
       {/* Main Content */}
-      <main className="lg:ml-64 pt-14 lg:pt-0 pb-20 lg:pb-0 min-h-screen dark:text-slate-100">
+      <main className={`pt-14 lg:pt-0 pb-20 lg:pb-0 min-h-screen dark:text-slate-100 transition-all duration-300 ${sidebarOpen ? "lg:ml-64" : "lg:ml-20"}`}>
         {children}
       </main>
 

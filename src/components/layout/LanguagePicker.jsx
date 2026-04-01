@@ -3,7 +3,7 @@ import { useLang } from "@/components/providers/LanguageContext";
 import { Check, ChevronDown } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 
-export default function LanguagePicker() {
+export default function LanguagePicker({ compact = false }) {
   const [open, setOpen] = useState(false);
   const { lang, setLang, SUPPORTED_LANGS, currentLangInfo } = useLang() || {};
 
@@ -13,12 +13,12 @@ export default function LanguagePicker() {
     <div className="relative">
       <button
         onClick={() => setOpen(v => !v)}
-        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl hover:bg-slate-100 transition-colors text-sm text-slate-600 font-medium"
+        className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-sm text-slate-600 dark:text-slate-400 font-medium ${compact && "justify-center w-full"}`}
         title="Change language"
       >
         <span className="text-base">{currentLangInfo?.flag}</span>
-        <span className="hidden sm:inline text-xs">{currentLangInfo?.label}</span>
-        <ChevronDown className="w-3 h-3 text-slate-400" />
+        {!compact && <span className="hidden sm:inline text-xs">{currentLangInfo?.label}</span>}
+        {!compact && <ChevronDown className="w-3 h-3 text-slate-400" />}
       </button>
 
       <AnimatePresence>
