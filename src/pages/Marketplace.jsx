@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import ProductCard from "@/components/shared/ProductCard";
-import { ProductSkeleton } from "@/components/shared/LoadingSkeleton";
+import { ProductSkeleton, StoreSkeleton } from "@/components/shared/LoadingSkeleton";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/lib/utils";
 import {
@@ -28,7 +28,7 @@ export default function Marketplace() {
     },
   });
 
-  const { data: storesResponse = {} } = useQuery({
+  const { data: storesResponse = {}, isLoading: storesLoading } = useQuery({
     queryKey: ["featuredStores"],
     queryFn: async () => {
       const res = await storesAPI.list({ status: "active", sort: "-follower_count", limit: 6 });
@@ -64,31 +64,35 @@ export default function Marketplace() {
       </div>
 
       {/* Featured Stores */}
-      {stores.length > 0 && (
+      {(stores.length > 0 || storesLoading) && (
         <div className="mb-8">
           <h2 className="text-lg font-bold text-slate-900 mb-3">Featured Stores</h2>
           <div className="overflow-x-auto -mx-4 px-4 hide-scrollbar">
             <div className="flex gap-3" style={{ width: "max-content" }}>
-              {stores.map((store, idx) => (
-                <Link
-                  key={store.id || store._id || `featured-store-${idx}`}
-                  to={createPageUrl("StoreDetail") + `?id=${store.id || store._id}`}
-                  className="w-40 shrink-0 bg-white rounded-2xl border border-slate-100 p-4 text-center hover:shadow-lg transition-shadow"
-                >
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center mx-auto mb-2 text-2xl overflow-hidden">
-                    {store.logo_url ? (
-                      <img src={store.logo_url} alt="" className="w-full h-full object-cover rounded-2xl" />
-                    ) : (
-                      store.name?.[0]?.toUpperCase()
-                    )}
-                  </div>
-                  <h3 className="text-sm font-semibold text-slate-900 truncate">{store.name}</h3>
-                  <div className="flex items-center justify-center gap-1 mt-1">
-                    {store.is_verified && <span className="text-blue-500 text-xs">✓</span>}
-                    <span className="text-xs text-slate-400">{store.product_count || 0} items</span>
-                  </div>
-                </Link>
-              ))}
+              {storesLoading ? (
+                Array(6).fill(0).map((_, i) => <StoreSkeleton key={`s-skeleton-${i}`} />)
+              ) : (
+                stores.map((store, idx) => (
+                  <Link
+                    key={store.id || store._id || `featured-store-${idx}`}
+                    to={createPageUrl("StoreDetail") + `?id=${store.id || store._id}`}
+                    className="w-40 shrink-0 bg-white rounded-2xl border border-slate-100 p-4 text-center hover:shadow-lg transition-shadow"
+                  >
+                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center mx-auto mb-2 text-2xl overflow-hidden">
+                      {store.logo_url ? (
+                        <img src={store.logo_url} alt="" className="w-full h-full object-cover rounded-2xl" />
+                      ) : (
+                        store.name?.[0]?.toUpperCase()
+                      )}
+                    </div>
+                    <h3 className="text-sm font-semibold text-slate-900 truncate">{store.name}</h3>
+                    <div className="flex items-center justify-center gap-1 mt-1">
+                      {store.is_verified && <span className="text-blue-500 text-xs">✓</span>}
+                      <span className="text-xs text-slate-400">{store.product_count || 0} items</span>
+                    </div>
+                  </Link>
+                ))
+              )}
             </div>
           </div>
         </div>

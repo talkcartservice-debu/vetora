@@ -10,11 +10,9 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 
-import { authAPI, cartAPI, ordersAPI, couponsAPI } from "@/api/apiClient";
+import { authAPI, cartAPI, couponsAPI } from "@/api/apiClient";
 
 export default function Cart() {
-  const [shippingAddress, setShippingAddress] = useState("");
-  const [placing, setPlacing] = useState(false);
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [couponError, setCouponError] = useState("");
@@ -49,50 +47,6 @@ export default function Cart() {
   const removeItemMutation = useMutation({
     mutationFn: (id) => cartAPI.remove(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["cart"] }),
-  });
-
-  const placeOrderMutation = useMutation({
-    mutationFn: async () => {
-      setPlacing(true);
-      // Group items by store
-      const storeGroups = {};
-      cartItems.forEach(item => {
-        const key = item.store_id || "default";
-        if (!storeGroups[key]) storeGroups[key] = { items: [], store_name: item.store_name };
-        storeGroups[key].items.push(item);
-      });
-
-      for (const group of Object.values(storeGroups)) {
-        const orderItems = group.items.map(item => ({
-          product_id: item.product_id,
-          product_title: item.product_title,
-          product_image: item.product_image,
-          quantity: item.quantity,
-          price: item.product_price,
-        }));
-        const subtotal = orderItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
-
-        await ordersAPI.create({
-          buyer_username: currentUser.username,
-          buyer_name: currentUser.full_name || currentUser.username,
-          items: orderItems,
-          subtotal,
-          total: subtotal, // In a real app, apply discount/shipping per store if needed
-          shipping_address: shippingAddress,
-          affiliate_username: group.items[0]?.affiliate_username,
-          payment_method: "paystack",
-        });
-      }
-
-      // Clear cart
-      await cartAPI.clear();
-    },
-    onSuccess: () => {
-      toast.success("Order placed successfully!");
-      queryClient.invalidateQueries({ queryKey: ["cart"] });
-      navigate(createPageUrl("Orders"));
-    },
-    onSettled: () => setPlacing(false),
   });
 
   const applyCoupon = async () => {
@@ -258,13 +212,6 @@ export default function Cart() {
                   </div>
                 )}
               </div>
-
-              <Input
-                placeholder="Shipping address"
-                value={shippingAddress}
-                onChange={(e) => setShippingAddress(e.target.value)}
-                className="mb-4 rounded-xl"
-              />
 
               <Button
                 onClick={() => navigate(createPageUrl("Checkout"))}

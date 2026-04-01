@@ -78,6 +78,10 @@ export default function Checkout() {
       const orders = [];
       const groups = Object.values(storeGroups);
       
+      // Get affiliate ref from storage
+      const affiliateRef = localStorage.getItem('vetora_ref');
+      const affiliateTime = localStorage.getItem('vetora_ref_time');
+      
       for (let i = 0; i < groups.length; i++) {
         const group = groups[i];
         const orderItems = group.items.map(item => ({
@@ -104,6 +108,8 @@ export default function Checkout() {
           total: groupSubtotal + groupShipping,
           shipping_address: fullAddress,
           affiliate_username: group.items[0]?.affiliate_username,
+          affiliate_ref: affiliateRef || undefined,
+          affiliate_time: affiliateTime || undefined,
           order_note: orderNote,
           status: "pending",
           payment_status: "pending",
@@ -151,6 +157,8 @@ export default function Checkout() {
         return;
       }
       toast.success("Order placed successfully! 🎉");
+      localStorage.removeItem('vetora_ref');
+      localStorage.removeItem('vetora_ref_time');
       queryClient.invalidateQueries({ queryKey: ["cart"] });
       navigate(createPageUrl("Orders"));
     },

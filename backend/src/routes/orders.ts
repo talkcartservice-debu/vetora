@@ -2,6 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { Order, IOrder } from '../models/Order';
 import { Product } from '../models/Product';
 import { User } from '../models/User';
+import { AffiliateLink } from '../models/AffiliateLink';
 import { z } from 'zod';
 import mongoose from 'mongoose';
 
@@ -24,6 +25,8 @@ const createOrderSchema = z.object({
   shipping_address: z.string().optional(),
   order_note: z.string().optional(),
   affiliate_username: z.string().min(1).or(z.literal('')).optional(),
+  affiliate_ref: z.string().optional(),
+  affiliate_time: z.string().optional(),
   payment_method: z.enum(['card', 'paypal', 'crypto', 'bank_transfer', 'paystack', 'mobile_money']).default('paystack'),
 });
 
@@ -165,6 +168,39 @@ export async function orderRoutes(fastify: FastifyInstance) {
       const shipping_fee = body.shipping_fee || 0;
       const computedTotal = computedSubtotal + shipping_fee;
 
+      // Handle affiliate tracking
+      let affiliate_username = body.affiliate_username;
+      let affiliate_commission = 0;
+      let usedAffiliateRef = false;
+
+      if (body.affiliate_ref) {
+        // 1. Check attribution window (default 30 days)
+        const ATTRIBUTION_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
+        const refTime = body.affiliate_time ? parseInt(body.affiliate_time) : Date.now();
+        const isWithinWindow = (Date.now() - refTime) <= ATTRIBUTION_WINDOW_MS;
+
+        if (isWithinWindow) {
+          const affLink = await AffiliateLink.findOne({
+            ref_code: body.affiliate_ref.toUpperCase(),
+            status: 'active'
+          });
+          
+          if (affLink) {
+            // 2. Scope commission ONLY to the product in the affiliate link
+            const referredItems = validatedItems.filter(item => 
+              item.product_id.toString() === affLink.product_id.toString()
+            );
+
+            if (referredItems.length > 0) {
+              affiliate_username = affLink.influencer_username;
+              const referredSubtotal = referredItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+              affiliate_commission = (referredSubtotal * affLink.commission_pct) / 100;
+              usedAffiliateRef = true;
+            }
+          }
+        }
+      }
+
       // Use a session for atomicity
       const session = await mongoose.startSession();
       try {
@@ -202,7 +238,8 @@ export async function orderRoutes(fastify: FastifyInstance) {
             store_id: firstProduct.store_id,
             store_name: firstProduct.store_name,
             order_note: body.order_note,
-            affiliate_username: body.affiliate_username || undefined,
+            affiliate_username: affiliate_username || undefined,
+            affiliate_commission: affiliate_commission,
             status: 'pending',
             payment_status: 'pending',
             created_at: new Date(),
@@ -210,6 +247,20 @@ export async function orderRoutes(fastify: FastifyInstance) {
           });
 
           await order.save({ session });
+
+          // Update affiliate link conversions and earnings if applicable
+          if (usedAffiliateRef) {
+            await AffiliateLink.findOneAndUpdate(
+              { ref_code: body.affiliate_ref!.toUpperCase(), status: 'active' },
+              { 
+                $inc: { 
+                  conversions: 1,
+                  total_commission_earned: affiliate_commission
+                } 
+              },
+              { session }
+            );
+          }
         });
 
         return order;

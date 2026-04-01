@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { useTheme } from "next-themes";
 import { createPageUrl } from "@/lib/utils";
 import { notificationsAPI, messagesAPI } from "@/api/apiClient";
 import { useAuth } from "@/lib/AuthContext";
@@ -24,7 +25,9 @@ import {
   Link2,
   Bell,
   Shield,
-  CreditCard
+  CreditCard,
+  Sun,
+  Moon
 } from "lucide-react";
 import LanguagePicker from "@/components/layout/LanguagePicker";
 import NotificationBell from "@/components/layout/NotificationBell";
@@ -76,8 +79,42 @@ const HIDE_LAYOUT_PAGES = [];
 export default function Layout({ children, currentPageName }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
   const { user: currentUser } = useAuth();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const toggleTheme = () => {
+    setTheme(theme === "dark" ? "light" : "dark");
+  };
+
+  const BottomSection = () => (
+    <div className="p-4 border-t border-slate-100 dark:border-slate-800 space-y-2">
+      {currentUser?.role !== 'super_admin' && (
+        <button
+          onClick={() => setShowCreate(true)}
+          className="flex items-center justify-center gap-2 w-full py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-medium text-sm hover:shadow-lg hover:shadow-indigo-200 dark:hover:shadow-indigo-900/40 transition-all"
+        >
+          <Plus className="w-4 h-4" />
+          Create
+        </button>
+      )}
+      <div className="flex flex-col items-center gap-2">
+        <button
+          onClick={toggleTheme}
+          className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+          title="Toggle Theme"
+        >
+          {mounted && (theme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />)}
+        </button>
+        <LanguagePicker />
+      </div>
+    </div>
+  );
 
   const { data: unreadNotifs = [] } = useQuery({
     queryKey: ["unreadNotifs", currentUser?.email],
@@ -154,27 +191,7 @@ export default function Layout({ children, currentPageName }) {
           })}
         </nav>
 
-        {currentUser?.role !== 'super_admin' && (
-          <div className="p-4 border-t border-slate-100 dark:border-slate-800 space-y-2">
-            <button
-              onClick={() => setShowCreate(true)}
-              className="flex items-center justify-center gap-2 w-full py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-medium text-sm hover:shadow-lg hover:shadow-indigo-200 dark:hover:shadow-indigo-900/40 transition-all"
-            >
-              <Plus className="w-4 h-4" />
-              Create
-            </button>
-            <div className="flex justify-center">
-              <LanguagePicker />
-            </div>
-          </div>
-        )}
-        {currentUser?.role === 'super_admin' && (
-          <div className="p-4 border-t border-slate-100 dark:border-slate-800 space-y-2">
-            <div className="flex justify-center">
-              <LanguagePicker />
-            </div>
-          </div>
-        )}
+        <BottomSection />
       </aside>
 
       {/* Mobile Top Bar */}
@@ -186,6 +203,13 @@ export default function Layout({ children, currentPageName }) {
           <span className="text-lg font-bold text-slate-900 dark:text-white">Vetora</span>
         </Link>
         <div className="flex items-center gap-1">
+          <button
+            onClick={toggleTheme}
+            className="p-2 text-slate-600 dark:text-slate-400"
+            title="Toggle Theme"
+          >
+            {mounted && (theme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />)}
+          </button>
           <LanguagePicker />
           {currentUser?.role !== 'super_admin' && (
             <Link to={createPageUrl("Chat")} className="relative p-2">
@@ -207,7 +231,7 @@ export default function Layout({ children, currentPageName }) {
       </header>
 
       {/* Main Content */}
-      <main className="lg:ml-64 pt-14 lg:pt-0 pb-20 lg:pb-0 min-h-screen">
+      <main className="lg:ml-64 pt-14 lg:pt-0 pb-20 lg:pb-0 min-h-screen dark:text-slate-100">
         {children}
       </main>
 

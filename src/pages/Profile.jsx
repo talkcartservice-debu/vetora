@@ -14,7 +14,7 @@ import { useAuth } from "@/lib/AuthContext";
 import {
   Grid3X3, ShoppingBag, UserPlus, UserCheck, LogOut,
   Store, Package, CheckCircle2, Clock, Truck, Pencil, Star, BadgeCheck, Heart,
-  Search, Users2, Calendar, MessageCircle, CreditCard
+  Search, Users2, Calendar, MessageCircle, CreditCard, Sparkles
 } from "lucide-react";
 import StarRating from "@/components/reviews/StarRating";
 import SubscriptionManager from "@/components/mystore/SubscriptionManager";
@@ -389,6 +389,17 @@ export default function Profile() {
               )}
             </div>
             <p className="text-xs text-slate-400 font-medium mb-2">@{profileUser?.username || profileUser?.display_name?.replace(/\s+/g, '_').toLowerCase() || profileUser?.email?.split('@')[0]}</p>
+            
+            {/* Vetora Points */}
+            {isOwnProfile && (
+              <div className="flex items-center gap-2 mb-2">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-amber-400 to-orange-500 text-white rounded-full shadow-sm hover:shadow-md transition-shadow cursor-default group">
+                  <Sparkles className="w-3.5 h-3.5 group-hover:rotate-12 transition-transform" />
+                  <span className="text-xs font-bold">1,250 Vetora Points</span>
+                </div>
+              </div>
+            )}
+
             {bio && <p className="text-sm text-slate-600 leading-relaxed mt-2 max-w-lg">{bio}</p>}
             
             <div className="mt-3 flex flex-wrap items-center gap-3">

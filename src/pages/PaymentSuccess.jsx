@@ -25,8 +25,10 @@ export default function PaymentSuccess() {
       try {
         const response = await verifyPayment(reference);
         if (response.status && response.data.status === 'success') {
-          // Clear cart on success
+          // Clear cart and affiliate ref on success
           await cartAPI.clear();
+          localStorage.removeItem('vetora_ref');
+          localStorage.removeItem('vetora_ref_time');
           queryClient.invalidateQueries({ queryKey: ['cart'] });
           
           setStatus('success');

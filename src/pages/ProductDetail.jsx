@@ -31,7 +31,6 @@ function StarRow({ rating }) {
 export default function ProductDetail() {
   const params = new URLSearchParams(window.location.search);
   const productId = params.get("id");
-  const affiliateEmail = params.get("ref");
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [addedToCart, setAddedToCart] = useState(false);
@@ -73,7 +72,6 @@ export default function ProductDetail() {
         store_id: product.store_id,
         store_name: product.store_name,
         quantity,
-        ...(affiliateEmail ? { affiliate_username: affiliateEmail } : {}),
       });
     },
     onSuccess: () => {

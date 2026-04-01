@@ -8,8 +8,9 @@ import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import { SocketProvider } from '@/lib/SocketContext';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
+import AffiliateTracker from './components/shared/AffiliateTracker';
 import { LanguageProvider } from '@/components/providers/LanguageContext';
-import Affiliate from './pages/Affiliate';
+import { ThemeProvider } from "next-themes";
 
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
@@ -87,18 +88,21 @@ function App() {
 
   return (
     <GoogleOAuthProvider clientId={googleClientId}>
-      <AuthProvider>
-        <SocketProvider>
-          <QueryClientProvider client={queryClientInstance}>
-            <LanguageProvider>
-              <Router future={{ v7_relativeSplatPath: true, v7_startTransition: true }}>
-                <AppRoutes />
-              </Router>
-              <Toaster />
-            </LanguageProvider>
-          </QueryClientProvider>
-        </SocketProvider>
-      </AuthProvider>
+      <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
+        <AuthProvider>
+          <SocketProvider>
+            <QueryClientProvider client={queryClientInstance}>
+              <LanguageProvider>
+                <Router future={{ v7_relativeSplatPath: true, v7_startTransition: true }}>
+                  <AffiliateTracker />
+                  <AppRoutes />
+                </Router>
+                <Toaster />
+              </LanguageProvider>
+            </QueryClientProvider>
+          </SocketProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </GoogleOAuthProvider>
   )
 }

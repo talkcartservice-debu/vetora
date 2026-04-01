@@ -1,16 +1,18 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { createPageUrl } from "@/lib/utils";
 import { Link } from "react-router-dom";
+import { toast } from "sonner";
 import {
   Sparkles, Send, Star, ChevronRight,
-  Loader2, Bot, User, RefreshCw, TrendingUp
+  Loader2, Bot, User, RefreshCw, TrendingUp, Mic, MicOff, Plus
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { ChatSkeleton } from "@/components/shared/LoadingSkeleton";
 import ReactMarkdown from "react-markdown";
-import { productsAPI, authAPI, aiAPI } from "@/api/apiClient";
+import { productsAPI, authAPI, aiAPI, cartAPI } from "@/api/apiClient";
 
 const QUICK_PROMPTS = [
   "Show me trending fashion items under $100",
@@ -28,47 +30,61 @@ const WELCOME_MESSAGE = {
   timestamp: new Date(),
 };
 
-function ProductRecommendation({ product }) {
+function ProductRecommendation({ product, onAddToCart, isAdding }) {
   const discount = product.compare_at_price > 0
     ? Math.round((1 - product.price / product.compare_at_price) * 100) : 0;
 
   return (
-    <Link to={createPageUrl("ProductDetail") + `?id=${product.id}`}>
-      <motion.div
-        whileHover={{ y: -2 }}
-        className="flex gap-3 bg-white rounded-2xl border border-slate-100 p-3 hover:shadow-md transition-all"
-      >
-        <div className="relative w-16 h-16 rounded-xl overflow-hidden shrink-0">
-          <img src={product.images?.[0] || "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=200"} alt={product.title} className="w-full h-full object-cover" />
-          {discount > 0 && (
-            <div className="absolute top-1 left-1 bg-red-500 text-white text-[8px] font-bold px-1 rounded">-{discount}%</div>
-          )}
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-xs text-slate-400 font-medium">{product.store_name}</p>
-          <p className="text-sm font-semibold text-slate-900 line-clamp-1">{product.title}</p>
-          <div className="flex items-center justify-between mt-1">
-            <div className="flex items-center gap-1.5">
-              <span className="text-sm font-bold text-indigo-600">${product.price?.toFixed(2)}</span>
-              {product.compare_at_price > 0 && (
-                <span className="text-xs text-slate-400 line-through">${product.compare_at_price?.toFixed(2)}</span>
-              )}
-            </div>
-            {product.rating_avg > 0 && (
-              <div className="flex items-center gap-0.5">
-                <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                <span className="text-xs text-slate-500">{product.rating_avg?.toFixed(1)}</span>
-              </div>
+    <div className="group relative">
+      <Link to={createPageUrl("ProductDetail") + `?id=${product.id}`}>
+        <motion.div
+          whileHover={{ y: -2 }}
+          className="flex gap-3 bg-white rounded-2xl border border-slate-100 p-3 hover:shadow-md transition-all"
+        >
+          <div className="relative w-16 h-16 rounded-xl overflow-hidden shrink-0">
+            <img src={product.images?.[0] || "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=200"} alt={product.title} className="w-full h-full object-cover" />
+            {discount > 0 && (
+              <div className="absolute top-1 left-1 bg-red-500 text-white text-[8px] font-bold px-1 rounded">-{discount}%</div>
             )}
           </div>
-        </div>
-        <ChevronRight className="w-4 h-4 text-slate-300 self-center shrink-0" />
-      </motion.div>
-    </Link>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs text-slate-400 font-medium">{product.store_name}</p>
+            <p className="text-sm font-semibold text-slate-900 line-clamp-1">{product.title}</p>
+            <div className="flex items-center justify-between mt-1">
+              <div className="flex items-center gap-1.5">
+                <span className="text-sm font-bold text-indigo-600">${product.price?.toFixed(2)}</span>
+                {product.compare_at_price > 0 && (
+                  <span className="text-xs text-slate-400 line-through">${product.compare_at_price?.toFixed(2)}</span>
+                )}
+              </div>
+              {product.rating_avg > 0 && (
+                <div className="flex items-center gap-0.5">
+                  <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                  <span className="text-xs text-slate-500">{product.rating_avg?.toFixed(1)}</span>
+                </div>
+              )}
+            </div>
+          </div>
+          <ChevronRight className="w-4 h-4 text-slate-300 self-center shrink-0" />
+        </motion.div>
+      </Link>
+      <Button
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onAddToCart(product);
+        }}
+        disabled={isAdding}
+        size="sm"
+        className="absolute -right-2 -top-2 w-8 h-8 rounded-full p-0 bg-indigo-600 hover:bg-indigo-700 shadow-lg scale-0 group-hover:scale-100 transition-transform flex items-center justify-center"
+      >
+        {isAdding ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-4 h-4" />}
+      </Button>
+    </div>
   );
 }
 
-function ChatMessage({ message }) {
+function ChatMessage({ message, onAddToCart, addingProductId }) {
   const isUser = message.role === "user";
   return (
     <motion.div
@@ -102,7 +118,14 @@ function ChatMessage({ message }) {
         {message.products?.length > 0 && (
           <div className="w-full space-y-2">
             <p className="text-xs text-slate-400 font-medium px-1">Recommended for you:</p>
-            {message.products.map(p => <ProductRecommendation key={p.id} product={p} />)}
+            {message.products.map(p => (
+              <ProductRecommendation 
+                key={p.id} 
+                product={p} 
+                onAddToCart={onAddToCart}
+                isAdding={addingProductId === p.id}
+              />
+            ))}
           </div>
         )}
       </div>
@@ -134,9 +157,75 @@ export default function AIAssistant() {
   const [messages, setMessages] = useState([WELCOME_MESSAGE]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isListening, setIsListening] = useState(false);
   const messagesEndRef = useRef(null);
+  const recognitionRef = useRef(null);
+  const queryClient = useQueryClient();
 
-  const { data: products = [] } = useQuery({
+  const addToCartMutation = useMutation({
+    mutationFn: (product) => cartAPI.add({ product_id: product.id, quantity: 1 }),
+    onSuccess: () => {
+      toast.success("Added to cart!");
+      queryClient.invalidateQueries({ queryKey: ["cart"] });
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to add to cart");
+    }
+  });
+
+  const handleAddToCart = (product) => {
+    addToCartMutation.mutate(product);
+  };
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && (window.SpeechRecognition || window.webkitSpeechRecognition)) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.lang = "en-US";
+
+      recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        setInput(prev => prev + (prev ? " " : "") + transcript);
+        setIsListening(false);
+      };
+
+      recognition.onerror = (event) => {
+        console.error("Speech Recognition Error:", event.error);
+        setIsListening(false);
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+
+      recognitionRef.current = recognition;
+
+      return () => {
+        recognition.onresult = null;
+        recognition.onerror = null;
+        recognition.onend = null;
+        try {
+          recognition.abort();
+        } catch (e) {
+          // ignore error on abort if already stopped
+        }
+      };
+    }
+  }, []);
+
+  const toggleListening = () => {
+    if (!recognitionRef.current) return;
+    if (isListening) {
+      recognitionRef.current.stop();
+    } else {
+      setIsListening(true);
+      recognitionRef.current.start();
+    }
+  };
+
+  const { data: products = [], isLoading: productsLoading } = useQuery({
     queryKey: ["allProducts"],
     queryFn: async () => {
       const res = await productsAPI.list({ status: "active", sort: "-sales_count", limit: 50 });
@@ -144,7 +233,7 @@ export default function AIAssistant() {
     },
   });
 
-  const { data: currentUser } = useQuery({
+  const { data: currentUser, isLoading: userLoading } = useQuery({
     queryKey: ["currentUser"],
     queryFn: async () => {
       const res = await authAPI.me();
@@ -152,6 +241,8 @@ export default function AIAssistant() {
     },
     retry: false,
   });
+
+  const isInitialLoading = productsLoading || userLoading;
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -250,9 +341,24 @@ Instructions:
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-        <AnimatePresence initial={false}>
-          {messages.map(msg => <ChatMessage key={msg.id} message={msg} />)}
-        </AnimatePresence>
+        {isInitialLoading ? (
+          <div className="space-y-4">
+            <ChatSkeleton />
+            <ChatSkeleton />
+            <ChatSkeleton />
+          </div>
+        ) : (
+          <AnimatePresence initial={false}>
+            {messages.map(msg => (
+              <ChatMessage 
+                key={msg.id} 
+                message={msg} 
+                onAddToCart={handleAddToCart}
+                addingProductId={addToCartMutation.isPending ? addToCartMutation.variables?.id : null}
+              />
+            ))}
+          </AnimatePresence>
+        )}
         {isLoading && <TypingIndicator />}
         <div ref={messagesEndRef} />
       </div>
@@ -288,6 +394,21 @@ Instructions:
             className="rounded-2xl border-slate-200 bg-slate-50 focus:bg-white text-sm"
             disabled={isLoading}
           />
+          <Button
+            onClick={toggleListening}
+            variant="outline"
+            className={`w-10 h-10 rounded-2xl p-0 shrink-0 transition-all ${
+              isListening ? "bg-red-50 text-red-600 border-red-200" : "bg-slate-50 text-slate-500 hover:bg-slate-100"
+            }`}
+          >
+            {isListening ? (
+              <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 1.5 }}>
+                <MicOff className="w-4 h-4" />
+              </motion.div>
+            ) : (
+              <Mic className="w-4 h-4" />
+            )}
+          </Button>
           <Button
             onClick={() => sendMessage(input)}
             disabled={!input.trim() || isLoading}

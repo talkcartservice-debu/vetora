@@ -145,19 +145,44 @@ export async function affiliateLinkRoutes(fastify: FastifyInstance) {
         });
       }
 
-      // Generate unique ref code
-      const refCode = generateRefCode();
+      // Generate unique ref code if not provided
+      let refCode = body.ref_code?.toUpperCase();
+      
+      if (refCode) {
+        const existingLink = await AffiliateLink.findOne({ ref_code: refCode });
+        if (existingLink) {
+          return reply.code(400).send({ error: 'Referral code already in use' });
+        }
+      } else {
+        // Try generating until unique (max 5 attempts)
+        let attempts = 0;
+        let isUnique = false;
+        while (!isUnique && attempts < 5) {
+          refCode = generateRefCode();
+          const existing = await AffiliateLink.findOne({ ref_code: refCode });
+          if (!existing) {
+            isUnique = true;
+          }
+          attempts++;
+        }
+        
+        if (!isUnique) {
+          return reply.code(500).send({ error: 'Failed to generate a unique referral code. Please try again.' });
+        }
+      }
 
       const link = new AffiliateLink({
-        ...body,
         influencer_email: user.email,
         influencer_username: user.username,
         influencer_name: user.display_name || user.username,
         store_id: product.store_id,
         store_name: product.store_name,
+        product_id: product._id,
         product_title: product.title,
         product_price: product.price,
         ref_code: refCode,
+        commission_pct: body.commission_pct ?? 10,
+        status: 'active',
       });
 
       await link.save();
