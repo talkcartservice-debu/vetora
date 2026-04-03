@@ -2,6 +2,8 @@ import { FastifyInstance } from 'fastify';
 import { Order, IOrder } from '../models/Order';
 import { Product } from '../models/Product';
 import { User } from '../models/User';
+import { Store } from '../models/Store';
+import { ShippingZone } from '../models/ShippingZone';
 import { AffiliateLink } from '../models/AffiliateLink';
 import { z } from 'zod';
 import mongoose from 'mongoose';
@@ -23,6 +25,8 @@ const createOrderSchema = z.object({
   })),
   subtotal: z.number().min(0),
   shipping_fee: z.number().default(0),
+  delivery_fee: z.number().default(0),
+  delivery_method: z.enum(['shipping', 'delivery', 'pickup']).default('shipping'),
   total: z.number().min(0),
   shipping_address: z.string().optional(),
   order_note: z.string().optional(),
@@ -167,8 +171,56 @@ export async function orderRoutes(fastify: FastifyInstance) {
         };
       });
 
-      const shipping_fee = body.shipping_fee || 0;
-      const computedTotal = computedSubtotal + shipping_fee;
+      // Fetch store details to validate delivery settings
+      const store = await Store.findById(firstProduct.store_id);
+      if (!store) {
+        return reply.code(404).send({ error: 'Store not found' });
+      }
+
+      const delivery_method = body.delivery_method;
+      let shipping_fee = 0;
+      let delivery_fee = 0;
+
+      // Validate delivery method against store settings
+      // Default delivery settings if not set
+      const ds = store.delivery_settings || {
+        shipping_enabled: true,
+        delivery_enabled: false,
+        pickup_enabled: false,
+        delivery_fee: 0,
+        min_order_for_delivery: 0
+      };
+
+      if (delivery_method === 'shipping') {
+        if (ds.shipping_enabled === false) {
+          return reply.code(400).send({ error: 'Shipping is not enabled for this store' });
+        }
+        if (!body.shipping_address) {
+          return reply.code(400).send({ error: 'Shipping address is required for shipping method' });
+        }
+        // We respect the shipping_fee from body if provided, otherwise 0
+        // In a more advanced version, we'd calculate this from ShippingZones
+        shipping_fee = body.shipping_fee || 0;
+      } else if (delivery_method === 'delivery') {
+        if (ds.delivery_enabled === false) {
+          return reply.code(400).send({ error: 'Local delivery is not enabled for this store' });
+        }
+        if (!body.shipping_address) {
+          return reply.code(400).send({ error: 'Delivery address is required for delivery method' });
+        }
+        if (computedSubtotal < (ds.min_order_for_delivery || 0)) {
+          return reply.code(400).send({ error: `Minimum order for local delivery is ${ds.min_order_for_delivery}` });
+        }
+        delivery_fee = ds.delivery_fee || 0;
+      } else if (delivery_method === 'pickup') {
+        if (ds.pickup_enabled === false) {
+          return reply.code(400).send({ error: 'In-store pickup is not enabled for this store' });
+        }
+        shipping_fee = 0;
+        delivery_fee = 0;
+      }
+
+      const computedTotal = computedSubtotal + shipping_fee + delivery_fee;
 
       // Handle affiliate tracking
       let affiliate_username = body.affiliate_username;
@@ -234,6 +286,9 @@ export async function orderRoutes(fastify: FastifyInstance) {
             ...body,
             items: validatedItems,
             subtotal: computedSubtotal,
+            shipping_fee: shipping_fee,
+            delivery_fee: delivery_fee,
+            delivery_method: delivery_method,
             total: computedTotal,
             buyer_username: user.username,
             buyer_name: body.buyer_name || user.display_name || user.full_name || user.username,

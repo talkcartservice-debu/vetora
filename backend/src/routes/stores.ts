@@ -20,6 +20,16 @@ const createStoreSchema = z.object({
   paypal_email: z.string().email().optional().or(z.literal('')),
   mobile_money_number: z.string().optional(),
   
+  // Delivery Settings
+  delivery_settings: z.object({
+    shipping_enabled: z.boolean().default(true),
+    delivery_enabled: z.boolean().default(false),
+    pickup_enabled: z.boolean().default(false),
+    delivery_fee: z.number().min(0).default(0),
+    delivery_radius_km: z.number().min(0).optional(),
+    min_order_for_delivery: z.number().min(0).default(0),
+  }).optional(),
+  
   // Additional Info
   phone_number: z.string().optional(),
   address: z.string().optional(),
@@ -202,6 +212,7 @@ export async function storeRoutes(fastify: FastifyInstance) {
       const allowedUpdates = [
         'name', 'description', 'logo_url', 'banner_url', 'category',
         'payment_method', 'bank_name', 'bank_account_name', 'bank_account_number', 'routing_number', 'paypal_email', 'mobile_money_number',
+        'delivery_settings',
         'phone_number', 'address', 'website_url', 'social_links'
       ];
       allowedUpdates.forEach(field => {

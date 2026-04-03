@@ -47,6 +47,19 @@
       "type": "number",
       "default": 0
     },
+    "delivery_fee": {
+      "type": "number",
+      "default": 0
+    },
+    "delivery_method": {
+      "type": "string",
+      "enum": [
+        "shipping",
+        "delivery",
+        "pickup"
+      ],
+      "default": "shipping"
+    },
     "total": {
       "type": "number"
     },

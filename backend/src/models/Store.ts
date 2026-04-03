@@ -25,6 +25,16 @@ export interface IStore extends Document {
   paypal_email?: string;
   mobile_money_number?: string;
   
+  // Delivery Settings
+  delivery_settings: {
+    shipping_enabled: boolean;
+    delivery_enabled: boolean;
+    pickup_enabled: boolean;
+    delivery_fee: number;
+    delivery_radius_km?: number;
+    min_order_for_delivery?: number;
+  };
+  
   // Additional Store Info
   phone_number?: string;
   address?: string;
@@ -112,6 +122,16 @@ const StoreSchema = new Schema<IStore>({
   routing_number: { type: String },
   paypal_email: { type: String },
   mobile_money_number: { type: String },
+  
+  // Delivery Settings
+  delivery_settings: {
+    shipping_enabled: { type: Boolean, default: true },
+    delivery_enabled: { type: Boolean, default: false },
+    pickup_enabled: { type: Boolean, default: false },
+    delivery_fee: { type: Number, default: 0, min: 0 },
+    delivery_radius_km: { type: Number, min: 0 },
+    min_order_for_delivery: { type: Number, default: 0, min: 0 },
+  },
   
   // Additional Store Info
   phone_number: { type: String },

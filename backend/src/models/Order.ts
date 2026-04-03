@@ -20,6 +20,8 @@ export interface IOrder extends Document {
   items: IOrderItem[];
   subtotal: number;
   shipping_fee: number;
+  delivery_fee: number;
+  delivery_method: 'shipping' | 'delivery' | 'pickup';
   total: number;
   status: 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'refunded';
   shipping_address?: string;
@@ -103,6 +105,16 @@ const OrderSchema = new Schema<IOrder>({
     type: Number,
     default: 0,
     min: 0,
+  },
+  delivery_fee: {
+    type: Number,
+    default: 0,
+    min: 0,
+  },
+  delivery_method: {
+    type: String,
+    enum: ['shipping', 'delivery', 'pickup'],
+    default: 'shipping',
   },
   total: {
     type: Number,
