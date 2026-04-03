@@ -11,7 +11,12 @@ export const PLAN_LIMITS = {
     media_per_product: 5,
     custom_domain: false,
     shipping_zones: false,
-    affiliate_program: false
+    affiliate_program: false,
+    ai_features: false,
+    live_sessions: false,
+    live_chat: false,
+    coupons: false,
+    advanced_analytics: false
   },
   pro: { 
     products: 200, 
@@ -20,7 +25,12 @@ export const PLAN_LIMITS = {
     media_per_product: 20,
     custom_domain: true,
     shipping_zones: true,
-    affiliate_program: false
+    affiliate_program: false,
+    ai_features: true,
+    live_sessions: true,
+    live_chat: true,
+    coupons: true,
+    advanced_analytics: true
   },
   elite: { 
     products: Infinity, 
@@ -29,7 +39,12 @@ export const PLAN_LIMITS = {
     media_per_product: Infinity,
     custom_domain: true,
     shipping_zones: true,
-    affiliate_program: true
+    affiliate_program: true,
+    ai_features: true,
+    live_sessions: true,
+    live_chat: true,
+    coupons: true,
+    advanced_analytics: true
   }
 };
 
@@ -265,6 +280,167 @@ export async function checkShippingZoneLimit(request: FastifyRequest, reply: Fas
 
     if (!limits.shipping_zones) {
       const message = `Shipping zones are not available on the ${plan} plan. Please upgrade to Pro or Elite.`;
+      await sendLimitNotification(user.username, message, request);
+      return reply.code(403).send({ 
+        error: 'Subscription feature restricted', 
+        message
+      });
+    }
+  } catch (err: any) {
+    reply.log.error(err);
+    return reply.code(500).send({ error: 'Internal server error during limit check' });
+  }
+}
+
+/**
+ * Middleware to check if a vendor can use AI features
+ */
+export async function checkAiAccessLimit(request: FastifyRequest, reply: FastifyReply) {
+  try {
+    const user = request.user as any;
+    if (!user?.username) {
+      return reply.code(401).send({ error: 'Unauthorized' });
+    }
+
+    const { plan, limits } = await getVendorPlan(user.username, request);
+
+    if (!limits.ai_features) {
+      const message = `AI features are not available on the ${plan} plan. Please upgrade to Pro or Elite.`;
+      await sendLimitNotification(user.username, message, request);
+      return reply.code(403).send({ 
+        error: 'Subscription feature restricted', 
+        message
+      });
+    }
+  } catch (err: any) {
+    reply.log.error(err);
+    return reply.code(500).send({ error: 'Internal server error during limit check' });
+  }
+}
+
+/**
+ * Middleware to check if a vendor can create live sessions
+ */
+export async function checkLiveSessionLimit(request: FastifyRequest, reply: FastifyReply) {
+  try {
+    const user = request.user as any;
+    if (!user?.username) {
+      return reply.code(401).send({ error: 'Unauthorized' });
+    }
+
+    const { plan, limits } = await getVendorPlan(user.username, request);
+
+    if (!limits.live_sessions) {
+      const message = `Live sessions are not available on the ${plan} plan. Please upgrade to Pro or Elite.`;
+      await sendLimitNotification(user.username, message, request);
+      return reply.code(403).send({ 
+        error: 'Subscription feature restricted', 
+        message
+      });
+    }
+  } catch (err: any) {
+    reply.log.error(err);
+    return reply.code(500).send({ error: 'Internal server error during limit check' });
+  }
+}
+
+/**
+ * Middleware to check if a vendor can create coupons
+ */
+export async function checkCouponLimit(request: FastifyRequest, reply: FastifyReply) {
+  try {
+    const user = request.user as any;
+    if (!user?.username) {
+      return reply.code(401).send({ error: 'Unauthorized' });
+    }
+
+    const { plan, limits } = await getVendorPlan(user.username, request);
+
+    if (!limits.coupons) {
+      const message = `Coupons are not available on the ${plan} plan. Please upgrade to Pro or Elite.`;
+      await sendLimitNotification(user.username, message, request);
+      return reply.code(403).send({ 
+        error: 'Subscription feature restricted', 
+        message
+      });
+    }
+  } catch (err: any) {
+    reply.log.error(err);
+    return reply.code(500).send({ error: 'Internal server error during limit check' });
+  }
+}
+
+/**
+ * Middleware to check if a vendor can access advanced analytics
+ */
+export async function checkAdvancedAnalyticsLimit(request: FastifyRequest, reply: FastifyReply) {
+  try {
+    const user = request.user as any;
+    if (!user?.username) {
+      return reply.code(401).send({ error: 'Unauthorized' });
+    }
+
+    const { plan, limits } = await getVendorPlan(user.username, request);
+
+    if (!limits.advanced_analytics) {
+      const message = `Advanced analytics are not available on the ${plan} plan. Please upgrade to Pro or Elite.`;
+      await sendLimitNotification(user.username, message, request);
+      return reply.code(403).send({ 
+        error: 'Subscription feature restricted', 
+        message
+      });
+    }
+  } catch (err: any) {
+    reply.log.error(err);
+    return reply.code(500).send({ error: 'Internal server error during limit check' });
+  }
+}
+
+/**
+ * Middleware to check if a vendor can use the affiliate program
+ */
+export async function checkAffiliateLimit(request: FastifyRequest, reply: FastifyReply) {
+  try {
+    const user = request.user as any;
+    if (!user?.username) {
+      return reply.code(401).send({ error: 'Unauthorized' });
+    }
+
+    const body = request.body as any;
+    // Only check if affiliate_commission_pct is being set to a non-default (usually non-zero) value
+    // or if the field is present in the request body
+    if (body?.affiliate_commission_pct === undefined) return;
+
+    const { plan, limits } = await getVendorPlan(user.username, request);
+
+    if (!limits.affiliate_program) {
+      const message = `The affiliate program is only available on the Elite plan. Please upgrade to Elite.`;
+      await sendLimitNotification(user.username, message, request);
+      return reply.code(403).send({ 
+        error: 'Subscription feature restricted', 
+        message
+      });
+    }
+  } catch (err: any) {
+    reply.log.error(err);
+    return reply.code(500).send({ error: 'Internal server error during limit check' });
+  }
+}
+
+/**
+ * Middleware to check if a vendor can use live chat
+ */
+export async function checkLiveChatLimit(request: FastifyRequest, reply: FastifyReply) {
+  try {
+    const user = request.user as any;
+    if (!user?.username) {
+      return reply.code(401).send({ error: 'Unauthorized' });
+    }
+
+    const { plan, limits } = await getVendorPlan(user.username, request);
+
+    if (!limits.live_chat) {
+      const message = `Live chat features are not available on the ${plan} plan. Please upgrade to Pro or Elite.`;
       await sendLimitNotification(user.username, message, request);
       return reply.code(403).send({ 
         error: 'Subscription feature restricted', 

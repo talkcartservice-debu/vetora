@@ -1,6 +1,7 @@
 import { FastifyInstance, FastifyRequest } from 'fastify';
 import axios from 'axios';
 import { z } from 'zod';
+import { checkAiAccessLimit } from '../middleware/subscription';
 
 // OpenRouter configuration
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
@@ -116,7 +117,7 @@ export async function aiRoutes(fastify: FastifyInstance) {
 
   // Main chat/invoke endpoint
   fastify.post('/chat', {
-    preHandler: [fastify.authenticate],
+    preHandler: [fastify.authenticate, checkAiAccessLimit],
   }, async (request, reply) => {
     try {
       const body = aiChatSchema.parse(request.body);
@@ -135,7 +136,7 @@ export async function aiRoutes(fastify: FastifyInstance) {
 
   // Legacy invoke support - now uses the shared handler
   fastify.post('/invoke', {
-    preHandler: [fastify.authenticate],
+    preHandler: [fastify.authenticate, checkAiAccessLimit],
   }, async (request, reply) => {
     try {
       const body = aiChatSchema.parse(request.body);
@@ -151,7 +152,7 @@ export async function aiRoutes(fastify: FastifyInstance) {
 
   // Generate product content
   fastify.post('/generate-product-content', {
-    preHandler: [fastify.authenticate],
+    preHandler: [fastify.authenticate, checkAiAccessLimit],
   }, async (request, reply) => {
     try {
       const { category, keyFeatures } = productContentSchema.parse(request.body);
@@ -177,7 +178,7 @@ export async function aiRoutes(fastify: FastifyInstance) {
 
   // Sentiment Analysis
   fastify.post('/generate-sentiment-summary', {
-    preHandler: [fastify.authenticate],
+    preHandler: [fastify.authenticate, checkAiAccessLimit],
   }, async (request, reply) => {
     try {
       const { reviews } = sentimentSchema.parse(request.body);
@@ -203,7 +204,7 @@ export async function aiRoutes(fastify: FastifyInstance) {
 
   // Translation
   fastify.post('/translate', {
-    preHandler: [fastify.authenticate], // Secure the translation route
+    preHandler: [fastify.authenticate, checkAiAccessLimit], // Secure the translation route
   }, async (request, reply) => {
     try {
       const { texts, targetLang } = translateSchema.parse(request.body);

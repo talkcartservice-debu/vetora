@@ -1,6 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { Coupon, ICoupon } from '../models/Coupon';
 import { User } from '../models/User';
+import { checkCouponLimit } from '../middleware/subscription';
 
 export async function couponRoutes(fastify: FastifyInstance) {
   // List coupons with filtering
@@ -108,7 +109,7 @@ export async function couponRoutes(fastify: FastifyInstance) {
 
   // Create coupon
   fastify.post('/', {
-    preHandler: fastify.authenticate
+    preHandler: [fastify.authenticate, checkCouponLimit]
   }, async (request, reply) => {
     try {
       const body = request.body as Partial<ICoupon>;

@@ -488,6 +488,9 @@ export async function vendorSubscriptionRoutes(fastify: FastifyInstance) {
             'Priority search listing',
             'Custom domain mapping',
             'Shipping zone manager',
+            'AI-powered content generation',
+            'Live shopping sessions',
+            'Store coupons & discounts',
             'Email support'
           ]
         },
@@ -502,6 +505,9 @@ export async function vendorSubscriptionRoutes(fastify: FastifyInstance) {
             'Top-tier search placement',
             'Custom domain + SSL',
             'Shipping zones + live rates',
+            'AI-powered content generation',
+            'Live shopping sessions + priority',
+            'Store coupons & discounts',
             'Dedicated account manager',
             'Affiliate program access'
           ]

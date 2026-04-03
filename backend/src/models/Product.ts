@@ -21,6 +21,10 @@ export interface IProduct extends Document {
   rating_avg: number;
   rating_count: number;
   sales_count: number;
+  views_count: number;
+  clicks_count: number;
+  add_to_cart_count: number;
+  checkout_start_count: number;
   affiliate_commission_pct: number;
   created_at: Date;
   updated_at: Date;
@@ -110,6 +114,26 @@ const ProductSchema = new Schema<IProduct>({
     min: 0,
   },
   sales_count: {
+    type: Number,
+    default: 0,
+    min: 0,
+  },
+  views_count: {
+    type: Number,
+    default: 0,
+    min: 0,
+  },
+  clicks_count: {
+    type: Number,
+    default: 0,
+    min: 0,
+  },
+  add_to_cart_count: {
+    type: Number,
+    default: 0,
+    min: 0,
+  },
+  checkout_start_count: {
     type: Number,
     default: 0,
     min: 0,

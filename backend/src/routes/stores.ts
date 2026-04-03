@@ -2,6 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { Store, IStore } from '../models/Store';
 import { Product } from '../models/Product';
 import { z } from 'zod';
+import { checkCustomDomainLimit, checkShippingZoneLimit } from '../middleware/subscription';
 
 const createStoreSchema = z.object({
   name: z.string().min(1),
@@ -37,6 +38,7 @@ const createStoreSchema = z.object({
   phone_number: z.string().optional(),
   address: z.string().optional(),
   website_url: z.string().url().optional().or(z.literal('')),
+  custom_domain: z.string().optional(),
   social_links: z.object({
     facebook: z.string().optional(),
     instagram: z.string().optional(),
@@ -195,7 +197,7 @@ export async function storeRoutes(fastify: FastifyInstance) {
 
   // Update store
   fastify.patch('/:id', {
-    preHandler: [fastify.authenticate],
+    preHandler: [fastify.authenticate, checkCustomDomainLimit],
   }, async (request, reply) => {
     try {
       const { id } = request.params as { id: string };
@@ -216,7 +218,7 @@ export async function storeRoutes(fastify: FastifyInstance) {
         'name', 'description', 'logo_url', 'banner_url', 'category',
         'payment_method', 'bank_name', 'bank_account_name', 'bank_account_number', 'routing_number', 'paypal_email', 'mobile_money_number',
         'delivery_settings',
-        'phone_number', 'address', 'website_url', 'social_links'
+        'phone_number', 'address', 'website_url', 'custom_domain', 'social_links'
       ];
       allowedUpdates.forEach(field => {
         if ((body as any)[field] !== undefined) {

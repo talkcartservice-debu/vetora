@@ -1,6 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { LiveSession, ILiveSession } from '../models/LiveSession';
 import { User } from '../models/User';
+import { checkLiveSessionLimit } from '../middleware/subscription';
 
 export async function liveSessionRoutes(fastify: FastifyInstance) {
   // List live sessions with filtering
@@ -96,7 +97,7 @@ export async function liveSessionRoutes(fastify: FastifyInstance) {
 
   // Create live session
   fastify.post('/', {
-    preHandler: fastify.authenticate
+    preHandler: [fastify.authenticate, checkLiveSessionLimit]
   }, async (request, reply) => {
     try {
       const body = request.body as Partial<ILiveSession>;

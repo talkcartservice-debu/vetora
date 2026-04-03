@@ -3,6 +3,7 @@ import { LiveChatMessage, ILiveChatMessage } from '../models/LiveChatMessage';
 import { LiveSession } from '../models/LiveSession';
 import { LiveChatService } from '../services/liveChatService';
 import { z } from 'zod';
+import { checkLiveChatLimit } from '../middleware/subscription';
 
 export async function liveChatMessageRoutes(fastify: FastifyInstance) {
   // Schema for message sending

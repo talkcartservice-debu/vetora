@@ -42,6 +42,7 @@ export interface IStore extends Document {
   phone_number?: string;
   address?: string;
   website_url?: string;
+  custom_domain?: string;
   social_links?: {
     facebook?: string;
     instagram?: string;
@@ -143,6 +144,7 @@ const StoreSchema = new Schema<IStore>({
   phone_number: { type: String },
   address: { type: String },
   website_url: { type: String },
+  custom_domain: { type: String, unique: true, sparse: true },
   social_links: {
     facebook: { type: String },
     instagram: { type: String },

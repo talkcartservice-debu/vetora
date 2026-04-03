@@ -8,7 +8,7 @@ import { Follow } from '../models/Follow';
 import { Notification } from '../models/Notification';
 import { Store } from '../models/Store';
 import { NotificationService } from '../services/notificationService';
-import { checkProductCountLimit, checkProductMediaLimit } from '../middleware/subscription';
+import { checkProductCountLimit, checkProductMediaLimit, checkAdvancedAnalyticsLimit, checkAffiliateLimit } from '../middleware/subscription';
 
 export async function productRoutes(fastify: FastifyInstance) {
   // Get recommended products for the current user
@@ -151,7 +151,7 @@ export async function productRoutes(fastify: FastifyInstance) {
 
   // Create product
   fastify.post('/', {
-    preHandler: [fastify.authenticate, checkProductCountLimit, checkProductMediaLimit],
+    preHandler: [fastify.authenticate, checkProductCountLimit, checkProductMediaLimit, checkAffiliateLimit],
   }, async (request, reply) => {
     try {
       const productData = request.body as Partial<IProduct>;
@@ -265,7 +265,7 @@ export async function productRoutes(fastify: FastifyInstance) {
 
   // Update product
   fastify.patch('/:id', {
-    preHandler: [fastify.authenticate, checkProductMediaLimit],
+    preHandler: [fastify.authenticate, checkProductMediaLimit, checkAffiliateLimit],
   }, async (request, reply) => {
     try {
       const { id } = request.params as { id: string };
@@ -330,6 +330,77 @@ export async function productRoutes(fastify: FastifyInstance) {
         error: 'Internal server error', 
         message: process.env.NODE_ENV === 'development' ? error.message : undefined 
       });
+    }
+  });
+
+  // Track product view
+  fastify.post('/:id/view', async (request, reply) => {
+    try {
+      const { id } = request.params as { id: string };
+      await Product.findByIdAndUpdate(id, { $inc: { views_count: 1 } });
+      return { success: true };
+    } catch (error) {
+      return reply.code(500).send({ error: 'Internal server error' });
+    }
+  });
+
+  // Track product click
+  fastify.post('/:id/click', async (request, reply) => {
+    try {
+      const { id } = request.params as { id: string };
+      await Product.findByIdAndUpdate(id, { $inc: { clicks_count: 1 } });
+      return { success: true };
+    } catch (error) {
+      return reply.code(500).send({ error: 'Internal server error' });
+    }
+  });
+
+  // Track add to cart
+  fastify.post('/:id/add-to-cart', async (request, reply) => {
+    try {
+      const { id } = request.params as { id: string };
+      await Product.findByIdAndUpdate(id, { $inc: { add_to_cart_count: 1 } });
+      return { success: true };
+    } catch (error) {
+      return reply.code(500).send({ error: 'Internal server error' });
+    }
+  });
+
+  // Get product statistics (Advanced Analytics)
+  fastify.get('/stats', {
+    preHandler: [fastify.authenticate, checkAdvancedAnalyticsLimit],
+  }, async (request, reply) => {
+    try {
+      const user = request.user as any;
+      const { store_id } = request.query as any;
+
+      const filter: any = { vendor_username: user.username };
+      if (store_id) filter.store_id = store_id;
+
+      const products = await Product.find(filter)
+        .select('title views_count clicks_count add_to_cart_count checkout_start_count sales_count price')
+        .lean();
+
+      const totalStats = products.reduce((acc, p) => {
+        acc.views += (p.views_count || 0);
+        acc.clicks += (p.clicks_count || 0);
+        acc.add_to_cart += (p.add_to_cart_count || 0);
+        acc.sales += (p.sales_count || 0);
+        acc.revenue += ((p.sales_count || 0) * (p.price || 0));
+        return acc;
+      }, { views: 0, clicks: 0, add_to_cart: 0, sales: 0, revenue: 0 });
+
+      return {
+        summary: totalStats,
+        products: products.map(p => ({
+          ...p,
+          ctr: p.views_count ? ((p.clicks_count / p.views_count) * 100).toFixed(2) : 0,
+          conversion_rate: p.clicks_count ? ((p.sales_count / p.clicks_count) * 100).toFixed(2) : 0
+        }))
+      };
+    } catch (error) {
+      fastify.log.error(error);
+      return reply.code(500).send({ error: 'Internal server error' });
     }
   });
 }
