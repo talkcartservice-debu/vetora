@@ -88,7 +88,10 @@
         "pickup_enabled": { "type": "boolean", "default": false },
         "delivery_fee": { "type": "number", "default": 0 },
         "delivery_radius_km": { "type": "number" },
-        "min_order_for_delivery": { "type": "number", "default": 0 }
+        "min_order_for_delivery": { "type": "number", "default": 0 },
+        "free_delivery_above": { "type": "number" },
+        "delivery_time_est": { "type": "string" },
+        "pickup_instructions": { "type": "string" }
       }
     },
     "phone_number": { "type": "string" },

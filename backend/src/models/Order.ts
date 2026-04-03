@@ -25,6 +25,9 @@ export interface IOrder extends Document {
   total: number;
   status: 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'refunded';
   shipping_address?: string;
+  shipping_country?: string;
+  estimated_delivery?: string;
+  pickup_instructions?: string;
   tracking_number?: string;
   order_note?: string;
   affiliate_username?: string;
@@ -127,6 +130,18 @@ const OrderSchema = new Schema<IOrder>({
     default: 'pending',
   },
   shipping_address: {
+    type: String,
+  },
+  shipping_country: {
+    type: String,
+    uppercase: true,
+    minlength: 2,
+    maxlength: 2,
+  },
+  estimated_delivery: {
+    type: String,
+  },
+  pickup_instructions: {
     type: String,
   },
   tracking_number: {

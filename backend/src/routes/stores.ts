@@ -28,6 +28,9 @@ const createStoreSchema = z.object({
     delivery_fee: z.number().min(0).default(0),
     delivery_radius_km: z.number().min(0).optional(),
     min_order_for_delivery: z.number().min(0).default(0),
+    free_delivery_above: z.number().min(0).optional(),
+    delivery_time_est: z.string().optional(),
+    pickup_instructions: z.string().optional(),
   }).optional(),
   
   // Additional Info

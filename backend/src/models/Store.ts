@@ -33,6 +33,9 @@ export interface IStore extends Document {
     delivery_fee: number;
     delivery_radius_km?: number;
     min_order_for_delivery?: number;
+    free_delivery_above?: number;
+    delivery_time_est?: string; // e.g. "30-60 mins"
+    pickup_instructions?: string;
   };
   
   // Additional Store Info
@@ -131,6 +134,9 @@ const StoreSchema = new Schema<IStore>({
     delivery_fee: { type: Number, default: 0, min: 0 },
     delivery_radius_km: { type: Number, min: 0 },
     min_order_for_delivery: { type: Number, default: 0, min: 0 },
+    free_delivery_above: { type: Number, min: 0 },
+    delivery_time_est: { type: String, trim: true },
+    pickup_instructions: { type: String, trim: true },
   },
   
   // Additional Store Info

@@ -79,6 +79,17 @@
     "shipping_address": {
       "type": "string"
     },
+    "shipping_country": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 2
+    },
+    "estimated_delivery": {
+      "type": "string"
+    },
+    "pickup_instructions": {
+      "type": "string"
+    },
     "tracking_number": {
       "type": "string"
     },

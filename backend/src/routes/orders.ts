@@ -29,6 +29,7 @@ const createOrderSchema = z.object({
   delivery_method: z.enum(['shipping', 'delivery', 'pickup']).default('shipping'),
   total: z.number().min(0),
   shipping_address: z.string().optional(),
+  shipping_country: z.string().length(2).optional(), // ISO country code
   order_note: z.string().optional(),
   affiliate_username: z.string().min(1).or(z.literal('')).optional(),
   affiliate_ref: z.string().optional(),
@@ -180,6 +181,8 @@ export async function orderRoutes(fastify: FastifyInstance) {
       const delivery_method = body.delivery_method;
       let shipping_fee = 0;
       let delivery_fee = 0;
+      let estimated_delivery = '';
+      let pickup_instructions = '';
 
       // Validate delivery method against store settings
       // Default delivery settings if not set
@@ -188,7 +191,10 @@ export async function orderRoutes(fastify: FastifyInstance) {
         delivery_enabled: false,
         pickup_enabled: false,
         delivery_fee: 0,
-        min_order_for_delivery: 0
+        min_order_for_delivery: 0,
+        free_delivery_above: 0,
+        delivery_time_est: '',
+        pickup_instructions: ''
       };
 
       if (delivery_method === 'shipping') {
@@ -198,9 +204,36 @@ export async function orderRoutes(fastify: FastifyInstance) {
         if (!body.shipping_address) {
           return reply.code(400).send({ error: 'Shipping address is required for shipping method' });
         }
-        // We respect the shipping_fee from body if provided, otherwise 0
-        // In a more advanced version, we'd calculate this from ShippingZones
-        shipping_fee = body.shipping_fee || 0;
+        
+        // Authoritative Shipping Fee Calculation via ShippingZones
+        const countryCode = body.shipping_country?.toUpperCase();
+        if (countryCode) {
+          const zones = await ShippingZone.find({
+            store_id: store._id.toString(),
+            is_active: true,
+            $or: [
+              { countries: { $in: [countryCode, 'WORLD'] } },
+              { countries: { $size: 0 } }
+            ]
+          }).sort({ countries: -1 }); // Prefer specific country match (non-empty array) over 'WORLD' or empty array
+
+          if (zones.length > 0) {
+            const zone = zones[0];
+            shipping_fee = zone.flat_rate;
+            estimated_delivery = `${zone.estimated_days_min}-${zone.estimated_days_max} days`;
+            
+            // Check for free shipping above a threshold
+            if (zone.free_above > 0 && computedSubtotal >= zone.free_above) {
+              shipping_fee = 0;
+            }
+          } else {
+            // Fallback to body shipping_fee if no zone found, or 0
+            shipping_fee = body.shipping_fee || 0;
+          }
+        } else {
+          // Fallback to body shipping_fee if no country code provided
+          shipping_fee = body.shipping_fee || 0;
+        }
       } else if (delivery_method === 'delivery') {
         if (ds.delivery_enabled === false) {
           return reply.code(400).send({ error: 'Local delivery is not enabled for this store' });
@@ -211,13 +244,21 @@ export async function orderRoutes(fastify: FastifyInstance) {
         if (computedSubtotal < (ds.min_order_for_delivery || 0)) {
           return reply.code(400).send({ error: `Minimum order for local delivery is ${ds.min_order_for_delivery}` });
         }
-        delivery_fee = ds.delivery_fee || 0;
+        
+        // Check for free local delivery above a threshold
+        if (ds.free_delivery_above && ds.free_delivery_above > 0 && computedSubtotal >= ds.free_delivery_above) {
+          delivery_fee = 0;
+        } else {
+          delivery_fee = ds.delivery_fee || 0;
+        }
+        estimated_delivery = ds.delivery_time_est || '';
       } else if (delivery_method === 'pickup') {
         if (ds.pickup_enabled === false) {
           return reply.code(400).send({ error: 'In-store pickup is not enabled for this store' });
         }
         shipping_fee = 0;
         delivery_fee = 0;
+        pickup_instructions = ds.pickup_instructions || '';
       }
 
       const computedTotal = computedSubtotal + shipping_fee + delivery_fee;
@@ -289,6 +330,9 @@ export async function orderRoutes(fastify: FastifyInstance) {
             shipping_fee: shipping_fee,
             delivery_fee: delivery_fee,
             delivery_method: delivery_method,
+            shipping_country: body.shipping_country,
+            estimated_delivery: estimated_delivery,
+            pickup_instructions: pickup_instructions,
             total: computedTotal,
             buyer_username: user.username,
             buyer_name: body.buyer_name || user.display_name || user.full_name || user.username,
