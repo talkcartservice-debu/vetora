@@ -487,7 +487,9 @@ export const storesAPI = {
 
 export const usersAPI = {
   getProfile: (usernameOrEmail) => apiClient.get(`/users/${usernameOrEmail}`),
-  search: (query) => apiClient.get(`/users/search?q=${encodeURIComponent(query)}`)
+  search: (query) => apiClient.get(`/users/search?q=${encodeURIComponent(query)}`),
+  registerPushToken: (token) => apiClient.post('/users/push-token', { token }),
+  unregisterPushToken: (token) => apiClient.delete('/users/push-token', { token })
 };
 
 export const communitiesAPI = {

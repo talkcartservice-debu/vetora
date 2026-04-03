@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/lib/utils";
 import {
   Store, Plus, Package, DollarSign, ShoppingCart, Trash2, Loader2, BarChart3, Eye,
@@ -34,9 +34,16 @@ const PLAN_LIMITS = {
 };
 
 export default function MyStore() {
-  const params = new URLSearchParams(window.location.search);
-  const defaultTab = params.get("tab") || "products";
+  const [searchParams, setSearchParams] = useSearchParams();
+  const defaultTab = searchParams.get("tab") || "products";
   const [activeTab, setActiveTab] = useState(defaultTab);
+
+  React.useEffect(() => {
+    const tab = searchParams.get("tab");
+    if (tab && tab !== activeTab) {
+      setActiveTab(tab);
+    }
+  }, [searchParams, activeTab]);
   const [showCreateStore, setShowCreateStore] = useState(false);
   const [showEditStore, setShowEditStore] = useState(false);
   const [showAddProduct, setShowAddProduct] = useState(false);
@@ -175,6 +182,15 @@ export default function MyStore() {
   const currentPlan = subscription?.plan || 'free';
   const limits = PLAN_LIMITS[currentPlan];
 
+  // Auto-redirect to subscription if limit reached and trying to add product
+  React.useEffect(() => {
+    if (showAddProduct && products.length >= limits.products) {
+      setShowAddProduct(false);
+      setActiveTab("subscription");
+      toast.error(`Subscription limit reached! Your ${currentPlan} plan allows up to ${limits.products === Infinity ? 'unlimited' : limits.products} products.`);
+    }
+  }, [showAddProduct, products.length, limits.products, currentPlan]);
+
   const { data: ordersResponse = {} } = useQuery({
     queryKey: ["storeOrders", currentUser?.username],
     queryFn: async () => {
@@ -256,6 +272,15 @@ export default function MyStore() {
       setImagePreviews([]);
       queryClient.invalidateQueries({ queryKey: ["myProducts"] });
     },
+    onError: (err) => {
+      if (err.status === 403 || err.message?.toLowerCase().includes("limit")) {
+        setShowAddProduct(false);
+        setActiveTab("subscription");
+        toast.error(`Subscription limit reached! Your ${currentPlan} plan allows up to ${limits.products === Infinity ? 'unlimited' : limits.products} products.`);
+      } else {
+        toast.error(err.message || "Failed to add product");
+      }
+    }
   });
 
   const deleteProductMutation = useMutation({
@@ -768,20 +793,23 @@ export default function MyStore() {
 
         {activeTab === "products" && (
           <Dialog open={showAddProduct} onOpenChange={setShowAddProduct}>
-            <DialogTrigger asChild>
+            {products.length >= limits.products ? (
               <Button 
-                onClick={(e) => {
-                  if (products.length >= limits.products) {
-                    e.preventDefault();
-                    toast.error(`Your ${currentPlan} plan allows up to ${limits.products === Infinity ? 'unlimited' : limits.products} products. Please upgrade to add more.`);
-                    return;
-                  }
+                onClick={() => {
+                  setActiveTab("subscription");
+                  toast.error(`Subscription limit reached! Your ${currentPlan} plan allows up to ${limits.products === Infinity ? 'unlimited' : limits.products} products.`);
                 }}
                 className="bg-indigo-600 hover:bg-indigo-700 rounded-xl"
               >
                 <Plus className="w-4 h-4 mr-1.5" /> Add Product
               </Button>
-            </DialogTrigger>
+            ) : (
+              <DialogTrigger asChild>
+                <Button className="bg-indigo-600 hover:bg-indigo-700 rounded-xl">
+                  <Plus className="w-4 h-4 mr-1.5" /> Add Product
+                </Button>
+              </DialogTrigger>
+            )}
             <DialogContent className="max-w-lg">
               <DialogHeader><DialogTitle>Add Product</DialogTitle></DialogHeader>
               <div className="space-y-3 max-h-[80vh] overflow-y-auto pr-1">

@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import EmptyState from "@/components/shared/EmptyState";
 import {
-  Bell, Heart, MessageCircle, UserPlus, Package, Users, Megaphone, CheckCheck
+  Bell, Heart, MessageCircle, UserPlus, Package, Users, Megaphone, CheckCheck, ShieldAlert
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
@@ -19,6 +19,8 @@ const TYPE_ICONS = {
   mention: { icon: MessageCircle, color: "bg-amber-100 text-amber-500" },
   community: { icon: Users, color: "bg-pink-100 text-pink-500" },
   promotion: { icon: Megaphone, color: "bg-orange-100 text-orange-500" },
+  subscription_limit: { icon: ShieldAlert, color: "bg-amber-100 text-amber-600" },
+  product_added: { icon: Package, color: "bg-emerald-100 text-emerald-500" },
 };
 
 export default function Notifications() {

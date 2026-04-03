@@ -66,4 +66,66 @@ export async function userRoutes(fastify: FastifyInstance) {
       });
     }
   });
+
+  // Register push notification token
+  fastify.post('/push-token', {
+    preHandler: [fastify.authenticate],
+  }, async (request, reply) => {
+    try {
+      const { token } = request.body as { token: string };
+      const user = request.user as any;
+
+      if (!token) {
+        return reply.code(400).send({ error: 'Token is required' });
+      }
+
+      if (!user?.username) {
+        return reply.code(401).send({ error: 'Unauthorized - invalid user data' });
+      }
+
+      // Add token if it doesn't exist already
+      await User.findOneAndUpdate(
+        { username: user.username },
+        { $addToSet: { push_tokens: token } }
+      );
+
+      return { success: true };
+    } catch (error: any) {
+      fastify.log.error(error);
+      return reply.code(500).send({ 
+        error: 'Internal server error', 
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      });
+    }
+  });
+
+  // Unregister push notification token
+  fastify.delete('/push-token', {
+    preHandler: [fastify.authenticate],
+  }, async (request, reply) => {
+    try {
+      const { token } = request.body as { token: string };
+      const user = request.user as any;
+
+      if (!token) {
+        return reply.code(400).send({ error: 'Token is required' });
+      }
+
+      if (!user?.username) {
+        return reply.code(401).send({ error: 'Unauthorized - invalid user data' });
+      }
+
+      await User.findOneAndUpdate(
+        { username: user.username },
+        { $pull: { push_tokens: token } }
+      );
+
+      return { success: true };
+    } catch (error: any) {
+      fastify.log.error(error);
+      return reply.code(500).send({ 
+        error: 'Internal server error' 
+      });
+    }
+  });
 }

@@ -4,6 +4,10 @@ import { User } from '../models/User';
 import { Like } from '../models/Like';
 import { WishlistItem } from '../models/WishlistItem';
 import { Order } from '../models/Order';
+import { Follow } from '../models/Follow';
+import { Notification } from '../models/Notification';
+import { Store } from '../models/Store';
+import { NotificationService } from '../services/notificationService';
 import { checkProductCountLimit, checkProductMediaLimit } from '../middleware/subscription';
 
 export async function productRoutes(fastify: FastifyInstance) {
@@ -168,6 +172,75 @@ export async function productRoutes(fastify: FastifyInstance) {
 
       // Emit real-time event
       fastify.io?.emit('product:created', savedProduct);
+
+      // Notification logic for followers in background
+      (async () => {
+        try {
+          const vendorName = user.display_name || user.username;
+          let storeName = '';
+          
+          if (savedProduct.store_id) {
+            const store = await Store.findById(savedProduct.store_id);
+            if (store) storeName = store.name;
+          }
+
+          // Find unique followers of the vendor (user follow) or the store (store follow)
+          const followers = await Follow.find({
+            $or: [
+              { following_username: user.username, follow_type: 'user' },
+              ...(savedProduct.store_id ? [{ target_id: savedProduct.store_id.toString(), follow_type: 'store' }] : [])
+            ]
+          }).select('follower_username');
+
+          const uniqueFollowerUsernames = [...new Set(followers.map(f => f.follower_username))];
+
+          // Exclude the vendor themselves if they somehow follow themselves
+          const recipientUsernames = uniqueFollowerUsernames.filter(username => username !== user.username);
+
+          if (recipientUsernames.length > 0) {
+            const title = storeName 
+              ? `${storeName} added a new product: ${savedProduct.title}`
+              : `${vendorName} added a new product: ${savedProduct.title}`;
+            
+            const body = savedProduct.description 
+              ? (savedProduct.description.length > 100 ? savedProduct.description.substring(0, 97) + '...' : savedProduct.description)
+              : `Check out our latest addition: ${savedProduct.title}`;
+
+            const notifications = recipientUsernames.map(followerUsername => ({
+              recipient_username: followerUsername,
+              type: 'product_added',
+              title,
+              body,
+              link: `/product/${savedProduct._id}`,
+              sender_username: user.username,
+              sender_name: vendorName,
+              metadata: {
+                product_id: savedProduct._id,
+                store_id: savedProduct.store_id
+              }
+            }));
+
+            const savedNotifications = await Notification.insertMany(notifications);
+            
+            // Emit via socket to each follower
+            if (fastify.io) {
+              savedNotifications.forEach(notif => {
+                fastify.io.to(`user:${notif.recipient_username}`).emit('notification:new', notif);
+              });
+            }
+
+            // Send push notifications (native)
+            await NotificationService.sendBulkPushNotifications(recipientUsernames, {
+              title,
+              body,
+              type: 'product_added',
+              metadata: { product_id: savedProduct._id }
+            }, fastify);
+          }
+        } catch (error) {
+          fastify.log.error(error, 'Error creating product added notifications');
+        }
+      })();
 
       return reply.code(201).send(savedProduct);
     } catch (error: any) {

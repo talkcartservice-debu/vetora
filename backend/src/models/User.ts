@@ -36,6 +36,7 @@ export interface IUser extends Document {
   follower_count: number;
   following_count: number;
   unread_messages_count: number;
+  push_tokens?: string[];
   current_challenge?: string;
   current_challenge_expires_at?: Date;
   authenticators: Array<{
@@ -172,6 +173,10 @@ const UserSchema = new Schema<IUser>({
     default: 0,
     min: 0,
   },
+  push_tokens: [{
+    type: String,
+    trim: true,
+  }],
   current_challenge: {
     type: String,
     select: false,
@@ -197,5 +202,6 @@ const UserSchema = new Schema<IUser>({
 
 // Indexes for performance
 UserSchema.index({ created_at: -1 });
+UserSchema.index({ push_tokens: 1 });
 
 export const User = mongoose.model<IUser>('User', UserSchema);

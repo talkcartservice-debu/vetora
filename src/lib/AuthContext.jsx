@@ -1,6 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { authAPI } from '@/api/apiClient';
 import { startRegistration, startAuthentication } from '@simplewebauthn/browser';
+import { setupPushNotifications, removePushNotifications } from '@/lib/pushNotifications';
 
 const AuthContext = createContext();
 
@@ -13,6 +14,12 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     initializeAuth();
   }, []);
+
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      setupPushNotifications();
+    }
+  }, [isAuthenticated, user]);
 
   const initializeAuth = async () => {
     try {
@@ -152,6 +159,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
+    removePushNotifications();
     authAPI.logout();
     setUser(null);
     setIsAuthenticated(false);

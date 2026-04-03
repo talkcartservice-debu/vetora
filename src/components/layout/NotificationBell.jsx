@@ -13,6 +13,7 @@ const TYPE_CONFIG = {
   like:         { icon: Heart,         color: "bg-red-100 text-red-500",       label: "Like" },
   follow:       { icon: UserPlus,      color: "bg-purple-100 text-purple-600", label: "Follow" },
   comment:      { icon: MessageCircle, color: "bg-blue-100 text-blue-600",     label: "Comment" },
+  product_added: { icon: Package,      color: "bg-emerald-100 text-emerald-600", label: "Product" },
 };
 
 export default function NotificationBell({ userEmail }) {

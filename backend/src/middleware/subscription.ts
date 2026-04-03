@@ -1,6 +1,7 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { VendorSubscription } from '../models/VendorSubscription';
 import { Product } from '../models/Product';
+import { Notification } from '../models/Notification';
 
 export const PLAN_LIMITS = {
   free: { 
@@ -78,6 +79,38 @@ async function getVendorPlan(username: string, request?: FastifyRequest) {
 }
 
 /**
+ * Helper to send a subscription limit notification with cooldown
+ */
+async function sendLimitNotification(username: string, message: string, request: FastifyRequest) {
+  try {
+    const cooldownPeriod = 24 * 60 * 60 * 1000; // 24 hours
+    const lastNotif = await Notification.findOne({
+      recipient_username: username,
+      type: 'subscription_limit',
+      created_at: { $gt: new Date(Date.now() - cooldownPeriod) }
+    });
+
+    if (!lastNotif) {
+      const notification = await Notification.create({
+        recipient_username: username,
+        type: 'subscription_limit',
+        title: 'Subscription Limit Reached',
+        body: message,
+        link: '/MyStore?tab=subscription',
+      });
+
+      // Emit notification via socket
+      const fastify = request.server as any;
+      if (fastify.io) {
+        fastify.io.to(`user:${username}`).emit('notification:new', notification);
+      }
+    }
+  } catch (err) {
+    request.log.error(err, 'Failed to create subscription limit notification:');
+  }
+}
+
+/**
  * Middleware to check if a vendor can create more products
  */
 export async function checkProductCountLimit(request: FastifyRequest, reply: FastifyReply) {
@@ -99,9 +132,13 @@ export async function checkProductCountLimit(request: FastifyRequest, reply: Fas
 
     if (productCount >= limits.products) {
       const limitDisplay = limits.products === Infinity ? 'unlimited' : limits.products;
+      const message = `Your ${plan} plan allows up to ${limitDisplay} products. Please upgrade to add more.`;
+
+      await sendLimitNotification(user.username, message, request);
+
       return reply.code(403).send({ 
         error: 'Subscription limit reached', 
-        message: `Your ${plan} plan allows up to ${limitDisplay} products. Please upgrade to add more.`,
+        message,
         limit: limits.products,
         current: productCount
       });
@@ -134,18 +171,22 @@ export async function checkProductMediaLimit(request: FastifyRequest, reply: Fas
     
     // 1. Check if plan allows videos at all
     if (videosCount > 0 && limits.videos_per_product === 0) {
+      const message = `Video uploads are not available on the ${plan} plan. Please upgrade to Pro or Elite.`;
+      await sendLimitNotification(user.username, message, request);
       return reply.code(403).send({ 
         error: 'Subscription feature restricted', 
-        message: `Video uploads are not available on the ${plan} plan. Please upgrade to Pro or Elite.`
+        message
       });
     }
 
     // 2. Check independent video limit
     if (videosCount > limits.videos_per_product) {
       const limitDisplay = limits.videos_per_product === Infinity ? 'unlimited' : limits.videos_per_product;
+      const message = `Your ${plan} plan allows up to ${limitDisplay} videos per product.`;
+      await sendLimitNotification(user.username, message, request);
       return reply.code(403).send({ 
         error: 'Subscription limit reached', 
-        message: `Your ${plan} plan allows up to ${limitDisplay} videos per product.`,
+        message,
         limit: limits.videos_per_product,
         current: videosCount
       });
@@ -154,9 +195,11 @@ export async function checkProductMediaLimit(request: FastifyRequest, reply: Fas
     // 3. Check independent image limit
     if (imagesCount > limits.images_per_product) {
       const limitDisplay = limits.images_per_product === Infinity ? 'unlimited' : limits.images_per_product;
+      const message = `Your ${plan} plan allows up to ${limitDisplay} images per product.`;
+      await sendLimitNotification(user.username, message, request);
       return reply.code(403).send({ 
         error: 'Subscription limit reached', 
-        message: `Your ${plan} plan allows up to ${limitDisplay} images per product.`,
+        message,
         limit: limits.images_per_product,
         current: imagesCount
       });
@@ -165,9 +208,11 @@ export async function checkProductMediaLimit(request: FastifyRequest, reply: Fas
     // 4. Check total media limit (if different from individual limits)
     if (totalMedia > (limits as any).media_per_product) {
        const limitDisplay = (limits as any).media_per_product === Infinity ? 'unlimited' : (limits as any).media_per_product;
+       const message = `Your ${plan} plan allows up to ${limitDisplay} total media files per product.`;
+       await sendLimitNotification(user.username, message, request);
        return reply.code(403).send({ 
         error: 'Subscription limit reached', 
-        message: `Your ${plan} plan allows up to ${limitDisplay} total media files per product.`,
+        message,
         limit: (limits as any).media_per_product,
         current: totalMedia
       });
@@ -195,9 +240,11 @@ export async function checkCustomDomainLimit(request: FastifyRequest, reply: Fas
     const { plan, limits } = await getVendorPlan(user.username, request);
 
     if (!limits.custom_domain) {
+      const message = `Custom domains are not available on the ${plan} plan. Please upgrade to Pro or Elite.`;
+      await sendLimitNotification(user.username, message, request);
       return reply.code(403).send({ 
         error: 'Subscription feature restricted', 
-        message: `Custom domains are not available on the ${plan} plan. Please upgrade to Pro or Elite.`
+        message
       });
     }
   } catch (err: any) {
@@ -219,9 +266,11 @@ export async function checkShippingZoneLimit(request: FastifyRequest, reply: Fas
     const { plan, limits } = await getVendorPlan(user.username, request);
 
     if (!limits.shipping_zones) {
+      const message = `Shipping zones are not available on the ${plan} plan. Please upgrade to Pro or Elite.`;
+      await sendLimitNotification(user.username, message, request);
       return reply.code(403).send({ 
         error: 'Subscription feature restricted', 
-        message: `Shipping zones are not available on the ${plan} plan. Please upgrade to Pro or Elite.`
+        message
       });
     }
   } catch (err: any) {
