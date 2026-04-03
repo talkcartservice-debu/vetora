@@ -228,24 +228,23 @@ export async function followRoutes(fastify: FastifyInstance) {
               await notification.save();
               
               // Emit notification via socket
-              if (fastify.io) {
-                fastify.io.to(`user:${recipientUsername}`).emit('notification:new', notification);
-              }
+              fastify.io?.to(`user:${recipientUsername}`).emit('notification:new', notification);
             } catch (notifErr: any) {
               fastify.log.error(notifErr, 'Failed to create/emit notification');
             }
           }
 
           // Emit real-time events to relevant users only
-          if (fastify.io) {
+          const io = fastify.io;
+          if (io) {
             try {
               // Emit to follower
-              fastify.io.to(`user:${user.username}`).emit('follow:created', {
+              io.to(`user:${user.username}`).emit('follow:created', {
                 follow: follow.toObject()
               });
               // Emit to followed user (if applicable)
               if (recipientUsername) {
-                fastify.io.to(`user:${recipientUsername}`).emit('follow:created', {
+                io.to(`user:${recipientUsername}`).emit('follow:created', {
                   follow: follow.toObject()
                 });
               }
@@ -339,15 +338,16 @@ export async function followRoutes(fastify: FastifyInstance) {
           }
 
           // Emit real-time events to relevant users only
-          if (fastify.io) {
-            fastify.io.to(`user:${user.username}`).emit('follow:deleted', {
+          const io = fastify.io;
+          if (io) {
+            io.to(`user:${user.username}`).emit('follow:deleted', {
               follow_id: follow._id,
               following_username: finalFollowingUsername,
               follow_type,
               target_id: target_id || null
             });
             if (recipientUsername) {
-              fastify.io.to(`user:${recipientUsername}`).emit('follow:deleted', {
+              io.to(`user:${recipientUsername}`).emit('follow:deleted', {
                 follow_id: follow._id,
                 following_username: finalFollowingUsername,
                 follow_type,

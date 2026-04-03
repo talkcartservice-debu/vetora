@@ -223,9 +223,10 @@ export async function productRoutes(fastify: FastifyInstance) {
             const savedNotifications = await Notification.insertMany(notifications);
             
             // Emit via socket to each follower
-            if (fastify.io) {
+            const io = fastify.io;
+            if (io) {
               savedNotifications.forEach(notif => {
-                fastify.io.to(`user:${notif.recipient_username}`).emit('notification:new', notif);
+                io.to(`user:${notif.recipient_username}`).emit('notification:new', notif);
               });
             }
 

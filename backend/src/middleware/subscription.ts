@@ -101,9 +101,7 @@ async function sendLimitNotification(username: string, message: string, request:
 
       // Emit notification via socket
       const fastify = request.server as any;
-      if (fastify.io) {
-        fastify.io.to(`user:${username}`).emit('notification:new', notification);
-      }
+      fastify.io?.to(`user:${username}`).emit('notification:new', notification);
     }
   } catch (err) {
     request.log.error(err, 'Failed to create subscription limit notification:');
