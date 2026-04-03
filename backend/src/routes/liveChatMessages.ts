@@ -91,7 +91,7 @@ export async function liveChatMessageRoutes(fastify: FastifyInstance) {
 
   // Send a message
   fastify.post('/', {
-    preHandler: [fastify.authenticate]
+    preHandler: [fastify.authenticate, checkLiveChatLimit]
   }, async (request, reply) => {
     try {
       const body = sendMessageSchema.parse(request.body);

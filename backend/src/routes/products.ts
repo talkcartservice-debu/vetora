@@ -366,6 +366,17 @@ export async function productRoutes(fastify: FastifyInstance) {
     }
   });
 
+  // Track checkout start
+  fastify.post('/:id/checkout-start', async (request, reply) => {
+    try {
+      const { id } = request.params as { id: string };
+      await Product.findByIdAndUpdate(id, { $inc: { checkout_start_count: 1 } });
+      return { success: true };
+    } catch (error) {
+      return reply.code(500).send({ error: 'Internal server error' });
+    }
+  });
+
   // Get product statistics (Advanced Analytics)
   fastify.get('/stats', {
     preHandler: [fastify.authenticate, checkAdvancedAnalyticsLimit],
