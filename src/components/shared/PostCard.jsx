@@ -1,6 +1,6 @@
 import React, { useState, useEffect, memo, useRef } from "react";
 import { postsAPI, bookmarksAPI, followsAPI } from "@/api/apiClient";
-import { Heart, MessageCircle, Share2, ShoppingBag, MoreHorizontal, Bookmark } from "lucide-react";
+import { Heart, MessageCircle, Share2, ShoppingBag, MoreHorizontal, Bookmark, ChevronLeft, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/lib/utils";
@@ -16,6 +16,8 @@ const PostCard = memo(function PostCard({ post, currentUser }) {
   const [showFullContent, setShowFullContent] = useState(false);
   const [showHeartAnimation, setShowHeartAnimation] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [canScrollPrev, setCanScrollPrev] = useState(false);
+  const [canScrollNext, setCanScrollNext] = useState(false);
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: false });
   const videoRefs = useRef({});
 
@@ -23,8 +25,11 @@ const PostCard = memo(function PostCard({ post, currentUser }) {
     if (!emblaApi) return;
     const onSelect = () => {
       setSelectedIndex(emblaApi.selectedScrollSnap());
+      setCanScrollPrev(emblaApi.canScrollPrev());
+      setCanScrollNext(emblaApi.canScrollNext());
     };
     emblaApi.on("select", onSelect);
+    emblaApi.on("reInit", onSelect);
     onSelect();
   }, [emblaApi]);
   
@@ -310,16 +315,44 @@ const PostCard = memo(function PostCard({ post, currentUser }) {
           
           {/* Pagination Indicators */}
           {post.media_urls.length > 1 && (
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1 z-10 pointer-events-none">
-              {post.media_urls.map((_, i) => (
-                <div 
-                  key={i} 
-                  className={`w-1.5 h-1.5 rounded-full shadow-sm transition-all duration-300 ${
-                    i === selectedIndex ? "bg-white w-3" : "bg-white/50"
-                  }`}
-                />
-              ))}
-            </div>
+            <>
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1 z-10 pointer-events-none">
+                {post.media_urls.map((_, i) => (
+                  <div 
+                    key={i} 
+                    className={`w-1.5 h-1.5 rounded-full shadow-sm transition-all duration-300 ${
+                      i === selectedIndex ? "bg-white w-3" : "bg-white/50"
+                    }`}
+                  />
+                ))}
+              </div>
+
+              {/* Navigation Buttons */}
+              {canScrollPrev && (
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    emblaApi?.scrollPrev();
+                  }}
+                  className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center bg-white/80 hover:bg-white text-slate-800 rounded-full shadow-md z-20 opacity-0 group-hover:opacity-100 transition-all duration-200"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+              )}
+              {canScrollNext && (
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    emblaApi?.scrollNext();
+                  }}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center bg-white/80 hover:bg-white text-slate-800 rounded-full shadow-md z-20 opacity-0 group-hover:opacity-100 transition-all duration-200"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+              )}
+            </>
           )}
 
           {/* Double Tap Heart Animation */}
