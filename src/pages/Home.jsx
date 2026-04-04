@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import React, { useState, useEffect, useRef } from "react";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import PostCard from "@/components/shared/PostCard";
 import ProductCard from "@/components/shared/ProductCard";
 import StoriesRow from "@/components/stories/StoriesRow";
@@ -7,29 +7,67 @@ import { PostSkeleton, ProductSkeleton } from "@/components/shared/LoadingSkelet
 import EmptyState from "@/components/shared/EmptyState";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/lib/utils";
-import { Flame, TrendingUp, Sparkles, ChevronRight, PenSquare } from "lucide-react";
+import { Flame, TrendingUp, Sparkles, ChevronRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import RecommendedSection from "@/components/home/RecommendedSection";
+import SuggestedUsers from "@/components/home/SuggestedUsers";
 import { postsAPI, productsAPI } from "@/api/apiClient";
 import { useAuth } from "@/lib/AuthContext";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState("for_you");
   const { user: currentUser } = useAuth();
+  const loadMoreRef = useRef(null);
 
-  const { data: postsResponse, isLoading: postsLoading } = useQuery({
+  const { 
+    data: postsData, 
+    isLoading: postsLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage
+  } = useInfiniteQuery({
     queryKey: ["posts", activeTab],
-    queryFn: () => {
+    queryFn: ({ pageParam = 1 }) => {
+      const params = { limit: 10, page: pageParam };
       if (activeTab === "trending") {
-        return postsAPI.list({ sort: "-likes_count", limit: 20 });
+        params.sort = "-likes_count";
+      } else if (activeTab === "following" && currentUser?.username) {
+        params.following_only = true;
+        params.user_username = currentUser.username;
+        params.sort = "-created_at";
+      } else {
+        params.sort = "-created_at";
       }
-      if (activeTab === "following" && currentUser?.username) {
-        return postsAPI.list({ following_only: true, user_username: currentUser.username, sort: "-created_at", limit: 20 });
-      }
-      return postsAPI.list({ sort: "-created_at", limit: 20 });
+      return postsAPI.list(params);
     },
+    getNextPageParam: (lastPage) => {
+      if (lastPage.data && lastPage.data.length === 10) {
+        return lastPage.page + 1;
+      }
+      return undefined;
+    },
+    initialPageParam: 1,
   });
-  const posts = postsResponse?.data || [];
+
+  const posts = postsData?.pages.flatMap(page => page.data) || [];
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (loadMoreRef.current) {
+      observer.observe(loadMoreRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const { data: trendingProductsResponse, isLoading: productsLoading } = useQuery({
     queryKey: ["trendingProducts"],
@@ -49,84 +87,140 @@ export default function Home() {
       <StoriesRow currentUser={currentUser} />
 
       {/* Feed Tabs */}
-      <div className="flex items-center gap-1 py-3 border-b border-slate-100 mb-4">
+      <div className="flex items-center gap-1 py-3 border-b border-slate-100 mb-4 sticky top-0 bg-white/80 backdrop-blur-md z-30">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all ${
+            className={`relative flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all ${
               activeTab === tab.id
-                ? "bg-slate-900 text-white"
-                : "text-slate-500 hover:bg-slate-100"
+                ? "text-white"
+                : "text-slate-500 hover:bg-slate-50"
             }`}
           >
+            {activeTab === tab.id && (
+              <motion.div
+                layoutId="activeTab"
+                className="absolute inset-0 bg-slate-900 rounded-full -z-10"
+                transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+              />
+            )}
             <tab.icon className="w-4 h-4" />
             {tab.label}
           </button>
         ))}
       </div>
 
-      {/* Recommended for You */}
-      {activeTab === "for_you" && <RecommendedSection currentUser={currentUser} />}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={activeTab}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          transition={{ duration: 0.2 }}
+        >
+          {/* Recommended for You */}
+          {activeTab === "for_you" && <RecommendedSection currentUser={currentUser} />}
 
-      {/* Trending Products Section */}
-      {trendingProducts.length > 0 && activeTab === "trending" && (
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <Flame className="w-4 h-4 text-orange-500" />
-              Trending Now
-            </h2>
-            <Link to={createPageUrl("Marketplace")} className="text-xs text-indigo-600 font-medium flex items-center gap-0.5">
-              See all <ChevronRight className="w-3 h-3" />
-            </Link>
-          </div>
-          <div className="overflow-x-auto -mx-4 px-4 hide-scrollbar">
-            <div className="flex gap-3 pb-2" style={{ width: "max-content" }}>
-              {productsLoading
-                ? Array(4).fill(0).map((_, i) => (
-                    <div key={`trending-skeleton-${i}`} className="w-44 shrink-0"><ProductSkeleton /></div>
-                  ))
-                : trendingProducts.slice(0, 8).map((product, idx) => (
-                    <div key={product._id || product.id || `trending-${idx}`} className="w-44 shrink-0">
-                      <ProductCard product={product} compact />
-                    </div>
-                  ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Posts Feed */}
-      <div className="space-y-4">
-        {postsLoading ? (
-          Array(3).fill(0).map((_, i) => <PostSkeleton key={`post-skeleton-${i}`} />)
-        ) : posts.length === 0 ? (
-          <EmptyState
-            icon={PenSquare}
-            title="Welcome to Vetora"
-            description="Your feed is empty. Start by creating a post or exploring the community!"
-            action={
-              <div className="flex gap-3">
-                <Link to={createPageUrl("CreatePost")}>
-                  <Button className="bg-indigo-600 hover:bg-indigo-700">Create Post</Button>
-                </Link>
-                <Link to={createPageUrl("Explore")}>
-                  <Button variant="outline">Explore</Button>
+          {/* Trending Products Section */}
+          {trendingProducts.length > 0 && activeTab === "trending" && (
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                  <Flame className="w-4 h-4 text-orange-500" />
+                  Trending Now
+                </h2>
+                <Link to={createPageUrl("Marketplace")} className="text-xs text-indigo-600 font-medium flex items-center gap-0.5">
+                  See all <ChevronRight className="w-3 h-3" />
                 </Link>
               </div>
-            }
-          />
-        ) : (
-          posts.map((post, idx) => (
-            <PostCard 
-              key={post.id || post._id || `home-post-${idx}`} 
-              post={post} 
-              currentUser={currentUser} 
-            />
-          ))
-        )}
-      </div>
+              <div className="overflow-x-auto -mx-4 px-4 hide-scrollbar">
+                <div className="flex gap-3 pb-2" style={{ width: "max-content" }}>
+                  {productsLoading
+                    ? Array(4).fill(0).map((_, i) => (
+                        <div key={`trending-skeleton-${i}`} className="w-44 shrink-0"><ProductSkeleton /></div>
+                      ))
+                    : trendingProducts.slice(0, 8).map((product, idx) => (
+                        <div key={product._id || product.id || `trending-${idx}`} className="w-44 shrink-0">
+                          <ProductCard product={product} compact />
+                        </div>
+                      ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Posts Feed */}
+          <div className="space-y-4">
+            {postsLoading ? (
+              Array(3).fill(0).map((_, i) => <PostSkeleton key={`post-skeleton-${i}`} />)
+            ) : posts.length === 0 ? (
+              <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <EmptyState
+                  icon={TrendingUp}
+                  title={activeTab === "following" ? "No followers yet" : "Welcome to Vetora"}
+                  description={
+                    activeTab === "following" 
+                      ? "Follow people and stores to see their latest posts here in your feed!" 
+                      : "Your feed is empty. Start by creating a post or exploring the community!"
+                  }
+                  action={
+                    <div className="flex gap-3">
+                      {activeTab === "following" ? (
+                        <Link to={createPageUrl("Explore")}>
+                          <Button className="bg-indigo-600 hover:bg-indigo-700">Find people to follow</Button>
+                        </Link>
+                      ) : (
+                        <>
+                          <Link to={createPageUrl("CreatePost")}>
+                            <Button className="bg-indigo-600 hover:bg-indigo-700">Create Post</Button>
+                          </Link>
+                          <Link to={createPageUrl("Explore")}>
+                            <Button variant="outline">Explore</Button>
+                          </Link>
+                        </>
+                      )}
+                    </div>
+                  }
+                />
+                
+                {activeTab === "following" && (
+                  <div className="max-w-md mx-auto">
+                    <SuggestedUsers currentUser={currentUser} />
+                  </div>
+                )}
+              </div>
+            ) : (
+              <>
+                {posts.map((post, idx) => (
+                  <PostCard 
+                    key={post.id || post._id || `home-post-${idx}`} 
+                    post={post} 
+                    currentUser={currentUser} 
+                  />
+                ))}
+                
+                {/* Infinite Scroll Trigger */}
+                <div 
+                  ref={loadMoreRef} 
+                  className="py-8 flex justify-center"
+                >
+                  {isFetchingNextPage ? (
+                    <div className="flex flex-col items-center gap-2">
+                      <Loader2 className="w-6 h-6 text-indigo-500 animate-spin" />
+                      <p className="text-xs text-slate-400 font-medium">Loading more posts...</p>
+                    </div>
+                  ) : hasNextPage ? (
+                    <p className="text-xs text-slate-300">Scroll for more</p>
+                  ) : (
+                    <p className="text-xs text-slate-300 italic">You've reached the end of the feed</p>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+        </motion.div>
+      </AnimatePresence>
     </div>
   );
 }

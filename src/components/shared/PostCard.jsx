@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, memo, useRef } from "react";
 import { postsAPI, bookmarksAPI, followsAPI } from "@/api/apiClient";
 import { Heart, MessageCircle, Share2, ShoppingBag, MoreHorizontal, Bookmark } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -10,13 +10,14 @@ import ShareModal from "./ShareModal";
 import { formatDistanceToNow } from "date-fns";
 import useEmblaCarousel from 'embla-carousel-react';
 
-export default function PostCard({ post, currentUser }) {
+const PostCard = memo(function PostCard({ post, currentUser }) {
   const queryClient = useQueryClient();
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [showFullContent, setShowFullContent] = useState(false);
   const [showHeartAnimation, setShowHeartAnimation] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: false });
+  const videoRefs = useRef({});
 
   useEffect(() => {
     if (!emblaApi) return;
@@ -41,6 +42,29 @@ export default function PostCard({ post, currentUser }) {
   useEffect(() => {
     setOptimisticCount(post?.likes_count || 0);
   }, [post?.likes_count]);
+
+  // Autoplay video logic
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const video = entry.target;
+          if (entry.isIntersecting) {
+            video.play().catch(() => {}); // Autoplay might be blocked
+          } else {
+            video.pause();
+          }
+        });
+      },
+      { threshold: 0.6 }
+    );
+
+    Object.values(videoRefs.current).forEach((video) => {
+      if (video) observer.observe(video);
+    });
+
+    return () => observer.disconnect();
+  }, [post.media_urls]);
 
   // Follow state
   const { data: followStatus = { is_following: false, is_followed_by: false } } = useQuery({
@@ -95,7 +119,6 @@ export default function PostCard({ post, currentUser }) {
 
   const likeMutation = useMutation({
     mutationFn: async () => {
-      console.log(`Liking/Unliking post: ${postId}, current state: ${optimisticLiked}`);
       if (optimisticLiked) {
         return await postsAPI.unlike(postId);
       } else {
@@ -107,7 +130,6 @@ export default function PostCard({ post, currentUser }) {
       setOptimisticCount(prev => optimisticLiked ? Math.max(0, prev - 1) : prev + 1);
     },
     onSuccess: (data) => {
-      console.log("Like mutation success, server data:", data);
       if (data && data.likes_count !== undefined) {
         setOptimisticCount(data.likes_count);
       }
@@ -116,9 +138,7 @@ export default function PostCard({ post, currentUser }) {
       }
     },
     onError: (error) => {
-      console.error("Like mutation failed:", error);
       toast.error("Failed to update like");
-      // Revert optimistic state
       setOptimisticLiked(isLiked);
       setOptimisticCount(post?.likes_count || 0);
     },
@@ -156,7 +176,8 @@ export default function PostCard({ post, currentUser }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-50px" }}
       className="bg-white rounded-2xl border border-slate-100 overflow-hidden hover:shadow-lg hover:shadow-slate-100 transition-all duration-300"
     >
       <ShareModal 
@@ -172,7 +193,7 @@ export default function PostCard({ post, currentUser }) {
           <div className="relative">
             <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-semibold text-sm ring-2 ring-white overflow-hidden shadow-sm">
               {post.author_avatar ? (
-                <img src={post.author_avatar} alt={post.author_name} className="w-full h-full object-cover" />
+                <img src={post.author_avatar} alt={post.author_name} className="w-full h-full object-cover" loading="lazy" />
               ) : (
                 <div className="w-full h-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white">
                   {post.author_name?.[0]?.toUpperCase() || "U"}
@@ -180,7 +201,7 @@ export default function PostCard({ post, currentUser }) {
               )}
             </div>
             {isFollowing && (
-              <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full" />
+              <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full" />
             )}
           </div>
           <div className="flex flex-col">
@@ -227,7 +248,7 @@ export default function PostCard({ post, currentUser }) {
       {/* Content */}
       {post.content && (
         <div className="px-4 py-2">
-          <p className={`text-sm text-slate-700 leading-relaxed ${!showFullContent && "line-clamp-3"}`}>
+          <p className={`text-[14px] text-slate-700 leading-relaxed whitespace-pre-wrap ${!showFullContent && "line-clamp-3"}`}>
             {post.content}
           </p>
           {post.content.length > 150 && (
@@ -243,9 +264,9 @@ export default function PostCard({ post, currentUser }) {
 
       {/* Media */}
       {post.media_urls?.length > 0 && (
-        <div className="mt-1 relative group select-none">
+        <div className="mt-2 relative group select-none bg-slate-50 aspect-square overflow-hidden">
           <div 
-            className="overflow-hidden cursor-pointer" 
+            className="h-full overflow-hidden cursor-pointer" 
             ref={emblaRef}
             onDoubleClick={() => {
               if (currentUser && !optimisticLiked) {
@@ -255,13 +276,14 @@ export default function PostCard({ post, currentUser }) {
               }
             }}
           >
-            <div className="flex">
+            <div className="flex h-full">
               {post.media_urls.map((url, i) => {
                 const isVid = post.media_type === "video" || isVideoUrl(url);
                 return (
-                  <div key={`${url}-${i}`} className="flex-[0_0_100%] min-w-0 relative aspect-square">
+                  <div key={`${url}-${i}`} className="flex-[0_0_100%] min-w-0 relative h-full">
                     {isVid ? (
                       <video 
+                        ref={el => videoRefs.current[i] = el}
                         src={url} 
                         className="w-full h-full object-cover" 
                         controls 
@@ -275,6 +297,9 @@ export default function PostCard({ post, currentUser }) {
                         alt="" 
                         className="w-full h-full object-cover" 
                         loading="lazy"
+                        onError={(e) => {
+                          e.target.src = "https://placehold.co/600x600/f8fafc/64748b?text=Image+Not+Found";
+                        }}
                       />
                     )}
                   </div>
@@ -315,13 +340,16 @@ export default function PostCard({ post, currentUser }) {
 
       {/* Tagged Products */}
       {post.tagged_products?.length > 0 && (
-        <div className="px-4 py-2">
+        <div className="px-4 py-3">
           <Link
             to={createPageUrl("ProductDetail") + `?id=${post.tagged_products[0]}`}
-            className="flex items-center gap-2 px-3 py-2 bg-indigo-50 rounded-xl text-sm text-indigo-700 font-medium hover:bg-indigo-100 transition-colors"
+            className="flex items-center gap-3 px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-sm text-slate-900 font-semibold hover:bg-slate-100 transition-colors"
           >
-            <ShoppingBag className="w-4 h-4" />
-            View tagged product
+            <div className="p-1.5 bg-indigo-100 rounded-lg text-indigo-600">
+              <ShoppingBag className="w-4 h-4" />
+            </div>
+            <span className="flex-1">View tagged product</span>
+            <ChevronRight className="w-4 h-4 text-slate-400" />
           </Link>
         </div>
       )}
@@ -379,4 +407,6 @@ export default function PostCard({ post, currentUser }) {
       </div>
     </motion.div>
   );
-}
+});
+
+export default PostCard;
