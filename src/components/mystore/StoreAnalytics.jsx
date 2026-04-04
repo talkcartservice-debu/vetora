@@ -4,7 +4,8 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from "recharts";
 import { motion } from "framer-motion";
-import { TrendingUp, TrendingDown, DollarSign, ShoppingCart, Users, Package } from "lucide-react";
+import { TrendingUp, TrendingDown, DollarSign, ShoppingCart, Users, Package, Star } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const COLORS = ["#6366f1", "#8b5cf6", "#ec4899", "#f59e0b", "#10b981", "#3b82f6"];
 
@@ -43,7 +44,8 @@ const CustomTooltip = ({ active, payload, label, prefix = "" }) => {
   return null;
 };
 
-export default function StoreAnalytics({ orders, products }) {
+export default function StoreAnalytics({ orders, products, plan = 'free', onUpgrade }) {
+  const isFree = plan === 'free';
   const dailyRevenue = useMemo(() => {
     const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
     const base = [1200, 890, 1560, 2100, 1890, 3200, 2780];
@@ -89,6 +91,25 @@ export default function StoreAnalytics({ orders, products }) {
 
   return (
     <div className="space-y-6">
+      {isFree && (
+        <motion.div 
+          initial={{ opacity: 0, y: -10 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          className="bg-gradient-to-r from-indigo-500/10 to-purple-500/10 border border-indigo-100 rounded-2xl p-4 flex flex-col md:flex-row items-center justify-between gap-4"
+        >
+          <div className="flex items-center gap-3 text-center md:text-left">
+            <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center shrink-0">
+              <Star className="w-5 h-5 text-indigo-600" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-slate-900">Unlock Advanced Insights</p>
+              <p className="text-xs text-slate-500">Upgrade to Pro or Elite to access detailed CTR, customer demographics, and location data.</p>
+            </div>
+          </div>
+          <Button onClick={onUpgrade} size="sm" className="bg-indigo-600 hover:bg-indigo-700 rounded-xl whitespace-nowrap">Upgrade Plan</Button>
+        </motion.div>
+      )}
+
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <StatCard label="Total Revenue" value={`$${totalRevenue > 0 ? totalRevenue.toFixed(0) : "13,240"}`} change={18.4} icon={DollarSign} color="bg-indigo-50 text-indigo-600" />

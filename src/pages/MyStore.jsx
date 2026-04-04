@@ -13,6 +13,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import StoreAnalytics from "@/components/mystore/StoreAnalytics";
@@ -61,6 +63,18 @@ export default function MyStore() {
     routing_number: "",
     paypal_email: "",
     mobile_money_number: "",
+    // Delivery Settings
+    delivery_settings: {
+      shipping_enabled: true,
+      delivery_enabled: false,
+      pickup_enabled: false,
+      delivery_fee: 0,
+      delivery_radius_km: 10,
+      min_order_for_delivery: 0,
+      free_delivery_above: 0,
+      delivery_time_est: "",
+      pickup_instructions: ""
+    },
     // Additional Info
     phone_number: "",
     address: "",
@@ -327,9 +341,10 @@ export default function MyStore() {
           <DialogContent className="max-w-2xl">
             <DialogHeader><DialogTitle>Create Your Store</DialogTitle></DialogHeader>
             <Tabs defaultValue="general" className="w-full">
-              <TabsList className="grid grid-cols-2 mb-4">
+              <TabsList className="grid grid-cols-3 mb-4">
                 <TabsTrigger value="general">Basic Info</TabsTrigger>
-                <TabsTrigger value="payment">Payout Settings</TabsTrigger>
+                <TabsTrigger value="payment">Payouts</TabsTrigger>
+                <TabsTrigger value="delivery">Delivery</TabsTrigger>
               </TabsList>
 
               <div className="max-h-[60vh] overflow-y-auto pr-2">
@@ -434,6 +449,103 @@ export default function MyStore() {
                     </div>
                   )}
                 </TabsContent>
+
+                <TabsContent value="delivery" className="space-y-6 pt-2">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-3 rounded-xl border border-slate-100">
+                      <div className="space-y-0.5">
+                        <Label>Shipping</Label>
+                        <p className="text-xs text-slate-500">Enable shipping for your products</p>
+                      </div>
+                      <Switch 
+                        checked={storeForm.delivery_settings.shipping_enabled} 
+                        onCheckedChange={(v) => setStoreForm(p => ({ ...p, delivery_settings: { ...p.delivery_settings, shipping_enabled: v } }))} 
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between p-3 rounded-xl border border-slate-100">
+                      <div className="space-y-0.5">
+                        <Label>Local Delivery</Label>
+                        <p className="text-xs text-slate-500">Deliver products directly to local customers</p>
+                      </div>
+                      <Switch 
+                        checked={storeForm.delivery_settings.delivery_enabled} 
+                        onCheckedChange={(v) => setStoreForm(p => ({ ...p, delivery_settings: { ...p.delivery_settings, delivery_enabled: v } }))} 
+                      />
+                    </div>
+
+                    {storeForm.delivery_settings.delivery_enabled && (
+                      <div className="space-y-3 border-l-2 border-indigo-100 pl-4 py-1">
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-1.5">
+                            <Label className="text-xs">Delivery Fee</Label>
+                            <Input 
+                              type="number" 
+                              value={storeForm.delivery_settings.delivery_fee} 
+                              onChange={e => setStoreForm(p => ({ ...p, delivery_settings: { ...p.delivery_settings, delivery_fee: parseFloat(e.target.value) || 0 } }))} 
+                            />
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label className="text-xs">Radius (km)</Label>
+                            <Input 
+                              type="number" 
+                              value={storeForm.delivery_settings.delivery_radius_km} 
+                              onChange={e => setStoreForm(p => ({ ...p, delivery_settings: { ...p.delivery_settings, delivery_radius_km: parseFloat(e.target.value) || 0 } }))} 
+                            />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-1.5">
+                            <Label className="text-xs">Min Order</Label>
+                            <Input 
+                              type="number" 
+                              value={storeForm.delivery_settings.min_order_for_delivery} 
+                              onChange={e => setStoreForm(p => ({ ...p, delivery_settings: { ...p.delivery_settings, min_order_for_delivery: parseFloat(e.target.value) || 0 } }))} 
+                            />
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label className="text-xs">Free Delivery Over</Label>
+                            <Input 
+                              type="number" 
+                              value={storeForm.delivery_settings.free_delivery_above} 
+                              onChange={e => setStoreForm(p => ({ ...p, delivery_settings: { ...p.delivery_settings, free_delivery_above: parseFloat(e.target.value) || 0 } }))} 
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs">Est. Delivery Time</Label>
+                          <Input 
+                            placeholder="e.g. 30-60 mins" 
+                            value={storeForm.delivery_settings.delivery_time_est} 
+                            onChange={e => setStoreForm(p => ({ ...p, delivery_settings: { ...p.delivery_settings, delivery_time_est: e.target.value } }))} 
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex items-center justify-between p-3 rounded-xl border border-slate-100">
+                      <div className="space-y-0.5">
+                        <Label>Store Pickup</Label>
+                        <p className="text-xs text-slate-500">Allow customers to pick up orders</p>
+                      </div>
+                      <Switch 
+                        checked={storeForm.delivery_settings.pickup_enabled} 
+                        onCheckedChange={(v) => setStoreForm(p => ({ ...p, delivery_settings: { ...p.delivery_settings, pickup_enabled: v } }))} 
+                      />
+                    </div>
+
+                    {storeForm.delivery_settings.pickup_enabled && (
+                      <div className="space-y-1.5 border-l-2 border-indigo-100 pl-4 py-1">
+                        <Label className="text-xs">Pickup Instructions</Label>
+                        <Textarea 
+                          placeholder="Where and when to pick up..." 
+                          value={storeForm.delivery_settings.pickup_instructions} 
+                          onChange={e => setStoreForm(p => ({ ...p, delivery_settings: { ...p.delivery_settings, pickup_instructions: e.target.value } }))} 
+                        />
+                      </div>
+                    )}
+                  </div>
+                </TabsContent>
               </div>
 
               <div className="mt-6">
@@ -483,6 +595,17 @@ export default function MyStore() {
                     routing_number: store.routing_number || "",
                     paypal_email: store.paypal_email || "",
                     mobile_money_number: store.mobile_money_number || "",
+                    delivery_settings: {
+                      shipping_enabled: store.delivery_settings?.shipping_enabled ?? true,
+                      delivery_enabled: store.delivery_settings?.delivery_enabled ?? false,
+                      pickup_enabled: store.delivery_settings?.pickup_enabled ?? false,
+                      delivery_fee: store.delivery_settings?.delivery_fee ?? 0,
+                      delivery_radius_km: store.delivery_settings?.delivery_radius_km ?? 10,
+                      min_order_for_delivery: store.delivery_settings?.min_order_for_delivery ?? 0,
+                      free_delivery_above: store.delivery_settings?.free_delivery_above ?? 0,
+                      delivery_time_est: store.delivery_settings?.delivery_time_est ?? "",
+                      pickup_instructions: store.delivery_settings?.pickup_instructions ?? ""
+                    },
                     phone_number: store.phone_number || "",
                     address: store.address || "",
                     website_url: store.website_url || "",
@@ -500,9 +623,10 @@ export default function MyStore() {
               <DialogContent className="max-w-2xl">
                 <DialogHeader><DialogTitle>Edit Store Details</DialogTitle></DialogHeader>
                 <Tabs defaultValue="general" className="w-full">
-                  <TabsList className="grid grid-cols-3 mb-4">
+                  <TabsList className="grid grid-cols-4 mb-4">
                     <TabsTrigger value="general">General</TabsTrigger>
                     <TabsTrigger value="payment">Payment</TabsTrigger>
+                    <TabsTrigger value="delivery">Delivery</TabsTrigger>
                     <TabsTrigger value="additional">Additional</TabsTrigger>
                   </TabsList>
                   
@@ -630,6 +754,108 @@ export default function MyStore() {
                           <Input placeholder="07XXXXXXXX" value={storeForm.mobile_money_number} onChange={e => setStoreForm(p => ({ ...p, mobile_money_number: e.target.value }))} />
                         </div>
                       )}
+                    </TabsContent>
+
+                    <TabsContent value="delivery" className="space-y-6 pt-2">
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between p-4 rounded-xl border border-slate-100 bg-slate-50/30">
+                          <div className="space-y-1">
+                            <Label className="text-base">Shipping</Label>
+                            <p className="text-xs text-slate-500">Allow shipping for your products</p>
+                          </div>
+                          <Switch 
+                            checked={storeForm.delivery_settings.shipping_enabled} 
+                            onCheckedChange={(v) => setStoreForm(p => ({ ...p, delivery_settings: { ...p.delivery_settings, shipping_enabled: v } }))} 
+                          />
+                        </div>
+
+                        <div className="flex items-center justify-between p-4 rounded-xl border border-slate-100 bg-slate-50/30">
+                          <div className="space-y-1">
+                            <Label className="text-base">Local Delivery</Label>
+                            <p className="text-xs text-slate-500">Enable local delivery service</p>
+                          </div>
+                          <Switch 
+                            checked={storeForm.delivery_settings.delivery_enabled} 
+                            onCheckedChange={(v) => setStoreForm(p => ({ ...p, delivery_settings: { ...p.delivery_settings, delivery_enabled: v } }))} 
+                          />
+                        </div>
+
+                        {storeForm.delivery_settings.delivery_enabled && (
+                          <div className="space-y-4 border-l-2 border-indigo-100 pl-4 py-1">
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                <Label className="text-sm font-medium text-slate-600">Delivery Fee</Label>
+                                <Input 
+                                  type="number" 
+                                  placeholder="0.00"
+                                  value={storeForm.delivery_settings.delivery_fee} 
+                                  onChange={e => setStoreForm(p => ({ ...p, delivery_settings: { ...p.delivery_settings, delivery_fee: parseFloat(e.target.value) || 0 } }))} 
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label className="text-sm font-medium text-slate-600">Delivery Radius (km)</Label>
+                                <Input 
+                                  type="number" 
+                                  placeholder="10"
+                                  value={storeForm.delivery_settings.delivery_radius_km} 
+                                  onChange={e => setStoreForm(p => ({ ...p, delivery_settings: { ...p.delivery_settings, delivery_radius_km: parseFloat(e.target.value) || 0 } }))} 
+                                />
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                <Label className="text-sm font-medium text-slate-600">Min Order for Delivery</Label>
+                                <Input 
+                                  type="number" 
+                                  placeholder="0.00"
+                                  value={storeForm.delivery_settings.min_order_for_delivery} 
+                                  onChange={e => setStoreForm(p => ({ ...p, delivery_settings: { ...p.delivery_settings, min_order_for_delivery: parseFloat(e.target.value) || 0 } }))} 
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label className="text-sm font-medium text-slate-600">Free Delivery Above</Label>
+                                <Input 
+                                  type="number" 
+                                  placeholder="0.00"
+                                  value={storeForm.delivery_settings.free_delivery_above} 
+                                  onChange={e => setStoreForm(p => ({ ...p, delivery_settings: { ...p.delivery_settings, free_delivery_above: parseFloat(e.target.value) || 0 } }))} 
+                                />
+                              </div>
+                            </div>
+                            <div className="space-y-2">
+                              <Label className="text-sm font-medium text-slate-600">Estimated Delivery Time</Label>
+                              <Input 
+                                placeholder="e.g. 24-48 hours or 30-60 mins" 
+                                value={storeForm.delivery_settings.delivery_time_est} 
+                                onChange={e => setStoreForm(p => ({ ...p, delivery_settings: { ...p.delivery_settings, delivery_time_est: e.target.value } }))} 
+                              />
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="flex items-center justify-between p-4 rounded-xl border border-slate-100 bg-slate-50/30">
+                          <div className="space-y-1">
+                            <Label className="text-base">Store Pickup</Label>
+                            <p className="text-xs text-slate-500">Allow customers to pick up from your location</p>
+                          </div>
+                          <Switch 
+                            checked={storeForm.delivery_settings.pickup_enabled} 
+                            onCheckedChange={(v) => setStoreForm(p => ({ ...p, delivery_settings: { ...p.delivery_settings, pickup_enabled: v } }))} 
+                          />
+                        </div>
+
+                        {storeForm.delivery_settings.pickup_enabled && (
+                          <div className="space-y-2 border-l-2 border-indigo-100 pl-4 py-1">
+                            <Label className="text-sm font-medium text-slate-600">Pickup Instructions</Label>
+                            <Textarea 
+                              placeholder="Provide details on where and when customers can pick up their orders..." 
+                              className="min-h-[100px]"
+                              value={storeForm.delivery_settings.pickup_instructions} 
+                              onChange={e => setStoreForm(p => ({ ...p, delivery_settings: { ...p.delivery_settings, pickup_instructions: e.target.value } }))} 
+                            />
+                          </div>
+                        )}
+                      </div>
                     </TabsContent>
 
                     <TabsContent value="additional" className="space-y-4 pt-2">
@@ -813,11 +1039,18 @@ export default function MyStore() {
             <DialogContent className="max-w-lg">
               <DialogHeader><DialogTitle>Add Product</DialogTitle></DialogHeader>
               <div className="space-y-3 max-h-[80vh] overflow-y-auto pr-1">
-                <AIProductGenerator onApply={(ai) => setProductForm(p => ({
-                  ...p,
-                  title: ai.title || p.title,
-                  description: ai.description || p.description,
-                }))} />
+                <AIProductGenerator 
+                  plan={currentPlan} 
+                  onUpgrade={() => {
+                    setShowAddProduct(false);
+                    setActiveTab("subscription");
+                  }}
+                  onApply={(ai) => setProductForm(p => ({
+                    ...p,
+                    title: ai.title || p.title,
+                    description: ai.description || p.description,
+                  }))} 
+                />
                 <Input placeholder="Product title" value={productForm.title} onChange={(e) => setProductForm(p => ({ ...p, title: e.target.value }))} />
                 <Textarea placeholder="Description" value={productForm.description} onChange={(e) => setProductForm(p => ({ ...p, description: e.target.value }))} />
                 
@@ -927,11 +1160,11 @@ export default function MyStore() {
                <Package className="w-8 h-8 text-slate-300" />
              </div>
              <h3 className="text-lg font-bold text-slate-900 mb-2">Shipping Zones Restricted</h3>
-             <p className="text-slate-500 max-w-sm mx-auto mb-6">Upgrade to Pro or Elite to manage custom shipping zones and flat rates.</p>
-             <Button onClick={() => setActiveTab("subscription")} className="bg-indigo-600 hover:bg-indigo-700 rounded-xl">Upgrade Now</Button>
+             <p className="text-slate-500 max-w-sm mx-auto mb-6">Upgrade your plan to manage custom shipping zones, set flat rates for different regions, and offer more flexible shipping options to your customers.</p>
+             <Button onClick={() => setActiveTab("subscription")} className="bg-indigo-600 hover:bg-indigo-700 rounded-xl">Upgrade Plan</Button>
           </div>
         ) : (
-          <ShippingZoneManager store={store} vendorUsername={currentUser?.username} plan={currentPlan} />
+          <ShippingZoneManager store={store} vendorUsername={currentUser?.username} plan={currentPlan} onUpgrade={() => setActiveTab("subscription")} />
         )
       )}
 
@@ -947,15 +1180,26 @@ export default function MyStore() {
 
       {/* Coupons Tab */}
       {activeTab === "coupons" && (
-        <CouponManager store={store} vendorUsername={currentUser?.username} />
+        currentPlan === 'free' ? (
+          <div className="bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200 p-12 text-center">
+             <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mx-auto mb-4">
+               <Tag className="w-8 h-8 text-slate-300" />
+             </div>
+             <h3 className="text-lg font-bold text-slate-900 mb-2">Coupons Restricted</h3>
+             <p className="text-slate-500 max-w-sm mx-auto mb-6">Upgrade your plan to create discount coupons, run promotional campaigns, and boost your sales with custom codes.</p>
+             <Button onClick={() => setActiveTab("subscription")} className="bg-indigo-600 hover:bg-indigo-700 rounded-xl">Upgrade Plan</Button>
+          </div>
+        ) : (
+          <CouponManager store={store} vendorUsername={currentUser?.username} />
+        )
       )}
 
       {/* Analytics Tab */}
       {activeTab === "analytics" && (
         currentPlan === 'elite' || currentPlan === 'pro' ? (
-          <AdvancedAnalytics orders={orders} products={products} plan={currentPlan} />
+          <AdvancedAnalytics orders={orders} products={products} plan={currentPlan} onUpgrade={() => setActiveTab("subscription")} />
         ) : (
-          <StoreAnalytics orders={orders} products={products} />
+          <StoreAnalytics orders={orders} products={products} plan={currentPlan} onUpgrade={() => setActiveTab("subscription")} />
         )
       )}
 

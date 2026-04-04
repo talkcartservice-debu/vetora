@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { affiliateLinksAPI, productsAPI } from "@/api/apiClient";
+import { affiliateLinksAPI, productsAPI, vendorSubscriptionsAPI } from "@/api/apiClient";
 import { useAuth } from "@/lib/AuthContext";
 
 const MOCK_LEADERBOARD = [
@@ -123,6 +123,18 @@ export default function Affiliate() {
   const [pendingProductId, setPendingProductId] = useState(null);
   const queryClient = useQueryClient();
   const { user: currentUser } = useAuth();
+
+  const { data: subscription } = useQuery({
+    queryKey: ["vendorSubscription", currentUser?.username],
+    queryFn: async () => {
+      const res = await vendorSubscriptionsAPI.list({ vendor_username: currentUser?.username });
+      const subs = res.subscriptions || res.data || (Array.isArray(res) ? res : []);
+      return subs.find(s => s.status === 'active') || null;
+    },
+    enabled: !!currentUser?.username,
+  });
+
+  const isEliteVendor = subscription?.plan === "elite";
 
   const { data: myData, isLoading } = useQuery({
     queryKey: ["affiliateLinks", currentUser?.username],
@@ -296,6 +308,22 @@ export default function Affiliate() {
 
             {/* Product Picker */}
             <div className="lg:col-span-2">
+              {!isEliteVendor && (
+                <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 mb-4">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <Zap className="w-4 h-4 text-amber-600" />
+                    <p className="text-sm font-bold text-amber-900">List Your Products</p>
+                  </div>
+                  <p className="text-xs text-amber-700 leading-relaxed mb-3">
+                    Only products from **Elite vendors** are shown in the affiliate marketplace. Upgrade your plan to let others promote your products.
+                  </p>
+                  <Link to={createPageUrl("MyStore") + "?tab=subscription"}>
+                    <Button size="sm" className="w-full bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-[11px] h-8">
+                      Upgrade to Elite
+                    </Button>
+                  </Link>
+                </div>
+              )}
               <div className="bg-white rounded-2xl border border-slate-100 p-4 sticky top-4">
                 <h3 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
                   <Package className="w-4 h-4 text-indigo-500" /> Choose a Product

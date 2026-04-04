@@ -46,8 +46,9 @@ function KpiCard({ icon: Icon, label, value, change, color, sub }) {
   );
 }
 
-export default function AdvancedAnalytics({ orders, products, plan = 'free' }) {
+export default function AdvancedAnalytics({ orders, products, plan = 'free', onUpgrade }) {
   const isElite = plan === 'elite';
+  const isPro = plan === 'pro' || plan === 'elite';
   // Derived real data
   const totalRevenue = orders.reduce((s, o) => s + (o.total || 0), 0);
   const avgOrderValue = orders.length ? totalRevenue / orders.length : 0;
@@ -240,8 +241,8 @@ export default function AdvancedAnalytics({ orders, products, plan = 'free' }) {
                 <Star className="w-5 h-5 text-amber-600" />
               </div>
               <h4 className="text-sm font-bold text-slate-900 mb-1">Elite Analytics Feature</h4>
-              <p className="text-[11px] text-slate-500 mb-4 max-w-[180px]">Detailed audience demographics are only available on the Elite plan.</p>
-              <Button size="sm" variant="outline" className="h-8 text-[10px] rounded-lg border-amber-200 text-amber-700 hover:bg-amber-50">Upgrade to Elite</Button>
+              <p className="text-[11px] text-slate-500 mb-4 max-w-[180px]">Upgrade your subscription to access detailed audience demographics and deeper insights.</p>
+              <Button onClick={onUpgrade} size="sm" variant="outline" className="h-8 text-[10px] rounded-lg border-amber-200 text-amber-700 hover:bg-amber-50">Upgrade Plan</Button>
             </div>
           )}
           <h3 className="text-sm font-semibold text-slate-900 mb-1">Audience Demographics</h3>
@@ -313,8 +314,8 @@ export default function AdvancedAnalytics({ orders, products, plan = 'free' }) {
                 <Star className="w-5 h-5 text-amber-600" />
               </div>
               <h4 className="text-sm font-bold text-slate-900 mb-1">Elite Analytics Feature</h4>
-              <p className="text-[11px] text-slate-500 mb-4 max-w-[180px]">Customer location data is only available on the Elite plan.</p>
-              <Button size="sm" variant="outline" className="h-8 text-[10px] rounded-lg border-amber-200 text-amber-700 hover:bg-amber-50">Upgrade to Elite</Button>
+              <p className="text-[11px] text-slate-500 mb-4 max-w-[180px]">Upgrade your subscription to see customer location data and target your audience better.</p>
+              <Button onClick={onUpgrade} size="sm" variant="outline" className="h-8 text-[10px] rounded-lg border-amber-200 text-amber-700 hover:bg-amber-50">Upgrade Plan</Button>
             </div>
           )}
           <h3 className="text-sm font-semibold text-slate-900 mb-1 flex items-center gap-1.5">

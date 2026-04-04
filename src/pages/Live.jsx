@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { liveSessionsAPI, liveChatMessagesAPI, productsAPI, cartAPI, authAPI, storesAPI, followsAPI } from "@/api/apiClient";
+import { liveSessionsAPI, liveChatMessagesAPI, productsAPI, cartAPI, authAPI, storesAPI, followsAPI, vendorSubscriptionsAPI } from "@/api/apiClient";
 import { useAuth } from "@/lib/AuthContext";
 
 const MessageCircleIcon = (props) => (
@@ -764,6 +764,18 @@ export default function Live() {
     enabled: !!currentUser?.email,
   });
 
+  const { data: subscription } = useQuery({
+    queryKey: ["vendorSubscription", currentUser?.username],
+    queryFn: async () => {
+      const res = await vendorSubscriptionsAPI.list({ vendor_username: currentUser?.username });
+      const subs = res.subscriptions || res.data || (Array.isArray(res) ? res : []);
+      return subs.find(s => s.status === 'active') || null;
+    },
+    enabled: !!currentUser?.username,
+  });
+
+  const currentPlan = subscription?.plan || 'free';
+
   const { data: activeSessionsRes = {} } = useQuery({
     queryKey: ["liveSessions", "active"],
     queryFn: async () => {
@@ -809,7 +821,21 @@ export default function Live() {
           <p className="text-slate-500 text-sm mt-0.5">Watch, chat & shop in real-time</p>
         </div>
         {currentUser && (
-          <Button onClick={() => setShowBroadcast(true)} className="bg-red-500 hover:bg-red-600 rounded-xl gap-1.5 text-sm">
+          <Button 
+            onClick={() => {
+              if (currentPlan === 'free') {
+                toast.error("Go Live is a premium feature! Upgrade to Pro or Elite to start streaming.", {
+                  action: {
+                    label: "Upgrade Plan",
+                    onClick: () => window.location.href = "/mystore?tab=subscription"
+                  }
+                });
+                return;
+              }
+              setShowBroadcast(true);
+            }} 
+            className="bg-red-500 hover:bg-red-600 rounded-xl gap-1.5 text-sm"
+          >
             <Video className="w-4 h-4" /> Go Live
           </Button>
         )}

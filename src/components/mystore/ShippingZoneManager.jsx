@@ -139,7 +139,7 @@ function ZoneForm({ initial = BLANK_ZONE, onSave, onCancel, saving }) {
   );
 }
 
-export default function ShippingZoneManager({ store, vendorUsername, plan = 'free' }) {
+export default function ShippingZoneManager({ store, vendorUsername, plan = 'free', onUpgrade }) {
   const [showAdd, setShowAdd] = useState(false);
   const [editId, setEditId] = useState(null);
   const queryClient = useQueryClient();
@@ -185,7 +185,22 @@ export default function ShippingZoneManager({ store, vendorUsername, plan = 'fre
           </h3>
           <p className="text-xs text-slate-500 mt-0.5">Define where you ship and how much it costs</p>
         </div>
-        <Button onClick={() => setShowAdd(true)} size="sm" className="bg-indigo-600 hover:bg-indigo-700 rounded-xl gap-1.5">
+        <Button 
+          onClick={() => {
+            if (plan === 'pro' && zones.length >= 3) {
+              toast.error("Pro plan limit reached! Upgrade to Elite for unlimited shipping zones.", {
+                action: {
+                  label: "Upgrade Plan",
+                  onClick: () => onUpgrade()
+                }
+              });
+              return;
+            }
+            setShowAdd(true);
+          }} 
+          size="sm" 
+          className="bg-indigo-600 hover:bg-indigo-700 rounded-xl gap-1.5"
+        >
           <Plus className="w-4 h-4" /> Add Zone
         </Button>
       </div>
@@ -286,8 +301,8 @@ export default function ShippingZoneManager({ store, vendorUsername, plan = 'fre
         {!isElite ? (
           <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between">
             <span className="text-[11px] text-slate-400 font-medium">Upgrade to Elite to unlock live carrier rates</span>
-            <Button size="sm" variant="outline" className="h-8 text-[10px] rounded-lg border-amber-200 text-amber-700 hover:bg-amber-50">
-              Explore Elite Plan
+            <Button onClick={onUpgrade} size="sm" variant="outline" className="h-8 text-[10px] rounded-lg border-amber-200 text-amber-700 hover:bg-amber-50">
+              Upgrade to Elite
             </Button>
           </div>
         ) : (
