@@ -38,6 +38,7 @@ import LanguagePicker from "@/components/layout/LanguagePicker";
 import NotificationBell from "@/components/layout/NotificationBell";
 import GlobalSearch from "@/components/layout/GlobalSearch";
 import CreateActionModal from "@/components/layout/CreateActionModal";
+import AnnouncementBanner from "@/components/layout/AnnouncementBanner";
 
 const NAV_ITEMS = [
   { name: "Home", icon: Home, page: "Home" },
@@ -326,6 +327,7 @@ export default function Layout({ children, currentPageName }) {
 
       {/* Main Content */}
       <main className={`pt-14 lg:pt-0 pb-20 lg:pb-0 min-h-screen dark:text-slate-100 transition-all duration-300 ${sidebarOpen ? "lg:ml-64" : "lg:ml-20"}`}>
+        <AnnouncementBanner />
         {children}
       </main>
 

@@ -421,6 +421,7 @@ export const adminAPI = {
     return apiClient.get(`/admin/users?${query}`);
   },
   updateUserBlockStatus: (id, is_blocked) => apiClient.patch(`/admin/users/${id}/block`, { is_blocked }),
+  bulkUpdateUserBlockStatus: (userIds, is_blocked) => apiClient.patch('/admin/users/bulk-block', { userIds, is_blocked }),
   updateUserRole: (id, role) => apiClient.patch(`/admin/users/${id}/role`, { role }),
   // Stores
   getStores: (params) => {
@@ -428,7 +429,15 @@ export const adminAPI = {
     return apiClient.get(`/admin/stores?${query}`);
   },
   updateStoreStatus: (id, status) => apiClient.patch(`/admin/stores/${id}/status`, { status }),
+  bulkUpdateStoreStatus: (storeIds, status) => apiClient.patch('/admin/stores/bulk-status', { storeIds, status }),
   updateStoreVerification: (id, is_verified) => apiClient.patch(`/admin/stores/${id}/verify`, { is_verified }),
+  // Products
+  getProducts: (params) => {
+    const query = apiClient.buildQueryString(params);
+    return apiClient.get(`/admin/products?${query}`);
+  },
+  updateProductStatus: (id, status) => apiClient.patch(`/admin/products/${id}/status`, { status }),
+  deleteProduct: (id) => apiClient.delete(`/admin/products/${id}`),
   // Orders
   getOrders: (params) => {
     const query = apiClient.buildQueryString(params);
@@ -453,6 +462,15 @@ export const adminAPI = {
     const query = apiClient.buildQueryString(params);
     return apiClient.get(`/admin/activity-logs?${query}`);
   },
+  // Announcements
+  getAnnouncements: () => apiClient.get('/admin/announcements'),
+  createAnnouncement: (data) => apiClient.post('/admin/announcements', data),
+  updateAnnouncement: (id, data) => apiClient.patch(`/admin/announcements/${id}`, data),
+  deleteAnnouncement: (id) => apiClient.delete(`/admin/announcements/${id}`),
+};
+
+export const announcementsAPI = {
+  getActive: () => apiClient.get('/announcements/active'),
 };
 
 export const shippingZonesAPI = {

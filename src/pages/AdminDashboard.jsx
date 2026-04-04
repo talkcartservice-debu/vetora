@@ -26,6 +26,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -49,7 +50,13 @@ import {
   Percent,
   Wallet,
   Eye,
-  Filter
+  Filter,
+  Package,
+  Trash2,
+  Archive,
+  Ban,
+  Bell,
+  Plus
 } from 'lucide-react';
 import { 
   Dialog,
@@ -203,6 +210,7 @@ const AdminDashboard = () => {
   const [users, setUsers] = useState([]);
   const [userSearch, setUserSearch] = useState('');
   const [userLoading, setUserLoading] = useState(false);
+  const [selectedUserIds, setSelectedUserIds] = useState([]);
 
   // Stores State
   const [stores, setStores] = useState([]);
@@ -211,6 +219,13 @@ const AdminDashboard = () => {
   const [storeLoading, setStoreLoading] = useState(false);
   const [selectedStore, setSelectedStore] = useState(null);
   const [isStoreModalOpen, setIsStoreModalOpen] = useState(false);
+  const [selectedStoreIds, setSelectedStoreIds] = useState([]);
+
+  // Products State
+  const [products, setProducts] = useState([]);
+  const [productSearch, setProductSearch] = useState('');
+  const [productFilter, setProductFilter] = useState('all');
+  const [productLoading, setProductLoading] = useState(false);
 
   // Orders State
   const [orders, setOrders] = useState([]);
@@ -236,6 +251,20 @@ const AdminDashboard = () => {
   // Activity Logs State
   const [activityLogs, setActivityLogs] = useState([]);
   const [activityLogsLoading, setActivityLogsLoading] = useState(false);
+
+  // Announcements State
+  const [announcements, setAnnouncements] = useState([]);
+  const [announcementsLoading, setAnnouncementsLoading] = useState(false);
+  const [isAnnouncementModalOpen, setIsAnnouncementModalOpen] = useState(false);
+  const [selectedAnnouncement, setSelectedAnnouncement] = useState(null);
+  const [announcementForm, setAnnouncementForm] = useState({
+    title: '',
+    content: '',
+    type: 'info',
+    target: 'all',
+    is_active: true,
+    expires_at: ''
+  });
 
   // Subscriptions State
   const [subscriptions, setSubscriptions] = useState([]);
@@ -312,6 +341,25 @@ const AdminDashboard = () => {
     }
   };
 
+  const fetchProducts = async () => {
+    try {
+      setProductLoading(true);
+      const data = await adminAPI.getProducts({ 
+        search: productSearch,
+        status: productFilter === 'all' ? undefined : productFilter
+      });
+      setProducts(data.products || []);
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to fetch products',
+        variant: 'destructive',
+      });
+    } finally {
+      setProductLoading(false);
+    }
+  };
+
   const fetchOrders = async () => {
     try {
       setOrderLoading(true);
@@ -376,9 +424,29 @@ const AdminDashboard = () => {
     }
   };
 
+  const fetchAnnouncements = async () => {
+    try {
+      setAnnouncementsLoading(true);
+      const data = await adminAPI.getAnnouncements();
+      setAnnouncements(data.announcements || []);
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to fetch announcements',
+        variant: 'destructive',
+      });
+    } finally {
+      setAnnouncementsLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (activeTab === 'stores') fetchStores();
   }, [storeFilter]);
+
+  useEffect(() => {
+    if (activeTab === 'products') fetchProducts();
+  }, [productFilter]);
 
   const fetchSubscriptions = async () => {
     try {
@@ -399,11 +467,13 @@ const AdminDashboard = () => {
   useEffect(() => {
     if (activeTab === 'users') fetchUsers();
     if (activeTab === 'stores') fetchStores();
+    if (activeTab === 'products') fetchProducts();
     if (activeTab === 'orders') fetchOrders();
     if (activeTab === 'withdrawals') fetchWithdrawals();
     if (activeTab === 'moderation') fetchReports();
     if (activeTab === 'logs') fetchActivityLogs();
     if (activeTab === 'subscriptions') fetchSubscriptions();
+    if (activeTab === 'announcements') fetchAnnouncements();
   }, [activeTab]);
 
   const handleBlockUser = async (userId, isBlocked) => {
@@ -418,6 +488,25 @@ const AdminDashboard = () => {
       toast({
         title: 'Error',
         description: 'Failed to update user status',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleBulkBlockUsers = async (isBlocked) => {
+    if (selectedUserIds.length === 0) return;
+    try {
+      await adminAPI.bulkUpdateUserBlockStatus(selectedUserIds, isBlocked);
+      toast({
+        title: 'Success',
+        description: `${selectedUserIds.length} users ${isBlocked ? 'blocked' : 'unblocked'} successfully`,
+      });
+      setSelectedUserIds([]);
+      fetchUsers();
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update users status',
         variant: 'destructive',
       });
     }
@@ -443,6 +532,25 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleBulkUpdateStoreStatus = async (status) => {
+    if (selectedStoreIds.length === 0) return;
+    try {
+      await adminAPI.bulkUpdateStoreStatus(selectedStoreIds, status);
+      toast({
+        title: 'Success',
+        description: `${selectedStoreIds.length} stores status updated to ${status}`,
+      });
+      setSelectedStoreIds([]);
+      fetchStores();
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update stores status',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const handleUpdateStoreVerification = async (storeId, isVerified) => {
     try {
       await adminAPI.updateStoreVerification(storeId, isVerified);
@@ -458,6 +566,41 @@ const AdminDashboard = () => {
       toast({
         title: 'Error',
         description: 'Failed to update store verification',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleUpdateProductStatus = async (productId, status) => {
+    try {
+      await adminAPI.updateProductStatus(productId, status);
+      toast({
+        title: 'Success',
+        description: `Product status updated to ${status}`,
+      });
+      fetchProducts();
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update product status',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleDeleteProduct = async (productId) => {
+    if (!window.confirm('Are you sure you want to delete this product?')) return;
+    try {
+      await adminAPI.deleteProduct(productId);
+      toast({
+        title: 'Success',
+        description: 'Product deleted successfully',
+      });
+      fetchProducts();
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to delete product',
         variant: 'destructive',
       });
     }
@@ -496,6 +639,42 @@ const AdminDashboard = () => {
       toast({
         title: 'Error',
         description: 'Failed to resolve report',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleSaveAnnouncement = async (e) => {
+    e.preventDefault();
+    try {
+      if (selectedAnnouncement) {
+        await adminAPI.updateAnnouncement(selectedAnnouncement._id, announcementForm);
+        toast({ title: 'Success', description: 'Announcement updated' });
+      } else {
+        await adminAPI.createAnnouncement(announcementForm);
+        toast({ title: 'Success', description: 'Announcement created' });
+      }
+      setIsAnnouncementModalOpen(false);
+      fetchAnnouncements();
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to save announcement',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleDeleteAnnouncement = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this announcement?')) return;
+    try {
+      await adminAPI.deleteAnnouncement(id);
+      toast({ title: 'Success', description: 'Announcement deleted' });
+      fetchAnnouncements();
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to delete announcement',
         variant: 'destructive',
       });
     }
@@ -545,7 +724,7 @@ const AdminDashboard = () => {
         </Button>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Users</CardTitle>
@@ -564,6 +743,16 @@ const AdminDashboard = () => {
           <CardContent>
             <div className="text-2xl font-bold">{stats?.counts?.stores?.active || 0}</div>
             <p className="text-xs text-muted-foreground">{stats?.counts?.stores?.pending || 0} pending approval</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Products</CardTitle>
+            <CreditCard className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats?.counts?.products || 0}</div>
+            <p className="text-xs text-muted-foreground">Live products</p>
           </CardContent>
         </Card>
         <Card>
@@ -599,10 +788,12 @@ const AdminDashboard = () => {
       </div>
 
       <Tabs defaultValue="overview" className="space-y-4" onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-9 lg:w-[1150px]">
+        <TabsList className="grid w-full grid-cols-11 lg:w-[1350px]">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="users">Users</TabsTrigger>
           <TabsTrigger value="stores">Stores</TabsTrigger>
+          <TabsTrigger value="products">Products</TabsTrigger>
+          <TabsTrigger value="announcements">Announcements</TabsTrigger>
           <TabsTrigger value="subscriptions">Subscriptions</TabsTrigger>
           <TabsTrigger value="moderation">Moderation</TabsTrigger>
           <TabsTrigger value="orders">Orders</TabsTrigger>
@@ -717,23 +908,37 @@ const AdminDashboard = () => {
         <TabsContent value="users" className="space-y-4">
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                   <CardTitle>Users Management</CardTitle>
                   <CardDescription>View and manage platform users.</CardDescription>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  {selectedUserIds.length > 0 && (
+                    <div className="flex items-center gap-2 mr-4 bg-muted p-1 px-2 rounded-md">
+                      <span className="text-xs font-medium">{selectedUserIds.length} selected</span>
+                      <Button size="xs" variant="destructive" className="h-7 px-2" onClick={() => handleBulkBlockUsers(true)}>
+                        <Ban className="w-3 h-3 mr-1" /> Block
+                      </Button>
+                      <Button size="xs" variant="outline" className="h-7 px-2" onClick={() => handleBulkBlockUsers(false)}>
+                        <UserCheck className="w-3 h-3 mr-1" /> Unblock
+                      </Button>
+                      <Button size="xs" variant="ghost" className="h-7 px-2" onClick={() => setSelectedUserIds([])}>
+                        Clear
+                      </Button>
+                    </div>
+                  )}
                   <div className="relative">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
                       placeholder="Search username or name..."
-                      className="pl-8 w-[250px]"
+                      className="pl-8 w-[250px] h-9"
                       value={userSearch}
                       onChange={(e) => setUserSearch(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && fetchUsers()}
                     />
                   </div>
-                  <Button onClick={fetchUsers} disabled={userLoading} size="sm">
+                  <Button onClick={fetchUsers} disabled={userLoading} size="sm" className="h-9">
                     Search
                   </Button>
                 </div>
@@ -743,6 +948,15 @@ const AdminDashboard = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-[50px]">
+                      <Checkbox 
+                        checked={users.length > 0 && selectedUserIds.length === users.length}
+                        onCheckedChange={(checked) => {
+                          if (checked) setSelectedUserIds(users.map(u => u._id));
+                          else setSelectedUserIds([]);
+                        }}
+                      />
+                    </TableHead>
                     <TableHead>User</TableHead>
                     <TableHead>Role</TableHead>
                     <TableHead>Status</TableHead>
@@ -751,54 +965,71 @@ const AdminDashboard = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {users.map((u) => (
-                    <TableRow key={u._id}>
-                      <TableCell>
-                        <div className="font-medium">{u.display_name}</div>
-                        <div className="text-xs text-muted-foreground">@{u.username}</div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{u.role}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        {u.is_blocked ? (
-                          <Badge variant="destructive">Blocked</Badge>
-                        ) : (
-                          <Badge variant="success">Active</Badge>
-                        )}
-                      </TableCell>
-                      <TableCell>{new Date(u.created_at).toLocaleDateString()}</TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem onClick={() => handleBlockUser(u._id, u.is_blocked)}>
-                              {u.is_blocked ? (
-                                <><UserCheck className="mr-2 h-4 w-4" /> Unblock</>
-                              ) : (
-                                <><UserX className="mr-2 h-4 w-4" /> Block</>
-                              )}
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => {
-                              const newRole = u.role === 'vendor' ? 'user' : 'vendor';
-                              adminAPI.updateUserRole(u._id, newRole).then(() => {
-                                toast({ title: 'Success', description: 'Role updated' });
-                                fetchUsers();
-                              });
-                            }}>
-                              Make {u.role === 'vendor' ? 'User' : 'Vendor'}
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                  {users.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                        No users found.
                       </TableCell>
                     </TableRow>
-                  ))}
+                  ) : (
+                    users.map((u) => (
+                      <TableRow key={u._id} className={selectedUserIds.includes(u._id) ? "bg-muted/50" : ""}>
+                        <TableCell>
+                          <Checkbox 
+                            checked={selectedUserIds.includes(u._id)}
+                            onCheckedChange={(checked) => {
+                              if (checked) setSelectedUserIds(prev => [...prev, u._id]);
+                              else setSelectedUserIds(prev => prev.filter(id => id !== u._id));
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <div className="font-medium">{u.display_name}</div>
+                          <div className="text-xs text-muted-foreground">@{u.username}</div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{u.role}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          {u.is_blocked ? (
+                            <Badge variant="destructive">Blocked</Badge>
+                          ) : (
+                            <Badge variant="success">Active</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell>{new Date(u.created_at).toLocaleDateString()}</TableCell>
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                              <DropdownMenuItem onClick={() => handleBlockUser(u._id, u.is_blocked)}>
+                                {u.is_blocked ? (
+                                  <><UserCheck className="mr-2 h-4 w-4" /> Unblock</>
+                                ) : (
+                                  <><UserX className="mr-2 h-4 w-4" /> Block</>
+                                )}
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={() => {
+                                const newRole = u.role === 'vendor' ? 'user' : 'vendor';
+                                adminAPI.updateUserRole(u._id, newRole).then(() => {
+                                  toast({ title: 'Success', description: 'Role updated' });
+                                  fetchUsers();
+                                });
+                              }}>
+                                Make {u.role === 'vendor' ? 'User' : 'Vendor'}
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
@@ -810,10 +1041,24 @@ const AdminDashboard = () => {
             <CardHeader>
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                  <CardTitle>Store Management</CardTitle>
-                  <CardDescription>Approve or manage vendor stores.</CardDescription>
+                  <CardTitle>Stores Management</CardTitle>
+                  <CardDescription>View and manage vendor stores.</CardDescription>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
+                  {selectedStoreIds.length > 0 && (
+                    <div className="flex items-center gap-2 mr-4 bg-muted p-1 px-2 rounded-md">
+                      <span className="text-xs font-medium">{selectedStoreIds.length} selected</span>
+                      <Button size="xs" variant="success" className="h-7 px-2" onClick={() => handleBulkUpdateStoreStatus('active')}>
+                        <CheckCircle className="w-3 h-3 mr-1" /> Activate
+                      </Button>
+                      <Button size="xs" variant="destructive" className="h-7 px-2" onClick={() => handleBulkUpdateStoreStatus('suspended')}>
+                        <Ban className="w-3 h-3 mr-1" /> Suspend
+                      </Button>
+                      <Button size="xs" variant="ghost" className="h-7 px-2" onClick={() => setSelectedStoreIds([])}>
+                        Clear
+                      </Button>
+                    </div>
+                  )}
                   <div className="flex items-center gap-2 mr-2">
                     <Filter className="w-4 h-4 text-muted-foreground" />
                     <Select value={storeFilter} onValueChange={setStoreFilter}>
@@ -848,6 +1093,15 @@ const AdminDashboard = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-[50px]">
+                      <Checkbox 
+                        checked={stores.length > 0 && selectedStoreIds.length === stores.length}
+                        onCheckedChange={(checked) => {
+                          if (checked) setSelectedStoreIds(stores.map(s => s._id));
+                          else setSelectedStoreIds([]);
+                        }}
+                      />
+                    </TableHead>
                     <TableHead>Store Name</TableHead>
                     <TableHead>Owner</TableHead>
                     <TableHead>Status</TableHead>
@@ -859,13 +1113,22 @@ const AdminDashboard = () => {
                 <TableBody>
                   {stores.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                         No stores found.
                       </TableCell>
                     </TableRow>
                   ) : (
                     stores.map((s) => (
-                      <TableRow key={s._id}>
+                      <TableRow key={s._id} className={selectedStoreIds.includes(s._id) ? "bg-muted/50" : ""}>
+                        <TableCell>
+                          <Checkbox 
+                            checked={selectedStoreIds.includes(s._id)}
+                            onCheckedChange={(checked) => {
+                              if (checked) setSelectedStoreIds(prev => [...prev, s._id]);
+                              else setSelectedStoreIds(prev => prev.filter(id => id !== s._id));
+                            }}
+                          />
+                        </TableCell>
                         <TableCell className="font-medium">
                           <div className="flex flex-col">
                             <span>{s.name}</span>
@@ -943,6 +1206,149 @@ const AdminDashboard = () => {
             onUpdateStatus={handleUpdateStoreStatus}
             onUpdateVerification={handleUpdateStoreVerification}
           />
+        </TabsContent>
+
+        <TabsContent value="products" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Product Catalog</CardTitle>
+                  <CardDescription>Monitor and moderate products across all stores.</CardDescription>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 mr-4">
+                    <Label htmlFor="product-status" className="text-xs">Status:</Label>
+                    <Select value={productFilter} onValueChange={setProductFilter}>
+                      <SelectTrigger id="product-status" className="w-[120px] h-9">
+                        <SelectValue placeholder="All Status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Status</SelectItem>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="draft">Draft</SelectItem>
+                        <SelectItem value="sold_out">Sold Out</SelectItem>
+                        <SelectItem value="archived">Archived</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search title or vendor..."
+                      className="pl-8 w-[200px] h-9"
+                      value={productSearch}
+                      onChange={(e) => setProductSearch(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && fetchProducts()}
+                    />
+                  </div>
+                  <Button onClick={fetchProducts} disabled={productLoading} size="sm" className="h-9">
+                    Search
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Product</TableHead>
+                    <TableHead>Store / Vendor</TableHead>
+                    <TableHead>Price</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Stats</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {products.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                        No products found.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    products.map((p) => (
+                      <TableRow key={p._id}>
+                        <TableCell className="font-medium">
+                          <div className="flex items-center gap-3">
+                            {p.images && p.images[0] ? (
+                              <img src={p.images[0]} alt="" className="w-10 h-10 object-cover rounded bg-muted" />
+                            ) : (
+                              <div className="w-10 h-10 rounded bg-muted flex items-center justify-center">
+                                <Package className="w-5 h-5 text-muted-foreground" />
+                              </div>
+                            )}
+                            <div className="flex flex-col">
+                              <span className="max-w-[200px] truncate">{p.title}</span>
+                              <span className="text-xs text-muted-foreground font-normal">ID: {p._id.substring(0, 8)}...</span>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col">
+                            <span>{p.store_name}</span>
+                            <span className="text-xs text-muted-foreground">@{p.vendor_username}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col">
+                            <span className="font-semibold">${p.price}</span>
+                            {p.compare_at_price > p.price && (
+                              <span className="text-xs text-muted-foreground line-through">${p.compare_at_price}</span>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={
+                            p.status === 'active' ? 'success' : 
+                            p.status === 'draft' ? 'warning' : 
+                            p.status === 'sold_out' ? 'destructive' : 'outline'
+                          }>
+                            {p.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col text-xs">
+                            <span>Sales: {p.sales_count || 0}</span>
+                            <span>Views: {p.views_count || 0}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuLabel>Product Actions</DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={() => handleUpdateProductStatus(p._id, 'active')}>
+                                  <CheckCircle className="w-4 h-4 mr-2 text-success" /> Activate
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleUpdateProductStatus(p._id, 'archived')}>
+                                  <Archive className="w-4 h-4 mr-2 text-muted-foreground" /> Archive
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem 
+                                  onClick={() => handleDeleteProduct(p._id)}
+                                  className="text-destructive"
+                                >
+                                  <Trash2 className="w-4 h-4 mr-2" /> Delete Product
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="orders" className="space-y-4">
@@ -1381,6 +1787,212 @@ const AdminDashboard = () => {
                   Confirm {reportAction === 'resolved' ? 'Resolution' : 'Dismissal'}
                 </Button>
               </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </TabsContent>
+
+        <TabsContent value="announcements" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Platform Announcements</CardTitle>
+                  <CardDescription>Create and manage system-wide notifications for users and vendors.</CardDescription>
+                </div>
+                <Button onClick={() => {
+                  setSelectedAnnouncement(null);
+                  setAnnouncementForm({
+                    title: '',
+                    content: '',
+                    type: 'info',
+                    target: 'all',
+                    is_active: true,
+                    expires_at: ''
+                  });
+                  setIsAnnouncementModalOpen(true);
+                }} size="sm" className="flex items-center gap-2">
+                  <Plus className="w-4 h-4" /> New Announcement
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Announcement</TableHead>
+                    <TableHead>Target</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Expires</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {announcements.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                        No announcements found.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    announcements.map((a) => (
+                      <TableRow key={a._id}>
+                        <TableCell>
+                          <div className="font-medium">{a.title}</div>
+                          <div className="text-xs text-muted-foreground truncate max-w-[300px]">{a.content}</div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="capitalize">{a.target}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={
+                            a.type === 'info' ? 'default' : 
+                            a.type === 'warning' ? 'warning' : 
+                            a.type === 'error' ? 'destructive' : 'success'
+                          } className="capitalize">
+                            {a.type}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {a.is_active ? (
+                            <Badge variant="success">Active</Badge>
+                          ) : (
+                            <Badge variant="outline">Inactive</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {a.expires_at ? new Date(a.expires_at).toLocaleDateString() : 'Never'}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-8 w-8 p-0"
+                              onClick={() => {
+                                setSelectedAnnouncement(a);
+                                setAnnouncementForm({
+                                  title: a.title,
+                                  content: a.content,
+                                  type: a.type,
+                                  target: a.target,
+                                  is_active: a.is_active,
+                                  expires_at: a.expires_at ? new Date(a.expires_at).toISOString().split('T')[0] : ''
+                                });
+                                setIsAnnouncementModalOpen(true);
+                              }}
+                            >
+                              <SettingsIcon className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-8 w-8 p-0 text-destructive"
+                              onClick={() => handleDeleteAnnouncement(a._id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+
+          <Dialog open={isAnnouncementModalOpen} onOpenChange={setIsAnnouncementModalOpen}>
+            <DialogContent className="sm:max-w-[500px]">
+              <DialogHeader>
+                <DialogTitle>{selectedAnnouncement ? 'Edit' : 'Create'} Announcement</DialogTitle>
+                <DialogDescription>
+                  This announcement will be shown to the targeted users on the platform.
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleSaveAnnouncement} className="space-y-4 py-2">
+                <div className="space-y-2">
+                  <Label htmlFor="title">Title</Label>
+                  <Input 
+                    id="title" 
+                    placeholder="E.g., Scheduled Maintenance" 
+                    value={announcementForm.title}
+                    onChange={(e) => setAnnouncementForm({...announcementForm, title: e.target.value})}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="content">Content</Label>
+                  <Textarea 
+                    id="content" 
+                    placeholder="Announcement details..." 
+                    value={announcementForm.content}
+                    onChange={(e) => setAnnouncementForm({...announcementForm, content: e.target.value})}
+                    required
+                    className="h-24"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="type">Type</Label>
+                    <Select 
+                      value={announcementForm.type} 
+                      onValueChange={(v) => setAnnouncementForm({...announcementForm, type: v})}
+                    >
+                      <SelectTrigger id="type">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="info">Information</SelectItem>
+                        <SelectItem value="warning">Warning</SelectItem>
+                        <SelectItem value="success">Success</SelectItem>
+                        <SelectItem value="error">Critical/Error</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="target">Target Audience</Label>
+                    <Select 
+                      value={announcementForm.target} 
+                      onValueChange={(v) => setAnnouncementForm({...announcementForm, target: v})}
+                    >
+                      <SelectTrigger id="target">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Everyone</SelectItem>
+                        <SelectItem value="vendors">Vendors Only</SelectItem>
+                        <SelectItem value="users">Regular Users Only</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="expires">Expiry Date (Optional)</Label>
+                    <Input 
+                      id="expires" 
+                      type="date" 
+                      value={announcementForm.expires_at}
+                      onChange={(e) => setAnnouncementForm({...announcementForm, expires_at: e.target.value})}
+                    />
+                  </div>
+                  <div className="flex items-center space-x-2 pt-8">
+                    <Switch 
+                      id="is-active" 
+                      checked={announcementForm.is_active}
+                      onCheckedChange={(v) => setAnnouncementForm({...announcementForm, is_active: v})}
+                    />
+                    <Label htmlFor="is-active">Active</Label>
+                  </div>
+                </div>
+                <DialogFooter className="pt-4">
+                  <Button type="button" variant="ghost" onClick={() => setIsAnnouncementModalOpen(false)}>Cancel</Button>
+                  <Button type="submit">
+                    {selectedAnnouncement ? 'Update' : 'Publish'} Announcement
+                  </Button>
+                </DialogFooter>
+              </form>
             </DialogContent>
           </Dialog>
         </TabsContent>

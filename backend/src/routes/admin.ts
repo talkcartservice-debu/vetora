@@ -2,6 +2,8 @@ import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { User } from '../models/User';
 import { Store } from '../models/Store';
+import { Product } from '../models/Product';
+import { Announcement } from '../models/Announcement';
 import { Withdrawal } from '../models/Withdrawal';
 import { Order } from '../models/Order';
 import { Settings } from '../models/Settings';
@@ -68,6 +70,28 @@ export async function adminRoutes(fastify: FastifyInstance) {
       await logActivity(request, is_blocked ? 'block_user' : 'unblock_user', user._id, 'user');
 
       return user;
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return reply.code(400).send({ error: 'Invalid request data', details: error.errors });
+      }
+      fastify.log.error(error);
+      return reply.code(500).send({ error: 'Internal server error' });
+    }
+  });
+
+  // Bulk block/unblock users
+  fastify.patch('/users/bulk-block', async (request, reply) => {
+    try {
+      const { userIds, is_blocked } = z.object({ 
+        userIds: z.array(z.string()),
+        is_blocked: z.boolean() 
+      }).parse(request.body);
+
+      await User.updateMany({ _id: { $in: userIds } }, { is_blocked });
+
+      await logActivity(request, is_blocked ? 'bulk_block_users' : 'bulk_unblock_users', null, 'user', { count: userIds.length });
+
+      return { success: true };
     } catch (error) {
       if (error instanceof z.ZodError) {
         return reply.code(400).send({ error: 'Invalid request data', details: error.errors });
@@ -161,6 +185,28 @@ export async function adminRoutes(fastify: FastifyInstance) {
       await logActivity(request, 'update_store_status', store._id, 'store', { status });
 
       return store;
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return reply.code(400).send({ error: 'Invalid request data', details: error.errors });
+      }
+      fastify.log.error(error);
+      return reply.code(500).send({ error: 'Internal server error' });
+    }
+  });
+
+  // Bulk update store status
+  fastify.patch('/stores/bulk-status', async (request, reply) => {
+    try {
+      const { storeIds, status } = z.object({ 
+        storeIds: z.array(z.string()),
+        status: z.enum(['active', 'pending', 'suspended']) 
+      }).parse(request.body);
+
+      await Store.updateMany({ _id: { $in: storeIds } }, { status });
+
+      await logActivity(request, 'bulk_update_store_status', null, 'store', { status, count: storeIds.length });
+
+      return { success: true };
     } catch (error) {
       if (error instanceof z.ZodError) {
         return reply.code(400).send({ error: 'Invalid request data', details: error.errors });
@@ -394,6 +440,182 @@ export async function adminRoutes(fastify: FastifyInstance) {
     }
   });
 
+  // --- Product Management ---
+
+  // Get all products
+  fastify.get('/products', async (request, reply) => {
+    try {
+      const { page = 1, limit = 10, status, search = '' } = request.query as any;
+      const skip = (parseInt(page) - 1) * parseInt(limit);
+
+      const query: any = {};
+      if (status) query.status = status;
+      if (search) {
+        query.$or = [
+          { title: { $regex: search, $options: 'i' } },
+          { vendor_username: { $regex: search, $options: 'i' } },
+          { store_name: { $regex: search, $options: 'i' } }
+        ];
+      }
+
+      const products = await Product.find(query)
+        .sort({ created_at: -1 })
+        .skip(skip)
+        .limit(parseInt(limit));
+
+      const total = await Product.countDocuments(query);
+
+      return {
+        products,
+        pagination: {
+          total,
+          page: parseInt(page),
+          limit: parseInt(limit),
+          pages: Math.ceil(total / parseInt(limit))
+        }
+      };
+    } catch (error) {
+      fastify.log.error(error);
+      return reply.code(500).send({ error: 'Internal server error' });
+    }
+  });
+
+  // Update product status
+  fastify.patch('/products/:id/status', async (request, reply) => {
+    try {
+      const { id } = request.params as { id: string };
+      const { status } = z.object({ 
+        status: z.enum(['active', 'draft', 'sold_out', 'archived']) 
+      }).parse(request.body);
+
+      const product = await Product.findByIdAndUpdate(id, { status }, { new: true });
+      if (!product) {
+        return reply.code(404).send({ error: 'Product not found' });
+      }
+
+      await logActivity(request, 'update_product_status', product._id, 'product', { status });
+
+      return product;
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return reply.code(400).send({ error: 'Invalid request data', details: error.errors });
+      }
+      fastify.log.error(error);
+      return reply.code(500).send({ error: 'Internal server error' });
+    }
+  });
+
+  // Delete product
+  fastify.delete('/products/:id', async (request, reply) => {
+    try {
+      const { id } = request.params as { id: string };
+      const product = await Product.findByIdAndDelete(id);
+      if (!product) {
+        return reply.code(404).send({ error: 'Product not found' });
+      }
+
+      await logActivity(request, 'delete_product', product._id, 'product');
+
+      return { success: true };
+    } catch (error) {
+      fastify.log.error(error);
+      return reply.code(500).send({ error: 'Internal server error' });
+    }
+  });
+
+  // --- Announcement Management ---
+
+  // Get all announcements (admin)
+  fastify.get('/announcements', async (request, reply) => {
+    try {
+      const announcements = await Announcement.find()
+        .sort({ created_at: -1 });
+      return { announcements };
+    } catch (error) {
+      fastify.log.error(error);
+      return reply.code(500).send({ error: 'Internal server error' });
+    }
+  });
+
+  // Create announcement
+  fastify.post('/announcements', async (request, reply) => {
+    try {
+      const data = z.object({
+        title: z.string(),
+        content: z.string(),
+        type: z.enum(['info', 'warning', 'success', 'error']),
+        target: z.enum(['all', 'vendors', 'users']),
+        is_active: z.boolean().optional(),
+        expires_at: z.string().optional().transform(v => v ? new Date(v) : undefined),
+      }).parse(request.body);
+
+      const user = request.user as any;
+      const announcement = new Announcement({
+        ...data,
+        created_by: user._id,
+      });
+
+      await announcement.save();
+      await logActivity(request, 'create_announcement', announcement._id, 'announcement');
+
+      return announcement;
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return reply.code(400).send({ error: 'Invalid request data', details: error.errors });
+      }
+      fastify.log.error(error);
+      return reply.code(500).send({ error: 'Internal server error' });
+    }
+  });
+
+  // Update announcement
+  fastify.patch('/announcements/:id', async (request, reply) => {
+    try {
+      const { id } = request.params as { id: string };
+      const data = z.object({
+        title: z.string().optional(),
+        content: z.string().optional(),
+        type: z.enum(['info', 'warning', 'success', 'error']).optional(),
+        target: z.enum(['all', 'vendors', 'users']).optional(),
+        is_active: z.boolean().optional(),
+        expires_at: z.string().optional().transform(v => v ? new Date(v) : undefined),
+      }).parse(request.body);
+
+      const announcement = await Announcement.findByIdAndUpdate(id, data, { new: true });
+      if (!announcement) {
+        return reply.code(404).send({ error: 'Announcement not found' });
+      }
+
+      await logActivity(request, 'update_announcement', announcement._id, 'announcement');
+
+      return announcement;
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return reply.code(400).send({ error: 'Invalid request data', details: error.errors });
+      }
+      fastify.log.error(error);
+      return reply.code(500).send({ error: 'Internal server error' });
+    }
+  });
+
+  // Delete announcement
+  fastify.delete('/announcements/:id', async (request, reply) => {
+    try {
+      const { id } = request.params as { id: string };
+      const announcement = await Announcement.findByIdAndDelete(id);
+      if (!announcement) {
+        return reply.code(404).send({ error: 'Announcement not found' });
+      }
+
+      await logActivity(request, 'delete_announcement', announcement._id, 'announcement');
+
+      return { success: true };
+    } catch (error) {
+      fastify.log.error(error);
+      return reply.code(500).send({ error: 'Internal server error' });
+    }
+  });
+
   // --- System Statistics ---
 
   fastify.get('/stats', async (request, reply) => {
@@ -403,6 +625,7 @@ export async function adminRoutes(fastify: FastifyInstance) {
         totalStores,
         activeStores,
         pendingStores,
+        totalProducts,
         totalOrders,
         totalWithdrawals,
         pendingWithdrawals,
@@ -414,6 +637,7 @@ export async function adminRoutes(fastify: FastifyInstance) {
         Store.countDocuments(),
         Store.countDocuments({ status: 'active' }),
         Store.countDocuments({ status: 'pending' }),
+        Product.countDocuments(),
         Order.countDocuments(),
         Withdrawal.countDocuments(),
         Withdrawal.countDocuments({ status: 'pending' }),
@@ -465,6 +689,7 @@ export async function adminRoutes(fastify: FastifyInstance) {
             active: activeStores,
             pending: pendingStores
           },
+          products: totalProducts,
           orders: totalOrders,
           withdrawals: {
             total: totalWithdrawals,

@@ -33,6 +33,7 @@ import { vendorSubscriptionRoutes } from './routes/vendorSubscriptions';
 import { withdrawalRoutes } from './routes/withdrawals';
 import { wishlistRoutes } from './routes/wishlist';
 import { bookmarkRoutes } from './routes/bookmarks';
+import { announcementRoutes } from './routes/announcements';
 import { adminRoutes } from './routes/admin';
 import { setupWebSocket, io } from './websocket/socket';
 import { authenticate, authenticateOptional, checkMaintenance } from './middleware/auth';
@@ -138,6 +139,7 @@ fastify.register(vendorSubscriptionRoutes, { prefix: '/api/vendor-subscriptions'
 fastify.register(withdrawalRoutes, { prefix: '/api/withdrawals' });
 fastify.register(wishlistRoutes, { prefix: '/api/wishlist' });
 fastify.register(bookmarkRoutes, { prefix: '/api/bookmarks' });
+fastify.register(announcementRoutes, { prefix: '/api/announcements' });
 fastify.register(adminRoutes, { prefix: '/api/admin' });
 
 // Error handling for uncaught exceptions
