@@ -222,6 +222,12 @@ export const authAPI = {
   verify2FALogin: (twoFactorToken, token) => apiClient.post('/auth/login/2fa', { two_factor_token: twoFactorToken, token }),
   forgotPassword: (email) => apiClient.post('/auth/forgot-password', { email }),
   resetPassword: (token, newPassword) => apiClient.post('/auth/reset-password', { token, newPassword }),
+  // Address Management
+  getAddresses: () => apiClient.get('/auth/me/addresses'),
+  addAddress: (address) => apiClient.post('/auth/me/addresses', address),
+  updateAddress: (addressId, address) => apiClient.put(`/auth/me/addresses/${addressId}`, address),
+  deleteAddress: (addressId) => apiClient.delete(`/auth/me/addresses/${addressId}`),
+  setDefaultAddress: (addressId) => apiClient.patch(`/auth/me/addresses/${addressId}/default`, {}),
   // WebAuthn
   getWebAuthnRegisterOptions: () => apiClient.get('/auth/webauthn/register-options'),
   verifyWebAuthnRegister: (response) => apiClient.post('/auth/webauthn/register-verify', response),
@@ -319,6 +325,49 @@ export const cartAPI = {
   update: (itemId, data) => apiClient.put(`/cart/${itemId}`, data),
   remove: (itemId) => apiClient.delete(`/cart/${itemId}`),
   clear: () => apiClient.delete('/cart')
+};
+
+export const checkoutAPI = {
+  process: (data) => apiClient.post('/checkout', data),
+};
+
+export const couponsAPI = {
+  list: (filters) => {
+    const query = apiClient.buildQueryString(filters);
+    return apiClient.get(`/coupons?${query}`);
+  },
+  get: (id) => apiClient.get(`/coupons/${id}`),
+  getByCode: (code) => apiClient.get(`/coupons/code/${code}`),
+  create: (data) => apiClient.post('/coupons', data),
+  update: (id, data) => apiClient.put(`/coupons/${id}`, data),
+  delete: (id) => apiClient.delete(`/coupons/${id}`),
+  validate: (code) => apiClient.get(`/coupons/validate/${code}`),
+  validateForCart: (data) => apiClient.post('/coupons/validate', data),
+  apply: (id) => apiClient.post(`/coupons/${id}/apply`, {}),
+  listForVendor: (filters = {}) => {
+    const query = apiClient.buildQueryString(filters);
+    return apiClient.get(`/coupons/vendor/me?${query}`);
+  }
+};
+
+export const shippingZonesAPI = {
+  list: (filters) => {
+    const query = apiClient.buildQueryString(filters);
+    return apiClient.get(`/shipping-zones?${query}`);
+  },
+  get: (id) => apiClient.get(`/shipping-zones/${id}`),
+  getByVendor: (vendorUsername) => apiClient.get(`/shipping-zones/vendor/${vendorUsername}`),
+  getByStore: (storeId) => apiClient.get(`/shipping-zones/store/${storeId}`),
+  listByStore: (storeId) => apiClient.get(`/shipping-zones?store_id=${storeId}`),
+  listByStores: (storeIds) => apiClient.get(`/shipping-zones?store_ids=${storeIds.join(',')}`),
+  create: (data) => apiClient.post('/shipping-zones', data),
+  update: (id, data) => apiClient.put(`/shipping-zones/${id}`, data),
+  delete: (id) => apiClient.delete(`/shipping-zones/${id}`),
+  calculate: (id, data) => apiClient.post(`/shipping-zones/${id}/calculate`, data),
+  getAvailable: (countryCode, filters) => {
+    const query = apiClient.buildQueryString(filters);
+    return apiClient.get(`/shipping-zones/available/${countryCode}?${query}`);
+  },
 };
 
 export const postsAPI = {
@@ -471,24 +520,6 @@ export const adminAPI = {
 
 export const announcementsAPI = {
   getActive: () => apiClient.get('/announcements/active'),
-};
-
-export const shippingZonesAPI = {
-  list: (filters) => {
-    const query = apiClient.buildQueryString(filters);
-    return apiClient.get(`/shipping-zones?${query}`);
-  },
-  get: (id) => apiClient.get(`/shipping-zones/${id}`),
-  getByVendor: (vendorUsername) => apiClient.get(`/shipping-zones/vendor/${vendorUsername}`),
-  getByStore: (storeId) => apiClient.get(`/shipping-zones/store/${storeId}`),
-  create: (data) => apiClient.post('/shipping-zones', data),
-  update: (id, data) => apiClient.put(`/shipping-zones/${id}`, data),
-  delete: (id) => apiClient.delete(`/shipping-zones/${id}`),
-  calculate: (id, data) => apiClient.post(`/shipping-zones/${id}/calculate`, data),
-  getAvailable: (countryCode, filters) => {
-    const query = apiClient.buildQueryString(filters);
-    return apiClient.get(`/shipping-zones/available/${countryCode}?${query}`);
-  },
 };
 
 export const storesAPI = {
@@ -714,24 +745,6 @@ export const affiliateLinksAPI = {
   listByProduct: (productId, filters = {}) => {
     const query = apiClient.buildQueryString(filters);
     return apiClient.get(`/affiliate-links/product/${productId}?${query}`);
-  }
-};
-
-export const couponsAPI = {
-  list: (filters) => {
-    const query = apiClient.buildQueryString(filters);
-    return apiClient.get(`/coupons?${query}`);
-  },
-  get: (id) => apiClient.get(`/coupons/${id}`),
-  getByCode: (code) => apiClient.get(`/coupons/code/${code}`),
-  create: (data) => apiClient.post('/coupons', data),
-  update: (id, data) => apiClient.put(`/coupons/${id}`, data),
-  delete: (id) => apiClient.delete(`/coupons/${id}`),
-  validate: (data) => apiClient.post('/coupons/validate', data),
-  apply: (id) => apiClient.post(`/coupons/${id}/apply`, {}),
-  listForVendor: (filters = {}) => {
-    const query = apiClient.buildQueryString(filters);
-    return apiClient.get(`/coupons/vendor/me?${query}`);
   }
 };
 

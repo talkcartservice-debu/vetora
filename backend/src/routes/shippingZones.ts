@@ -50,6 +50,7 @@ export async function shippingZoneRoutes(fastify: FastifyInstance) {
       const {
         vendor_username,
         store_id,
+        store_ids,
         is_active = true,
         sort = 'zone_name',
         limit = 20,
@@ -61,6 +62,10 @@ export async function shippingZoneRoutes(fastify: FastifyInstance) {
 
       if (vendor_username) filter.vendor_username = vendor_username.toLowerCase();
       if (store_id) filter.store_id = store_id;
+      if (store_ids) {
+        const ids = store_ids.split(',');
+        filter.store_id = { $in: ids };
+      }
       if (query.is_active !== undefined) {
         filter.is_active = query.is_active === 'true';
       }

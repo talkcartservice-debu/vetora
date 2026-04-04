@@ -1178,4 +1178,105 @@ export async function authRoutes(fastify: FastifyInstance) {
     // In a stateless JWT system, logout is handled client-side
     return { success: true };
   });
+
+  // Address Management Routes
+  fastify.get('/me/addresses', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+    const user = await User.findById((request.user as any).userId);
+    if (!user) return reply.code(404).send({ error: 'User not found' });
+    return { addresses: user.saved_addresses || [] };
+  });
+
+  fastify.post('/me/addresses', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+    const addressSchema = z.object({
+      label: z.string().optional(),
+      street: z.string(),
+      city: z.string(),
+      state: z.string(),
+      zip: z.string(),
+      country: z.string().default('NG'),
+      phone: z.string().optional(),
+      is_default: z.boolean().default(false),
+    });
+
+    try {
+      const body = addressSchema.parse(request.body);
+      const user = await User.findById((request.user as any).userId);
+      if (!user) return reply.code(404).send({ error: 'User not found' });
+
+      if (!user.saved_addresses) user.saved_addresses = [];
+
+      if (body.is_default) {
+        user.saved_addresses.forEach(a => a.is_default = false);
+      } else if (user.saved_addresses.length === 0) {
+        body.is_default = true;
+      }
+
+      user.saved_addresses.push(body as any);
+      await user.save();
+
+      return { message: 'Address added', addresses: user.saved_addresses };
+    } catch (error: any) {
+      if (error instanceof z.ZodError) return reply.code(400).send({ error: 'Invalid address data', details: error.errors });
+      throw error;
+    }
+  });
+
+  fastify.put('/me/addresses/:id', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const addressSchema = z.object({
+      label: z.string().optional(),
+      street: z.string().optional(),
+      city: z.string().optional(),
+      state: z.string().optional(),
+      zip: z.string().optional(),
+      country: z.string().optional(),
+      phone: z.string().optional(),
+      is_default: z.boolean().optional(),
+    });
+
+    try {
+      const body = addressSchema.parse(request.body);
+      const user = await User.findById((request.user as any).userId);
+      if (!user) return reply.code(404).send({ error: 'User not found' });
+
+      const address = user.saved_addresses?.find(a => (a as any)._id.toString() === id);
+      if (!address) return reply.code(404).send({ error: 'Address not found' });
+
+      if (body.is_default && !address.is_default) {
+        user.saved_addresses?.forEach(a => a.is_default = false);
+      }
+
+      Object.assign(address, body);
+      await user.save();
+
+      return { message: 'Address updated', addresses: user.saved_addresses };
+    } catch (error: any) {
+      if (error instanceof z.ZodError) return reply.code(400).send({ error: 'Invalid address data', details: error.errors });
+      throw error;
+    }
+  });
+
+  fastify.delete('/me/addresses/:id', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const user = await User.findById((request.user as any).userId);
+    if (!user) return reply.code(404).send({ error: 'User not found' });
+
+    user.saved_addresses = user.saved_addresses?.filter(a => (a as any)._id.toString() !== id);
+    await user.save();
+
+    return { message: 'Address deleted', addresses: user.saved_addresses };
+  });
+
+  fastify.patch('/me/addresses/:id/default', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const user = await User.findById((request.user as any).userId);
+    if (!user) return reply.code(404).send({ error: 'User not found' });
+
+    user.saved_addresses?.forEach(a => {
+      a.is_default = (a as any)._id.toString() === id;
+    });
+
+    await user.save();
+    return { message: 'Default address updated', addresses: user.saved_addresses };
+  });
 }

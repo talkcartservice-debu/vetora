@@ -1,10 +1,10 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/lib/utils";
 import {
   Store, Plus, Package, DollarSign, ShoppingCart, Trash2, Loader2, BarChart3, Eye,
-  X, Upload, Camera, CheckCircle2, Play
+  X, Upload, Camera, CheckCircle2, Play, Search, MessageCircle, Info
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,6 +24,7 @@ import SubscriptionManager from "@/components/mystore/SubscriptionManager";
 import ShippingZoneManager from "@/components/mystore/ShippingZoneManager";
 import AIProductGenerator from "@/components/mystore/AIProductGenerator";
 import VendorFinance from "./VendorFinance";
+import OrderDetailModal from "@/components/orders/OrderDetailModal";
 import { storesAPI, productsAPI, ordersAPI, filesAPI, vendorSubscriptionsAPI } from "@/api/apiClient";
 import { useAuth } from "@/lib/AuthContext";
 
@@ -39,6 +40,10 @@ export default function MyStore() {
   const [searchParams, setSearchParams] = useSearchParams();
   const defaultTab = searchParams.get("tab") || "products";
   const [activeTab, setActiveTab] = useState(defaultTab);
+  const [orderSearch, setOrderSearch] = useState("");
+  const [orderTab, setOrderTab] = useState("all");
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const navigate = useNavigate();
 
   React.useEffect(() => {
     const tab = searchParams.get("tab");
@@ -1205,62 +1210,141 @@ export default function MyStore() {
 
       {/* Orders Tab */}
       {activeTab === "orders" && (
-        <div className="space-y-3">
-          {orders.length === 0 ? (
-            <div className="text-center py-16 text-slate-400">No orders yet</div>
-          ) : (
-            orders.map((order, idx) => {
-              const orderId = order.id || order._id || `order-${idx}`;
-              return (
-                <div key={orderId} className="bg-white rounded-2xl border border-slate-100 p-5">
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="text-xs text-slate-400 font-medium">#{orderId?.slice(-8)} · {new Date(order.created_at || order.created_date).toLocaleDateString()}</p>
-                    <Select 
-                      defaultValue={order.status} 
-                      onValueChange={(status) => updateOrderStatusMutation.mutate({ id: orderId, status })}
-                      disabled={updateOrderStatusMutation.isPending}
-                    >
-                      <SelectTrigger className="w-[120px] h-8 text-[11px] font-bold rounded-lg border-slate-200">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {["pending", "confirmed", "processing", "shipped", "delivered", "cancelled"].map(s => (
-                          <SelectItem key={s} value={s} className="text-[11px]">{s.charAt(0).toUpperCase() + s.slice(1)}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row gap-4 mb-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <Input 
+                placeholder="Search orders by buyer name or ID..."
+                value={orderSearch}
+                onChange={(e) => setOrderSearch(e.target.value)}
+                className="pl-10 bg-white border-slate-100 rounded-2xl"
+              />
+            </div>
+          </div>
+
+          <Tabs value={orderTab} onValueChange={setOrderTab} className="w-full">
+            <TabsList className="bg-white border border-slate-100 w-full justify-start overflow-x-auto hide-scrollbar h-auto p-1">
+              <TabsTrigger value="all" className="rounded-xl px-4 py-2">All</TabsTrigger>
+              <TabsTrigger value="pending" className="rounded-xl px-4 py-2">Pending</TabsTrigger>
+              <TabsTrigger value="processing" className="rounded-xl px-4 py-2">Processing</TabsTrigger>
+              <TabsTrigger value="shipped" className="rounded-xl px-4 py-2">Shipped</TabsTrigger>
+              <TabsTrigger value="delivered" className="rounded-xl px-4 py-2">Delivered</TabsTrigger>
+            </TabsList>
+          </Tabs>
+
+          {(() => {
+            const filtered = orders.filter(o => {
+              const matchesTab = orderTab === "all" ? true : o.status === orderTab;
+              const searchLower = orderSearch.toLowerCase();
+              const orderId = o._id || o.id;
+              const matchesSearch = orderSearch === "" || 
+                orderId?.toLowerCase().includes(searchLower) || 
+                o.buyer_name?.toLowerCase().includes(searchLower) ||
+                o.buyer_username?.toLowerCase().includes(searchLower);
+              return matchesTab && matchesSearch;
+            });
+
+            if (filtered.length === 0) {
+              return <div className="text-center py-16 text-slate-400">No orders found</div>;
+            }
+
+            return (
+              <div className="space-y-3">
+                {filtered.map((order, idx) => {
+                  const orderId = order.id || order._id || `order-${idx}`;
+                  const status = order.status || "pending";
                   
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <h4 className="text-sm font-bold text-slate-900">{order.buyer_name || `@${order.buyer_username}`}</h4>
-                      <p className="text-xs text-slate-500 mt-0.5">{order.shipping_address?.split(",")[0] || "No address"}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-black text-slate-900">${order.total?.toFixed(2)}</p>
-                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{order.items?.length || 0} items</p>
-                    </div>
-                  </div>
-
-                  {order.order_note && (
-                    <div className="mb-4 p-3 bg-amber-50 rounded-xl border border-amber-100/50">
-                      <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1 flex items-center gap-1">
-                        <AlertCircle className="w-3 h-3" /> Customer Note
-                      </p>
-                      <p className="text-xs text-amber-700 leading-relaxed">{order.order_note}</p>
-                    </div>
-                  )}
-
-                  <div className="flex gap-2 overflow-x-auto pb-1 hide-scrollbar">
-                    {order.items?.map((item, i) => (
-                      <div key={i} className="w-12 h-12 rounded-lg bg-slate-50 border border-slate-100 overflow-hidden shrink-0">
-                        {item.product_image && <img src={item.product_image} alt="" className="w-full h-full object-cover" />}
+                  return (
+                    <motion.div 
+                      key={orderId} 
+                      layout
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="bg-white rounded-2xl border border-slate-100 p-5 hover:shadow-md transition-all cursor-pointer group"
+                      onClick={() => setSelectedOrder(order)}
+                    >
+                      <div className="flex items-start justify-between mb-4">
+                        <div>
+                          <p className="text-[10px] font-mono text-slate-400 uppercase tracking-wider mb-1">
+                            Order #{orderId?.slice(-8)}
+                          </p>
+                          <h4 className="text-sm font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
+                            {order.buyer_name || `@${order.buyer_username}`}
+                          </h4>
+                          <p className="text-xs text-slate-500 mt-0.5">
+                            {new Date(order.created_at || order.created_date).toLocaleDateString()} · {order.items?.length || 0} items
+                          </p>
+                        </div>
+                        <div className="flex flex-col items-end gap-2">
+                          <Badge className={`${
+                            status === 'delivered' ? 'bg-green-100 text-green-700' :
+                            status === 'cancelled' ? 'bg-red-100 text-red-700' :
+                            status === 'pending' ? 'bg-amber-100 text-amber-700' :
+                            'bg-indigo-100 text-indigo-700'
+                          } border-0 text-[10px] px-2 py-0.5 h-6 font-semibold capitalize`}>
+                            {status}
+                          </Badge>
+                          <p className="text-sm font-black text-slate-900">${order.total?.toFixed(2)}</p>
+                        </div>
                       </div>
-                    ))}
-                  </div>
-                </div>
-              );
-            })
+
+                      <div className="flex items-center justify-between pt-4 border-t border-slate-50">
+                        <div className="flex gap-1.5 overflow-hidden">
+                          {order.items?.slice(0, 4).map((item, i) => (
+                            <div key={i} className="w-10 h-10 rounded-lg bg-slate-50 border border-slate-100 overflow-hidden shrink-0">
+                              {item.product_image && <img src={item.product_image} alt="" className="w-full h-full object-cover" />}
+                            </div>
+                          ))}
+                          {order.items?.length > 4 && (
+                            <div className="w-10 h-10 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-400">
+                              +{order.items.length - 4}
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            className="h-8 rounded-xl text-[10px] gap-1 text-slate-500"
+                            onClick={(e) => { e.stopPropagation(); setSelectedOrder(order); }}
+                          >
+                            <Info className="w-3 h-3" />
+                            Details
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            className="h-8 rounded-xl text-[10px] gap-1 text-indigo-600 hover:bg-indigo-50"
+                            onClick={(e) => { 
+                              e.stopPropagation(); 
+                              navigate(createPageUrl("Chat") + `?to=${order.buyer_username}`);
+                            }}
+                          >
+                            <MessageCircle className="w-3 h-3" />
+                            Chat
+                          </Button>
+                        </div>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            );
+          })()}
+
+          {selectedOrder && (
+            <OrderDetailModal
+              open={!!selectedOrder}
+              onOpenChange={(open) => !open && setSelectedOrder(null)}
+              order={selectedOrder}
+              userRole="vendor"
+              onUpdateStatus={(id, status) => {
+                updateOrderStatusMutation.mutate({ id, status });
+                setSelectedOrder(prev => prev ? { ...prev, status } : null);
+              }}
+              onContactBuyer={(username) => navigate(createPageUrl("Chat") + `?to=${username}`)}
+            />
           )}
         </div>
       )}

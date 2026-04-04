@@ -37,6 +37,16 @@ export interface IUser extends Document {
   following_count: number;
   unread_messages_count: number;
   push_tokens?: string[];
+  saved_addresses?: Array<{
+    label?: string;
+    street: string;
+    city: string;
+    state: string;
+    zip: string;
+    country: string;
+    phone?: string;
+    is_default: boolean;
+  }>;
   current_challenge?: string;
   current_challenge_expires_at?: Date;
   authenticators: Array<{
@@ -176,6 +186,16 @@ const UserSchema = new Schema<IUser>({
   push_tokens: [{
     type: String,
     trim: true,
+  }],
+  saved_addresses: [{
+    label: { type: String, trim: true, default: 'Default' },
+    street: { type: String, required: true, trim: true },
+    city: { type: String, required: true, trim: true },
+    state: { type: String, required: true, trim: true },
+    zip: { type: String, required: true, trim: true },
+    country: { type: String, required: true, trim: true, default: 'NG' },
+    phone: { type: String, trim: true },
+    is_default: { type: Boolean, default: false },
   }],
   current_challenge: {
     type: String,

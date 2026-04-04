@@ -20,6 +20,7 @@ export interface IOrder extends Document {
   items: IOrderItem[];
   subtotal: number;
   shipping_fee: number;
+  discount_amount: number;
   delivery_fee: number;
   delivery_method: 'shipping' | 'delivery' | 'pickup';
   total: number;
@@ -105,6 +106,11 @@ const OrderSchema = new Schema<IOrder>({
     min: 0,
   },
   shipping_fee: {
+    type: Number,
+    default: 0,
+    min: 0,
+  },
+  discount_amount: {
     type: Number,
     default: 0,
     min: 0,
