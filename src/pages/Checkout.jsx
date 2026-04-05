@@ -60,7 +60,13 @@ export default function Checkout() {
   
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, isLoadingAuth, isAuthenticated } = useAuth();
+
+  useEffect(() => {
+    if (!isLoadingAuth && !isAuthenticated) {
+        navigate(createPageUrl("Login"), { state: { from: window.location.pathname } });
+    }
+  }, [isLoadingAuth, isAuthenticated, navigate]);
 
   // Queries
   const { data: cartResponse = {}, isLoading: cartLoading } = useQuery({
@@ -78,11 +84,13 @@ export default function Checkout() {
   const cartItems = Array.isArray(cartResponse?.items) ? cartResponse.items : [];
   const storeIds = useMemo(() => Array.from(new Set(cartItems.map(item => item.store_id))), [cartItems]);
 
-  const { data: shippingZones = [] } = useQuery({
+  const { data: shippingZonesResponse = { zones: [] } } = useQuery({
     queryKey: ["shipping-zones", storeIds],
     queryFn: () => shippingZonesAPI.listByStores(storeIds),
     enabled: storeIds.length > 0,
   });
+
+  const shippingZones = Array.isArray(shippingZonesResponse?.zones) ? shippingZonesResponse.zones : [];
 
   // Group items by store
   const storeGroups = useMemo(() => {
@@ -118,9 +126,10 @@ export default function Checkout() {
 
         // Find applicable shipping zone for this store and country
         const storeZones = shippingZones.filter(z => z.store_id === group.store_id && z.is_active);
-        const zone = storeZones.find(z => z.countries.includes(country)) || storeZones.find(z => z.countries.includes("WORLD"));
+        const zone = storeZones.find(z => Array.isArray(z.countries) && z.countries.includes(country)) || 
+                     storeZones.find(z => Array.isArray(z.countries) && z.countries.includes("WORLD"));
         
-        let groupShipping = zone ? zone.flat_rate : 0;
+        let groupShipping = zone ? (zone.flat_rate || 0) : 0;
         if (zone && zone.free_above > 0 && groupSubtotal >= zone.free_above) {
             groupShipping = 0;
         }
