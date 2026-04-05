@@ -204,7 +204,7 @@ export async function aiRoutes(fastify: FastifyInstance) {
 
   // Translation
   fastify.post('/translate', {
-    preHandler: [fastify.authenticate, checkAiAccessLimit], // Secure the translation route
+    preHandler: [fastify.authenticateOptional], // Allow guests to translate for basic UI localization
   }, async (request, reply) => {
     try {
       const { texts, targetLang } = translateSchema.parse(request.body);

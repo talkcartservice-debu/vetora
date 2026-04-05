@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
-import { aiAPI } from "@/api/apiClient";
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
+import { aiAPI, authAPI } from "@/api/apiClient";
+import { useAuth } from "@/lib/AuthContext";
 
 export const SUPPORTED_LANGS = [
   { code: "en", label: "English", flag: "🇺🇸" },
@@ -33,13 +34,37 @@ function detectBrowserLang() {
 }
 
 export function LanguageProvider({ children }) {
+  const { user, isAuthenticated } = useAuth();
   const [lang, setLangState] = useState(() => {
     return localStorage.getItem("vetora_lang") || detectBrowserLang();
   });
+  const hasSyncedUserLang = useRef(false);
 
-  const setLang = (code) => {
+  // Sync with user preference from backend once on load/login
+  useEffect(() => {
+    if (isAuthenticated && user?.preferences?.language && !hasSyncedUserLang.current) {
+      if (user.preferences.language !== lang) {
+        setLangState(user.preferences.language);
+        localStorage.setItem("vetora_lang", user.preferences.language);
+      }
+      hasSyncedUserLang.current = true;
+    }
+  }, [isAuthenticated, user, lang]);
+
+  const setLang = async (code) => {
     localStorage.setItem("vetora_lang", code);
     setLangState(code);
+    
+    // Sync with backend if logged in
+    if (isAuthenticated && user) {
+      try {
+        await authAPI.updateProfile({ 
+          preferences: { ...user.preferences, language: code } 
+        });
+      } catch (error) {
+        console.error("Failed to sync language to profile", error);
+      }
+    }
   };
 
   const translate = useCallback(async (texts) => {

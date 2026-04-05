@@ -38,6 +38,10 @@ class APIClient {
       headers['Authorization'] = `Bearer ${this.token}`;
     }
 
+    // Add current language to headers
+    const lang = localStorage.getItem('vetora_lang') || 'en';
+    headers['Accept-Language'] = lang;
+
     return headers;
   }
 

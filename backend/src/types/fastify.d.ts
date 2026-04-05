@@ -6,4 +6,8 @@ declare module 'fastify' {
     authenticateOptional: (request: any, reply: any) => Promise<void>;
     io: SocketIOServer | null;
   }
+
+  interface FastifyRequest {
+    language: string;
+  }
 }

@@ -140,7 +140,7 @@ export default function Settings() {
 
   const handleLanguageChange = (code) => {
     setLang(code);
-    updateMutation.mutate({ preferences: { ...currentUser?.preferences, language: code } });
+    toast.success("Language updated successfully!");
   };
 
   const handle2FAToggle = () => {

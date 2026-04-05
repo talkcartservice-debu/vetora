@@ -37,7 +37,7 @@ import { announcementRoutes } from './routes/announcements';
 import { checkoutRoutes } from './routes/checkout';
 import { adminRoutes } from './routes/admin';
 import { setupWebSocket, io } from './websocket/socket';
-import { authenticate, authenticateOptional, checkMaintenance } from './middleware/auth';
+import { authenticate, authenticateOptional, checkMaintenance, extractLanguage } from './middleware/auth';
 
 const fastify = Fastify({
   logger: {
@@ -92,7 +92,8 @@ setupWebSocket(fastify);
 // Set the io instance on fastify
 fastify.io = io;
 
-// Add maintenance mode check
+// Add global hooks
+fastify.addHook('preHandler', extractLanguage);
 fastify.addHook('preHandler', checkMaintenance);
 
 // Global error handler

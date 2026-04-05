@@ -2,6 +2,23 @@ import { FastifyRequest, FastifyReply } from 'fastify';
 import { Settings } from '../models/Settings';
 import { ActivityLog } from '../models/ActivityLog';
 
+export async function extractLanguage(request: FastifyRequest, reply: FastifyReply) {
+  // Try to get from header first
+  const headerLang = request.headers['accept-language'];
+  
+  // Default to en
+  request.language = 'en';
+
+  if (headerLang) {
+    // Take the first one (e.g., 'en-US,en;q=0.9' -> 'en')
+    const lang = headerLang.split(',')[0].split('-')[0].trim().toLowerCase();
+    request.language = lang || 'en';
+  }
+
+  // If authenticated, we might want to prioritize user preference, 
+  // but usually the frontend should send the correct header.
+}
+
 export async function authenticate(request: FastifyRequest, reply: FastifyReply) {
   try {
     await request.jwtVerify();
