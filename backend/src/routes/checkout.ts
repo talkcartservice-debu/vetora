@@ -211,7 +211,9 @@ export async function checkoutRoutes(fastify: FastifyInstance) {
              } else {
                // Proportional flat discount
                if (totalSubtotalAcrossStores > 0) {
-                 discount = Math.min((subtotal / totalSubtotalAcrossStores) * coupon.discount_value, subtotal);
+                 const proportionalDiscount = (subtotal / totalSubtotalAcrossStores) * coupon.discount_value;
+                 // Round to 2 decimal places to avoid floating point issues
+                 discount = Math.min(Math.round(proportionalDiscount * 100) / 100, subtotal);
                } else {
                  // Should not happen if subtotal is positive
                  discount = Math.min(coupon.discount_value, subtotal);

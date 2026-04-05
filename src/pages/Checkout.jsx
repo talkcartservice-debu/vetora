@@ -301,28 +301,28 @@ export default function Checkout() {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="col-span-2">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">Label (e.g. Home, Office)</label>
-                        <Input value={newAddress.label} onChange={e => setNewAddress({...newAddress, label: e.target.value})} placeholder="Home" className="rounded-xl h-11 bg-white border-slate-200" />
+                        <label htmlFor="addr-label" className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">Label (e.g. Home, Office)</label>
+                        <Input id="addr-label" value={newAddress.label} onChange={e => setNewAddress({...newAddress, label: e.target.value})} placeholder="Home" className="rounded-xl h-11 bg-white border-slate-200" />
                     </div>
                     <div className="col-span-2">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">Street Address</label>
-                      <Input value={newAddress.street} onChange={e => setNewAddress({...newAddress, street: e.target.value})} placeholder="123 Main St" className="rounded-xl h-11 bg-white border-slate-200" />
+                      <label htmlFor="addr-street" className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">Street Address</label>
+                      <Input id="addr-street" value={newAddress.street} onChange={e => setNewAddress({...newAddress, street: e.target.value})} placeholder="123 Main St" className="rounded-xl h-11 bg-white border-slate-200" />
                     </div>
                     <div>
-                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">City</label>
-                      <Input value={newAddress.city} onChange={e => setNewAddress({...newAddress, city: e.target.value})} placeholder="Lagos" className="rounded-xl h-11 bg-white border-slate-200" />
+                      <label htmlFor="addr-city" className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">City</label>
+                      <Input id="addr-city" value={newAddress.city} onChange={e => setNewAddress({...newAddress, city: e.target.value})} placeholder="Lagos" className="rounded-xl h-11 bg-white border-slate-200" />
                     </div>
                     <div>
-                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">State</label>
-                      <Input value={newAddress.state} onChange={e => setNewAddress({...newAddress, state: e.target.value})} placeholder="Lagos" className="rounded-xl h-11 bg-white border-slate-200" />
+                      <label htmlFor="addr-state" className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">State</label>
+                      <Input id="addr-state" value={newAddress.state} onChange={e => setNewAddress({...newAddress, state: e.target.value})} placeholder="Lagos" className="rounded-xl h-11 bg-white border-slate-200" />
                     </div>
                     <div>
-                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">ZIP Code</label>
-                      <Input value={newAddress.zip} onChange={e => setNewAddress({...newAddress, zip: e.target.value})} placeholder="100001" className="rounded-xl h-11 bg-white border-slate-200" />
+                      <label htmlFor="addr-zip" className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">ZIP Code</label>
+                      <Input id="addr-zip" value={newAddress.zip} onChange={e => setNewAddress({...newAddress, zip: e.target.value})} placeholder="100001" className="rounded-xl h-11 bg-white border-slate-200" />
                     </div>
                     <div>
-                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">Phone</label>
-                      <Input value={newAddress.phone} onChange={e => setNewAddress({...newAddress, phone: e.target.value})} placeholder="+234..." className="rounded-xl h-11 bg-white border-slate-200" />
+                      <label htmlFor="addr-phone" className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">Phone</label>
+                      <Input id="addr-phone" value={newAddress.phone} onChange={e => setNewAddress({...newAddress, phone: e.target.value})} placeholder="+234..." className="rounded-xl h-11 bg-white border-slate-200" />
                     </div>
                   </div>
                   <Button 

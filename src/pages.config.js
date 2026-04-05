@@ -77,6 +77,7 @@ import PaymentSuccess from './pages/PaymentSuccess';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import AdminDashboard from './pages/AdminDashboard';
+import Support from './pages/Support';
 import __Layout from './Layout.jsx';
 
 
@@ -111,6 +112,7 @@ export const PAGES = {
     "Login": Login,
     "Register": Register,
     "AdminDashboard": AdminDashboard,
+    "Support": Support,
 }
 
 export const pagesConfig = {
