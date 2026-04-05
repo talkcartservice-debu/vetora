@@ -9,9 +9,11 @@ import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { postsAPI, commentsAPI } from "@/api/apiClient";
 import { useAuth } from "@/lib/AuthContext";
+import { useSocket } from "@/lib/SocketContext";
 
 function CommentItem({ comment, currentUser }) {
   const queryClient = useQueryClient();
+  const { on } = useSocket();
   const commentId = (comment.id || comment._id)?.toString();
   const [isLiked, setIsLiked] = useState(!!comment.is_liked);
   const [likesCount, setLikesCount] = useState(comment.likes_count || 0);
@@ -24,6 +26,31 @@ function CommentItem({ comment, currentUser }) {
   React.useEffect(() => {
     setLikesCount(comment.likes_count || 0);
   }, [comment.likes_count]);
+
+  // Real-time updates for comments
+  React.useEffect(() => {
+    if (!commentId) return;
+
+    const unsubscribe = on('comment_updated', (data) => {
+      if (data.comment_id === commentId) {
+        if (data.likes_count !== undefined) {
+          setLikesCount(data.likes_count);
+        }
+        
+        // Sync like status if triggered by current user
+        if (data.user_username && currentUser?.username && 
+            data.user_username.toLowerCase() === currentUser.username.toLowerCase()) {
+          if (data.type === 'like') {
+            setIsLiked(true);
+          } else if (data.type === 'unlike') {
+            setIsLiked(false);
+          }
+        }
+      }
+    });
+
+    return unsubscribe;
+  }, [commentId, currentUser?.username, on]);
 
   const likeMutation = useMutation({
     mutationFn: async () => {
@@ -105,9 +132,13 @@ export default function PostDetail() {
   const { user: currentUser } = useAuth();
 
   const { data: post, error: postError } = useQuery({
-    queryKey: ["postDetail", postId],
+    queryKey: ["postDetail", postId, currentUser?.username],
     queryFn: async () => {
-      return postsAPI.get(postId);
+      const params = {};
+      if (currentUser?.username) {
+        params.user_username = currentUser.username;
+      }
+      return postsAPI.get(postId, params);
     },
     enabled: !!postId,
     retry: false,

@@ -149,6 +149,17 @@ export async function likeRoutes(fastify: FastifyInstance) {
         target_id
       });
 
+      // Special handling for post updates to match posts.ts
+      if (target_type === 'post') {
+        const updatedPost = await Post.findById(target_id).lean();
+        fastify.io?.emit('post_updated', {
+          type: 'like',
+          post_id: target_id,
+          likes_count: updatedPost?.likes_count || 0,
+          user_username: user.username
+        });
+      }
+
       reply.code(201).send(like);
     } catch (error: any) {
       fastify.log.error(error);
@@ -191,6 +202,17 @@ export async function likeRoutes(fastify: FastifyInstance) {
         target_type,
         target_id
       });
+
+      // Special handling for post updates
+      if (target_type === 'post') {
+        const updatedPost = await Post.findById(target_id).lean();
+        fastify.io?.emit('post_updated', {
+          type: 'unlike',
+          post_id: target_id,
+          likes_count: updatedPost?.likes_count || 0,
+          user_username: user.username
+        });
+      }
 
       reply.send({ message: 'Like removed successfully' });
     } catch (error: any) {

@@ -30,11 +30,16 @@ export default function Home() {
     queryKey: ["posts", activeTab],
     queryFn: ({ pageParam = 1 }) => {
       const params = { limit: 10, page: pageParam };
+      
+      // Always pass user_username if available to ensure is_liked status is correctly returned
+      if (currentUser?.username) {
+        params.user_username = currentUser.username;
+      }
+
       if (activeTab === "trending") {
         params.sort = "-likes_count";
       } else if (activeTab === "following" && currentUser?.username) {
         params.following_only = true;
-        params.user_username = currentUser.username;
         params.sort = "-created_at";
       } else {
         params.sort = "-created_at";

@@ -9,9 +9,11 @@ import { toast } from "sonner";
 import ShareModal from "./ShareModal";
 import { formatDistanceToNow } from "date-fns";
 import useEmblaCarousel from 'embla-carousel-react';
+import { useSocket } from "@/lib/SocketContext";
 
 const PostCard = memo(function PostCard({ post, currentUser }) {
   const queryClient = useQueryClient();
+  const { on } = useSocket();
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [showFullContent, setShowFullContent] = useState(false);
   const [showHeartAnimation, setShowHeartAnimation] = useState(false);
@@ -21,18 +23,6 @@ const PostCard = memo(function PostCard({ post, currentUser }) {
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: false });
   const videoRefs = useRef({});
 
-  useEffect(() => {
-    if (!emblaApi) return;
-    const onSelect = () => {
-      setSelectedIndex(emblaApi.selectedScrollSnap());
-      setCanScrollPrev(emblaApi.canScrollPrev());
-      setCanScrollNext(emblaApi.canScrollNext());
-    };
-    emblaApi.on("select", onSelect);
-    emblaApi.on("reInit", onSelect);
-    onSelect();
-  }, [emblaApi]);
-  
   const postId = (post?.id || post?._id)?.toString();
   const authorUsername = post?.author_username;
   const isLiked = !!post?.is_liked;
@@ -47,6 +37,43 @@ const PostCard = memo(function PostCard({ post, currentUser }) {
   useEffect(() => {
     setOptimisticCount(post?.likes_count || 0);
   }, [post?.likes_count]);
+
+  // Real-time updates for likes
+  useEffect(() => {
+    if (!postId) return;
+
+    const unsubscribe = on('post_updated', (data) => {
+      if (data.post_id === postId) {
+        if (data.likes_count !== undefined) {
+          setOptimisticCount(data.likes_count);
+        }
+        
+        // If the update was triggered by the current user, sync the like status
+        if (data.user_username && currentUser?.username && 
+            data.user_username.toLowerCase() === currentUser.username.toLowerCase()) {
+          if (data.type === 'like') {
+            setOptimisticLiked(true);
+          } else if (data.type === 'unlike') {
+            setOptimisticLiked(false);
+          }
+        }
+      }
+    });
+
+    return unsubscribe;
+  }, [postId, currentUser?.username, on]);
+
+  useEffect(() => {
+    if (!emblaApi) return;
+    const onSelect = () => {
+      setSelectedIndex(emblaApi.selectedScrollSnap());
+      setCanScrollPrev(emblaApi.canScrollPrev());
+      setCanScrollNext(emblaApi.canScrollNext());
+    };
+    emblaApi.on("select", onSelect);
+    emblaApi.on("reInit", onSelect);
+    onSelect();
+  }, [emblaApi]);
 
   // Autoplay video logic
   useEffect(() => {

@@ -375,7 +375,10 @@ export const postsAPI = {
     const query = apiClient.buildQueryString(filters);
     return apiClient.get(`/posts?${query}`);
   },
-  get: (id) => apiClient.get(`/posts/${id}`),
+  get: (id, params = {}) => {
+    const query = apiClient.buildQueryString(params);
+    return apiClient.get(`/posts/${id}${query ? `?${query}` : ''}`);
+  },
   create: (data) => apiClient.post('/posts', data),
   update: (id, data) => apiClient.patch(`/posts/${id}`, data),
   delete: (id) => apiClient.delete(`/posts/${id}`),

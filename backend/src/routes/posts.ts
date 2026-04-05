@@ -33,9 +33,14 @@ export async function postRoutes(fastify: FastifyInstance) {
         user_username,
         search,
         limit = 20,
-        skip = 0,
+        skip,
+        page = 1,
         sort = '-created_at'
       } = query;
+
+      const parsedLimit = parseInt(limit);
+      const parsedPage = parseInt(page);
+      const parsedSkip = (skip !== undefined && skip !== null) ? parseInt(skip) : (parsedPage - 1) * parsedLimit;
 
       const filter: any = {};
       if (author_username) filter.author_username = author_username;
@@ -56,7 +61,7 @@ export async function postRoutes(fastify: FastifyInstance) {
           ];
         } else {
           // Special case: following no one, so return empty list
-          return { data: [], total: 0, limit: parseInt(limit), skip: parseInt(skip) };
+          return { data: [], total: 0, limit: parsedLimit, skip: parsedSkip, page: parsedPage };
         }
       }
 
@@ -66,8 +71,8 @@ export async function postRoutes(fastify: FastifyInstance) {
 
       const posts = await Post.find(filter)
         .sort(sort)
-        .limit(parseInt(limit))
-        .skip(parseInt(skip))
+        .limit(parsedLimit)
+        .skip(parsedSkip)
         .lean({ virtuals: true });
 
       const total = await Post.countDocuments(filter);
@@ -101,8 +106,9 @@ export async function postRoutes(fastify: FastifyInstance) {
       return {
         data: postsWithLikeStatus,
         total,
-        limit: parseInt(limit),
-        skip: parseInt(skip),
+        limit: parsedLimit,
+        skip: parsedSkip,
+        page: parsedPage,
       };
     } catch (error: any) {
       fastify.log.error(error);
