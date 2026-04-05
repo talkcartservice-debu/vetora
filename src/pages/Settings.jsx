@@ -18,6 +18,7 @@ import {
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLang } from "@/components/providers/LanguageContext";
+import { useTheme } from "next-themes";
 
 function SettingSection({ icon: Icon, title, description, children, active, onClick }) {
   return (
@@ -98,15 +99,8 @@ export default function Settings() {
     notif_live: currentUser?.notifications?.notif_live ?? false,
   });
 
-  const [darkMode, setDarkMode] = useState(() => {
-    if (currentUser?.preferences?.theme) {
-      return currentUser.preferences.theme === 'dark';
-    }
-    if (typeof window !== "undefined") {
-      return document.documentElement.classList.contains("dark");
-    }
-    return false;
-  });
+  const { theme, setTheme } = useTheme();
+  const hasSyncedTheme = React.useRef(false);
 
   // Sync state with currentUser when it loads
   React.useEffect(() => {
@@ -127,29 +121,16 @@ export default function Settings() {
           notif_live: currentUser.notifications.notif_live ?? false,
         });
       }
-      
-      if (currentUser.preferences?.theme) {
-        setDarkMode(currentUser.preferences.theme === 'dark');
+
+      // Sync theme preference from user data ONCE on load
+      if (currentUser.preferences?.theme && !hasSyncedTheme.current) {
+        if (currentUser.preferences.theme !== theme) {
+          setTheme(currentUser.preferences.theme);
+        }
+        hasSyncedTheme.current = true;
       }
     }
-  }, [currentUser]);
-
-  // Theme effect
-  React.useEffect(() => {
-    const theme = darkMode ? "dark" : "light";
-    if (darkMode) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-    localStorage.setItem("vetora_theme", theme);
-    
-    // Update preference if changed from user's current setting
-    // Only if user is logged in
-    if (currentUser && currentUser.preferences?.theme !== theme) {
-      updateMutation.mutate({ preferences: { ...currentUser.preferences, theme } });
-    }
-  }, [darkMode, currentUser]);
+  }, [currentUser, theme, setTheme]);
 
   const handleNotificationToggle = (id) => {
     const newState = { ...notifications, [id]: !notifications[id] };
@@ -664,10 +645,16 @@ export default function Settings() {
               <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">Dark Mode</span>
             </div>
             <div 
-              onClick={() => setDarkMode(!darkMode)}
-              className={`w-10 h-5 rounded-full relative cursor-pointer transition-colors ${darkMode ? "bg-indigo-600" : "bg-slate-200 dark:bg-slate-700"}`}
+              onClick={() => {
+                const newTheme = theme === "dark" ? "light" : "dark";
+                setTheme(newTheme);
+                if (currentUser) {
+                  updateMutation.mutate({ preferences: { ...currentUser.preferences, theme: newTheme } });
+                }
+              }}
+              className={`w-10 h-5 rounded-full relative cursor-pointer transition-colors ${theme === "dark" ? "bg-indigo-600" : "bg-slate-200 dark:bg-slate-700"}`}
             >
-              <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-all ${darkMode ? "right-0.5" : "left-0.5"}`} />
+              <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-all ${theme === "dark" ? "right-0.5" : "left-0.5"}`} />
             </div>
           </div>
         </div>

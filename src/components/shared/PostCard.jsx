@@ -183,7 +183,7 @@ const PostCard = memo(function PostCard({ post, currentUser }) {
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-50px" }}
-      className="bg-white rounded-2xl border border-slate-100 overflow-hidden hover:shadow-lg hover:shadow-slate-100 transition-all duration-300"
+      className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 overflow-hidden hover:shadow-lg hover:shadow-slate-100 dark:hover:shadow-slate-950 transition-all duration-300"
     >
       <ShareModal 
         isOpen={isShareModalOpen} 
@@ -196,7 +196,7 @@ const PostCard = memo(function PostCard({ post, currentUser }) {
       <div className="flex items-center justify-between p-4">
         <Link to={createPageUrl("Profile") + `?username=${authorUsername}`} className="flex items-center gap-3">
           <div className="relative">
-            <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-semibold text-sm ring-2 ring-white overflow-hidden shadow-sm">
+            <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400 font-semibold text-sm ring-2 ring-white dark:ring-slate-900 overflow-hidden shadow-sm">
               {post.author_avatar ? (
                 <img src={post.author_avatar} alt={post.author_name} className="w-full h-full object-cover" loading="lazy" />
               ) : (
@@ -206,15 +206,15 @@ const PostCard = memo(function PostCard({ post, currentUser }) {
               )}
             </div>
             {isFollowing && (
-              <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full" />
+              <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-green-500 border-2 border-white dark:border-slate-900 rounded-full" />
             )}
           </div>
           <div className="flex flex-col">
             <div className="flex items-center gap-2">
-              <p className="text-[13px] font-bold text-slate-900 hover:text-indigo-600 transition-colors">{post.author_name || "User"}</p>
+              <p className="text-[13px] font-bold text-slate-900 dark:text-slate-100 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">{post.author_name || "User"}</p>
               {currentUser && authorUsername && currentUser.username !== authorUsername && (
                 <>
-                  <span className="w-1 h-1 rounded-full bg-slate-300" />
+                  <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-700" />
                   <button
                     onClick={(e) => {
                       e.preventDefault();
@@ -224,8 +224,8 @@ const PostCard = memo(function PostCard({ post, currentUser }) {
                     disabled={followMutation.isPending}
                     className={`text-[11px] font-bold transition-colors ${
                       isFollowing 
-                        ? "text-slate-400 hover:text-slate-600" 
-                        : "text-indigo-600 hover:text-indigo-700"
+                        ? "text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-400" 
+                        : "text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300"
                     }`}
                   >
                     {isFollowing ? "Following" : "Follow"}
@@ -234,18 +234,18 @@ const PostCard = memo(function PostCard({ post, currentUser }) {
               )}
             </div>
             <div className="flex items-center gap-2">
-              <p className="text-[11px] text-slate-500 font-medium">@{authorUsername}</p>
-              <span className="text-[10px] text-slate-300">•</span>
-              <p className="text-[11px] text-slate-400">
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">@{authorUsername}</p>
+              <span className="text-[10px] text-slate-300 dark:text-slate-600">•</span>
+              <p className="text-[11px] text-slate-400 dark:text-slate-500">
                 {formatDistanceToNow(new Date(post.created_at || post.created_date), { addSuffix: true })}
               </p>
               {post.is_sponsored && (
-                <span className="ml-1 px-1.5 py-0 bg-amber-50 text-amber-600 rounded text-[9px] font-bold uppercase tracking-wider">Sponsored</span>
+                <span className="ml-1 px-1.5 py-0 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-500 rounded text-[9px] font-bold uppercase tracking-wider">Sponsored</span>
               )}
             </div>
           </div>
         </Link>
-        <button className="p-2 rounded-full hover:bg-slate-100 text-slate-400 transition-colors">
+        <button className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 dark:text-slate-500 transition-colors">
           <MoreHorizontal className="w-5 h-5" />
         </button>
       </div>
@@ -253,13 +253,13 @@ const PostCard = memo(function PostCard({ post, currentUser }) {
       {/* Content */}
       {post.content && (
         <div className="px-4 py-2">
-          <p className={`text-[14px] text-slate-700 leading-relaxed whitespace-pre-wrap ${!showFullContent && "line-clamp-3"}`}>
+          <p className={`text-[14px] text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap ${!showFullContent && "line-clamp-3"}`}>
             {post.content}
           </p>
           {post.content.length > 150 && (
             <button
               onClick={() => setShowFullContent(!showFullContent)}
-              className="text-xs font-semibold text-indigo-600 mt-1 hover:text-indigo-700"
+              className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 mt-1 hover:text-indigo-700 dark:hover:text-indigo-300"
             >
               {showFullContent ? "Show Less" : "Read More"}
             </button>
@@ -269,7 +269,7 @@ const PostCard = memo(function PostCard({ post, currentUser }) {
 
       {/* Media */}
       {post.media_urls?.length > 0 && (
-        <div className="mt-2 relative group select-none bg-slate-50 aspect-square overflow-hidden">
+        <div className="mt-2 relative group select-none bg-slate-50 dark:bg-slate-950 aspect-square overflow-hidden">
           <div 
             className="h-full overflow-hidden cursor-pointer" 
             ref={emblaRef}
@@ -335,7 +335,7 @@ const PostCard = memo(function PostCard({ post, currentUser }) {
                     e.stopPropagation();
                     emblaApi?.scrollPrev();
                   }}
-                  className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center bg-white/80 hover:bg-white text-slate-800 rounded-full shadow-md z-20 opacity-0 group-hover:opacity-100 transition-all duration-200"
+                  className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center bg-white/80 dark:bg-slate-900/80 hover:bg-white dark:hover:bg-slate-900 text-slate-800 dark:text-slate-200 rounded-full shadow-md z-20 opacity-0 group-hover:opacity-100 transition-all duration-200"
                 >
                   <ChevronLeft className="w-5 h-5" />
                 </button>
@@ -347,7 +347,7 @@ const PostCard = memo(function PostCard({ post, currentUser }) {
                     e.stopPropagation();
                     emblaApi?.scrollNext();
                   }}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center bg-white/80 hover:bg-white text-slate-800 rounded-full shadow-md z-20 opacity-0 group-hover:opacity-100 transition-all duration-200"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center bg-white/80 dark:bg-slate-900/80 hover:bg-white dark:hover:bg-slate-900 text-slate-800 dark:text-slate-200 rounded-full shadow-md z-20 opacity-0 group-hover:opacity-100 transition-all duration-200"
                 >
                   <ChevronRight className="w-5 h-5" />
                 </button>
@@ -376,19 +376,19 @@ const PostCard = memo(function PostCard({ post, currentUser }) {
         <div className="px-4 py-3">
           <Link
             to={createPageUrl("ProductDetail") + `?id=${post.tagged_products[0]}`}
-            className="flex items-center gap-3 px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-sm text-slate-900 font-semibold hover:bg-slate-100 transition-colors"
+            className="flex items-center gap-3 px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-slate-100 font-semibold hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
           >
-            <div className="p-1.5 bg-indigo-100 rounded-lg text-indigo-600">
+            <div className="p-1.5 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg text-indigo-600 dark:text-indigo-400">
               <ShoppingBag className="w-4 h-4" />
             </div>
             <span className="flex-1">View tagged product</span>
-            <ChevronRight className="w-4 h-4 text-slate-400" />
+            <ChevronRight className="w-4 h-4 text-slate-400 dark:text-slate-500" />
           </Link>
         </div>
       )}
 
       {/* Actions */}
-      <div className="flex items-center justify-between px-4 py-3 border-t border-slate-50">
+      <div className="flex items-center justify-between px-4 py-3 border-t border-slate-50 dark:border-slate-800/50">
         <div className="flex items-center gap-6">
           <button
             onClick={() => currentUser && likeMutation.mutate()}
@@ -400,18 +400,18 @@ const PostCard = memo(function PostCard({ post, currentUser }) {
             >
               <Heart
                 className={`w-5 h-5 transition-colors duration-200 ${
-                  optimisticLiked ? "fill-red-500 text-red-500" : "text-slate-500 group-hover:text-red-400"
+                  optimisticLiked ? "fill-red-500 text-red-500" : "text-slate-500 dark:text-slate-400 group-hover:text-red-400"
                 }`}
               />
             </motion.div>
-            <span className={`text-[13px] font-semibold transition-colors ${optimisticLiked ? "text-red-500" : "text-slate-500"}`}>
+            <span className={`text-[13px] font-semibold transition-colors ${optimisticLiked ? "text-red-500" : "text-slate-500 dark:text-slate-400"}`}>
               {optimisticCount > 0 ? optimisticCount.toLocaleString() : "Like"}
             </span>
           </button>
 
           <Link to={createPageUrl("PostDetail") + `?id=${postId}`} className="flex items-center gap-1.5 group outline-none">
-            <MessageCircle className="w-5 h-5 text-slate-500 group-hover:text-indigo-500 transition-colors" />
-            <span className="text-[13px] font-semibold text-slate-500 group-hover:text-indigo-500 transition-colors">
+            <MessageCircle className="w-5 h-5 text-slate-500 dark:text-slate-400 group-hover:text-indigo-500 transition-colors" />
+            <span className="text-[13px] font-semibold text-slate-500 dark:text-slate-400 group-hover:text-indigo-500 transition-colors">
               {post.comments_count > 0 ? post.comments_count.toLocaleString() : "Comment"}
             </span>
           </Link>
@@ -420,8 +420,8 @@ const PostCard = memo(function PostCard({ post, currentUser }) {
             onClick={() => currentUser && setIsShareModalOpen(true)}
             className="flex items-center gap-1.5 group outline-none"
           >
-            <Share2 className="w-5 h-5 text-slate-500 group-hover:text-indigo-500 transition-colors" />
-            <span className="text-[13px] font-semibold text-slate-500 group-hover:text-indigo-500 transition-colors">
+            <Share2 className="w-5 h-5 text-slate-500 dark:text-slate-400 group-hover:text-indigo-500 transition-colors" />
+            <span className="text-[13px] font-semibold text-slate-500 dark:text-slate-400 group-hover:text-indigo-500 transition-colors">
               {post.shares_count > 0 ? post.shares_count.toLocaleString() : "Share"}
             </span>
           </button>
@@ -431,8 +431,8 @@ const PostCard = memo(function PostCard({ post, currentUser }) {
           onClick={() => currentUser && saveMutation.mutate()}
           className={`p-1.5 rounded-full transition-all duration-200 ${
             isBookmarked 
-              ? "text-indigo-600 bg-indigo-50" 
-              : "text-slate-500 hover:text-indigo-500 hover:bg-slate-50"
+              ? "text-indigo-600 bg-indigo-50 dark:bg-indigo-900/30" 
+              : "text-slate-500 dark:text-slate-400 hover:text-indigo-500 hover:bg-slate-50 dark:hover:bg-slate-800"
           }`}
         >
           <Bookmark className={`w-5 h-5 ${isBookmarked ? "fill-current" : ""}`} />
