@@ -626,7 +626,7 @@ export const reviewsAPI = {
   create: (data) => apiClient.post('/reviews', data),
   update: (id, data) => apiClient.put(`/reviews/${id}`, data),
   delete: (id) => apiClient.delete(`/reviews/${id}`),
-  markHelpful: (id) => apiClient.post(`/reviews/${id}/helpful`, {}),
+  markHelpful: (id) => likesAPI.like('review', id),
   getSummary: (productId) => apiClient.get(`/reviews/product/${productId}/summary`),
 };
 

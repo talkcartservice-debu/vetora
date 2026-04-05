@@ -71,7 +71,7 @@ export async function storyRoutes(fastify: FastifyInstance) {
   });
 
   // List stories with filtering
-  fastify.get('', {
+  fastify.get('/', {
     preHandler: [fastify.authenticateOptional],
   }, async (request, reply) => {
     try {
@@ -164,7 +164,7 @@ export async function storyRoutes(fastify: FastifyInstance) {
   });
 
   // Create story
-  fastify.post('', {
+  fastify.post('/', {
     preHandler: fastify.authenticate
   }, async (request, reply) => {
     try {
@@ -330,76 +330,6 @@ export async function storyRoutes(fastify: FastifyInstance) {
     }
   });
   
-  // Like a story
-  fastify.post('/:id/like', {
-    preHandler: [fastify.authenticate]
-  }, async (request, reply) => {
-    try {
-      const { id } = request.params as { id: string };
-      const user = request.user as any;
-      
-      const result = await likeTarget(user.username, 'story', id);
-      
-      // Emit real-time events
-      fastify.io?.emit('story_updated', {
-        type: 'like',
-        story_id: id,
-        likes_count: result.likes_count,
-        user_username: user.username
-      });
-
-      fastify.io?.emit('like:created', {
-        like: result.like_doc,
-        target_type: 'story',
-        target_id: id
-      });
-      
-      return result;
-    } catch (error: any) {
-      if (error.message.includes('not found')) {
-        return reply.code(404).send({ error: error.message });
-      }
-      if (error.message.includes('Already liked')) {
-        return reply.code(409).send({ error: error.message });
-      }
-      fastify.log.error(error);
-      return reply.code(500).send({ error: 'Internal server error' });
-    }
-  });
-
-  // Unlike a story
-  fastify.delete('/:id/like', {
-    preHandler: [fastify.authenticate]
-  }, async (request, reply) => {
-    try {
-      const { id } = request.params as { id: string };
-      const user = request.user as any;
-
-      const result = await unlikeTarget(user.username, 'story', id);
-
-      fastify.io?.emit('story_updated', {
-        type: 'unlike',
-        story_id: id,
-        likes_count: result.likes_count,
-        user_username: user.username
-      });
-
-      fastify.io?.emit('like:deleted', {
-        target_type: 'story',
-        target_id: id,
-        user_username: user.username
-      });
-
-      return result;
-    } catch (error: any) {
-      if (error.message.includes('not found')) {
-        return reply.code(404).send({ error: error.message });
-      }
-      fastify.log.error(error);
-      return reply.code(500).send({ error: 'Internal server error' });
-    }
-  });
-
   // Reply to a story
   fastify.post('/:id/reply', {
     preHandler: [fastify.authenticate]

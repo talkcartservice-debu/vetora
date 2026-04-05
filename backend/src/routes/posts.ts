@@ -20,7 +20,7 @@ const createPostSchema = z.object({
 
 export async function postRoutes(fastify: FastifyInstance) {
   // List posts with filtering and pagination
-  fastify.get('', {
+  fastify.get('/', {
     preHandler: [fastify.authenticateOptional],
   }, async (request, reply) => {
     try {
@@ -151,7 +151,7 @@ export async function postRoutes(fastify: FastifyInstance) {
   });
 
   // Create post
-  fastify.post('', {
+  fastify.post('/', {
     preHandler: [fastify.authenticate],
   }, async (request, reply) => {
     try {
@@ -189,83 +189,6 @@ export async function postRoutes(fastify: FastifyInstance) {
       }
       fastify.log.error(error);
       return reply.code(500).send({ error: 'Internal server error', message: error.message });
-    }
-  });
-
-  // Like a post
-  fastify.post('/:id/like', {
-    preHandler: [fastify.authenticate],
-  }, async (request, reply) => {
-    try {
-      const { id } = request.params as { id: string };
-      const user = request.user as any;
-
-      const result = await likeTarget(user.username, 'post', id);
-
-      // Broadcast update
-      const io = (fastify as any).io;
-      if (io) {
-        io.emit('post_updated', {
-          type: 'like',
-          post_id: id,
-          likes_count: result.likes_count,
-          user_username: user.username
-        });
-        
-        io.emit('like:created', {
-          like: result.like_doc,
-          target_type: 'post',
-          target_id: id
-        });
-      }
-
-      return result;
-    } catch (error: any) {
-      if (error.message.includes('not found')) {
-        return reply.code(404).send({ error: error.message });
-      }
-      if (error.message.includes('Already liked')) {
-        return reply.code(409).send({ error: error.message });
-      }
-      fastify.log.error(error);
-      return reply.code(500).send({ error: 'Internal server error' });
-    }
-  });
-
-  // Unlike a post
-  fastify.delete('/:id/like', {
-    preHandler: [fastify.authenticate],
-  }, async (request, reply) => {
-    try {
-      const { id } = request.params as { id: string };
-      const user = request.user as any;
-
-      const result = await unlikeTarget(user.username, 'post', id);
-
-      // Broadcast update
-      const io = (fastify as any).io;
-      if (io) {
-        io.emit('post_updated', {
-          type: 'unlike',
-          post_id: id,
-          likes_count: result.likes_count,
-          user_username: user.username
-        });
-
-        io.emit('like:deleted', {
-          target_type: 'post',
-          target_id: id,
-          user_username: user.username
-        });
-      }
-
-      return result;
-    } catch (error: any) {
-      if (error.message.includes('not found')) {
-        return reply.code(404).send({ error: error.message });
-      }
-      fastify.log.error(error);
-      return reply.code(500).send({ error: 'Internal server error' });
     }
   });
 

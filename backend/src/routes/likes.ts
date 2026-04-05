@@ -89,21 +89,46 @@ export async function likeRoutes(fastify: FastifyInstance) {
 
       const result = await likeTarget(user.username, target_type, target_id);
 
-      // Emit real-time events
+      // Emit generic real-time event
       fastify.io?.emit('like:created', {
         like: result.like_doc,
         target_type,
-        target_id
+        target_id,
+        user_username: user.username
       });
 
-      // Special handling for backward compatibility with specific entity listeners
-      if (target_type === 'post') {
-        fastify.io?.emit('post_updated', {
-          type: 'like',
-          post_id: target_id,
-          likes_count: result.likes_count,
-          user_username: user.username
-        });
+      // Special handling for entity-specific listeners
+      switch (target_type) {
+        case 'post':
+          fastify.io?.emit('post_updated', {
+            type: 'like',
+            post_id: target_id,
+            likes_count: result.likes_count,
+            user_username: user.username
+          });
+          break;
+        case 'story':
+          fastify.io?.emit('story_updated', {
+            type: 'like',
+            story_id: target_id,
+            likes_count: result.likes_count,
+            user_username: user.username
+          });
+          break;
+        case 'comment':
+          fastify.io?.emit('comment_updated', {
+            type: 'like',
+            comment_id: target_id,
+            likes_count: result.likes_count,
+            user_username: user.username
+          });
+          break;
+        case 'live_session':
+          fastify.io?.to(`live-session-${target_id}`).emit('live-session-liked', {
+            session_id: target_id,
+            likes: result.likes_count
+          });
+          break;
       }
 
       reply.code(201).send(result);
@@ -134,21 +159,45 @@ export async function likeRoutes(fastify: FastifyInstance) {
 
       const result = await unlikeTarget(user.username, target_type, target_id);
 
-      // Emit real-time event
+      // Emit generic real-time event
       fastify.io?.emit('like:deleted', {
         target_type,
         target_id,
         user_username: user.username
       });
 
-      // Special handling for post updates
-      if (target_type === 'post') {
-        fastify.io?.emit('post_updated', {
-          type: 'unlike',
-          post_id: target_id,
-          likes_count: result.likes_count,
-          user_username: user.username
-        });
+      // Special handling for entity-specific updates
+      switch (target_type) {
+        case 'post':
+          fastify.io?.emit('post_updated', {
+            type: 'unlike',
+            post_id: target_id,
+            likes_count: result.likes_count,
+            user_username: user.username
+          });
+          break;
+        case 'story':
+          fastify.io?.emit('story_updated', {
+            type: 'unlike',
+            story_id: target_id,
+            likes_count: result.likes_count,
+            user_username: user.username
+          });
+          break;
+        case 'comment':
+          fastify.io?.emit('comment_updated', {
+            type: 'unlike',
+            comment_id: target_id,
+            likes_count: result.likes_count,
+            user_username: user.username
+          });
+          break;
+        case 'live_session':
+          fastify.io?.to(`live-session-${target_id}`).emit('live-session-unliked', {
+            session_id: target_id,
+            likes: result.likes_count
+          });
+          break;
       }
 
       reply.send(result);

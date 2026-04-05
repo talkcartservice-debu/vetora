@@ -7,7 +7,7 @@ import { likeTarget, unlikeTarget, getLikesForTargets } from '../services/likeSe
 
 export async function commentRoutes(fastify: FastifyInstance) {
   // List comments for a post with pagination
-  fastify.get('', {
+  fastify.get('/', {
     preHandler: [fastify.authenticateOptional]
   }, async (request, reply) => {
     try {
@@ -102,7 +102,7 @@ export async function commentRoutes(fastify: FastifyInstance) {
   });
 
   // Create comment
-  fastify.post('', {
+  fastify.post('/', {
     preHandler: fastify.authenticate
   }, async (request, reply) => {
     try {
@@ -234,75 +234,6 @@ export async function commentRoutes(fastify: FastifyInstance) {
 
       reply.send({ message: 'Comment and replies deleted successfully' });
     } catch (error) {
-      fastify.log.error(error);
-      reply.code(500).send({ error: 'Internal server error' });
-    }
-  });
-
-  // Like a comment
-  fastify.post('/:id/like', {
-    preHandler: fastify.authenticate
-  }, async (request, reply) => {
-    try {
-      const { id } = request.params as { id: string };
-      const user = request.user as any;
-
-      const result = await likeTarget(user.username, 'comment', id);
-
-      fastify.io?.emit('comment_updated', {
-        type: 'like',
-        comment_id: id,
-        likes_count: result.likes_count,
-        user_username: user.username
-      });
-
-      fastify.io?.emit('like:created', {
-        like: result.like_doc,
-        target_type: 'comment',
-        target_id: id
-      });
-
-      return result;
-    } catch (error: any) {
-      if (error.message.includes('not found')) {
-        return reply.code(404).send({ error: error.message });
-      }
-      if (error.message.includes('Already liked')) {
-        return reply.code(409).send({ error: error.message });
-      }
-      fastify.log.error(error);
-      reply.code(500).send({ error: 'Internal server error' });
-    }
-  });
-
-  // Unlike a comment
-  fastify.delete('/:id/like', {
-    preHandler: fastify.authenticate
-  }, async (request, reply) => {
-    try {
-      const { id } = request.params as { id: string };
-      const user = request.user as any;
-
-      const result = await unlikeTarget(user.username, 'comment', id);
-
-      fastify.io?.emit('comment_updated', {
-        type: 'unlike',
-        comment_id: id,
-        likes_count: result.likes_count,
-        user_username: user.username
-      });
-
-      fastify.io?.emit('like:deleted', {
-        target_type: 'comment',
-        target_id: id,
-        user_username: user.username
-      });
-
-      return result;
-    } catch (error: any) {
-      if (error.message.includes('not found')) {
-        return reply.code(404).send({ error: error.message });
-      }
       fastify.log.error(error);
       reply.code(500).send({ error: 'Internal server error' });
     }
