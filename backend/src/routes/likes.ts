@@ -1,15 +1,10 @@
 import { FastifyInstance } from 'fastify';
-import mongoose from 'mongoose';
-import { Like, ILike } from '../models/Like';
-import { Post } from '../models/Post';
-import { Comment } from '../models/Comment';
-import { Product } from '../models/Product';
-import { Review } from '../models/Review';
-import { User } from '../models/User';
+import { Like } from '../models/Like';
+import { likeTarget, unlikeTarget } from '../services/likeService';
 
 export async function likeRoutes(fastify: FastifyInstance) {
   // Get likes for a specific target
-  fastify.get('/', async (request, reply) => {
+  fastify.get('', async (request, reply) => {
     try {
       const query = request.query as any;
       const {
@@ -84,94 +79,48 @@ export async function likeRoutes(fastify: FastifyInstance) {
   });
 
   // Like a target
-  fastify.post('/', {
+  fastify.post('', {
     preHandler: fastify.authenticate
   }, async (request, reply) => {
     try {
       const body = request.body as { target_type: string; target_id: string };
       const user = request.user as any;
-
       const { target_type, target_id } = body;
 
-      // Validate target_type
-      const validTypes = ['post', 'comment', 'product', 'review'];
-      if (!validTypes.includes(target_type)) {
-        return reply.code(400).send({ error: 'Invalid target_type. Must be one of: post, comment, product, review' });
-      }
+      const result = await likeTarget(user.username, target_type, target_id);
 
-      // Check if target exists
-      let targetExists = false;
-      switch (target_type) {
-        case 'post':
-          targetExists = !!(await Post.findById(target_id));
-          break;
-        case 'comment':
-          targetExists = !!(await Comment.findById(target_id));
-          break;
-        case 'product':
-          targetExists = !!(await Product.findById(target_id));
-          break;
-        case 'review':
-          targetExists = !!(await Review.findById(target_id));
-          break;
-      }
-
-      if (!targetExists) {
-        return reply.code(404).send({ error: `${target_type} not found` });
-      }
-
-      // Check if user already liked this target
-      const existingLike = await Like.findOne({
-        user_username: user.username.toLowerCase(),
-        target_type,
-        target_id
-      });
-
-      if (existingLike) {
-        return reply.code(409).send({ error: 'You have already liked this item' });
-      }
-
-      const like = new Like({
-        user_username: user.username.toLowerCase(),
-        target_type,
-        target_id
-      });
-
-      await like.save();
-
-      // Update the likes count on the target
-      await updateLikesCount(target_type, target_id, 1);
-
-      // Emit real-time event
+      // Emit real-time events
       fastify.io?.emit('like:created', {
-        like: like.toObject(),
+        like: result.like_doc,
         target_type,
         target_id
       });
 
-      // Special handling for post updates to match posts.ts
+      // Special handling for backward compatibility with specific entity listeners
       if (target_type === 'post') {
-        const updatedPost = await Post.findById(target_id).lean();
         fastify.io?.emit('post_updated', {
           type: 'like',
           post_id: target_id,
-          likes_count: updatedPost?.likes_count || 0,
+          likes_count: result.likes_count,
           user_username: user.username
         });
       }
 
-      reply.code(201).send(like);
+      reply.code(201).send(result);
     } catch (error: any) {
+      if (error.message.includes('not found')) {
+        return reply.code(404).send({ error: error.message });
+      }
+      if (error.message.includes('Already liked')) {
+        return reply.code(409).send({ error: error.message });
+      }
       fastify.log.error(error);
-      return reply.code(500).send({ 
-        error: 'Internal server error', 
-        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
-      });
+      return reply.code(500).send({ error: 'Internal server error' });
     }
   });
 
   // Unlike a target
-  fastify.delete('/', {
+  fastify.delete('', {
     preHandler: fastify.authenticate
   }, async (request, reply) => {
     try {
@@ -183,44 +132,32 @@ export async function likeRoutes(fastify: FastifyInstance) {
         return reply.code(400).send({ error: 'Missing required parameters: target_type, target_id' });
       }
 
-      const like = await Like.findOneAndDelete({
-        user_username: user.username.toLowerCase(),
-        target_type,
-        target_id
-      });
-
-      if (!like) {
-        return reply.code(404).send({ error: 'Like not found' });
-      }
-
-      // Update the likes count on the target
-      await updateLikesCount(target_type, target_id, -1);
+      const result = await unlikeTarget(user.username, target_type, target_id);
 
       // Emit real-time event
       fastify.io?.emit('like:deleted', {
-        like_id: like._id,
         target_type,
-        target_id
+        target_id,
+        user_username: user.username
       });
 
       // Special handling for post updates
       if (target_type === 'post') {
-        const updatedPost = await Post.findById(target_id).lean();
         fastify.io?.emit('post_updated', {
           type: 'unlike',
           post_id: target_id,
-          likes_count: updatedPost?.likes_count || 0,
+          likes_count: result.likes_count,
           user_username: user.username
         });
       }
 
-      reply.send({ message: 'Like removed successfully' });
+      reply.send(result);
     } catch (error: any) {
+      if (error.message.includes('not found')) {
+        return reply.code(404).send({ error: error.message });
+      }
       fastify.log.error(error);
-      return reply.code(500).send({ 
-        error: 'Internal server error', 
-        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
-      });
+      return reply.code(500).send({ error: 'Internal server error' });
     }
   });
 
@@ -290,35 +227,4 @@ export async function likeRoutes(fastify: FastifyInstance) {
       });
     }
   });
-}
-
-// Helper function to update likes count on target documents
-async function updateLikesCount(target_type: string, target_id: string, increment: number) {
-  try {
-    const objId = new mongoose.Types.ObjectId(target_id);
-    switch (target_type) {
-      case 'post':
-        if (increment < 0) {
-          await Post.updateOne({ _id: objId, likes_count: { $gt: 0 } }, { $inc: { likes_count: increment } });
-        } else {
-          await Post.updateOne({ _id: objId }, { $inc: { likes_count: increment } });
-        }
-        break;
-      case 'comment':
-        if (increment < 0) {
-          await Comment.updateOne({ _id: objId, likes_count: { $gt: 0 } }, { $inc: { likes_count: increment } });
-        } else {
-          await Comment.updateOne({ _id: objId }, { $inc: { likes_count: increment } });
-        }
-        break;
-      case 'product':
-        // Products might not have likes_count field, skip for now
-        break;
-      case 'review':
-        // Reviews might not have likes_count field, skip for now
-        break;
-    }
-  } catch (error) {
-    console.error('Error updating likes count:', error);
-  }
 }

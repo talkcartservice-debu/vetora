@@ -1,10 +1,11 @@
 import { FastifyInstance } from 'fastify';
 import { Review, IReview } from '../models/Review';
 import { User } from '../models/User';
+import { likeTarget } from '../services/likeService';
 
 export async function reviewRoutes(fastify: FastifyInstance) {
   // List reviews with filtering, sorting, and pagination
-  fastify.get('/', async (request, reply) => {
+  fastify.get('', async (request, reply) => {
     try {
       const query = request.query as any;
       const {
@@ -81,7 +82,7 @@ export async function reviewRoutes(fastify: FastifyInstance) {
   });
 
   // Create review
-  fastify.post('/', {
+  fastify.post('', {
     preHandler: fastify.authenticate
   }, async (request, reply) => {
     try {
@@ -230,19 +231,16 @@ export async function reviewRoutes(fastify: FastifyInstance) {
       const { id } = request.params as { id: string };
       const user = request.user as any;
 
-      const review = await Review.findById(id);
+      const result = await likeTarget(user.username, 'review', id);
 
-      if (!review) {
-        return reply.code(404).send({ error: 'Review not found' });
+      reply.send(result);
+    } catch (error: any) {
+      if (error.message.includes('not found')) {
+        return reply.code(404).send({ error: error.message });
       }
-
-      // TODO: Implement helpful votes tracking (could use a separate collection)
-      // For now, just increment the count
-      review.helpful_count += 1;
-      await review.save();
-
-      reply.send({ helpful_count: review.helpful_count });
-    } catch (error) {
+      if (error.message.includes('Already liked')) {
+        return reply.code(409).send({ error: 'You have already marked this review as helpful' });
+      }
       fastify.log.error(error);
       reply.code(500).send({ error: 'Internal server error' });
     }

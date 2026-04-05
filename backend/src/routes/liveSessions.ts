@@ -2,10 +2,11 @@ import { FastifyInstance } from 'fastify';
 import { LiveSession, ILiveSession } from '../models/LiveSession';
 import { User } from '../models/User';
 import { checkLiveSessionLimit } from '../middleware/subscription';
+import { likeTarget, unlikeTarget } from '../services/likeService';
 
 export async function liveSessionRoutes(fastify: FastifyInstance) {
   // List live sessions with filtering
-  fastify.get('/', async (request, reply) => {
+  fastify.get('', async (request, reply) => {
     try {
       const query = request.query as any;
       const {
@@ -96,7 +97,7 @@ export async function liveSessionRoutes(fastify: FastifyInstance) {
   });
 
   // Create live session
-  fastify.post('/', {
+  fastify.post('', {
     preHandler: [fastify.authenticate, checkLiveSessionLimit]
   }, async (request, reply) => {
     try {
@@ -315,33 +316,62 @@ export async function liveSessionRoutes(fastify: FastifyInstance) {
       const { id } = request.params as { id: string };
       const user = request.user as any;
 
-      const session = await LiveSession.findByIdAndUpdate(
-        id,
-        { $inc: { likes: 1 } },
-        { new: true }
-      );
+      const result = await likeTarget(user.username, 'live_session', id);
 
-      if (!session) {
-        return reply.code(404).send({ error: 'Live session not found' });
-      }
-
-      if (session.status !== 'active') {
-        return reply.code(400).send({ error: 'Can only like active live sessions' });
-      }
-
-      // Emit real-time event
+      // Emit real-time events
       fastify.io?.to(`live-session-${id}`).emit('live-session-liked', {
         session_id: id,
-        likes: session.likes
+        likes: result.likes_count
       });
 
-      reply.send({ likes: session.likes });
-    } catch (error: any) {
-      fastify.log.error(error);
-      return reply.code(500).send({ 
-        error: 'Internal server error', 
-        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      fastify.io?.emit('like:created', {
+        like: result.like_doc,
+        target_type: 'live_session',
+        target_id: id
       });
+
+      reply.send(result);
+    } catch (error: any) {
+      if (error.message.includes('not found')) {
+        return reply.code(404).send({ error: error.message });
+      }
+      if (error.message.includes('Already liked')) {
+        return reply.code(409).send({ error: error.message });
+      }
+      fastify.log.error(error);
+      return reply.code(500).send({ error: 'Internal server error' });
+    }
+  });
+
+  // Unlike live session
+  fastify.delete('/:id/like', {
+    preHandler: fastify.authenticate
+  }, async (request, reply) => {
+    try {
+      const { id } = request.params as { id: string };
+      const user = request.user as any;
+
+      const result = await unlikeTarget(user.username, 'live_session', id);
+
+      // Emit real-time event
+      fastify.io?.to(`live-session-${id}`).emit('live-session-unliked', {
+        session_id: id,
+        likes: result.likes_count
+      });
+
+      fastify.io?.emit('like:deleted', {
+        target_type: 'live_session',
+        target_id: id,
+        user_username: user.username
+      });
+
+      reply.send(result);
+    } catch (error: any) {
+      if (error.message.includes('not found')) {
+        return reply.code(404).send({ error: error.message });
+      }
+      fastify.log.error(error);
+      return reply.code(500).send({ error: 'Internal server error' });
     }
   });
 

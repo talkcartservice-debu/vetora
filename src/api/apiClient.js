@@ -382,8 +382,8 @@ export const postsAPI = {
   create: (data) => apiClient.post('/posts', data),
   update: (id, data) => apiClient.patch(`/posts/${id}`, data),
   delete: (id) => apiClient.delete(`/posts/${id}`),
-  like: (id) => apiClient.post(`/posts/${id}/like`, {}),
-  unlike: (id) => apiClient.delete(`/posts/${id}/like`, {}),
+  like: (id) => likesAPI.like('post', id),
+  unlike: (id) => likesAPI.unlike('post', id),
   share: (id) => apiClient.patch(`/posts/${id}`, { $inc: { shares_count: 1 } }), // Direct increment for simplicity
 };
 
@@ -407,8 +407,8 @@ export const commentsAPI = {
   create: (data) => apiClient.post('/comments', data),
   update: (id, data) => apiClient.put(`/comments/${id}`, data),
   delete: (id) => apiClient.delete(`/comments/${id}`),
-  like: (id) => apiClient.post(`/comments/${id}/like`, {}),
-  unlike: (id) => apiClient.delete(`/comments/${id}/like`, {}),
+  like: (id) => likesAPI.like('comment', id),
+  unlike: (id) => likesAPI.unlike('comment', id),
 };
 
 export const likesAPI = {
@@ -661,7 +661,8 @@ export const storiesAPI = {
   create: (data) => apiClient.post('/stories', data),
   update: (id, data) => apiClient.put(`/stories/${id}`, data),
   view: (id) => apiClient.post(`/stories/${id}/view`, {}),
-  like: (id) => apiClient.post(`/stories/${id}/like`, {}),
+  like: (id) => likesAPI.like('story', id),
+  unlike: (id) => likesAPI.unlike('story', id),
   reply: (id, text) => apiClient.post(`/stories/${id}/reply`, { text }),
   delete: (id) => apiClient.delete(`/stories/${id}`),
   cleanup: () => apiClient.post('/stories/cleanup', {})
@@ -678,7 +679,8 @@ export const liveSessionsAPI = {
   start: (id) => apiClient.post(`/live-sessions/${id}/start`, {}),
   end: (id) => apiClient.post(`/live-sessions/${id}/end`, {}),
   updateViewers: (id, count) => apiClient.post(`/live-sessions/${id}/viewers`, { count }),
-  like: (id) => apiClient.post(`/live-sessions/${id}/like`, {}),
+  like: (id) => likesAPI.like('live_session', id),
+  unlike: (id) => likesAPI.unlike('live_session', id),
   delete: (id) => apiClient.delete(`/live-sessions/${id}`),
   listForMe: (status = null) => {
     const query = apiClient.buildQueryString({ status });

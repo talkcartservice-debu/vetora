@@ -3,11 +3,11 @@ import mongoose from 'mongoose';
 import { Comment, IComment } from '../models/Comment';
 import { User } from '../models/User';
 import { Post } from '../models/Post';
-import { Like } from '../models/Like';
+import { likeTarget, unlikeTarget, getLikesForTargets } from '../services/likeService';
 
 export async function commentRoutes(fastify: FastifyInstance) {
   // List comments for a post with pagination
-  fastify.get('/', {
+  fastify.get('', {
     preHandler: [fastify.authenticateOptional]
   }, async (request, reply) => {
     try {
@@ -59,13 +59,7 @@ export async function commentRoutes(fastify: FastifyInstance) {
 
       if (effectiveUsername && typeof effectiveUsername === 'string') {
         const commentIds = comments.map((c: any) => c._id.toString());
-        const likes = await Like.find({
-          user_username: effectiveUsername.toLowerCase(),
-          target_type: 'comment',
-          target_id: { $in: commentIds }
-        }).select('target_id').lean();
-        
-        userLikesSet = new Set(likes.map((l: any) => l.target_id.toString()));
+        userLikesSet = await getLikesForTargets(effectiveUsername, 'comment', commentIds);
       }
 
       const commentsWithLikeStatus = comments.map((comment: any) => ({
@@ -108,7 +102,7 @@ export async function commentRoutes(fastify: FastifyInstance) {
   });
 
   // Create comment
-  fastify.post('/', {
+  fastify.post('', {
     preHandler: fastify.authenticate
   }, async (request, reply) => {
     try {
@@ -253,56 +247,29 @@ export async function commentRoutes(fastify: FastifyInstance) {
       const { id } = request.params as { id: string };
       const user = request.user as any;
 
-      if (!user?.username) {
-        return reply.code(401).send({ error: 'Unauthorized' });
-      }
+      const result = await likeTarget(user.username, 'comment', id);
 
-      const comment = await Comment.findById(id);
-      if (!comment) {
-        return reply.code(404).send({ error: 'Comment not found' });
-      }
-
-      // Check if already liked
-      const existingLike = await Like.findOne({
-        user_username: user.username.toLowerCase(),
-        target_id: id,
-        target_type: 'comment'
-      });
-
-      if (existingLike) {
-        return reply.code(400).send({ error: 'Comment already liked' });
-      }
-
-      const like = new Like({
-        user_username: user.username.toLowerCase(),
-        target_id: id,
-        target_type: 'comment'
-      });
-
-      await like.save();
-
-      // Increment likes count
-      const updatedComment = await Comment.findByIdAndUpdate(
-        id,
-        { $inc: { likes_count: 1 } },
-        { new: true, lean: true }
-      );
-
-      // Emit real-time event
       fastify.io?.emit('comment_updated', {
         type: 'like',
         comment_id: id,
-        post_id: comment.post_id,
-        likes_count: updatedComment?.likes_count || 0,
+        likes_count: result.likes_count,
         user_username: user.username
       });
 
-      return { 
-        status: 'liked', 
-        likes_count: updatedComment?.likes_count || 0,
-        is_liked: true
-      };
-    } catch (error) {
+      fastify.io?.emit('like:created', {
+        like: result.like_doc,
+        target_type: 'comment',
+        target_id: id
+      });
+
+      return result;
+    } catch (error: any) {
+      if (error.message.includes('not found')) {
+        return reply.code(404).send({ error: error.message });
+      }
+      if (error.message.includes('Already liked')) {
+        return reply.code(409).send({ error: error.message });
+      }
       fastify.log.error(error);
       reply.code(500).send({ error: 'Internal server error' });
     }
@@ -316,44 +283,26 @@ export async function commentRoutes(fastify: FastifyInstance) {
       const { id } = request.params as { id: string };
       const user = request.user as any;
 
-      if (!user?.username) {
-        return reply.code(401).send({ error: 'Unauthorized' });
-      }
+      const result = await unlikeTarget(user.username, 'comment', id);
 
-      const result = await Like.deleteOne({
-        user_username: user.username.toLowerCase(),
-        target_id: id,
-        target_type: 'comment'
-      });
-
-      if (result.deletedCount === 0) {
-        return reply.code(404).send({ error: 'Like not found' });
-      }
-
-      // Decrement likes count
-      const updatedComment = await Comment.findOneAndUpdate(
-        { _id: id, likes_count: { $gt: 0 } },
-        { $inc: { likes_count: -1 } },
-        { new: true, lean: true }
-      );
-
-      const finalComment = updatedComment || await Comment.findById(id).lean();
-
-      // Emit real-time event
       fastify.io?.emit('comment_updated', {
         type: 'unlike',
         comment_id: id,
-        post_id: finalComment?.post_id,
-        likes_count: finalComment?.likes_count || 0,
+        likes_count: result.likes_count,
         user_username: user.username
       });
 
-      return { 
-        status: 'unliked', 
-        likes_count: finalComment?.likes_count || 0,
-        is_liked: false
-      };
-    } catch (error) {
+      fastify.io?.emit('like:deleted', {
+        target_type: 'comment',
+        target_id: id,
+        user_username: user.username
+      });
+
+      return result;
+    } catch (error: any) {
+      if (error.message.includes('not found')) {
+        return reply.code(404).send({ error: error.message });
+      }
       fastify.log.error(error);
       reply.code(500).send({ error: 'Internal server error' });
     }

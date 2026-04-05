@@ -2,9 +2,9 @@ import { FastifyInstance } from 'fastify';
 import mongoose from 'mongoose';
 import { Post, IPost } from '../models/Post';
 import { User } from '../models/User';
-import { Like } from '../models/Like';
 import { Follow } from '../models/Follow';
 import { z } from 'zod';
+import { likeTarget, unlikeTarget, getLikesForTargets, checkIfLiked } from '../services/likeService';
 
 const createPostSchema = z.object({
   content: z.string().default(''),
@@ -20,7 +20,7 @@ const createPostSchema = z.object({
 
 export async function postRoutes(fastify: FastifyInstance) {
   // List posts with filtering and pagination
-  fastify.get('/', {
+  fastify.get('', {
     preHandler: [fastify.authenticateOptional],
   }, async (request, reply) => {
     try {
@@ -84,13 +84,7 @@ export async function postRoutes(fastify: FastifyInstance) {
 
       if (effectiveUsername && typeof effectiveUsername === 'string') {
         const postIds = posts.map((p: any) => p._id.toString());
-        const likes = await Like.find({
-          user_username: effectiveUsername.toLowerCase(),
-          target_type: 'post',
-          target_id: { $in: postIds }
-        }).select('target_id').lean();
-        
-        userLikesSet = new Set(likes.map((l: any) => l.target_id.toString()));
+        userLikesSet = await getLikesForTargets(effectiveUsername, 'post', postIds);
       }
 
       // Add is_liked field to each post
@@ -139,12 +133,7 @@ export async function postRoutes(fastify: FastifyInstance) {
       
       let is_liked = false;
       if (effectiveUsername && typeof effectiveUsername === 'string') {
-        const like = await Like.findOne({
-          user_username: effectiveUsername.toLowerCase(),
-          target_id: id,
-          target_type: 'post'
-        }).lean();
-        is_liked = !!like;
+        is_liked = await checkIfLiked(effectiveUsername, 'post', id);
       }
 
       return { 
@@ -162,7 +151,7 @@ export async function postRoutes(fastify: FastifyInstance) {
   });
 
   // Create post
-  fastify.post('/', {
+  fastify.post('', {
     preHandler: [fastify.authenticate],
   }, async (request, reply) => {
     try {
@@ -211,96 +200,35 @@ export async function postRoutes(fastify: FastifyInstance) {
       const { id } = request.params as { id: string };
       const user = request.user as any;
 
-      if (!user?.username) {
-        return reply.code(401).send({ error: 'Unauthorized - invalid user data' });
+      const result = await likeTarget(user.username, 'post', id);
+
+      // Broadcast update
+      const io = (fastify as any).io;
+      if (io) {
+        io.emit('post_updated', {
+          type: 'like',
+          post_id: id,
+          likes_count: result.likes_count,
+          user_username: user.username
+        });
+        
+        io.emit('like:created', {
+          like: result.like_doc,
+          target_type: 'post',
+          target_id: id
+        });
       }
 
-      fastify.log.info(`User ${user.username} liking post ${id}`);
-
-      // Check if post exists first
-      const post = await Post.findById(id);
-      if (!post) {
-        fastify.log.error(`Post ${id} not found during like attempt`);
-        return reply.code(404).send({ error: 'Post not found' });
-      }
-
-      // Check if already liked
-      const existingLike = await Like.findOne({
-        user_username: user.username.toLowerCase(), 
-        target_id: id, 
-        target_type: 'post'
-      });
-
-      if (existingLike) {
-        fastify.log.warn(`Post ${id} already liked by user ${user.username}`);
-        return reply.code(400).send({ error: 'Post already liked' });
-      }
-
-      const like = new Like({
-        user_username: user.username.toLowerCase(),
-        target_id: id,
-        target_type: 'post'
-      });
-
-      await like.save();
-      fastify.log.info(`Like saved for post ${id} by user ${user.username}`);
-
-      // Increment likes count on post using direct update
-      let updatedPost;
-      try {
-        const objId = new mongoose.Types.ObjectId(id);
-        updatedPost = await Post.findByIdAndUpdate(
-          objId,
-          { $inc: { likes_count: 1 } },
-          { new: true, lean: true }
-        );
-
-        if (!updatedPost) {
-          fastify.log.error(`Failed to update likes_count for post ${id} after saving like`);
-        } else {
-          fastify.log.info(`Post ${id} like count updated to ${updatedPost?.likes_count}`);
-        }
-      } catch (err: any) {
-        fastify.log.error(`Error during like update for post ${id}: ${err.message}`);
-        // Still try to return something if findById works with string
-        updatedPost = await Post.findById(id).lean();
-      }
-
-      // Notify author and broadcast update in background
-      if (updatedPost) {
-        const io = (fastify as any).io;
-        if (io) {
-          io.emit('post_updated', {
-            type: 'like',
-            post_id: id,
-            likes_count: updatedPost.likes_count,
-            user_username: user.username
-          });
-        }
-
-        // Optional: Create notification for author
-        // We do this in a try-catch to not fail the like if notification fails
-        try {
-          if (updatedPost.author_username && updatedPost.author_username !== user.username) {
-            // Check if Notification model is available or use a generic approach
-            // For now, just logging or using a dedicated service if available
-          }
-        } catch (err: any) {
-          fastify.log.error(`Failed to create notification for like: ${err.message}`);
-        }
-      }
-
-      return { 
-        status: 'liked', 
-        likes_count: updatedPost?.likes_count || 0,
-        is_liked: true
-      };
+      return result;
     } catch (error: any) {
+      if (error.message.includes('not found')) {
+        return reply.code(404).send({ error: error.message });
+      }
+      if (error.message.includes('Already liked')) {
+        return reply.code(409).send({ error: error.message });
+      }
       fastify.log.error(error);
-      return reply.code(500).send({ 
-        error: 'Internal server error', 
-        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
-      });
+      return reply.code(500).send({ error: 'Internal server error' });
     }
   });
 
@@ -312,42 +240,7 @@ export async function postRoutes(fastify: FastifyInstance) {
       const { id } = request.params as { id: string };
       const user = request.user as any;
 
-      if (!user?.username) {
-        return reply.code(401).send({ error: 'Unauthorized - invalid user data' });
-      }
-
-      fastify.log.info(`User ${user.username} unliking post ${id}`);
-
-      const result = await Like.deleteOne({
-        user_username: user.username.toLowerCase(),
-        target_id: id,
-        target_type: 'post'
-      });
-
-      if (result.deletedCount === 0) {
-        fastify.log.warn(`Like not found for user ${user.username} on post ${id}`);
-        // Return 200 anyway to keep frontend in sync if it thinks it's liked
-        return { status: 'unliked', message: 'Like already removed or not found' };
-      }
-
-      // Decrement likes count on post using direct update
-      let updatedPost;
-      try {
-        const objId = new mongoose.Types.ObjectId(id);
-        updatedPost = await Post.findOneAndUpdate(
-          { _id: objId, likes_count: { $gt: 0 } },
-          { $inc: { likes_count: -1 } },
-          { new: true, lean: true }
-        );
-        
-        if (!updatedPost) {
-          fastify.log.warn(`Failed to decrement likes_count for post ${id} (possibly already 0)`);
-          updatedPost = await Post.findById(id).lean();
-        }
-      } catch (err: any) {
-        fastify.log.error(`Error during unlike update for post ${id}: ${err.message}`);
-        updatedPost = await Post.findById(id).lean();
-      }
+      const result = await unlikeTarget(user.username, 'post', id);
 
       // Broadcast update
       const io = (fastify as any).io;
@@ -355,22 +248,24 @@ export async function postRoutes(fastify: FastifyInstance) {
         io.emit('post_updated', {
           type: 'unlike',
           post_id: id,
-          likes_count: updatedPost?.likes_count || 0,
+          likes_count: result.likes_count,
+          user_username: user.username
+        });
+
+        io.emit('like:deleted', {
+          target_type: 'post',
+          target_id: id,
           user_username: user.username
         });
       }
 
-      return { 
-        status: 'unliked', 
-        likes_count: updatedPost?.likes_count || 0,
-        is_liked: false
-      };
+      return result;
     } catch (error: any) {
+      if (error.message.includes('not found')) {
+        return reply.code(404).send({ error: error.message });
+      }
       fastify.log.error(error);
-      return reply.code(500).send({ 
-        error: 'Internal server error', 
-        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
-      });
+      return reply.code(500).send({ error: 'Internal server error' });
     }
   });
 

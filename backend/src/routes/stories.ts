@@ -3,7 +3,7 @@ import { Story, IStory } from '../models/Story';
 import { User } from '../models/User';
 import { Follow } from '../models/Follow';
 import { Message } from '../models/Message';
-import { Like } from '../models/Like';
+import { likeTarget, unlikeTarget, getLikesForTargets } from '../services/likeService';
 
 export async function storyRoutes(fastify: FastifyInstance) {
   // Get active stories feed (from users you follow + your own)
@@ -34,13 +34,7 @@ export async function storyRoutes(fastify: FastifyInstance) {
 
       // Get current user's likes for these stories
       const storyIds = stories.map(s => s._id.toString());
-      const likes = await Like.find({
-        user_username: user.username.toLowerCase(),
-        target_type: 'story',
-        target_id: { $in: storyIds }
-      }).select('target_id').lean();
-      
-      const userLikesSet = new Set(likes.map(l => l.target_id.toString()));
+      const userLikesSet = await getLikesForTargets(user.username, 'story', storyIds);
 
       // Group by author - use username string from document
       const groupedStories = stories.reduce((acc, story) => {
@@ -77,7 +71,7 @@ export async function storyRoutes(fastify: FastifyInstance) {
   });
 
   // List stories with filtering
-  fastify.get('/', {
+  fastify.get('', {
     preHandler: [fastify.authenticateOptional],
   }, async (request, reply) => {
     try {
@@ -121,13 +115,7 @@ export async function storyRoutes(fastify: FastifyInstance) {
 
       if (effectiveUsername && typeof effectiveUsername === 'string') {
         const storyIds = stories.map(s => s._id.toString());
-        const likes = await Like.find({
-          user_username: effectiveUsername.toLowerCase(),
-          target_type: 'story',
-          target_id: { $in: storyIds }
-        }).select('target_id').lean();
-        
-        userLikesSet = new Set(likes.map(l => l.target_id.toString()));
+        userLikesSet = await getLikesForTargets(effectiveUsername, 'story', storyIds);
       }
 
       const storiesWithLikeStatus = stories.map(story => ({
@@ -176,7 +164,7 @@ export async function storyRoutes(fastify: FastifyInstance) {
   });
 
   // Create story
-  fastify.post('/', {
+  fastify.post('', {
     preHandler: fastify.authenticate
   }, async (request, reply) => {
     try {
@@ -350,61 +338,32 @@ export async function storyRoutes(fastify: FastifyInstance) {
       const { id } = request.params as { id: string };
       const user = request.user as any;
       
-      const story = await Story.findById(id);
+      const result = await likeTarget(user.username, 'story', id);
       
-      if (!story) {
-        return reply.code(404).send({ error: 'Story not found' });
-      }
-      
-      if (!story.is_active || story.expires_at <= new Date()) {
-        return reply.code(400).send({ error: 'Story is no longer active' });
-      }
-
-      // Check if already liked
-      const existingLike = await Like.findOne({
-        user_username: user.username.toLowerCase(),
-        target_id: id,
-        target_type: 'story'
-      });
-
-      if (existingLike) {
-        return reply.code(400).send({ error: 'Story already liked' });
-      }
-
-      const like = new Like({
-        user_username: user.username.toLowerCase(),
-        target_id: id,
-        target_type: 'story'
-      });
-
-      await like.save();
-      
-      // Increment likes count
-      const updatedStory = await Story.findByIdAndUpdate(
-        id,
-        { $inc: { likes_count: 1 } },
-        { new: true, lean: true }
-      );
-      
-      // Emit real-time event
+      // Emit real-time events
       fastify.io?.emit('story_updated', {
         type: 'like',
         story_id: id,
-        likes_count: updatedStory?.likes_count || 0,
+        likes_count: result.likes_count,
         user_username: user.username
       });
-      
-      return { 
-        status: 'liked', 
-        likes_count: updatedStory?.likes_count || 0,
-        is_liked: true
-      };
-    } catch (error: any) {
-      fastify.log.error(error);
-      return reply.code(500).send({ 
-        error: 'Internal server error', 
-        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+
+      fastify.io?.emit('like:created', {
+        like: result.like_doc,
+        target_type: 'story',
+        target_id: id
       });
+      
+      return result;
+    } catch (error: any) {
+      if (error.message.includes('not found')) {
+        return reply.code(404).send({ error: error.message });
+      }
+      if (error.message.includes('Already liked')) {
+        return reply.code(409).send({ error: error.message });
+      }
+      fastify.log.error(error);
+      return reply.code(500).send({ error: 'Internal server error' });
     }
   });
 
@@ -416,44 +375,28 @@ export async function storyRoutes(fastify: FastifyInstance) {
       const { id } = request.params as { id: string };
       const user = request.user as any;
 
-      const result = await Like.deleteOne({
-        user_username: user.username.toLowerCase(),
-        target_id: id,
-        target_type: 'story'
-      });
+      const result = await unlikeTarget(user.username, 'story', id);
 
-      if (result.deletedCount === 0) {
-        return reply.code(404).send({ error: 'Like not found' });
-      }
-
-      // Decrement likes count
-      const updatedStory = await Story.findOneAndUpdate(
-        { _id: id, likes_count: { $gt: 0 } },
-        { $inc: { likes_count: -1 } },
-        { new: true, lean: true }
-      );
-
-      const finalStory = updatedStory || await Story.findById(id).lean();
-
-      // Emit real-time event
       fastify.io?.emit('story_updated', {
         type: 'unlike',
         story_id: id,
-        likes_count: finalStory?.likes_count || 0,
+        likes_count: result.likes_count,
         user_username: user.username
       });
 
-      return { 
-        status: 'unliked', 
-        likes_count: finalStory?.likes_count || 0,
-        is_liked: false
-      };
-    } catch (error: any) {
-      fastify.log.error(error);
-      return reply.code(500).send({ 
-        error: 'Internal server error', 
-        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      fastify.io?.emit('like:deleted', {
+        target_type: 'story',
+        target_id: id,
+        user_username: user.username
       });
+
+      return result;
+    } catch (error: any) {
+      if (error.message.includes('not found')) {
+        return reply.code(404).send({ error: error.message });
+      }
+      fastify.log.error(error);
+      return reply.code(500).send({ error: 'Internal server error' });
     }
   });
 

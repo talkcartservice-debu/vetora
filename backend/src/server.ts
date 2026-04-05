@@ -44,6 +44,7 @@ const fastify = Fastify({
     level: process.env.LOG_LEVEL || 'info',
   },
   bodyLimit: 50 * 1024 * 1024, // 50MB limit for file uploads
+  ignoreTrailingSlash: true,
 });
 
 // Environment variables
