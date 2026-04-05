@@ -52,11 +52,12 @@ export function LanguageProvider({ children }) {
   }, [isAuthenticated, user, lang]);
 
   const setLang = async (code) => {
+    if (code === lang) return;
     localStorage.setItem("vetora_lang", code);
     setLangState(code);
     
-    // Sync with backend if logged in
-    if (isAuthenticated && user) {
+    // Sync with backend if logged in and different from saved preference
+    if (isAuthenticated && user && user.preferences?.language !== code) {
       try {
         await authAPI.updateProfile({ 
           preferences: { ...user.preferences, language: code } 
