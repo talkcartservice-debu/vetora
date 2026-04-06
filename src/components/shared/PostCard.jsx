@@ -170,7 +170,13 @@ const PostCard = memo(function PostCard({ post, currentUser }) {
       }
     },
     onError: (error) => {
-      toast.error("Failed to update like");
+      if (error.status === 404) {
+        toast.error("This post is no longer available");
+        // We could invalidate queries here to remove it from the feed
+        queryClient.invalidateQueries({ queryKey: ["posts"] });
+      } else {
+        toast.error("Failed to update like");
+      }
       setOptimisticLiked(isLiked);
       setOptimisticCount(post?.likes_count || 0);
     },

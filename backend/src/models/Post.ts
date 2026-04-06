@@ -3,6 +3,7 @@ import mongoose, { Document, Schema } from 'mongoose';
 export interface IPost extends Document {
   _id: mongoose.Types.ObjectId;
   author_username: string;
+  author_email?: string;
   author_name?: string;
   author_avatar?: string;
   content: string;
@@ -23,6 +24,11 @@ const PostSchema = new Schema<IPost>({
   author_username: {
     type: String,
     required: true,
+    lowercase: true,
+    trim: true,
+  },
+  author_email: {
+    type: String,
     lowercase: true,
     trim: true,
   },

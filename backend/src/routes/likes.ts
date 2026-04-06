@@ -4,7 +4,7 @@ import { likeTarget, unlikeTarget } from '../services/likeService';
 
 export async function likeRoutes(fastify: FastifyInstance) {
   // Get likes for a specific target
-  fastify.get('', async (request, reply) => {
+  fastify.get('/', async (request, reply) => {
     try {
       const query = request.query as any;
       const {
@@ -44,7 +44,7 @@ export async function likeRoutes(fastify: FastifyInstance) {
       fastify.log.error(error);
       return reply.code(500).send({ 
         error: 'Internal server error', 
-        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+        message: process.env.NODE_ENV === 'development' ? error.message : 'Failed to fetch likes' 
       });
     }
   });
@@ -73,18 +73,23 @@ export async function likeRoutes(fastify: FastifyInstance) {
       fastify.log.error(error);
       return reply.code(500).send({ 
         error: 'Internal server error', 
-        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+        message: process.env.NODE_ENV === 'development' ? error.message : 'Failed to check like status' 
       });
     }
   });
 
   // Like a target
-  fastify.post('', {
+  fastify.post('/', {
     preHandler: fastify.authenticate
   }, async (request, reply) => {
     try {
       const body = request.body as { target_type: string; target_id: string };
       const user = request.user as any;
+      
+      if (!body || !body.target_type || !body.target_id) {
+        return reply.code(400).send({ error: 'Missing required body parameters: target_type, target_id' });
+      }
+
       const { target_type, target_id } = body;
 
       const result = await likeTarget(user.username, target_type, target_id);
@@ -134,18 +139,18 @@ export async function likeRoutes(fastify: FastifyInstance) {
       reply.code(201).send(result);
     } catch (error: any) {
       if (error.message.includes('not found')) {
-        return reply.code(404).send({ error: error.message });
+        return reply.code(404).send({ error: 'Target not found', message: error.message });
       }
       if (error.message.includes('Already liked')) {
-        return reply.code(409).send({ error: error.message });
+        return reply.code(409).send({ error: 'Conflict', message: error.message });
       }
       fastify.log.error(error);
-      return reply.code(500).send({ error: 'Internal server error' });
+      return reply.code(500).send({ error: 'Internal server error', message: error.message });
     }
   });
 
   // Unlike a target
-  fastify.delete('', {
+  fastify.delete('/', {
     preHandler: fastify.authenticate
   }, async (request, reply) => {
     try {
@@ -154,7 +159,7 @@ export async function likeRoutes(fastify: FastifyInstance) {
       const user = request.user as any;
 
       if (!target_type || !target_id) {
-        return reply.code(400).send({ error: 'Missing required parameters: target_type, target_id' });
+        return reply.code(400).send({ error: 'Missing required query parameters: target_type, target_id' });
       }
 
       const result = await unlikeTarget(user.username, target_type, target_id);
@@ -203,10 +208,12 @@ export async function likeRoutes(fastify: FastifyInstance) {
       reply.send(result);
     } catch (error: any) {
       if (error.message.includes('not found')) {
-        return reply.code(404).send({ error: error.message });
+        // Return 200 instead of 404 for unliking something that isn't liked
+        // to handle race conditions and optimistic UI gracefully
+        return reply.code(200).send({ status: 'already_unliked', message: error.message });
       }
       fastify.log.error(error);
-      return reply.code(500).send({ error: 'Internal server error' });
+      return reply.code(500).send({ error: 'Internal server error', message: error.message });
     }
   });
 
