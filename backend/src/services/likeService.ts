@@ -181,10 +181,11 @@ export async function unlikeTarget(user_username: string, target_type: string, t
  * Check if a user has liked a target
  */
 export async function checkIfLiked(user_username: string, target_type: string, target_id: string): Promise<boolean> {
+  if (!user_username || !target_id) return false;
   const like = await Like.findOne({
     user_username: user_username.toLowerCase(),
     target_type,
-    target_id
+    target_id: target_id.toString()
   }).lean();
   return !!like;
 }
@@ -194,11 +195,13 @@ export async function checkIfLiked(user_username: string, target_type: string, t
  * Returns a Set of target_ids that the user has liked
  */
 export async function getLikesForTargets(user_username: string, target_type: string, target_ids: string[]): Promise<Set<string>> {
+  if (!user_username || !target_ids || target_ids.length === 0) return new Set();
+  
   const likes = await Like.find({
     user_username: user_username.toLowerCase(),
     target_type,
-    target_id: { $in: target_ids }
+    target_id: { $in: target_ids.map(id => id.toString()) }
   }).select('target_id').lean();
   
-  return new Set(likes.map((l: any) => (l.target_id as any).toString()));
+  return new Set(likes.map((l: any) => l.target_id.toString()));
 }

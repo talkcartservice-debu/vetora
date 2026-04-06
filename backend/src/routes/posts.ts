@@ -82,17 +82,18 @@ export async function postRoutes(fastify: FastifyInstance) {
       const effectiveUsername = user?.username || user_username;
       let userLikesSet = new Set<string>();
 
-      if (effectiveUsername && typeof effectiveUsername === 'string') {
+      if (effectiveUsername) {
         const postIds = posts.map((p: any) => p._id.toString());
-        userLikesSet = await getLikesForTargets(effectiveUsername, 'post', postIds);
+        userLikesSet = await getLikesForTargets(effectiveUsername.toString(), 'post', postIds);
       }
 
       // Add is_liked field to each post
       const postsWithLikeStatus = posts.map((post: any) => {
-        const is_liked = userLikesSet.has(post._id.toString());
+        const id = post._id.toString();
+        const is_liked = userLikesSet.has(id);
         return { 
           ...post, 
-          id: post._id.toString(), // Ensure string ID is always present for frontend
+          id, 
           is_liked 
         };
       });
@@ -132,8 +133,8 @@ export async function postRoutes(fastify: FastifyInstance) {
       const effectiveUsername = user?.username || user_username;
       
       let is_liked = false;
-      if (effectiveUsername && typeof effectiveUsername === 'string') {
-        is_liked = await checkIfLiked(effectiveUsername, 'post', id);
+      if (effectiveUsername) {
+        is_liked = await checkIfLiked(effectiveUsername.toString(), 'post', id);
       }
 
       return { 

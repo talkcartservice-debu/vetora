@@ -21,7 +21,8 @@ export async function extractLanguage(request: FastifyRequest, reply: FastifyRep
 
 export async function authenticate(request: FastifyRequest, reply: FastifyReply) {
   try {
-    await request.jwtVerify();
+    const user = await request.jwtVerify();
+    request.user = user;
   } catch (err) {
     return reply.code(401).send({ error: 'Unauthorized' });
   }
@@ -29,7 +30,8 @@ export async function authenticate(request: FastifyRequest, reply: FastifyReply)
 
 export async function authenticateOptional(request: FastifyRequest, reply: FastifyReply) {
   try {
-    await request.jwtVerify();
+    const user = await request.jwtVerify();
+    request.user = user;
   } catch (err) {
     // Silently fail, user remains undefined on request
   }
