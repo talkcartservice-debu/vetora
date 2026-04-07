@@ -248,24 +248,32 @@ const Login = () => {
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-4 items-center">
-                  <GoogleLogin
-                    onSuccess={handleGoogleSuccess}
-                    onError={handleGoogleError}
-                    theme="outline"
-                    shape="pill"
-                  />
+                <div className="flex justify-center gap-8 items-center">
+                  <div className="flex flex-col items-center gap-2">
+                    <GoogleLogin
+                      onSuccess={handleGoogleSuccess}
+                      onError={handleGoogleError}
+                      type="icon"
+                      theme="outline"
+                      shape="circle"
+                      size="large"
+                    />
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Google</span>
+                  </div>
                   
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleBiometricLogin}
-                    disabled={isLoading}
-                    className="flex items-center gap-2 px-6 py-2 rounded-full border border-slate-200 bg-white text-slate-700 font-bold text-xs uppercase tracking-tight hover:bg-slate-50 transition-all active:scale-95 disabled:opacity-50"
-                  >
-                    <Fingerprint className="h-5 w-5 text-indigo-600" />
-                    Sign in with Biometrics
-                  </Button>
+                  <div className="flex flex-col items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={handleBiometricLogin}
+                      disabled={isLoading}
+                      className="h-11 w-11 rounded-full border border-slate-200 bg-white hover:bg-slate-50 transition-all active:scale-95 disabled:opacity-50 shadow-sm"
+                    >
+                      <Fingerprint className="h-6 w-6 text-indigo-600" />
+                    </Button>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Biometric</span>
+                  </div>
                 </div>
 
                 <div className="pt-8 border-t border-slate-50 text-center">
