@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { announcementsAPI } from '@/api/apiClient';
 import { X, AlertCircle, Info, CheckCircle, AlertTriangle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 
 export default function AnnouncementBanner() {
   const [dismissedIds, setDismissedIds] = useState([]);

@@ -5,7 +5,7 @@ import { createPageUrl } from "@/lib/utils";
 import { 
   ArrowLeft, CreditCard, Shield, Truck, 
   MapPin, CheckCircle2, Loader2,
-  Lock, Info, Wallet, Plus, Trash2, Tag, 
+  Info, Wallet, Plus, Trash2, Tag, 
   ChevronRight, ShoppingBag, Store as StoreIcon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { cartAPI, checkoutAPI, authAPI, couponsAPI, shippingZonesAPI } from "@/api/apiClient";
 import { useAuth } from "@/lib/AuthContext";
-import { initializePaystackPayment } from "@/lib/paystack";
 
 const CheckoutStep = ({ number, title, active, completed, children, onEdit, summary }) => (
   <div 
