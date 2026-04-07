@@ -26,7 +26,7 @@ const QUICK_PROMPTS = [
 const WELCOME_MESSAGE = {
   id: "welcome",
   role: "assistant",
-  content: "Hi! I'm **Vetora AI** 🛍️\n\nI can help you:\n- **Find products** based on your style & budget\n- **Discover deals** across all categories\n- **Answer questions** about shipping, returns & policies\n- **Give personalized recommendations** based on your preferences\n\nWhat are you looking for today?",
+  content: "Hi! I'm **IQON AI** 🛍️\n\nI can help you:\n- **Find products** based on your style & budget\n- **Discover deals** across all categories\n- **Answer questions** about shipping, returns & policies\n- **Give personalized recommendations** based on your preferences\n\nWhat are you looking for today?",
   timestamp: new Date(),
 };
 
@@ -272,9 +272,9 @@ export default function AIAssistant() {
       `- ${p.title} ($${p.price}, ${p.category}, ${p.store_name}, rating: ${p.rating_avg || "N/A"}, stock: ${p.inventory_count || 0})`
     ).join("\n");
 
-    const systemPrompt = `You are Vetora AI, a friendly and knowledgeable shopping assistant for Vetora — a social commerce platform.
+    const systemPrompt = `You are IQON AI, a friendly and knowledgeable shopping assistant for IQON — a social commerce platform.
 
-Available products on Vetora right now:
+Available products on IQON right now:
 ${productContext}
 
 Instructions:
@@ -302,7 +302,7 @@ Instructions:
       };
       setMessages(prev => [...prev, aiMsg]);
     } catch (e) {
-      console.error("Vetora AI Chat Error:", e);
+      console.error("IQON AI Chat Error:", e);
       const errorMsg = {
         id: Date.now() + 1,
         role: "assistant",
@@ -327,7 +327,7 @@ Instructions:
             <Sparkles className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-base font-bold text-slate-900">Vetora AI</h1>
+            <h1 className="text-base font-bold text-slate-900">IQON AI</h1>
             <div className="flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
               <p className="text-xs text-slate-500">Shopping assistant · Online</p>
@@ -417,7 +417,7 @@ Instructions:
             {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           </Button>
         </div>
-        <p className="text-[10px] text-slate-400 text-center mt-2">Powered by Vetora AI · Recommendations are personalized</p>
+        <p className="text-[10px] text-slate-400 text-center mt-2">Powered by IQON AI · Recommendations are personalized</p>
       </div>
     </div>
   );

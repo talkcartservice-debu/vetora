@@ -1,4 +1,4 @@
-package com.vetora.app;
+package com.iqon.app;
 
 import com.getcapacitor.BridgeActivity;
 

@@ -21,7 +21,7 @@ export const SocketProvider = ({ children }) => {
 
   useEffect(() => {
     if (user) {
-      const token = localStorage.getItem('vetora_token');
+      const token = localStorage.getItem('iqon_token');
       const newSocket = io(SOCKET_URL, {
         auth: { token },
         transports: ['websocket'],

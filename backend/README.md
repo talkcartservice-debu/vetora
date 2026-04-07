@@ -1,6 +1,6 @@
-# Vetora Backend
+# IQON Backend
 
-Backend API for the Vetora social commerce platform, built with Fastify, TypeScript, MongoDB, and Socket.io.
+Backend API for the IQON social commerce platform, built with Fastify, TypeScript, MongoDB, and Socket.io.
 
 ## Features
 
@@ -214,10 +214,10 @@ npm run migrate:create add-user-indexes
 
 ```bash
 # Build image
-docker build -t vetora-backend .
+docker build -t iqon-backend .
 
 # Run container
-docker run -p 3001:3001 --env-file .env vetora-backend
+docker run -p 3001:3001 --env-file .env iqon-backend
 ```
 
 ### Production Checklist

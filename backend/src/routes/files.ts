@@ -17,7 +17,7 @@ export async function fileRoutes(fastify: FastifyInstance) {
     try {
       const timestamp = Math.round(new Date().getTime() / 1000);
       const signature = cloudinary.utils.api_sign_request(
-        { timestamp, folder: 'vetora' },
+        { timestamp, folder: 'iqon' },
         process.env.CLOUDINARY_API_SECRET!
       );
 
@@ -26,7 +26,7 @@ export async function fileRoutes(fastify: FastifyInstance) {
         timestamp,
         cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
         api_key: process.env.CLOUDINARY_API_KEY,
-        folder: 'vetora',
+        folder: 'iqon',
       };
     } catch (error) {
       fastify.log.error(error);
@@ -68,7 +68,7 @@ export async function fileRoutes(fastify: FastifyInstance) {
       fastify.log.info(`File size: ${Math.round(file.length / 1024)}KB`);
 
       const uploadResponse = await cloudinary.uploader.upload(file, {
-        folder: 'vetora',
+        folder: 'iqon',
         resource_type: 'auto', // Auto-detect image or video
       });
 

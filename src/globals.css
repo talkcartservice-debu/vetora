@@ -3,10 +3,10 @@
 @tailwind utilities;
 
 :root {
-  --vetora-primary: 79 70 229;
-  --vetora-accent: 249 112 102;
-  --vetora-dark: 15 23 42;
-  --vetora-surface: 248 250 252;
+  --iqon-primary: 79 70 229;
+  --iqon-accent: 249 112 102;
+  --iqon-dark: 15 23 42;
+  --iqon-surface: 248 250 252;
 }
 
 @layer base {

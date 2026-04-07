@@ -165,9 +165,9 @@ export default function Layout({ children, currentPageName }) {
               className={`flex items-center gap-2 ${!sidebarOpen && !isMobile && "justify-center w-full"}`}
             >
               <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center shrink-0">
-                <span className="text-white font-bold text-lg">V</span>
+                <span className="text-white font-bold text-lg">I</span>
               </div>
-              {(sidebarOpen || isMobile) && <span className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">Vetora</span>}
+              {(sidebarOpen || isMobile) && <span className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">IQON</span>}
             </Link>
             <button
               onClick={toggleSidebar}
@@ -268,9 +268,9 @@ export default function Layout({ children, currentPageName }) {
           </button>
           <Link to={createPageUrl(currentUser?.role === 'super_admin' ? "AdminDashboard" : "Home")} className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center">
-              <span className="text-white font-bold text-sm">V</span>
+              <span className="text-white font-bold text-sm">I</span>
             </div>
-            <span className="text-lg font-bold text-slate-900 dark:text-white">Vetora</span>
+            <span className="text-lg font-bold text-slate-900 dark:text-white">IQON</span>
           </Link>
         </div>
         <div className="flex items-center gap-1">

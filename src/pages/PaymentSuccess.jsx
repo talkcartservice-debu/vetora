@@ -27,8 +27,8 @@ export default function PaymentSuccess() {
         if (response.status && response.data.status === 'success') {
           // Clear cart and affiliate ref on success
           await cartAPI.clear();
-          localStorage.removeItem('vetora_ref');
-          localStorage.removeItem('vetora_ref_time');
+          localStorage.removeItem('iqon_ref');
+          localStorage.removeItem('iqon_ref_time');
           queryClient.invalidateQueries({ queryKey: ['cart'] });
           
           setStatus('success');

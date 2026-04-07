@@ -16,7 +16,7 @@ const SettingsSchema = new Schema<ISettings>({
   },
   maintenance_message: {
     type: String,
-    default: 'Vetora is currently under maintenance. Please check back later.',
+    default: 'IQON is currently under maintenance. Please check back later.',
   },
   allow_registration: {
     type: Boolean,

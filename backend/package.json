@@ -1,7 +1,7 @@
 {
-  "name": "vetora-backend",
+  "name": "iqon-backend",
   "version": "1.0.0",
-  "description": "Backend API for Vetora social commerce platform",
+  "description": "Backend API for IQON social commerce platform",
   "main": "dist/server.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
@@ -51,6 +51,6 @@
     "fastify",
     "mongodb"
   ],
-  "author": "Vetora Team",
+  "author": "IQON Team",
   "license": "MIT"
 }

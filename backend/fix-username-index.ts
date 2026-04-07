@@ -11,7 +11,7 @@ dotenv.config();
 async function fixUsernameIndex() {
   try {
     // Connect to MongoDB
-    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/vetora');
+    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/iqon');
     console.log('✅ Connected to MongoDB');
 
     const db = mongoose.connection;

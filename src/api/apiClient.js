@@ -1,7 +1,7 @@
 /// <reference types="vite/client" />
 
 /**
- * API Client for Vetora Backend
+ * API Client for IQON Backend
  * Replaces Base44 SDK with direct API calls
  */
 
@@ -39,7 +39,7 @@ class APIClient {
     }
 
     // Add current language to headers
-    const lang = localStorage.getItem('vetora_lang') || 'en';
+    const lang = localStorage.getItem('iqon_lang') || 'en';
     headers['Accept-Language'] = lang;
 
     return headers;
@@ -88,7 +88,7 @@ class APIClient {
       // Handle unauthorized
       if (response.status === 401) {
         this.clearToken();
-        localStorage.removeItem('vetora_token');
+        localStorage.removeItem('iqon_token');
         // We throw the error and let the AuthContext/UI handle the redirect if needed
         throw new Error('Unauthorized - Please login again');
       }
@@ -193,7 +193,7 @@ export const authAPI = {
     const data = await apiClient.post('/auth/login', { email, password, rememberMe });
     if (data.token) {
       apiClient.setToken(data.token);
-      localStorage.setItem('vetora_token', data.token);
+      localStorage.setItem('iqon_token', data.token);
     }
     return data;
   },
@@ -201,7 +201,7 @@ export const authAPI = {
     const data = await apiClient.post('/auth/google-login', { idToken });
     if (data.token) {
       apiClient.setToken(data.token);
-      localStorage.setItem('vetora_token', data.token);
+      localStorage.setItem('iqon_token', data.token);
     }
     return data;
   },
@@ -209,7 +209,7 @@ export const authAPI = {
     const data = await apiClient.post('/auth/register', userData);
     if (data.token) {
       apiClient.setToken(data.token);
-      localStorage.setItem('vetora_token', data.token);
+      localStorage.setItem('iqon_token', data.token);
     }
     return data;
   },
@@ -240,17 +240,17 @@ export const authAPI = {
     return apiClient.post('/auth/webauthn/login-verify', { email, response }).then(data => {
       if (data.token) {
         apiClient.setToken(data.token);
-        localStorage.setItem('vetora_token', data.token);
+        localStorage.setItem('iqon_token', data.token);
       }
       return data;
     });
   },
   logout: () => {
     apiClient.clearToken();
-    localStorage.removeItem('vetora_token');
+    localStorage.removeItem('iqon_token');
   },
   initialize: () => {
-    const token = localStorage.getItem('vetora_token');
+    const token = localStorage.getItem('iqon_token');
     if (token) {
       apiClient.setToken(token);
     }

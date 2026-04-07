@@ -41,7 +41,7 @@ export default function Support() {
       <div className="text-center mb-16">
         <h1 className="text-4xl font-black text-slate-900 mb-4 tracking-tight">How can we help?</h1>
         <p className="text-slate-500 max-w-lg mx-auto font-medium">
-          Our dedicated support team is here to ensure you have the best experience on Vetora.
+          Our dedicated support team is here to ensure you have the best experience on IQON.
         </p>
       </div>
 
@@ -72,7 +72,7 @@ export default function Support() {
             </div>
             <h2 className="text-3xl font-black mb-4 tracking-tight">Your security is our top priority</h2>
             <p className="text-white/80 text-sm font-medium leading-relaxed mb-6">
-              Every transaction on Vetora is protected. If you don't receive your item or it's not as described, we've got you covered.
+              Every transaction on IQON is protected. If you don't receive your item or it's not as described, we've got you covered.
             </p>
             <div className="flex flex-wrap gap-4">
                <div className="flex items-center gap-2">

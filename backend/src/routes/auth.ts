@@ -322,7 +322,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       if (!user) return reply.code(404).send({ error: 'User not found' });
 
       const options = await generateRegistrationOptions({
-        rpName: 'Vetora',
+        rpName: 'IQON',
         rpID,
         userID: Buffer.from(user._id.toString()),
         userName: user.username,
@@ -1083,7 +1083,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       user.two_factor_secret = secret;
       await user.save();
 
-      const otpauth = generateURI({ secret, label: user.email, issuer: 'Vetora' });
+      const otpauth = generateURI({ secret, label: user.email, issuer: 'IQON' });
       const qrCode = await QRCode.toDataURL(otpauth);
 
       return { secret, qrCode };

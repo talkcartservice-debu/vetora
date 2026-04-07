@@ -1,7 +1,7 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-Vetora is a social commerce platform with a decoupled frontend and backend.
+IQON is a social commerce platform with a decoupled frontend and backend.
 - **Frontend (Root)**: React application built with Vite, utilizing Tailwind CSS and Radix UI components. Mobile support is provided via Capacitor.
 - **Backend (`backend/`)**: High-performance API built with Fastify and TypeScript, using MongoDB (Mongoose) for data persistence and Socket.io for real-time features.
 - **Entities (`entities/`)**: Shared JSON Schema definitions (without extensions) that define core data structures used across the platform.

@@ -61,7 +61,7 @@ fastify.register(cors, {
   origin: (origin, cb) => {
     const allowedOrigins = [
       process.env.FRONTEND_URL,
-      'https://vetora-1.vercel.app',
+      'https://iqon-1.vercel.app',
       'http://localhost:5173',
       'http://127.0.0.1:5173'
     ].filter(Boolean);

@@ -36,7 +36,7 @@ function detectBrowserLang() {
 export function LanguageProvider({ children }) {
   const { user, isAuthenticated } = useAuth();
   const [lang, setLangState] = useState(() => {
-    return localStorage.getItem("vetora_lang") || detectBrowserLang();
+    return localStorage.getItem("iqon_lang") || detectBrowserLang();
   });
   const hasSyncedUserLang = useRef(false);
 
@@ -45,7 +45,7 @@ export function LanguageProvider({ children }) {
     if (isAuthenticated && user?.preferences?.language && !hasSyncedUserLang.current) {
       if (user.preferences.language !== lang) {
         setLangState(user.preferences.language);
-        localStorage.setItem("vetora_lang", user.preferences.language);
+        localStorage.setItem("iqon_lang", user.preferences.language);
       }
       hasSyncedUserLang.current = true;
     }
@@ -53,7 +53,7 @@ export function LanguageProvider({ children }) {
 
   const setLang = async (code) => {
     if (code === lang) return;
-    localStorage.setItem("vetora_lang", code);
+    localStorage.setItem("iqon_lang", code);
     setLangState(code);
     
     // Sync with backend if logged in and different from saved preference

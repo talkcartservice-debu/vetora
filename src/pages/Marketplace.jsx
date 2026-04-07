@@ -48,7 +48,7 @@ export default function Marketplace() {
       <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 rounded-3xl p-6 lg:p-8 mb-6 text-white relative overflow-hidden">
         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=1200')] bg-cover bg-center opacity-10" />
         <div className="relative z-10">
-          <h1 className="text-2xl lg:text-3xl font-bold mb-2">Vetora Marketplace</h1>
+          <h1 className="text-2xl lg:text-3xl font-bold mb-2">IQON Marketplace</h1>
           <p className="text-white/80 text-sm lg:text-base mb-4">Discover unique products from creators and vendors worldwide</p>
           <div className="flex gap-4 text-sm">
             <div className="flex items-center gap-1.5 bg-white/20 rounded-full px-3 py-1.5">

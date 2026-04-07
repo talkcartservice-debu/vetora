@@ -198,8 +198,8 @@ export default function Checkout() {
             payment_method: paymentMethod,
             order_note: orderNote,
             coupon_code: appliedCoupon?.code,
-            affiliate_ref: localStorage.getItem('vetora_ref') || undefined,
-            affiliate_time: localStorage.getItem('vetora_ref_time') || undefined,
+            affiliate_ref: localStorage.getItem('iqon_ref') || undefined,
+            affiliate_time: localStorage.getItem('iqon_ref_time') || undefined,
         };
 
         return await checkoutAPI.process(payload);
@@ -211,8 +211,8 @@ export default function Checkout() {
         }
         
         toast.success("Order placed successfully! 🎉");
-        localStorage.removeItem('vetora_ref');
-        localStorage.removeItem('vetora_ref_time');
+        localStorage.removeItem('iqon_ref');
+        localStorage.removeItem('iqon_ref_time');
         queryClient.invalidateQueries({ queryKey: ["cart"] });
         navigate(createPageUrl("Orders"));
     },
@@ -406,7 +406,7 @@ export default function Checkout() {
                   </div>
                   <p className="text-xs text-slate-600 leading-relaxed font-medium">
                       All transactions are processed through <strong>Paystack</strong>'s secure infrastructure. 
-                      Vetora does not store or see your payment details.
+                      IQON does not store or see your payment details.
                   </p>
               </div>
 

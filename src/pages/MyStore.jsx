@@ -335,7 +335,7 @@ export default function MyStore() {
           <Store className="w-9 h-9 text-indigo-500" />
         </div>
         <h1 className="text-2xl font-bold text-slate-900 mb-2">Create Your Store</h1>
-        <p className="text-slate-500 mb-8">Start selling on Vetora by setting up your store</p>
+        <p className="text-slate-500 mb-8">Start selling on IQON by setting up your store</p>
 
         <Dialog open={showCreateStore} onOpenChange={setShowCreateStore}>
           <DialogTrigger asChild>

@@ -88,7 +88,7 @@ export async function checkMaintenance(request: FastifyRequest, reply: FastifyRe
       
       return reply.code(503).send({ 
         error: 'Service Unavailable', 
-        message: settings.maintenance_message || 'Vetora is currently under maintenance. Please check back later.',
+        message: settings.maintenance_message || 'IQON is currently under maintenance. Please check back later.',
         maintenance: true
       });
     }

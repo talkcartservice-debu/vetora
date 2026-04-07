@@ -13,12 +13,12 @@ export default function AffiliateTracker() {
   useEffect(() => {
     if (ref) {
       // 0. Use sessionStorage to avoid tracking multiple times in the same session
-      const sessionKey = `vetora_ref_tracked_${ref}`;
+      const sessionKey = `iqon_ref_tracked_${ref}`;
       if (sessionStorage.getItem(sessionKey)) return;
       
       // 1. Store in localStorage for conversion tracking later (checkout)
-      localStorage.setItem('vetora_ref', ref);
-      localStorage.setItem('vetora_ref_time', Date.now().toString());
+      localStorage.setItem('iqon_ref', ref);
+      localStorage.setItem('iqon_ref_time', Date.now().toString());
 
       // 2. Track click in backend
       const trackClick = async () => {

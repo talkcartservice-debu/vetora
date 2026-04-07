@@ -155,7 +155,7 @@ const Login = () => {
                   
                   <div className="space-y-2">
                     <h1 className="text-[2.5rem] font-black text-slate-900 tracking-tight leading-none italic uppercase">
-                      Vetora
+                      IQON
                     </h1>
                     <div className="h-1 w-12 bg-indigo-600 mx-auto rounded-full" />
                     <p className="text-slate-400 font-semibold tracking-wide text-xs uppercase pt-2">
