@@ -51,25 +51,26 @@ const AppRoutes = () => {
       <Route path="/" element={
         !isAuthenticated ? <Pages.Login /> :
         // NOTE: This is a UX-only guard. Backend APIs must independently enforce super_admin authorization.
-        user?.role === 'super_admin' ? <Navigate to="/AdminDashboard" replace /> :
+        user?.role === 'super_admin' ? <Navigate to="/admin-dashboard" replace /> :
         <LayoutWrapper currentPageName={mainPageKey}>
           <MainPage />
         </LayoutWrapper>
       } />
 
       {Object.entries(Pages).map(([path, Page]) => {
+        const lowerPath = path.toLowerCase();
         // Skip Login and Register as they are handled above
         if (['Login', 'Register', 'ForgotPassword', 'ResetPassword'].includes(path)) return null;
         
         return (
           <Route
             key={path}
-            path={`/${path}`}
+            path={`/${lowerPath}`}
             element={
               !isAuthenticated ? <Pages.Login /> :
               // NOTE: This is a UX-only guard. Backend APIs must independently enforce super_admin authorization.
               user?.role === 'super_admin' && !['AdminDashboard', 'Profile', 'Chat', 'Notifications', 'Settings'].includes(path) ? 
-              <Navigate to="/AdminDashboard" replace /> :
+              <Navigate to="/admin-dashboard" replace /> :
               <LayoutWrapper currentPageName={path}>
                 <Page />
               </LayoutWrapper>
@@ -77,6 +78,14 @@ const AppRoutes = () => {
           />
         );
       })}
+      
+      <Route path="/admin-dashboard" element={
+        !isAuthenticated ? <Pages.Login /> :
+        user?.role !== 'super_admin' ? <Navigate to="/" replace /> :
+        <LayoutWrapper currentPageName="AdminDashboard">
+          <Pages.AdminDashboard />
+        </LayoutWrapper>
+      } />
       
       <Route path="*" element={<PageNotFound />} />
     </Routes>

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/lib/AuthContext';
 import { getRedirectPath } from '@/lib/utils';
-import { Mail, Lock, User, Loader2, ShoppingBag, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, User, Loader2, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { GoogleLogin } from '@react-oauth/google';
 import { Button } from "@/components/ui/button";
@@ -112,7 +112,7 @@ const Register = () => {
               <Logo 
                 size="lg" 
                 className="flex-col !gap-6" 
-                subtext="Premium Social Commerce" 
+                subtext="Join the IQON Network" 
                 showDecoration={true} 
               />
             </div>
@@ -210,7 +210,7 @@ const Register = () => {
                 </div>
 
                 <div className="space-y-2.5">
-                  <Label htmlFor="confirm_password" className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1 opacity-60">Confirm</Label>
+                  <Label htmlFor="confirm_password" className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1 opacity-60">Confirm Password</Label>
                   <div className="relative group">
                     <Input
                       id="confirm_password"
@@ -246,7 +246,7 @@ const Register = () => {
                   <Loader2 className="h-5 w-5 animate-spin text-white" />
                 ) : (
                   <span className="flex items-center gap-3">
-                    Establish Identity <ArrowRight className="h-4 w-4 group-hover:translate-x-1.5 transition-transform duration-300" />
+                    Create your identity <ArrowRight className="h-4 w-4 group-hover:translate-x-1.5 transition-transform duration-300" />
                   </span>
                 )}
               </Button>
@@ -261,7 +261,7 @@ const Register = () => {
               </div>
             </div>
 
-            <div className="flex justify-center">
+            <div className="flex flex-col gap-4 items-center">
               <GoogleLogin
                 onSuccess={handleGoogleSuccess}
                 onError={handleGoogleError}
@@ -273,7 +273,7 @@ const Register = () => {
             <div className="pt-8 border-t border-slate-50 text-center">
               <p className="text-slate-400 font-bold text-xs uppercase tracking-tight">
                 Already part of the network?{' '}
-                <Link to="/Login" className="text-indigo-600 hover:text-indigo-700 font-black underline underline-offset-4 decoration-2 transition-colors">
+                <Link to="/login" className="text-indigo-600 hover:text-indigo-700 font-black underline underline-offset-4 decoration-2 transition-colors">
                   Sign In
                 </Link>
               </p>

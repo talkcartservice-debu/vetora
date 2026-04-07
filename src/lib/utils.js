@@ -7,11 +7,11 @@ export function cn(...inputs) {
 
 export function createPageUrl(pageName) {
   if (pageName === "Home") return "/";
-  return `/${pageName}`;
+  return `/${pageName.toLowerCase()}`;
 }
 
 export function getRedirectPath(user) {
-  return user?.role === 'super_admin' ? '/AdminDashboard' : '/';
+  return user?.role === 'super_admin' ? '/admin-dashboard' : '/';
 }
 
 export const isIframe = window.self !== window.top;

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/lib/AuthContext';
 import { getRedirectPath } from '@/lib/utils';
-import { Mail, Lock, Loader2, ShieldCheck, ArrowRight, ShoppingBag, Eye, EyeOff, Fingerprint } from 'lucide-react';
+import { Mail, Lock, Loader2, ShieldCheck, ArrowRight, Eye, EyeOff, Fingerprint } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GoogleLogin } from '@react-oauth/google';
 import { Button } from "@/components/ui/button";
@@ -183,7 +183,7 @@ const Login = () => {
                   <div className="space-y-2.5">
                     <div className="flex justify-between items-center ml-1">
                       <Label htmlFor="password" className="text-xs font-black text-slate-800 uppercase tracking-widest opacity-60">Password</Label>
-                      <Link to="/ForgotPassword" title="Reset your password" className="text-[10px] uppercase tracking-tighter text-indigo-600 hover:text-indigo-700 font-black transition-colors">
+                      <Link to="/forgot-password" title="Reset your password" className="text-[10px] uppercase tracking-tighter text-indigo-600 hover:text-indigo-700 font-black transition-colors">
                         Forgot Password?
                       </Link>
                     </div>
@@ -271,7 +271,7 @@ const Login = () => {
                 <div className="pt-8 border-t border-slate-50 text-center">
                   <p className="text-slate-400 font-bold text-xs uppercase tracking-tight">
                     Don't have an account?{' '}
-                    <Link to="/Register" className="text-indigo-600 hover:text-indigo-700 font-black underline underline-offset-4 decoration-2 transition-colors">
+                    <Link to="/register" className="text-indigo-600 hover:text-indigo-700 font-black underline underline-offset-4 decoration-2 transition-colors">
                       Register Now
                     </Link>
                   </p>
