@@ -163,28 +163,28 @@ const Login = () => {
                   </motion.div>
                 )}
 
-                <form onSubmit={handleSubmit} className="space-y-7">
-                  <div className="space-y-2.5">
-                    <Label htmlFor="identifier" className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1 opacity-60">Account Identity</Label>
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="identifier" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Account Identity</Label>
                     <div className="relative group">
                       <Input
                         id="identifier"
                         type="text"
                         value={identifier}
                         onChange={(e) => setIdentifier(e.target.value)}
-                        className="w-full pl-12 pr-4 py-7 rounded-2xl border border-slate-100 bg-slate-50/50 text-slate-900 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 focus:bg-white outline-none transition-all duration-300 font-medium group-hover:border-slate-200"
+                        className="w-full pl-12 pr-4 py-7 rounded-2xl border border-slate-100 bg-slate-50/50 text-slate-900 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 focus:bg-white outline-none transition-all duration-300 font-bold group-hover:border-slate-200 placeholder:text-slate-300 placeholder:font-medium"
                         placeholder="Email or @username"
                         required
                       />
-                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-indigo-600 transition-colors duration-300" />
+                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300 group-focus-within:text-indigo-600 transition-colors duration-300" />
                     </div>
                   </div>
 
-                  <div className="space-y-2.5">
+                  <div className="space-y-2">
                     <div className="flex justify-between items-center ml-1">
-                      <Label htmlFor="password" className="text-xs font-black text-slate-800 uppercase tracking-widest opacity-60">Password</Label>
-                      <Link to="/forgot-password" title="Reset your password" className="text-[10px] uppercase tracking-tighter text-indigo-600 hover:text-indigo-700 font-black transition-colors">
-                        Forgot Password?
+                      <Label htmlFor="password" className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Password</Label>
+                      <Link to="/forgot-password" title="Reset your password" className="text-[10px] uppercase tracking-tighter text-indigo-500 hover:text-indigo-700 font-black transition-colors">
+                        Lost Access?
                       </Link>
                     </div>
                     <div className="relative group">
@@ -193,41 +193,44 @@ const Login = () => {
                         type={showPassword ? "text" : "password"}
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="w-full pl-12 pr-12 py-7 rounded-2xl border border-slate-100 bg-slate-50/50 text-slate-900 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 focus:bg-white outline-none transition-all duration-300 font-medium group-hover:border-slate-200"
+                        className="w-full pl-12 pr-12 py-7 rounded-2xl border border-slate-100 bg-slate-50/50 text-slate-900 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 focus:bg-white outline-none transition-all duration-300 font-bold group-hover:border-slate-200 placeholder:text-slate-300 placeholder:font-medium"
                         placeholder="••••••••"
                         required
                       />
-                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-indigo-600 transition-colors duration-300" />
+                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300 group-focus-within:text-indigo-600 transition-colors duration-300" />
                       <Button
                         type="button"
                         variant="ghost"
                         size="icon"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-indigo-600 transition-colors duration-300 focus:outline-none h-10 w-10"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-300 hover:text-indigo-600 transition-colors duration-300 focus:outline-none h-10 w-10"
                       >
                         {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                       </Button>
                     </div>
                   </div>
 
-                  <div className="flex items-center space-x-2 ml-1">
-                    <Checkbox 
-                      id="remember" 
-                      checked={rememberMe}
-                      onCheckedChange={setRememberMe}
-                    />
-                    <Label 
-                      htmlFor="remember" 
-                      className="text-xs font-bold text-slate-500 cursor-pointer select-none"
-                    >
-                      Keep me signed in
-                    </Label>
+                  <div className="flex items-center justify-between px-1">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="remember" 
+                        checked={rememberMe}
+                        onCheckedChange={setRememberMe}
+                        className="border-slate-200 data-[state=checked]:bg-indigo-600 data-[state=checked]:border-indigo-600"
+                      />
+                      <Label 
+                        htmlFor="remember" 
+                        className="text-[11px] font-bold text-slate-400 cursor-pointer select-none uppercase tracking-tight"
+                      >
+                        Remember me
+                      </Label>
+                    </div>
                   </div>
 
                   <Button
                     type="submit"
                     disabled={isLoading}
-                    className="group w-full bg-slate-900 text-white py-8 rounded-[1.25rem] font-black text-sm uppercase tracking-widest hover:bg-slate-800 active:scale-[0.98] transition-all duration-300 flex items-center justify-center disabled:opacity-70 disabled:active:scale-100 shadow-[0_20px_40px_-10px_rgba(15,23,42,0.3)] mt-8"
+                    className="group w-full bg-slate-900 text-white py-8 rounded-[1.5rem] font-black text-xs uppercase tracking-[0.2em] hover:bg-indigo-600 active:scale-[0.98] transition-all duration-500 flex items-center justify-center disabled:opacity-70 disabled:active:scale-100 shadow-[0_20px_40px_-10px_rgba(15,23,42,0.3)] hover:shadow-indigo-500/25 mt-4"
                   >
                     {isLoading ? (
                       <Loader2 className="h-5 w-5 animate-spin text-white" />
@@ -239,40 +242,41 @@ const Login = () => {
                   </Button>
                 </form>
 
-                <div className="relative py-4">
+                <div className="relative py-2">
                   <div className="absolute inset-0 flex items-center">
                     <span className="w-full border-t border-slate-100"></span>
                   </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-white px-4 text-slate-400 font-bold">Or continue with</span>
+                  <div className="relative flex justify-center text-[10px] uppercase tracking-widest">
+                    <span className="bg-white px-6 text-slate-300 font-black">Secure Gateway</span>
                   </div>
                 </div>
 
-                <div className="flex justify-center gap-8 items-center">
-                  <div className="flex flex-col items-center gap-2">
-                    <GoogleLogin
-                      onSuccess={handleGoogleSuccess}
-                      onError={handleGoogleError}
-                      type="icon"
-                      theme="outline"
-                      shape="circle"
-                      size="large"
-                    />
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Google</span>
+                <div className="flex justify-center gap-10 items-center">
+                  <div className="flex flex-col items-center gap-2.5 group cursor-pointer">
+                    <div className="p-0.5 rounded-full border border-slate-100 group-hover:border-indigo-100 group-hover:bg-indigo-50/30 transition-all duration-300">
+                      <GoogleLogin
+                        onSuccess={handleGoogleSuccess}
+                        onError={handleGoogleError}
+                        type="icon"
+                        theme="outline"
+                        shape="circle"
+                        size="large"
+                      />
+                    </div>
+                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] group-hover:text-indigo-600 transition-colors">Google</span>
                   </div>
                   
-                  <div className="flex flex-col items-center gap-2">
+                  <div className="flex flex-col items-center gap-2.5 group cursor-pointer" onClick={handleBiometricLogin}>
                     <Button
                       type="button"
                       variant="outline"
                       size="icon"
-                      onClick={handleBiometricLogin}
                       disabled={isLoading}
-                      className="h-11 w-11 rounded-full border border-slate-200 bg-white hover:bg-slate-50 transition-all active:scale-95 disabled:opacity-50 shadow-sm"
+                      className="h-11 w-11 rounded-full border border-slate-100 bg-white group-hover:bg-indigo-600 group-hover:border-indigo-600 group-hover:text-white transition-all duration-500 active:scale-95 disabled:opacity-50 shadow-sm"
                     >
-                      <Fingerprint className="h-6 w-6 text-indigo-600" />
+                      <Fingerprint className="h-6 w-6 text-indigo-600 group-hover:text-white transition-colors" />
                     </Button>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Biometric</span>
+                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] group-hover:text-indigo-600 transition-colors">Biometrics</span>
                   </div>
                 </div>
 

@@ -129,9 +129,9 @@ const Register = () => {
             )}
 
             <form onSubmit={handleSubmit} className="space-y-7">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <div className="space-y-2.5">
-                  <Label htmlFor="display_name" className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1 opacity-60">Full Name</Label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
+                <div className="space-y-2">
+                  <Label htmlFor="display_name" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Full Name</Label>
                   <div className="relative group">
                     <Input
                       id="display_name"
@@ -139,16 +139,16 @@ const Register = () => {
                       name="display_name"
                       value={formData.display_name}
                       onChange={handleChange}
-                      className="w-full pl-12 pr-4 py-7 rounded-2xl border border-slate-100 bg-slate-50/50 text-slate-900 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 focus:bg-white outline-none transition-all duration-300 font-medium group-hover:border-slate-200"
-                      placeholder=""
+                      className="w-full pl-12 pr-4 py-7 rounded-2xl border border-slate-100 bg-slate-50/50 text-slate-900 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 focus:bg-white outline-none transition-all duration-300 font-bold group-hover:border-slate-200 placeholder:text-slate-300 placeholder:font-medium"
+                      placeholder="e.g. John Doe"
                       required
                     />
-                    <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-indigo-600 transition-colors duration-300" />
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300 group-focus-within:text-indigo-600 transition-colors duration-300" />
                   </div>
                 </div>
 
-                <div className="space-y-2.5">
-                  <Label htmlFor="username" className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1 opacity-60">Username</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="username" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Username</Label>
                   <div className="relative group">
                     <Input
                       id="username"
@@ -156,17 +156,17 @@ const Register = () => {
                       name="username"
                       value={formData.username}
                       onChange={(e) => setFormData({ ...formData, username: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '') })}
-                      className="w-full pl-12 pr-4 py-7 rounded-2xl border border-slate-100 bg-slate-50/50 text-slate-900 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 focus:bg-white outline-none transition-all duration-300 font-medium group-hover:border-slate-200"
+                      className="w-full pl-12 pr-4 py-7 rounded-2xl border border-slate-100 bg-slate-50/50 text-slate-900 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 focus:bg-white outline-none transition-all duration-300 font-bold group-hover:border-slate-200 placeholder:text-slate-300 placeholder:font-medium"
                       placeholder="unique_handle"
                       required
                       minLength={3}
                     />
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-slate-400 group-focus-within:text-indigo-600 transition-colors duration-300">@</span>
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 font-black text-slate-300 group-focus-within:text-indigo-600 transition-colors duration-300">@</span>
                   </div>
                 </div>
 
-                <div className="space-y-2.5">
-                  <Label htmlFor="email" className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1 opacity-60">Email Address</Label>
+                <div className="space-y-2 sm:col-span-2">
+                  <Label htmlFor="email" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Email Address</Label>
                   <div className="relative group">
                     <Input
                       id="email"
@@ -174,16 +174,16 @@ const Register = () => {
                       name="email"
                       value={formData.email}
                       onChange={handleChange}
-                      className="w-full pl-12 pr-4 py-7 rounded-2xl border border-slate-100 bg-slate-50/50 text-slate-900 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 focus:bg-white outline-none transition-all duration-300 font-medium group-hover:border-slate-200"
-                      placeholder=""
+                      className="w-full pl-12 pr-4 py-7 rounded-2xl border border-slate-100 bg-slate-50/50 text-slate-900 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 focus:bg-white outline-none transition-all duration-300 font-bold group-hover:border-slate-200 placeholder:text-slate-300 placeholder:font-medium"
+                      placeholder="hello@example.com"
                       required
                     />
-                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-indigo-600 transition-colors duration-300" />
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300 group-focus-within:text-indigo-600 transition-colors duration-300" />
                   </div>
                 </div>
 
-                <div className="space-y-2.5">
-                  <Label htmlFor="password" className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1 opacity-60">Password</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="password" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Password</Label>
                   <div className="relative group">
                     <Input
                       id="password"
@@ -191,26 +191,26 @@ const Register = () => {
                       name="password"
                       value={formData.password}
                       onChange={handleChange}
-                      className="w-full pl-12 pr-12 py-7 rounded-2xl border border-slate-100 bg-slate-50/50 text-slate-900 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 focus:bg-white outline-none transition-all duration-300 font-medium group-hover:border-slate-200"
+                      className="w-full pl-12 pr-12 py-7 rounded-2xl border border-slate-100 bg-slate-50/50 text-slate-900 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 focus:bg-white outline-none transition-all duration-300 font-bold group-hover:border-slate-200 placeholder:text-slate-300 placeholder:font-medium"
                       placeholder="••••••••"
                       required
                       minLength={6}
                     />
-                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-indigo-600 transition-colors duration-300" />
+                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300 group-focus-within:text-indigo-600 transition-colors duration-300" />
                     <Button
                       type="button"
                       variant="ghost"
                       size="icon"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-indigo-600 transition-colors duration-300 focus:outline-none h-10 w-10"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-300 hover:text-indigo-600 transition-colors duration-300 focus:outline-none h-10 w-10"
                     >
                       {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                     </Button>
                   </div>
                 </div>
 
-                <div className="space-y-2.5">
-                  <Label htmlFor="confirm_password" className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1 opacity-60">Confirm Password</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="confirm_password" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Confirm Identity</Label>
                   <div className="relative group">
                     <Input
                       id="confirm_password"
@@ -218,18 +218,18 @@ const Register = () => {
                       name="confirm_password"
                       value={formData.confirm_password}
                       onChange={handleChange}
-                      className="w-full pl-12 pr-12 py-7 rounded-2xl border border-slate-100 bg-slate-50/50 text-slate-900 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 focus:bg-white outline-none transition-all duration-300 font-medium group-hover:border-slate-200"
+                      className="w-full pl-12 pr-12 py-7 rounded-2xl border border-slate-100 bg-slate-50/50 text-slate-900 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 focus:bg-white outline-none transition-all duration-300 font-bold group-hover:border-slate-200 placeholder:text-slate-300 placeholder:font-medium"
                       placeholder="••••••••"
                       required
                       minLength={6}
                     />
-                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-indigo-600 transition-colors duration-300" />
+                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300 group-focus-within:text-indigo-600 transition-colors duration-300" />
                     <Button
                       type="button"
                       variant="ghost"
                       size="icon"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-indigo-600 transition-colors duration-300 focus:outline-none h-10 w-10"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-300 hover:text-indigo-600 transition-colors duration-300 focus:outline-none h-10 w-10"
                     >
                       {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                     </Button>
@@ -240,34 +240,41 @@ const Register = () => {
               <Button
                 type="submit"
                 disabled={isLoading}
-                className="group w-full bg-slate-900 text-white py-8 rounded-[1.25rem] font-black text-sm uppercase tracking-widest hover:bg-slate-800 active:scale-[0.98] transition-all duration-300 flex items-center justify-center disabled:opacity-70 disabled:active:scale-100 shadow-[0_20px_40px_-10px_rgba(15,23,42,0.3)] mt-8"
+                className="group w-full bg-slate-900 text-white py-8 rounded-[1.5rem] font-black text-xs uppercase tracking-[0.2em] hover:bg-indigo-600 active:scale-[0.98] transition-all duration-500 flex items-center justify-center disabled:opacity-70 disabled:active:scale-100 shadow-[0_20px_40px_-10px_rgba(15,23,42,0.3)] hover:shadow-indigo-500/25 mt-4"
               >
                 {isLoading ? (
                   <Loader2 className="h-5 w-5 animate-spin text-white" />
                 ) : (
                   <span className="flex items-center gap-3">
-                    Create your identity <ArrowRight className="h-4 w-4 group-hover:translate-x-1.5 transition-transform duration-300" />
+                    Initialize Identity <ArrowRight className="h-4 w-4 group-hover:translate-x-1.5 transition-transform duration-300" />
                   </span>
                 )}
               </Button>
             </form>
 
-            <div className="relative py-4">
+            <div className="relative py-2">
               <div className="absolute inset-0 flex items-center">
                 <span className="w-full border-t border-slate-100"></span>
               </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white px-4 text-slate-400 font-bold">Or continue with</span>
+              <div className="relative flex justify-center text-[10px] uppercase tracking-widest">
+                <span className="bg-white px-6 text-slate-300 font-black">Join IQON Network</span>
               </div>
             </div>
 
-            <div className="flex flex-col gap-4 items-center">
-              <GoogleLogin
-                onSuccess={handleGoogleSuccess}
-                onError={handleGoogleError}
-                theme="outline"
-                shape="pill"
-              />
+            <div className="flex justify-center gap-10 items-center">
+              <div className="flex flex-col items-center gap-2.5 group cursor-pointer">
+                <div className="p-0.5 rounded-full border border-slate-100 group-hover:border-indigo-100 group-hover:bg-indigo-50/30 transition-all duration-300">
+                  <GoogleLogin
+                    onSuccess={handleGoogleSuccess}
+                    onError={handleGoogleError}
+                    type="icon"
+                    theme="outline"
+                    shape="circle"
+                    size="large"
+                  />
+                </div>
+                <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] group-hover:text-indigo-600 transition-colors">Google</span>
+              </div>
             </div>
 
             <div className="pt-8 border-t border-slate-50 text-center">
