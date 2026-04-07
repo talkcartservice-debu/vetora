@@ -67,7 +67,7 @@ export default function ForgotPassword() {
           transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
           className="bg-white/80 backdrop-blur-2xl p-8 sm:p-12 rounded-[2.5rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.08)] border border-white/40 ring-1 ring-black/5"
         >
-          <Link to={createPageUrl("Login")} className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-indigo-600 mb-8 transition-colors">
+          <Link to={createPageUrl("login")} className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-indigo-600 mb-8 transition-colors">
             <ArrowLeft className="w-4 h-4" /> Back to Login
           </Link>
 
@@ -123,7 +123,7 @@ export default function ForgotPassword() {
                   <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-2">Development Token</p>
                   <p className="text-xl font-mono font-bold text-amber-900 break-all">{devToken}</p>
                   <Link 
-                    to={createPageUrl("ResetPassword") + `?token=${devToken}`}
+                    to={createPageUrl("resetpassword") + `?token=${devToken}`}
                     className="mt-3 inline-block text-xs font-bold text-indigo-600 hover:underline"
                   >
                     Go to Reset Page
@@ -131,7 +131,7 @@ export default function ForgotPassword() {
                 </div>
               )}
 
-              <Link to={createPageUrl("Login")}>
+              <Link to={createPageUrl("login")}>
                 <Button variant="outline" className="w-full h-14 rounded-2xl font-black text-xs uppercase tracking-widest border-slate-200 hover:bg-slate-50 transition-all active:scale-[0.98]">
                   Return to Login
                 </Button>

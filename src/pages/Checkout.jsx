@@ -64,7 +64,7 @@ export default function Checkout() {
 
   useEffect(() => {
     if (!isLoadingAuth && !isAuthenticated) {
-        navigate(createPageUrl("Login"), { state: { from: window.location.pathname } });
+        navigate(createPageUrl("login"), { state: { from: window.location.pathname } });
     }
   }, [isLoadingAuth, isAuthenticated, navigate]);
 
@@ -214,7 +214,7 @@ export default function Checkout() {
         localStorage.removeItem('iqon_ref');
         localStorage.removeItem('iqon_ref_time');
         queryClient.invalidateQueries({ queryKey: ["cart"] });
-        navigate(createPageUrl("Orders"));
+        navigate(createPageUrl("orders"));
     },
     onError: (err) => {
         toast.error(err.message || "Failed to place order");
@@ -224,7 +224,7 @@ export default function Checkout() {
   useEffect(() => {
     if (!cartLoading && cartItems.length === 0 && !checkoutMutation.isSuccess) {
       toast.error("Your cart is empty");
-      navigate(createPageUrl("Cart"));
+      navigate(createPageUrl("cart"));
     }
   }, [cartItems, cartLoading, navigate, checkoutMutation.isSuccess]);
 
@@ -232,7 +232,7 @@ export default function Checkout() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8 lg:py-12">
-      <Link to={createPageUrl("Cart")} className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-900 mb-8 transition-colors">
+      <Link to={createPageUrl("cart")} className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-900 mb-8 transition-colors">
         <ArrowLeft className="w-4 h-4" /> Back to Cart
       </Link>
 
@@ -572,7 +572,7 @@ export default function Checkout() {
                 <p className="text-xs text-white/60 font-medium leading-relaxed mb-4">
                     If you have any questions about your order or the checkout process, our support team is available 24/7.
                 </p>
-                <Link to="/Support" className="text-xs font-black text-white hover:text-indigo-400 underline underline-offset-4 decoration-white/20">Contact Support</Link>
+                <Link to="/support" className="text-xs font-black text-white hover:text-indigo-400 underline underline-offset-4 decoration-white/20">Contact Support</Link>
             </div>
           </div>
         </div>

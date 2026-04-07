@@ -163,11 +163,11 @@ export const AuthProvider = ({ children }) => {
     authAPI.logout();
     setUser(null);
     setIsAuthenticated(false);
-    window.location.href = '/Login';
+    window.location.href = '/login';
   };
 
   const navigateToLogin = () => {
-    window.location.href = '/Login';
+    window.location.href = '/login';
   };
 
   const clearAuthError = () => {

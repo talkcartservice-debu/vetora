@@ -161,7 +161,7 @@ export default function Layout({ children, currentPageName }) {
         <div className="p-4 flex flex-col gap-4">
           <div className="flex items-center justify-between">
             <Link 
-              to={createPageUrl(currentUser?.role === 'super_admin' ? "AdminDashboard" : "Home")} 
+              to={createPageUrl(currentUser?.role === 'super_admin' ? "admindashboard" : "home")} 
               onClick={() => isMobile && setSidebarOpen(false)}
               className={`flex items-center gap-2 ${!sidebarOpen && !isMobile && "justify-center w-full"}`}
             >
@@ -268,14 +268,14 @@ export default function Layout({ children, currentPageName }) {
           >
             <Menu className="w-6 h-6" />
           </button>
-          <Link to={createPageUrl(currentUser?.role === 'super_admin' ? "AdminDashboard" : "Home")} className="flex items-center gap-2.5">
+          <Link to={createPageUrl(currentUser?.role === 'super_admin' ? "admindashboard" : "home")} className="flex items-center gap-2.5">
             <Logo size="sm" showText={true} />
           </Link>
         </div>
         <div className="flex items-center gap-1">
           <LanguagePicker />
           {currentUser?.role !== 'super_admin' && (
-            <Link to={createPageUrl("Chat")} className="relative p-2">
+            <Link to={createPageUrl("chat")} className="relative p-2">
               <MessageCircle className="w-5 h-5 text-slate-600 dark:text-slate-400" />
               {unreadMsgCount > 0 && (
                 <span className="absolute top-1 right-1 w-4 h-4 bg-indigo-500 text-white text-[10px] rounded-full flex items-center justify-center">
@@ -286,7 +286,7 @@ export default function Layout({ children, currentPageName }) {
           )}
           <NotificationBell userEmail={currentUser?.email} />
           {currentUser?.role !== 'super_admin' && (
-            <Link to={createPageUrl("Cart")} className="p-2">
+            <Link to={createPageUrl("cart")} className="p-2">
               <ShoppingBag className="w-5 h-5 text-slate-600 dark:text-slate-400" />
             </Link>
           )}

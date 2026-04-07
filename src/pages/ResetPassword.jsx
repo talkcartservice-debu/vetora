@@ -29,7 +29,7 @@ export default function ResetPassword() {
 
   useEffect(() => {
     if (success) {
-      const timer = setTimeout(() => navigate(createPageUrl("Login")), 3000);
+      const timer = setTimeout(() => navigate(createPageUrl("login")), 3000);
       return () => clearTimeout(timer);
     }
   }, [success, navigate]);
@@ -185,7 +185,7 @@ export default function ResetPassword() {
               <p className="text-sm text-slate-500 mb-8 leading-relaxed">
                 Your password has been successfully updated. You'll be redirected to the login page shortly.
               </p>
-              <Link to={createPageUrl("Login")}>
+              <Link to={createPageUrl("login")}>
                 <Button className="w-full h-14 bg-indigo-600 hover:bg-indigo-700 rounded-2xl font-black text-xs uppercase tracking-widest transition-all active:scale-[0.98] shadow-lg shadow-indigo-200">
                   Log In Now
                 </Button>

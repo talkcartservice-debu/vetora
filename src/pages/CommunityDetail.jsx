@@ -101,7 +101,7 @@ const COMMUNITY_CATEGORIES = [
 
    return ( 
      <div className="max-w-2xl mx-auto px-4 py-4 lg:py-6"> 
-       <Link to="/Communities" className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 mb-4"> 
+       <Link to="/communities" className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 mb-4"> 
          <ArrowLeft className="w-4 h-4" /> Communities 
        </Link> 
 
