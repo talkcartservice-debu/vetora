@@ -62,6 +62,14 @@ module.exports = {
   			}
   		},
   		keyframes: {
+  			'neon-pulse': {
+  				'0%, 100%': {
+  					boxShadow: '0 0 15px -3px rgba(var(--neon-shadow), var(--neon-shadow-opacity)), 0 4px 6px -2px rgba(0, 0, 0, 0.05)'
+  				},
+  				'50%': {
+  					boxShadow: '0 0 25px 2px rgba(var(--neon-shadow), calc(var(--neon-shadow-opacity) + 0.2)), 0 4px 6px -2px rgba(0, 0, 0, 0.05)'
+  				}
+  			},
   			'accordion-down': {
   				from: {
   					height: '0'
@@ -80,6 +88,7 @@ module.exports = {
   			}
   		},
   		animation: {
+  			'neon-pulse': 'neon-pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
   			'accordion-down': 'accordion-down 0.2s ease-out',
   			'accordion-up': 'accordion-up 0.2s ease-out'
   		}

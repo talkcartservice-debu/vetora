@@ -5,6 +5,7 @@ import { createPageUrl } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import Logo from "@/components/layout/Logo";
 import { ArrowLeft, Mail, Loader2, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
@@ -73,25 +74,12 @@ export default function ForgotPassword() {
           {!submitted ? (
             <div className="space-y-10">
               <div className="text-center space-y-8">
-                <motion.div 
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="inline-flex items-center justify-center"
-                >
-                  <div className="h-14 w-14 bg-gradient-to-tr from-indigo-600 to-violet-600 rounded-2xl flex items-center justify-center shadow-2xl shadow-indigo-200 rotate-3">
-                    <Mail className="h-8 w-8 text-white -rotate-3" />
-                  </div>
-                </motion.div>
-                
-                <div className="space-y-2">
-                  <h1 className="text-[2.5rem] font-black text-slate-900 tracking-tight leading-none italic uppercase">
-                    Reset
-                  </h1>
-                  <div className="h-1 w-12 bg-indigo-600 mx-auto rounded-full" />
-                  <p className="text-slate-400 font-semibold tracking-wide text-xs uppercase pt-2">
-                    Recover your account
-                  </p>
-                </div>
+                <Logo 
+                  size="lg" 
+                  className="flex-col !gap-6" 
+                  subtext="Recover your account" 
+                  showDecoration={true} 
+                />
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-7">

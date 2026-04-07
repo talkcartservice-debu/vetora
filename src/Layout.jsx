@@ -36,6 +36,7 @@ import NotificationBell from "@/components/layout/NotificationBell";
 import GlobalSearch from "@/components/layout/GlobalSearch";
 import CreateActionModal from "@/components/layout/CreateActionModal";
 import AnnouncementBanner from "@/components/layout/AnnouncementBanner";
+import Logo from "@/components/layout/Logo";
 
 const NAV_ITEMS = [
   { name: "Home", icon: Home, page: "Home" },
@@ -164,10 +165,11 @@ export default function Layout({ children, currentPageName }) {
               onClick={() => isMobile && setSidebarOpen(false)}
               className={`flex items-center gap-2 ${!sidebarOpen && !isMobile && "justify-center w-full"}`}
             >
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center shrink-0">
-                <span className="text-white font-bold text-lg">I</span>
-              </div>
-              {(sidebarOpen || isMobile) && <span className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">IQON</span>}
+              <Logo 
+                size="md" 
+                showText={sidebarOpen || isMobile} 
+                className={!sidebarOpen && !isMobile ? "justify-center w-full !gap-0" : ""}
+              />
             </Link>
             <button
               onClick={toggleSidebar}
@@ -266,11 +268,8 @@ export default function Layout({ children, currentPageName }) {
           >
             <Menu className="w-6 h-6" />
           </button>
-          <Link to={createPageUrl(currentUser?.role === 'super_admin' ? "AdminDashboard" : "Home")} className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center">
-              <span className="text-white font-bold text-sm">I</span>
-            </div>
-            <span className="text-lg font-bold text-slate-900 dark:text-white">IQON</span>
+          <Link to={createPageUrl(currentUser?.role === 'super_admin' ? "AdminDashboard" : "Home")} className="flex items-center gap-2.5">
+            <Logo size="sm" showText={true} />
           </Link>
         </div>
         <div className="flex items-center gap-1">
