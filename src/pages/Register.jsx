@@ -196,7 +196,7 @@ const Register = () => {
                         value={formData.display_name}
                         onChange={handleChange}
                         className="w-full pl-12 pr-4 py-7 rounded-2xl border-white/5 bg-white/[0.03] text-white focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500/40 focus:bg-white/[0.05] outline-none transition-all duration-300 font-bold group-hover:border-white/10 placeholder:text-slate-700 placeholder:font-medium"
-                        placeholder="John Doe"
+                        placeholder=""
                         required
                       />
                       <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-600 group-focus-within:text-orange-500 transition-colors duration-300" />
