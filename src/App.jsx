@@ -12,7 +12,11 @@ import AffiliateTracker from './components/shared/AffiliateTracker';
 import { LanguageProvider } from '@/components/providers/LanguageContext';
 import { ThemeProvider } from "next-themes";
 
-const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
+
+if (!googleClientId) {
+  console.warn("VITE_GOOGLE_CLIENT_ID is not defined in environment variables. Google Login will not function.");
+}
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
