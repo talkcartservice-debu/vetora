@@ -20,18 +20,22 @@ const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const getWebAuthnConfig = (request: any): { rpID: string, origin: string } => {
   const host = (request.headers.host || 'localhost') as string;
   const protocol = (request.headers['x-forwarded-proto'] || 'http') as string;
+  const originHeader = request.headers.origin as string | undefined;
   
-  // Use env var if available, otherwise determine from host
+  // 1. Determine Origin
+  let currentOrigin = process.env.FRONTEND_URL || originHeader || `${protocol}://${host}`;
+  
+  // 2. Determine RP ID (must be the frontend domain)
   let currentRpID = process.env.RP_ID;
   if (!currentRpID) {
-    // Strip port for RP ID
-    currentRpID = host.split(':')[0];
-  }
-  
-  let currentOrigin = process.env.FRONTEND_URL;
-  if (!currentOrigin) {
-    // Use the actual origin from the request if frontend URL is not configured
-    currentOrigin = (request.headers.origin || `${protocol}://${host}`) as string;
+    try {
+      // Extract hostname from the determined origin
+      const url = new URL(currentOrigin);
+      currentRpID = url.hostname;
+    } catch (e) {
+      // Fallback to host if origin parsing fails
+      currentRpID = host.split(':')[0];
+    }
   }
   
   return { rpID: currentRpID as string, origin: currentOrigin as string };
