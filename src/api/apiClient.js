@@ -761,6 +761,7 @@ export const aiAPI = {
   health: () => apiClient.get('/ai/health'),
   invoke: (data) => apiClient.post('/ai/invoke', data),
   chat: (prompt, messages = [], system_prompt) => apiClient.post('/ai/chat', { prompt, messages, system_prompt }),
+  assistant: (message, history = [], init = false) => apiClient.post('/ai/assistant', { message, history, init }),
   generateProductDescription: (data) => apiClient.post('/ai/generate-product-description', data),
   generateProductContent: (data) => apiClient.post('/ai/generate-product-content', data),
   generateSentimentSummary: (data) => apiClient.post('/ai/generate-sentiment-summary', data),

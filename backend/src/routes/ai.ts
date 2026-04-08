@@ -2,6 +2,7 @@ import { FastifyInstance, FastifyRequest } from 'fastify';
 import axios from 'axios';
 import { z } from 'zod';
 import { checkAiAccessLimit } from '../middleware/subscription';
+import { getUserContext, getDiscoveryContext, searchProducts, formatSystemPrompt } from '../services/aiContext';
 
 // OpenRouter configuration
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
@@ -52,6 +53,15 @@ const sentimentSchema = z.object({
 const translateSchema = z.object({
   texts: z.array(z.string()).min(1),
   targetLang: z.string().min(1),
+});
+
+const aiAssistantSchema = z.object({
+  message: z.string().optional(),
+  history: z.array(z.object({
+    role: z.enum(['user', 'assistant']),
+    content: z.string()
+  })).optional(),
+  init: z.boolean().optional(),
 });
 
 // Shared AI handler to avoid fastify.inject and duplication
@@ -131,6 +141,65 @@ export async function aiRoutes(fastify: FastifyInstance) {
         response: getMockResponse((request.body as any)?.prompt || '') + `\n\n(AI ERROR: Service unavailable)`,
         usage: { total_tokens: 0 }
       };
+    }
+  });
+
+  // Assistant endpoint for rich interaction
+  fastify.post('/assistant', {
+    preHandler: [fastify.authenticate, checkAiAccessLimit],
+  }, async (request, reply) => {
+    try {
+      const body = aiAssistantSchema.parse(request.body);
+      const userId = (request.user as any)._id;
+
+      // 1. Fetch User Context
+      const userContext = await getUserContext(userId);
+
+      // 2. Fetch Discovery Context (for "Daily Picks" or general trending)
+      const discoveryContext = await getDiscoveryContext();
+
+      // 3. Search for relevant products if a message is provided
+      let searchContext: any[] = [];
+      if (body.message && !body.init) {
+        searchContext = await searchProducts(body.message);
+      }
+
+      // 4. Format System Prompt
+      const systemPrompt = formatSystemPrompt(userContext, discoveryContext, searchContext);
+
+      // 5. Call AI
+      const userPrompt = body.message || (body.init ? "Hello! Introduce yourself as my IQON personal shopping assistant and show me some daily picks based on my interests or what's trending." : "");
+      
+      const result = await handleAiRequest({
+        prompt: userPrompt,
+        messages: body.history,
+        system_prompt: systemPrompt
+      });
+
+      // 6. Parse Actions from AI response
+      // Example: [ACTION: ORDER_CARD, id: ORDER_ID]
+      const actions: any[] = [];
+      const actionRegex = /\[ACTION:\s*([^,\]]+)(?:,\s*id:\s*([^\]]+))?\]/g;
+      let match;
+      
+      while ((match = actionRegex.exec(result.response)) !== null) {
+        actions.push({
+          type: match[1].trim(),
+          data: match[2] ? { id: match[2].trim() } : {}
+        });
+      }
+
+      return {
+        reply: result.response,
+        actions,
+        products: searchContext.length > 0 ? searchContext : discoveryContext.slice(0, 5)
+      };
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return reply.code(400).send({ error: 'Invalid input', details: error.errors });
+      }
+      fastify.log.error(error);
+      return reply.code(500).send({ error: 'Assistant failed', message: error.message });
     }
   });
 

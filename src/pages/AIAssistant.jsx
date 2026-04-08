@@ -6,22 +6,15 @@ import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import {
   Sparkles, Send, Star, ChevronRight,
-  Loader2, Bot, User, RefreshCw, TrendingUp, Mic, MicOff, Plus
+  Loader2, Bot, User, RefreshCw, Mic, MicOff, Plus
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ChatSkeleton } from "@/components/shared/LoadingSkeleton";
 import ReactMarkdown from "react-markdown";
 import { productsAPI, authAPI, aiAPI, cartAPI } from "@/api/apiClient";
-
-const QUICK_PROMPTS = [
-  "Show me trending fashion items under $100",
-  "What are the best beauty products?",
-  "Find me top-rated electronics",
-  "What's the return policy for most stores?",
-  "How long does shipping usually take?",
-  "Recommend something for home decor",
-];
+import OrderStatusCard from "@/components/chat/OrderStatusCard";
+import SmartActionChips from "@/components/chat/SmartActionChips";
 
 const WELCOME_MESSAGE = {
   id: "welcome",
@@ -86,6 +79,24 @@ function ProductRecommendation({ product, onAddToCart, isAdding }) {
 
 function ChatMessage({ message, onAddToCart, addingProductId }) {
   const isUser = message.role === "user";
+  
+  // Parse actions from content and combine with explicit actions
+  const actions = [...(message.actions || [])];
+  let displayContent = message.content;
+  
+  if (!isUser) {
+    const ACTION_REGEX = /\[ACTION:\s*(\w+),\s*id:\s*([\w-]+)\]/g;
+    let match;
+    while ((match = ACTION_REGEX.exec(message.content)) !== null) {
+      // Avoid duplicates if both are present
+      if (!actions.some(a => a.type === match[1] && a.id === match[2])) {
+        actions.push({ type: match[1], id: match[2] });
+      }
+    }
+    // Clean up content from action tags for cleaner display
+    displayContent = message.content.replace(ACTION_REGEX, '').trim();
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -103,18 +114,28 @@ function ChatMessage({ message, onAddToCart, addingProductId }) {
         <div className={`rounded-2xl px-4 py-3 ${
           isUser
             ? "bg-gradient-to-br from-indigo-600 to-purple-600 text-white"
-            : "bg-white border border-slate-100 text-slate-800"
+            : "bg-white border border-slate-100 text-slate-800 shadow-sm"
         }`}>
           {isUser ? (
-            <p className="text-sm leading-relaxed">{message.content}</p>
+            <p className="text-sm leading-relaxed">{displayContent}</p>
           ) : (
             <ReactMarkdown
               className="text-sm leading-relaxed prose prose-sm max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&_strong]:text-slate-900 [&_ul]:my-1 [&_li]:my-0.5"
             >
-              {message.content}
+              {displayContent}
             </ReactMarkdown>
           )}
         </div>
+
+        {/* Actions Rendering */}
+        {actions.map((action, idx) => (
+          <div key={idx} className="w-full">
+            {action.type === 'ORDER_CARD' && (
+              <OrderStatusCard orderId={action.id} />
+            )}
+          </div>
+        ))}
+
         {message.products?.length > 0 && (
           <div className="w-full space-y-2">
             <p className="text-xs text-slate-400 font-medium px-1">Recommended for you:</p>
@@ -244,20 +265,38 @@ export default function AIAssistant() {
 
   const isInitialLoading = productsLoading || userLoading;
 
+  // Proactive Initialization
+  useEffect(() => {
+    if (messages.length === 1 && messages[0].id === "welcome" && currentUser) {
+      const initAssistant = async () => {
+        setIsLoading(true);
+        try {
+          const res = await aiAPI.assistant("", [], true);
+          const data = res.data || res;
+          if (data.reply) {
+            const aiMsg = {
+              id: "init-" + Date.now(),
+              role: "assistant",
+              content: data.reply,
+              actions: data.actions || [],
+              products: data.products || [],
+              timestamp: new Date(),
+            };
+            setMessages(prev => [...prev, aiMsg]);
+          }
+        } catch (e) {
+          console.error("Proactive AI Init Error:", e);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      initAssistant();
+    }
+  }, [currentUser]);
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
-
-  const findRelevantProducts = (query, limit = 3) => {
-    const q = query.toLowerCase();
-    const keywords = q.split(" ").filter(w => w.length > 3);
-    return products
-      .filter(p => {
-        const text = `${p.title} ${p.description} ${p.category} ${p.tags?.join(" ")}`.toLowerCase();
-        return keywords.some(k => text.includes(k)) || text.includes(q);
-      })
-      .slice(0, limit);
-  };
 
   const sendMessage = async (userMessage) => {
     if (!userMessage.trim() || isLoading) return;
@@ -267,42 +306,24 @@ export default function AIAssistant() {
     setInput("");
     setIsLoading(true);
 
-    const relevantProducts = findRelevantProducts(userMessage);
-    const productContext = products.slice(0, 20).map(p =>
-      `- ${p.title} ($${p.price}, ${p.category}, ${p.store_name}, rating: ${p.rating_avg || "N/A"}, stock: ${p.inventory_count || 0})`
-    ).join("\n");
-
-    const systemPrompt = `You are IQON AI, a friendly and knowledgeable shopping assistant for IQON — a social commerce platform.
-
-Available products on IQON right now:
-${productContext}
-
-Instructions:
-- If asking about products, recommend specific ones from the list above by name.
-- If asking about shipping: typical shipping is 3-7 business days standard, 1-2 days express. Most stores offer free shipping over $75.
-- If asking about returns: most stores have a 30-day return policy for unused items. Some stores offer 60 days. Items must be in original condition.
-- If asking about a specific store policy, give general platform policy and suggest contacting the store directly.
-- Be concise (2-4 sentences), warm, and helpful. Use emoji sparingly.
-- If recommending products, mention them by name but keep the response brief since product cards will be shown separately.
-- Format with markdown for readability.`;
-
     const history = messages
       .filter(m => m.id !== "welcome")
       .map(m => ({ role: m.role, content: m.content }));
 
     try {
-      const res = await aiAPI.chat(userMessage, history, systemPrompt);
+      const res = await aiAPI.assistant(userMessage, history, false);
       const data = res.data || res;
       const aiMsg = {
         id: Date.now() + 1,
         role: "assistant",
-        content: data.reply || data.response || "I received an empty response from the AI.",
-        products: relevantProducts,
+        content: data.reply || "I received an empty response from the AI.",
+        actions: data.actions || [],
+        products: data.products || [],
         timestamp: new Date(),
       };
       setMessages(prev => [...prev, aiMsg]);
     } catch (e) {
-      console.error("IQON AI Chat Error:", e);
+      console.error("IQON AI Assistant Error:", e);
       const errorMsg = {
         id: Date.now() + 1,
         role: "assistant",
@@ -363,23 +384,10 @@ Instructions:
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Quick Prompts (shown only when just welcome message) */}
-      {messages.length === 1 && !isLoading && (
+      {/* Smart Action Chips */}
+      {!isLoading && (
         <div className="px-4 pb-2">
-          <p className="text-xs text-slate-400 font-medium mb-2 flex items-center gap-1.5">
-            <TrendingUp className="w-3 h-3" /> Popular questions
-          </p>
-          <div className="grid grid-cols-1 gap-1.5">
-            {QUICK_PROMPTS.slice(0, 4).map(prompt => (
-              <button
-                key={prompt}
-                onClick={() => handleQuickPrompt(prompt)}
-                className="text-left px-3 py-2 bg-white border border-slate-100 rounded-xl text-xs text-slate-600 hover:bg-indigo-50 hover:border-indigo-100 hover:text-indigo-700 transition-all"
-              >
-                {prompt}
-              </button>
-            ))}
-          </div>
+          <SmartActionChips onChipClick={handleQuickPrompt} />
         </div>
       )}
 
