@@ -59,6 +59,9 @@ if (!JWT_SECRET) {
 // Register plugins
 fastify.register(cors, {
   origin: (origin, cb) => {
+    // Log origin for debugging in deployment logs
+    console.log(`CORS check for origin: ${origin}`);
+    
     const allowedOrigins = [
       process.env.FRONTEND_URL,
       'https://iqon-1.vercel.app',
@@ -68,15 +71,26 @@ fastify.register(cors, {
       'http://127.0.0.1:5173'
     ].filter(Boolean);
     
-    if (!origin || allowedOrigins.includes(origin)) {
+    // Allow if no origin (local tools), matches whitelist, or is any vercel subdomain
+    if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
       cb(null, true);
       return;
     }
-    cb(new Error('Not allowed by CORS'), false);
+    
+    console.warn(`CORS rejected origin: ${origin}`);
+    cb(null, false);
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Accept-Language', 'x-requested-with'],
+  allowedHeaders: [
+    'Content-Type', 
+    'Authorization', 
+    'Accept-Language', 
+    'x-requested-with', 
+    'Origin', 
+    'Accept'
+  ],
+  exposedHeaders: ['set-cookie'],
 });
 
 fastify.register(jwt, {
