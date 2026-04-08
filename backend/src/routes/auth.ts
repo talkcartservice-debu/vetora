@@ -17,9 +17,9 @@ import { sendVerificationCode, sendWhatsAppVerification } from '../services/mail
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // Helper to get RP ID and Origin dynamically based on request or config
-const getWebAuthnConfig = (request: any) => {
-  const host = request.headers.host || '';
-  const protocol = request.headers['x-forwarded-proto'] || 'http';
+const getWebAuthnConfig = (request: any): { rpID: string, origin: string } => {
+  const host = (request.headers.host || 'localhost') as string;
+  const protocol = (request.headers['x-forwarded-proto'] || 'http') as string;
   
   // Use env var if available, otherwise determine from host
   let currentRpID = process.env.RP_ID;
@@ -31,10 +31,10 @@ const getWebAuthnConfig = (request: any) => {
   let currentOrigin = process.env.FRONTEND_URL;
   if (!currentOrigin) {
     // Use the actual origin from the request if frontend URL is not configured
-    currentOrigin = request.headers.origin || `${protocol}://${host}`;
+    currentOrigin = (request.headers.origin || `${protocol}://${host}`) as string;
   }
   
-  return { rpID: currentRpID, origin: currentOrigin };
+  return { rpID: currentRpID as string, origin: currentOrigin as string };
 };
 
 const loginSchema = z.object({
