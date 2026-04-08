@@ -3,10 +3,10 @@ import { Capacitor } from '@capacitor/core';
 import { usersAPI } from '@/api/apiClient';
 
 export const setupPushNotifications = async () => {
-  // Only run on native platforms
+  // Try web notifications if not on native platform
   if (!Capacitor.isNativePlatform()) {
-    console.log('Push notifications not available on web');
-    return;
+    console.log('Native push notifications not available on web, attempting web notifications...');
+    return setupWebNotifications();
   }
 
   try {
@@ -67,5 +67,27 @@ export const removePushNotifications = async () => {
     await PushNotifications.removeAllListeners();
   } catch (error) {
     console.error('Error removing push notification listeners:', error);
+  }
+};
+
+export const setupWebNotifications = async () => {
+  if (typeof window === 'undefined' || !('Notification' in window)) {
+    console.log('This browser does not support desktop notifications');
+    return;
+  }
+
+  try {
+    let permission = Notification.permission;
+    if (permission === 'default') {
+      permission = await Notification.requestPermission();
+    }
+    
+    if (permission === 'granted') {
+      console.log('Web notification permission granted');
+    } else {
+      console.log('Web notification permission:', permission);
+    }
+  } catch (err) {
+    console.error('Error requesting web notification permission:', err);
   }
 };

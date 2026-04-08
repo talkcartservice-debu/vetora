@@ -138,9 +138,19 @@ export default function Settings() {
     updateMutation.mutate({ notifications: newState });
   };
 
+  const [selectedLang, setSelectedLang] = useState(currentLang);
+
   const handleLanguageChange = (code) => {
-    setLang(code);
-    toast.success("Language updated successfully!");
+    setSelectedLang(code);
+  };
+
+  const handleSaveLanguage = () => {
+    setLang(selectedLang);
+    if (currentUser) {
+      updateMutation.mutate({ preferences: { ...currentUser.preferences, language: selectedLang } });
+    } else {
+      toast.success("Language updated successfully!");
+    }
   };
 
   const handle2FAToggle = () => {
@@ -623,13 +633,13 @@ export default function Settings() {
                 {currentLangInfo?.flag} {currentLangInfo?.label}
               </span>
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-2 mb-4">
               {SUPPORTED_LANGS.map((l) => (
                 <button
                   key={l.code}
                   onClick={() => handleLanguageChange(l.code)}
                   className={`px-3 py-2 rounded-lg text-xs font-bold transition-all border ${
-                    currentLang === l.code 
+                    selectedLang === l.code 
                       ? "bg-indigo-600 border-indigo-600 text-white shadow-md shadow-indigo-100" 
                       : "bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:border-indigo-200 dark:hover:border-indigo-800 hover:text-indigo-600 dark:hover:text-indigo-400"
                   }`}
@@ -638,6 +648,13 @@ export default function Settings() {
                 </button>
               ))}
             </div>
+            <Button 
+              onClick={handleSaveLanguage}
+              disabled={selectedLang === currentLang || updateMutation.isPending}
+              className="w-full bg-slate-900 dark:bg-indigo-600 hover:bg-slate-800 dark:hover:bg-indigo-700 text-white rounded-xl h-10 text-xs font-bold"
+            >
+              {updateMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : "Save Language"}
+            </Button>
           </div>
           <div className="flex items-center justify-between p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700">
             <div className="flex items-center gap-3">

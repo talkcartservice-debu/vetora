@@ -10,13 +10,17 @@ export function setupWebSocket(fastify: FastifyInstance) {
       origin: (origin, callback) => {
         const allowedOrigins = [
           process.env.FRONTEND_URL,
+          'https://iqon-1.vercel.app',
+          'https://iqon-nu.vercel.app',
+          'https://iqon.vercel.app',
           'http://localhost:5173',
           'http://127.0.0.1:5173'
         ].filter(Boolean);
         
-        if (!origin || allowedOrigins.includes(origin)) {
+        if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
           callback(null, true);
         } else {
+          console.warn(`WebSocket CORS rejected origin: ${origin}`);
           callback(new Error('Not allowed by CORS'));
         }
       },
