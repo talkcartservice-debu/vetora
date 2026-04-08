@@ -15,8 +15,27 @@ import { User } from '../models/User';
 import { sendVerificationCode, sendWhatsAppVerification } from '../services/mailService';
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-const rpID = process.env.RP_ID || 'localhost';
-const origin = process.env.FRONTEND_URL || 'http://localhost:5173';
+
+// Helper to get RP ID and Origin dynamically based on request or config
+const getWebAuthnConfig = (request: any) => {
+  const host = request.headers.host || '';
+  const protocol = request.headers['x-forwarded-proto'] || 'http';
+  
+  // Use env var if available, otherwise determine from host
+  let currentRpID = process.env.RP_ID;
+  if (!currentRpID) {
+    // Strip port for RP ID
+    currentRpID = host.split(':')[0];
+  }
+  
+  let currentOrigin = process.env.FRONTEND_URL;
+  if (!currentOrigin) {
+    // Use the actual origin from the request if frontend URL is not configured
+    currentOrigin = request.headers.origin || `${protocol}://${host}`;
+  }
+  
+  return { rpID: currentRpID, origin: currentOrigin };
+};
 
 const loginSchema = z.object({
   email: z.string().min(3), // Could be email or username
@@ -321,6 +340,8 @@ export async function authRoutes(fastify: FastifyInstance) {
       const user = await User.findById((request.user as any).userId);
       if (!user) return reply.code(404).send({ error: 'User not found' });
 
+      const { rpID } = getWebAuthnConfig(request);
+
       const options = await generateRegistrationOptions({
         rpName: 'IQON',
         rpID,
@@ -388,6 +409,8 @@ export async function authRoutes(fastify: FastifyInstance) {
       user.current_challenge_expires_at = undefined;
       await user.save();
 
+      const { rpID, origin } = getWebAuthnConfig(request);
+
       const verification = await verifyRegistrationResponse({
         response: body as any,
         expectedChallenge,
@@ -433,6 +456,8 @@ export async function authRoutes(fastify: FastifyInstance) {
       if (!user || user.authenticators.length === 0) {
         return reply.code(400).send({ error: 'Biometric authentication not set up for this user' });
       }
+
+      const { rpID } = getWebAuthnConfig(request);
 
       const options = await generateAuthenticationOptions({
         rpID,
@@ -486,6 +511,8 @@ export async function authRoutes(fastify: FastifyInstance) {
       user.current_challenge = undefined;
       user.current_challenge_expires_at = undefined;
       await user.save();
+
+      const { rpID, origin } = getWebAuthnConfig(request);
 
       const verification = await verifyAuthenticationResponse({
         response,
