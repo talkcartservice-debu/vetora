@@ -23,7 +23,8 @@ const getWebAuthnConfig = (request: any): { rpID: string, origin: string } => {
   const originHeader = request.headers.origin as string | undefined;
   
   // 1. Determine Origin
-  let currentOrigin = process.env.FRONTEND_URL || originHeader || `${protocol}://${host}`;
+  // Prioritize originHeader because WebAuthn MUST match the browser's current domain
+  let currentOrigin = originHeader || process.env.FRONTEND_URL || `${protocol}://${host}`;
   
   // 2. Determine RP ID (must be the frontend domain)
   let currentRpID = process.env.RP_ID;
@@ -32,6 +33,11 @@ const getWebAuthnConfig = (request: any): { rpID: string, origin: string } => {
       // Extract hostname from the determined origin
       const url = new URL(currentOrigin);
       currentRpID = url.hostname;
+      
+      // Special case: if origin is localhost but we have a host header, use host
+      if (currentRpID === 'localhost' && host !== 'localhost' && !host.includes('localhost')) {
+         currentRpID = host.split(':')[0];
+      }
     } catch (e) {
       // Fallback to host if origin parsing fails
       currentRpID = host.split(':')[0];
