@@ -309,12 +309,12 @@ const Login = () => {
 
                   <div className="flex justify-center gap-8 items-center">
                     <div className="flex flex-col items-center gap-2 group cursor-pointer">
-                      <div className="p-0.5 rounded-full border border-white/5 bg-white/5 group-hover:border-orange-500/50 group-hover:bg-white/10 transition-all duration-300">
+                      <div className="hover:scale-110 transition-transform duration-300">
                         <GoogleLogin
                           onSuccess={handleGoogleSuccess}
                           onError={handleGoogleError}
                           type="icon"
-                          theme="outline"
+                          theme="filled_blue"
                           shape="circle"
                           size="large"
                         />
