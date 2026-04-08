@@ -324,7 +324,7 @@ const Register = () => {
                       onSuccess={handleGoogleSuccess}
                       onError={handleGoogleError}
                       type="icon"
-                      theme="filled_black"
+                      theme="outline"
                       shape="circle"
                       size="large"
                     />

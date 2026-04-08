@@ -314,7 +314,7 @@ const Login = () => {
                           onSuccess={handleGoogleSuccess}
                           onError={handleGoogleError}
                           type="icon"
-                          theme="filled_black"
+                          theme="outline"
                           shape="circle"
                           size="large"
                         />
