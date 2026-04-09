@@ -469,6 +469,11 @@ export const vendorSubscriptionsAPI = {
   verifyPayment: (id, reference) => apiClient.post(`/vendor-subscriptions/${id}/verify-payment`, { reference }),
 };
 
+export const reportsAPI = {
+  create: (data) => apiClient.post('/reports', data),
+  getMe: () => apiClient.get('/reports/me'),
+};
+
 export const adminAPI = {
   getStats: () => apiClient.get('/admin/stats'),
   // Users
