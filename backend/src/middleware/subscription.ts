@@ -12,7 +12,7 @@ export const PLAN_LIMITS = {
     custom_domain: false,
     shipping_zones: false,
     affiliate_program: false,
-    ai_features: false,
+    ai_features: true,
     live_sessions: false,
     live_chat: false,
     coupons: false,
