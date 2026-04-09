@@ -11,7 +11,7 @@ export async function reportRoutes(fastify: FastifyInstance) {
   });
 
   // Create a report
-  fastify.post('/', {
+  fastify.post('/reports', {
     preHandler: [fastify.authenticate]
   }, async (request, reply) => {
     try {
@@ -36,7 +36,7 @@ export async function reportRoutes(fastify: FastifyInstance) {
   });
 
   // Get my reports
-  fastify.get('/me', {
+  fastify.get('/reports/me', {
     preHandler: [fastify.authenticate]
   }, async (request, reply) => {
     try {

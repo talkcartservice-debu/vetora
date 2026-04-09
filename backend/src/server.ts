@@ -162,7 +162,7 @@ fastify.register(withdrawalRoutes, { prefix: '/api/withdrawals' });
 fastify.register(wishlistRoutes, { prefix: '/api/wishlist' });
 fastify.register(bookmarkRoutes, { prefix: '/api/bookmarks' });
 fastify.register(announcementRoutes, { prefix: '/api/announcements' });
-fastify.register(reportRoutes, { prefix: '/api/reports' });
+fastify.register(reportRoutes, { prefix: '/api' });
 fastify.register(checkoutRoutes, { prefix: '/api/checkout' });
 fastify.register(adminRoutes, { prefix: '/api/admin' });
 
