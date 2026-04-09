@@ -191,11 +191,17 @@ export async function messageRoutes(fastify: FastifyInstance) {
       const usernames = [user.username, body.recipient_username].sort();
       const conversationId = body.conversation_id || `chat_${usernames[0]}_${usernames[1]}`;
 
+      // Fetch full user data to get display_name
+      const userData = await User.findOne({ email: user.email }).lean();
+      if (!userData) {
+        return reply.code(400).send({ error: 'User not found' });
+      }
+
       const message = new Message({
         ...body,
         conversation_id: conversationId,
         sender_username: user.username,
-        sender_name: user.display_name || user.username,
+        sender_name: userData.display_name || user.username,
         receiver_username: body.recipient_username,
         created_at: new Date(),
         updated_at: new Date()

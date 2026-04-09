@@ -191,13 +191,19 @@ export async function storyRoutes(fastify: FastifyInstance) {
         return reply.code(400).send({ error: `media_url is required for ${body.media_type} stories` });
       }
 
+      // Fetch full user data to get display_name and avatar_url
+      const userData = await User.findOne({ email: user.email }).lean();
+      if (!userData) {
+        return reply.code(400).send({ error: 'User not found' });
+      }
+
       const story = new Story({
         ...body,
         media_url: body.media_url?.trim() || "",
         author_email: user.email,
-        author_username: user.username,
-        author_name: user.display_name || user.username,
-        author_avatar: user.avatar_url,
+        author_username: userData.username,
+        author_name: userData.display_name || userData.username,
+        author_avatar: userData.avatar_url,
       });
 
       await story.save();
@@ -369,10 +375,16 @@ export async function storyRoutes(fastify: FastifyInstance) {
       const usernames = [user.username, story.author_username].sort();
       const conversationId = `chat_${usernames[0]}_${usernames[1]}`;
 
+      // Fetch full user data to get display_name
+      const userData = await User.findOne({ email: user.email }).lean();
+      if (!userData) {
+        return reply.code(400).send({ error: 'User not found' });
+      }
+
       const message = new Message({
         conversation_id: conversationId,
         sender_username: user.username,
-        sender_name: user.display_name || user.username,
+        sender_name: userData.display_name || user.username,
         receiver_username: story.author_username,
         content: `Replied to your story: "${trimmedText}"`,
         message_type: 'text',

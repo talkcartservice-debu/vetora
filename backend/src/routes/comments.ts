@@ -114,11 +114,17 @@ export async function commentRoutes(fastify: FastifyInstance) {
         return reply.code(400).send({ error: 'Missing required fields: post_id, content' });
       }
 
+      // Fetch full user data to get display_name and avatar_url
+      const userData = await User.findOne({ email: user.email }).lean();
+      if (!userData) {
+        return reply.code(400).send({ error: 'User not found' });
+      }
+
       const comment = new Comment({
         ...body,
-        author_username: user.username,
-        author_name: user.display_name || user.username,
-        author_avatar: user.avatar_url,
+        author_username: userData.username,
+        author_name: userData.display_name || userData.username,
+        author_avatar: userData.avatar_url,
       });
 
       await comment.save();

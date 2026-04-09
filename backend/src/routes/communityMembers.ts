@@ -105,12 +105,16 @@ export async function communityMemberRoutes(fastify: FastifyInstance) {
 
       // Create notification for community owner
       if (community.owner_username !== user.username) {
+        // Fetch full user data to get display_name
+        const userData = await User.findOne({ email: user.email }).lean();
+        const display_name = userData?.display_name || user.username;
+
         const notification = new Notification({
           recipient_username: community.owner_username,
           type: 'follow',
-          title: `${user.display_name || user.username} joined your community: ${community.name}`,
+          title: `${display_name} joined your community: ${community.name}`,
           sender_username: user.username,
-          sender_name: user.display_name || user.username,
+          sender_name: display_name,
           link: `/community/${community._id}`,
           metadata: {
             community_id: community._id,

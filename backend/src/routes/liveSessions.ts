@@ -109,10 +109,16 @@ export async function liveSessionRoutes(fastify: FastifyInstance) {
         return reply.code(400).send({ error: 'Missing required field: title' });
       }
 
+      // Fetch full user data to get display_name
+      const userData = await User.findOne({ email: user.email }).lean();
+      if (!userData) {
+        return reply.code(400).send({ error: 'User not found' });
+      }
+
       const session = new LiveSession({
         ...body,
         host_username: user.username,
-        host_name: user.display_name || user.username,
+        host_name: userData.display_name || user.username,
         status: 'scheduled',
         stream_key: generateStreamKey(),
       });

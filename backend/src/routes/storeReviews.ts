@@ -204,9 +204,15 @@ export async function storeReviewRoutes(fastify: FastifyInstance) {
         return reply.code(400).send({ error: 'Rating must be between 1 and 5' });
       }
 
+      // Fetch full user data to get display_name
+      const userData = await User.findOne({ email: user.email }).lean();
+      if (!userData) {
+        return reply.code(400).send({ error: 'User not found' });
+      }
+
       // Set reviewer info from authenticated user
       body.reviewer_username = user.username;
-      body.reviewer_name = user.display_name || user.username;
+      body.reviewer_name = userData.display_name || user.username;
 
       const review = new StoreReview(body);
       await review.save();

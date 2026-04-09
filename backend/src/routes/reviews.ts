@@ -108,10 +108,16 @@ export async function reviewRoutes(fastify: FastifyInstance) {
         return reply.code(409).send({ error: 'You have already reviewed this product' });
       }
 
+      // Fetch full user data to get display_name
+      const userData = await User.findOne({ email: user.email }).lean();
+      if (!userData) {
+        return reply.code(400).send({ error: 'User not found' });
+      }
+
       const review = new Review({
         ...body,
         reviewer_username: user.username,
-        reviewer_name: user.display_name || user.username,
+        reviewer_name: userData.display_name || user.username,
         is_verified_purchase: false // TODO: Implement purchase verification logic
       });
 

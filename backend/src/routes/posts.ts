@@ -14,6 +14,7 @@ const createPostSchema = z.object({
   community_id: z.string().optional().nullable(),
   visibility: z.enum(['public', 'followers', 'community']).default('public'),
   // Optional fields that can be provided but are not required
+  author_email: z.string().optional().nullable(),
   author_username: z.string().optional().nullable(),
   author_name: z.string().optional().nullable(),
 });
@@ -26,10 +27,12 @@ export async function postRoutes(fastify: FastifyInstance) {
     try {
       const query = request.query as any;
       const {
+        author_email,
         author_username,
         community_id,
         visibility = 'public',
         following_only,
+        user_email,
         user_username,
         search,
         limit = 20,
@@ -43,24 +46,33 @@ export async function postRoutes(fastify: FastifyInstance) {
       const parsedSkip = (skip !== undefined && skip !== null) ? parseInt(skip) : (parsedPage - 1) * parsedLimit;
 
       const filter: any = {};
+      if (author_email) filter.author_email = author_email;
       if (author_username) filter.author_username = author_username;
       if (community_id) filter.community_id = community_id;
       if (visibility) filter.visibility = visibility;
 
-      if (following_only === 'true' && user_username && typeof user_username === 'string') {
-        const follower_username = user_username.toLowerCase();
-        const follows = await Follow.find({ follower_username }).lean();
-        const followingEmails = follows.map((f: any) => f.following_email).filter(Boolean);
-        const followingUsernames = follows.map(f => f.following_username).filter(Boolean);
+      // Handle following_only filter
+      if (following_only === 'true' && (user_email || user_username)) {
+        let follower_username = user_username;
         
-        // If following no one, we should probably return empty array or handle it
-        if (followingUsernames.length > 0 || followingEmails.length > 0) {
-          filter.$or = [
-            { author_username: { $in: followingUsernames } },
-            { author_email: { $in: followingEmails } }
-          ];
-        } else {
-          // Special case: following no one, so return empty list
+        // If only email is provided, find the user to get their username
+        if (!follower_username && user_email) {
+          const u = await User.findOne({ email: user_email.toLowerCase() }).select('username').lean();
+          if (u) follower_username = u.username;
+        }
+
+        if (follower_username) {
+          const follows = await Follow.find({ follower_username: follower_username.toLowerCase() }).lean();
+          const followingUsernames = follows.map(f => f.following_username).filter(Boolean);
+          
+          if (followingUsernames.length > 0) {
+            filter.author_username = { $in: followingUsernames };
+          } else {
+            // Following no one
+            return { data: [], total: 0, limit: parsedLimit, skip: parsedSkip, page: parsedPage };
+          }
+        } else if (user_email) {
+          // User with this email not found
           return { data: [], total: 0, limit: parsedLimit, skip: parsedSkip, page: parsedPage };
         }
       }
@@ -87,19 +99,18 @@ export async function postRoutes(fastify: FastifyInstance) {
         userLikesSet = await getLikesForTargets(effectiveUsername.toString(), 'post', postIds);
       }
 
-      // Add is_liked field to each post
-      const postsWithLikeStatus = posts.map((post: any) => {
+      // Add is_liked field and ID to each post
+      const data = posts.map((post: any) => {
         const id = post._id.toString();
-        const is_liked = userLikesSet.has(id);
         return { 
           ...post, 
           id, 
-          is_liked 
+          is_liked: userLikesSet.has(id)
         };
       });
 
       return {
-        data: postsWithLikeStatus,
+        data,
         total,
         limit: parsedLimit,
         skip: parsedSkip,
@@ -129,8 +140,7 @@ export async function postRoutes(fastify: FastifyInstance) {
       // Add is_liked field
       const user = request.user as any;
       const query = request.query as any;
-      const user_username = query?.user_username;
-      const effectiveUsername = user?.username || user_username;
+      const effectiveUsername = user?.username || query?.user_username;
       
       let is_liked = false;
       if (effectiveUsername) {
@@ -157,17 +167,20 @@ export async function postRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     try {
       const user = request.user as any;
-      
-      // Log the incoming request body for debugging
-      fastify.log.info(`Creating post with body: ${JSON.stringify(request.body)}`);
-      
       const body = createPostSchema.parse(request.body);
+
+      // Fetch full user data to get display_name and avatar_url
+      const userData = await User.findOne({ email: user.email }).lean();
+      if (!userData) {
+        return reply.code(400).send({ error: 'User not found' });
+      }
 
       const post = new Post({
         ...body,
-        author_username: user.username,
-        author_name: user?.display_name || user.username,
-        author_avatar: user?.avatar_url,
+        author_email: user.email,
+        author_username: userData.username,
+        author_name: userData.display_name || userData.username,
+        author_avatar: userData.avatar_url,
         likes_count: 0,
         comments_count: 0,
         shares_count: 0,
@@ -176,20 +189,43 @@ export async function postRoutes(fastify: FastifyInstance) {
       });
 
       await post.save();
-      
-      fastify.log.info(`Post created successfully: ${post._id}`);
       return post;
     } catch (error: any) {
       if (error instanceof z.ZodError) {
-        const errorMsg = error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ');
-        fastify.log.error(`Validation error: ${errorMsg}`);
-        return reply.code(400).send({ 
-          error: `Invalid request data: ${errorMsg}`, 
-          details: error.errors 
-        });
+        return reply.code(400).send({ error: 'Invalid request data', details: error.errors });
       }
       fastify.log.error(error);
       return reply.code(500).send({ error: 'Internal server error', message: error.message });
+    }
+  });
+
+  // Like a post
+  fastify.post('/:id/like', {
+    preHandler: [fastify.authenticate],
+  }, async (request, reply) => {
+    try {
+      const { id } = request.params as { id: string };
+      const user = request.user as any;
+      return await likeTarget(user.username, 'post', id);
+    } catch (error: any) {
+      fastify.log.error(error);
+      if (error.message === 'Already liked') return reply.code(400).send({ error: error.message });
+      return reply.code(500).send({ error: 'Internal server error' });
+    }
+  });
+
+  // Unlike a post
+  fastify.delete('/:id/like', {
+    preHandler: [fastify.authenticate],
+  }, async (request, reply) => {
+    try {
+      const { id } = request.params as { id: string };
+      const user = request.user as any;
+      return await unlikeTarget(user.username, 'post', id);
+    } catch (error: any) {
+      fastify.log.error(error);
+      if (error.message === 'Like not found') return { status: 'unliked', message: 'Like already removed' };
+      return reply.code(500).send({ error: 'Internal server error' });
     }
   });
 
@@ -201,15 +237,10 @@ export async function postRoutes(fastify: FastifyInstance) {
       const { id } = request.params as { id: string };
       const user = request.user as any;
 
-      if (!user?.username) {
-        return reply.code(401).send({ error: 'Unauthorized - invalid user data' });
-      }
-
       const post = await Post.findById(id);
-      if (!post) {
-        return reply.code(404).send({ error: 'Post not found' });
-      }
+      if (!post) return reply.code(404).send({ error: 'Post not found' });
 
+      // Check ownership using username
       if (post.author_username !== user.username) {
         return reply.code(403).send({ error: 'Unauthorized' });
       }
@@ -218,14 +249,11 @@ export async function postRoutes(fastify: FastifyInstance) {
       return { status: 'deleted' };
     } catch (error: any) {
       fastify.log.error(error);
-      return reply.code(500).send({ 
-        error: 'Internal server error', 
-        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
-      });
+      return reply.code(500).send({ error: 'Internal server error' });
     }
   });
 
-  // Update post (for share increment, etc.)
+  // Update post
   fastify.patch('/:id', {
     preHandler: [fastify.authenticate],
   }, async (request, reply) => {
@@ -235,18 +263,11 @@ export async function postRoutes(fastify: FastifyInstance) {
       const user = request.user as any;
 
       const post = await Post.findById(id);
-      if (!post) {
-        return reply.code(404).send({ error: 'Post not found' });
-      }
+      if (!post) return reply.code(404).send({ error: 'Post not found' });
 
-      // Handle share count increment separately (anyone can share)
+      // Handle share count increment (allowed for everyone)
       if (body.$inc && body.$inc.shares_count === 1) {
-        const updatedPost = await Post.findByIdAndUpdate(
-          id, 
-          { $inc: { shares_count: 1 } }, 
-          { new: true }
-        );
-        return updatedPost;
+        return await Post.findByIdAndUpdate(id, { $inc: { shares_count: 1 } }, { new: true });
       }
 
       // Other updates require ownership
@@ -254,17 +275,12 @@ export async function postRoutes(fastify: FastifyInstance) {
         return reply.code(403).send({ error: 'Unauthorized' });
       }
 
-      // Filter body to only allow safe updates, NOT counters
-      const { likes_count, comments_count, shares_count, author_username, ...safeBody } = body;
-      
-      const updatedPost = await Post.findByIdAndUpdate(id, safeBody, { new: true });
-      return updatedPost;
+      // Filter counters and sensitive fields from body
+      const { likes_count, comments_count, shares_count, author_username, author_email, ...safeBody } = body;
+      return await Post.findByIdAndUpdate(id, safeBody, { new: true });
     } catch (error: any) {
       fastify.log.error(error);
-      return reply.code(500).send({ 
-        error: 'Internal server error', 
-        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
-      });
+      return reply.code(500).send({ error: 'Internal server error' });
     }
   });
 }
