@@ -2,7 +2,7 @@ import { FastifyInstance, FastifyRequest } from 'fastify';
 import axios from 'axios';
 import { z } from 'zod';
 import { checkAiAccessLimit } from '../middleware/subscription';
-import { getUserContext, getDiscoveryContext, searchProducts, formatSystemPrompt } from '../services/aiContext';
+import { getUserContext, getDiscoveryContext, searchProducts, searchStores, getPlatformContext, formatSystemPrompt } from '../services/aiContext';
 
 // OpenRouter configuration
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
@@ -158,14 +158,19 @@ export async function aiRoutes(fastify: FastifyInstance) {
       // 2. Fetch Discovery Context (for "Daily Picks" or general trending)
       const discoveryContext = await getDiscoveryContext();
 
-      // 3. Search for relevant products if a message is provided
+      // 3. Fetch Platform Context (Announcements & FAQs)
+      const platformContext = await getPlatformContext();
+
+      // 4. Search for relevant products and stores if a message is provided
       let searchContext: any[] = [];
+      let storeContext: any[] = [];
       if (body.message && !body.init) {
         searchContext = await searchProducts(body.message);
+        storeContext = await searchStores(body.message);
       }
 
-      // 4. Format System Prompt
-      const systemPrompt = formatSystemPrompt(userContext, discoveryContext, searchContext);
+      // 5. Format System Prompt
+      const systemPrompt = formatSystemPrompt(userContext, discoveryContext, searchContext, platformContext, storeContext);
 
       // 5. Call AI
       const userPrompt = body.message || (body.init ? "Hello! Introduce yourself as my IQON personal shopping assistant and show me some daily picks based on my interests or what's trending." : "");

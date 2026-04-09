@@ -4,6 +4,8 @@ import { Like } from '../models/Like';
 import { Order } from '../models/Order';
 import { Product } from '../models/Product';
 import { Post } from '../models/Post';
+import { Announcement } from '../models/Announcement';
+import { Store } from '../models/Store';
 
 /**
  * Service to fetch and format user context for the AI prompt
@@ -72,7 +74,9 @@ export async function getUserContext(userId: string) {
   return {
     user: {
       display_name: user.display_name || user.username,
-      username: user.username
+      username: user.username,
+      role: user.role,
+      verified: user.is_verified
     },
     wishlist: wishlistContext,
     likes: likesContext.filter(Boolean),
@@ -83,6 +87,34 @@ export async function getUserContext(userId: string) {
       itemCount: order.items.length,
       items: order.items.map(i => i.product_title).join(', ')
     }))
+  };
+}
+
+/**
+ * Fetch platform-wide context like announcements and policies
+ */
+export async function getPlatformContext() {
+  const activeAnnouncements = await Announcement.find({ 
+    is_active: true,
+    $or: [
+      { expires_at: { $exists: false } },
+      { expires_at: { $gt: new Date() } }
+    ]
+  })
+    .sort({ created_at: -1 })
+    .limit(3)
+    .lean();
+
+  const faqs = [
+    { q: "How do I track my order?", a: "Go to your Orders page and click on 'Track Order' for any active shipment." },
+    { q: "What is the return policy?", a: "Most items can be returned within 14 days of delivery. Check individual store policies for specifics." },
+    { q: "How do I become a vendor?", a: "Click 'Sell on IQON' in your profile menu to upgrade your account and start selling." },
+    { q: "Are my payments secure?", a: "Yes, we use industry-standard encryption and escrow-based buyer protection." }
+  ];
+
+  return {
+    announcements: activeAnnouncements.map(a => ({ title: a.title, content: a.content })),
+    faqs
   };
 }
 
@@ -102,7 +134,9 @@ export async function getDiscoveryContext() {
     price: p.price,
     category: p.category,
     rating: p.rating_avg,
-    sales: p.sales_count
+    sales: p.sales_count,
+    store: p.store_name,
+    vendor: p.vendor_username
   }));
 }
 
@@ -133,7 +167,40 @@ export async function searchProducts(query: string) {
     price: p.price,
     category: p.category,
     description: p.description?.substring(0, 100),
-    image: p.images?.[0]
+    image: p.images?.[0],
+    store: p.store_name,
+    vendor: p.vendor_username
+  }));
+}
+
+/**
+ * Query the database for relevant stores based on a search query
+ */
+export async function searchStores(query: string) {
+  if (!query) return [];
+
+  const searchRegex = new RegExp(query, 'i');
+  const stores = await Store.find({
+    status: 'active',
+    $or: [
+      { name: searchRegex },
+      { description: searchRegex },
+      { category: searchRegex }
+    ]
+  })
+    .sort({ rating_avg: -1, follower_count: -1 })
+    .limit(5)
+    .lean();
+
+  return stores.map(s => ({
+    id: s._id.toString(),
+    name: s.name,
+    category: s.category,
+    description: s.description?.substring(0, 100),
+    rating: s.rating_avg,
+    followers: s.follower_count,
+    verified: s.is_verified,
+    owner: s.owner_username
   }));
 }
 
@@ -143,7 +210,9 @@ export async function searchProducts(query: string) {
 export function formatSystemPrompt(
   userContext: any, 
   discoveryContext: any[], 
-  searchContext: any[] = []
+  searchContext: any[] = [],
+  platformContext: any = null,
+  storeContext: any[] = []
 ) {
   const userName = userContext?.user?.display_name || 'there';
   
@@ -155,6 +224,8 @@ Your goal is to provide a premium, helpful, and personalized shopping experience
   if (userContext) {
     prompt += `USER CONTEXT:
 - Name: ${userName}
+- Role: ${userContext.user?.role || 'user'}
+- Status: ${userContext.user?.verified ? 'Verified' : 'Unverified'}
 `;
     if (userContext.wishlist?.length > 0) {
       prompt += `- Recently Wishlisted: ${userContext.wishlist.map((i: any) => `${i.title} ($${i.price})`).join(', ')}\n`;
@@ -168,10 +239,30 @@ Your goal is to provide a premium, helpful, and personalized shopping experience
     prompt += '\n';
   }
 
+  if (platformContext) {
+    if (platformContext.announcements?.length > 0) {
+      prompt += `PLATFORM ANNOUNCEMENTS:
+${platformContext.announcements.map((a: any) => `- ${a.title}: ${a.content}`).join('\n')}
+
+`;
+    }
+    prompt += `PLATFORM HELP & POLICIES (FAQs):
+${platformContext.faqs.map((f: any) => `Q: ${f.q}\nA: ${f.a}`).join('\n')}
+
+`;
+  }
+
+  if (storeContext?.length > 0) {
+    prompt += `RELEVANT STORES:
+${storeContext.map((s: any) => `- ${s.name} (${s.category}) - ${s.rating} stars, ${s.followers} followers. [Owner: ${s.owner}]`).join('\n')}
+
+`;
+  }
+
   const productsToShow = searchContext.length > 0 ? searchContext : discoveryContext;
   if (productsToShow?.length > 0) {
     prompt += `AVAILABLE PRODUCTS TO RECOMMEND:
-${productsToShow.map((p: any) => `- [ID: ${p.id}] ${p.title} - $${p.price} (${p.category})`).join('\n')}
+${productsToShow.map((p: any) => `- [ID: ${p.id}] ${p.title} - $${p.price} (${p.category}) [Sold by: ${p.store || p.vendor}]`).join('\n')}
 
 `;
   }
@@ -183,8 +274,12 @@ ${productsToShow.map((p: any) => `- [ID: ${p.id}] ${p.title} - $${p.price} (${p.
    - For orders: [ACTION: ORDER_CARD, id: ORDER_ID]
 4. DISCOVERY: If it's a new conversation or the user asks "what's new", show the available products.
 5. STYLE: Be concise, friendly, and helpful. Use emojis occasionally to maintain a social commerce vibe. 🛍️✨
+6. SUPPORT: Use the PLATFORM HELP section to answer common questions about tracking, returns, and payments.
+7. STORES: If a user asks for a specific store or category, use the RELEVANT STORES context to help them find vendors.
 
 Remember: Never share sensitive user data like full addresses or payment details.`;
 
   return prompt;
 }
+
+
