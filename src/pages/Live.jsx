@@ -75,11 +75,18 @@ function ProductPill({ product, currentUser }) {
 // ========== VIEWER ==========
 function LiveStreamViewer({ session: initialSession, onBack }) {
   const [chatInput, setChatInput] = useState("");
+  const [guestName, setGuestName] = useState("");
+  const [guestNameInput, setGuestNameInput] = useState("");
+  const [showGuestNamePrompt, setShowGuestNamePrompt] = useState(false);
   const [liked, setLiked] = useState(false);
   const [floatingHearts, setFloatingHearts] = useState([]);
   const chatEndRef = useRef(null);
+  const joinSentRef = useRef(false);
   const queryClient = useQueryClient();
   const { user: currentUser } = useAuth();
+
+  const activeName = currentUser?.display_name || currentUser?.username || guestName || "Guest";
+  const activeUsername = currentUser?.username || (guestName ? guestName.toLowerCase().replace(/\s+/g, "_") : "guest");
 
   // Real-time session data
   const { data: session = initialSession } = useQuery({
@@ -95,6 +102,20 @@ function LiveStreamViewer({ session: initialSession, onBack }) {
 
   const [viewerCount, setViewerCount] = useState(session.viewer_count || 0);
   const [likeCount, setLikeCount] = useState(session.likes || 0);
+
+  // Send join notification once on mount
+  useEffect(() => {
+    if (!initialSession?.id || joinSentRef.current) return;
+    joinSentRef.current = true;
+    const name = currentUser?.display_name || currentUser?.username || "A viewer";
+    liveChatMessagesAPI.send({
+      session_id: initialSession.id,
+      user_username: currentUser?.username || "guest",
+      user_name: name,
+      content: `${name} joined the stream 👋`,
+      message_type: "join",
+    }).catch(() => {});
+  }, [initialSession?.id, currentUser]);
 
   // Sync state with polled data and handle end of session
   useEffect(() => {
@@ -174,10 +195,10 @@ function LiveStreamViewer({ session: initialSession, onBack }) {
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [liveChatMsgs]);
 
   const sendChatMutation = useMutation({
-    mutationFn: () => liveChatMessagesAPI.send({
+    mutationFn: (nameOverride) => liveChatMessagesAPI.send({
       session_id: session?.id,
-      user_username: currentUser?.username || "guest",
-      user_name: currentUser?.display_name || currentUser?.username || "Guest",
+      user_username: activeUsername,
+      user_name: nameOverride || activeName,
       content: chatInput,
       message_type: "chat",
     }),
@@ -200,8 +221,40 @@ function LiveStreamViewer({ session: initialSession, onBack }) {
 
   const sendMessage = () => {
     if (!chatInput.trim()) return;
-    if (session?.id) {
-      sendChatMutation.mutate();
+    if (!session?.id) return;
+    // Guest without a name: show name prompt first
+    if (!currentUser && !guestName) {
+      setShowGuestNamePrompt(true);
+      return;
+    }
+    sendChatMutation.mutate();
+  };
+
+  const confirmGuestName = () => {
+    const name = guestNameInput.trim() || "Guest";
+    setGuestName(name);
+    setGuestNameInput("");
+    setShowGuestNamePrompt(false);
+    // Send the queued message after setting name
+    if (chatInput.trim() && session?.id) {
+      liveChatMessagesAPI.send({
+        session_id: session.id,
+        user_username: name.toLowerCase().replace(/\s+/g, "_"),
+        user_name: name,
+        content: chatInput,
+        message_type: "chat",
+      }).then(() => {
+        setChatInput("");
+        queryClient.invalidateQueries({ queryKey: ["liveChat", session?.id] });
+      }).catch(() => {});
+      // Also send join message with the real name
+      liveChatMessagesAPI.send({
+        session_id: session.id,
+        user_username: name.toLowerCase().replace(/\s+/g, "_"),
+        user_name: name,
+        content: `${name} joined the stream 👋`,
+        message_type: "join",
+      }).catch(() => {});
     }
   };
 
@@ -257,20 +310,27 @@ function LiveStreamViewer({ session: initialSession, onBack }) {
             {currentUser?.username !== session.host_username && (
               <button 
                 onClick={() => {
-                  if (!currentUser) return toast.error("Sign in to follow");
-                  if (followStatus) unfollowMutation.mutate();
+                  if (!currentUser) {
+                    toast.info("Sign in to follow this vendor", {
+                      action: { label: "Sign In", onClick: () => window.location.href = "/login" }
+                    });
+                    return;
+                  }
+                  if (isFollowing) unfollowMutation.mutate();
                   else followMutation.mutate();
                 }}
                 disabled={followMutation.isPending || unfollowMutation.isPending}
                 className={`ml-auto px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
-                  isFollowing 
-                    ? "bg-white/20 text-white hover:bg-white/30 backdrop-blur-sm" 
-                    : isFollowedBy ? "bg-indigo-100 text-indigo-700 hover:bg-indigo-200" : "bg-indigo-600 text-white hover:bg-indigo-500 shadow-lg shadow-indigo-600/20"
+                  !currentUser
+                    ? "bg-white/10 text-white/70 hover:bg-white/20 backdrop-blur-sm border border-white/20"
+                    : isFollowing 
+                      ? "bg-white/20 text-white hover:bg-white/30 backdrop-blur-sm" 
+                      : isFollowedBy ? "bg-indigo-100 text-indigo-700 hover:bg-indigo-200" : "bg-indigo-600 text-white hover:bg-indigo-500 shadow-lg shadow-indigo-600/20"
                 }`}
               >
                 {followMutation.isPending || unfollowMutation.isPending 
                   ? "..." 
-                  : isFollowing ? "Following" : isFollowedBy ? "Follow Back" : "Follow"}
+                  : !currentUser ? "Follow" : isFollowing ? "Following" : isFollowedBy ? "Follow Back" : "Follow"}
               </button>
             )}
           </div>
@@ -318,20 +378,73 @@ function LiveStreamViewer({ session: initialSession, onBack }) {
           <span className="text-white text-sm font-semibold">Live Chat</span>
           <span className="ml-auto text-slate-400 text-xs">{allChat.length} messages</span>
         </div>
+
+        {/* Guest name display badge */}
+        {!currentUser && guestName && (
+          <div className="px-3 pt-2 shrink-0">
+            <div className="flex items-center gap-2 bg-white/5 rounded-xl px-3 py-1.5">
+              <span className="w-2 h-2 rounded-full bg-indigo-400" />
+              <span className="text-white/70 text-xs">Chatting as <span className="text-indigo-300 font-semibold">{guestName}</span></span>
+              <button onClick={() => { setGuestName(""); }} className="ml-auto text-[10px] text-slate-500 hover:text-slate-300 transition-colors">Change</button>
+            </div>
+          </div>
+        )}
+
         <div className="flex-1 overflow-y-auto p-3 space-y-2 min-h-0">
           {allChat.map((msg, i) => <ChatMsg key={msg.id || i} msg={msg} isNew={msg.isNew} />)}
           <div ref={chatEndRef} />
         </div>
+
+        {/* Guest name prompt (inline) */}
+        <AnimatePresence>
+          {showGuestNamePrompt && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+              className="px-3 pb-2 shrink-0"
+            >
+              <div className="bg-indigo-900/80 border border-indigo-500/40 rounded-2xl p-3">
+                <p className="text-white text-xs font-semibold mb-2">What should we call you?</p>
+                <div className="flex gap-2">
+                  <Input
+                    autoFocus
+                    value={guestNameInput}
+                    onChange={e => setGuestNameInput(e.target.value)}
+                    onKeyDown={e => e.key === "Enter" && confirmGuestName()}
+                    placeholder="Enter a display name..."
+                    maxLength={30}
+                    className="bg-white/10 border-white/20 text-white placeholder:text-slate-400 text-xs rounded-xl h-8 flex-1"
+                  />
+                  <button
+                    onClick={confirmGuestName}
+                    className="px-3 h-8 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold shrink-0 transition-colors"
+                  >
+                    Join
+                  </button>
+                </div>
+                <p className="text-slate-400 text-[10px] mt-1.5">
+                  Or <a href="/login" className="text-indigo-400 hover:text-indigo-300 underline">sign in</a> for your full profile
+                </p>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         <div className="p-3 border-t border-white/10 flex gap-2 shrink-0">
           <Input
             value={chatInput}
             onChange={e => setChatInput(e.target.value)}
             onKeyDown={e => e.key === "Enter" && sendMessage()}
-            placeholder="Say something..."
+            placeholder={!currentUser && !guestName ? "Join chat — tap Send to set your name" : "Say something..."}
             className="bg-white/10 border-white/20 text-white placeholder:text-slate-400 text-sm rounded-xl h-9"
           />
-          <button onClick={sendMessage} className="w-9 h-9 rounded-xl bg-indigo-600 hover:bg-indigo-500 flex items-center justify-center shrink-0 transition-colors">
-            <Send className="w-4 h-4 text-white" />
+          <button
+            onClick={sendMessage}
+            disabled={sendChatMutation.isPending}
+            className="w-9 h-9 rounded-xl bg-indigo-600 hover:bg-indigo-500 flex items-center justify-center shrink-0 transition-colors disabled:opacity-50"
+          >
+            {sendChatMutation.isPending ? <Loader2 className="w-4 h-4 text-white animate-spin" /> : <Send className="w-4 h-4 text-white" />}
           </button>
         </div>
       </div>
@@ -755,7 +868,7 @@ export default function Live() {
     const res = await authAPI.me();
     return res.data || res;
   }, retry: false });
-  const { data: store } = useQuery({
+  const { data: store, isLoading: storeLoading } = useQuery({
     queryKey: ["myStore", currentUser?.email],
     queryFn: async () => { 
       try {
@@ -826,6 +939,7 @@ export default function Live() {
         </div>
         {currentUser && (
           <Button 
+            disabled={storeLoading}
             onClick={() => {
               if (!store) {
                 setAccessDialog("no-store");
@@ -837,9 +951,10 @@ export default function Live() {
               }
               setShowBroadcast(true);
             }} 
-            className="bg-red-500 hover:bg-red-600 rounded-xl gap-1.5 text-sm"
+            className="bg-red-500 hover:bg-red-600 rounded-xl gap-1.5 text-sm disabled:opacity-60"
           >
-            <Video className="w-4 h-4" /> Go Live
+            {storeLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Video className="w-4 h-4" />}
+            Go Live
           </Button>
         )}
       </div>
