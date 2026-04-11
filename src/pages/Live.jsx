@@ -1,17 +1,20 @@
 import React, { useState, useEffect, useRef } from "react";
+import { Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Radio, Heart, Send, Eye,
-  Video, Loader2, X, Pin, PinOff, ShoppingBag
+  Video, Loader2, X, Pin, PinOff, ShoppingBag, Zap, Store, Crown
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { liveSessionsAPI, liveChatMessagesAPI, productsAPI, cartAPI, authAPI, storesAPI, followsAPI, vendorSubscriptionsAPI } from "@/api/apiClient";
 import { useAuth } from "@/lib/AuthContext";
+import { createPageUrl } from "@/lib/utils";
 
 const MessageCircleIcon = (props) => (
   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
@@ -746,6 +749,7 @@ export default function Live() {
   const [activeSession, setActiveSession] = useState(null);
   const [showBroadcast, setShowBroadcast] = useState(false);
   const [filter, setFilter] = useState("all");
+  const [accessDialog, setAccessDialog] = useState(null);
 
   const { data: currentUser } = useQuery({ queryKey: ["currentUser"], queryFn: async () => {
     const res = await authAPI.me();
@@ -823,13 +827,12 @@ export default function Live() {
         {currentUser && (
           <Button 
             onClick={() => {
-              if (currentPlan === 'free') {
-                toast.error("Go Live is a premium feature! Upgrade to Pro or Elite to start streaming.", {
-                  action: {
-                    label: "Upgrade Plan",
-                    onClick: () => window.location.href = "/mystore?tab=subscription"
-                  }
-                });
+              if (!store) {
+                setAccessDialog("no-store");
+                return;
+              }
+              if (currentPlan !== 'elite') {
+                setAccessDialog("upgrade-elite");
                 return;
               }
               setShowBroadcast(true);
@@ -934,6 +937,90 @@ export default function Live() {
           </div>
         </section>
       )}
+
+      {/* No Store Dialog — shown to regular users without a store */}
+      <Dialog open={accessDialog === "no-store"} onOpenChange={open => !open && setAccessDialog(null)}>
+        <DialogContent className="max-w-sm rounded-3xl p-0 overflow-hidden">
+          <div className="bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 p-6 text-white text-center">
+            <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-3">
+              <Store className="w-7 h-7 text-white" />
+            </div>
+            <DialogTitle className="text-white text-lg font-black mb-1">Start Your Live Journey</DialogTitle>
+            <DialogDescription className="text-white/80 text-sm">
+              Live shopping is available for store owners with a premium plan.
+            </DialogDescription>
+          </div>
+          <div className="p-6 space-y-4">
+            <div className="space-y-3">
+              <div className="flex items-start gap-3 p-3 bg-indigo-50 rounded-2xl">
+                <div className="w-8 h-8 bg-indigo-100 rounded-xl flex items-center justify-center shrink-0">
+                  <Store className="w-4 h-4 text-indigo-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-slate-900">Step 1 — Create your store</p>
+                  <p className="text-xs text-slate-500 mt-0.5">Set up your store profile to start selling and going live.</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 p-3 bg-purple-50 rounded-2xl">
+                <div className="w-8 h-8 bg-purple-100 rounded-xl flex items-center justify-center shrink-0">
+                  <Crown className="w-4 h-4 text-purple-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-slate-900">Step 2 — Upgrade to Elite</p>
+                  <p className="text-xs text-slate-500 mt-0.5">Unlock live shopping, affiliate programs, and more.</p>
+                </div>
+              </div>
+            </div>
+            <Link to={createPageUrl("MyStore")} onClick={() => setAccessDialog(null)}>
+              <Button className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 rounded-2xl h-11 font-bold text-sm">
+                Create My Store
+              </Button>
+            </Link>
+            <button onClick={() => setAccessDialog(null)} className="w-full text-xs text-slate-400 hover:text-slate-600 transition-colors">
+              Maybe later
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Upgrade to Elite Dialog — shown to vendors on non-elite plans */}
+      <Dialog open={accessDialog === "upgrade-elite"} onOpenChange={open => !open && setAccessDialog(null)}>
+        <DialogContent className="max-w-sm rounded-3xl p-0 overflow-hidden">
+          <div className="bg-gradient-to-br from-amber-400 via-orange-500 to-red-500 p-6 text-white text-center">
+            <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-3">
+              <Crown className="w-7 h-7 text-white" />
+            </div>
+            <DialogTitle className="text-white text-lg font-black mb-1">Elite Plan Required</DialogTitle>
+            <DialogDescription className="text-white/80 text-sm">
+              Live shopping is an exclusive feature for Elite vendors.
+            </DialogDescription>
+          </div>
+          <div className="p-6 space-y-4">
+            <div className="space-y-2.5">
+              {[
+                { icon: Radio, label: "Unlimited live streams", color: "text-red-500 bg-red-50" },
+                { icon: Zap, label: "Affiliate marketplace access", color: "text-amber-500 bg-amber-50" },
+                { icon: ShoppingBag, label: "In-stream product pinning", color: "text-indigo-500 bg-indigo-50" },
+              ].map(({ icon: Icon, label, color }) => (
+                <div key={label} className="flex items-center gap-3 p-3 bg-slate-50 rounded-2xl">
+                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${color}`}>
+                    <Icon className="w-4 h-4" />
+                  </div>
+                  <p className="text-sm font-semibold text-slate-800">{label}</p>
+                </div>
+              ))}
+            </div>
+            <Link to={createPageUrl("MyStore") + "?tab=subscription"} onClick={() => setAccessDialog(null)}>
+              <Button className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 rounded-2xl h-11 font-bold text-sm">
+                <Crown className="w-4 h-4 mr-2" /> Upgrade to Elite
+              </Button>
+            </Link>
+            <button onClick={() => setAccessDialog(null)} className="w-full text-xs text-slate-400 hover:text-slate-600 transition-colors">
+              Maybe later
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
