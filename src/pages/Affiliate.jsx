@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import {
@@ -13,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { affiliateLinksAPI, productsAPI, vendorSubscriptionsAPI } from "@/api/apiClient";
 import { useAuth } from "@/lib/AuthContext";
+import { createPageUrl } from "@/lib/utils";
 
 const MOCK_LEADERBOARD = [
   { rank: 1, name: "Sarah J.", avatar: "https://i.pravatar.cc/150?u=sarah", earnings: 1250.50, sales: 84 },
