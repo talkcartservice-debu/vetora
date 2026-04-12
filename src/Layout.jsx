@@ -31,7 +31,6 @@ import {
   ChevronRight,
   X
 } from "lucide-react";
-import LanguagePicker from "@/components/layout/LanguagePicker";
 import NotificationBell from "@/components/layout/NotificationBell";
 import GlobalSearch from "@/components/layout/GlobalSearch";
 import CreateActionModal from "@/components/layout/CreateActionModal";
@@ -97,22 +96,7 @@ export default function Layout({ children, currentPageName }) {
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
 
-  const BottomSection = () => (
-    <div className="p-4 border-t border-slate-100 dark:border-slate-800 space-y-2">
-      {currentUser?.role !== 'super_admin' && (
-        <button
-          onClick={() => setShowCreate(true)}
-          className="flex items-center justify-center gap-2 w-full py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-medium text-sm hover:shadow-lg hover:shadow-indigo-200 dark:hover:shadow-indigo-900/40 transition-all"
-        >
-          <Plus className="w-4 h-4" />
-          Create
-        </button>
-      )}
-      <div className="flex flex-col items-center gap-2">
-        <LanguagePicker />
-      </div>
-    </div>
-  );
+
 
   const { data: unreadNotifs = [] } = useQuery({
     queryKey: ["unreadNotifs", currentUser?.email],
@@ -253,9 +237,6 @@ export default function Layout({ children, currentPageName }) {
               {(sidebarOpen || isMobile) && <span>Create</span>}
             </button>
           )}
-          <div className={`flex items-center gap-2 ${!sidebarOpen && !isMobile ? "flex-col" : "justify-center"}`}>
-            <LanguagePicker compact={!sidebarOpen && !isMobile} />
-          </div>
         </div>
       </aside>
 
