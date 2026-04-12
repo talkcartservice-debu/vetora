@@ -273,7 +273,6 @@ export default function Layout({ children, currentPageName }) {
           </Link>
         </div>
         <div className="flex items-center gap-1">
-          <LanguagePicker />
           {currentUser?.role !== 'super_admin' && (
             <Link to={createPageUrl("chat")} className="relative p-2">
               <MessageCircle className="w-5 h-5 text-slate-600 dark:text-slate-400" />
