@@ -6,7 +6,7 @@ import EmptyState from "@/components/shared/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Package, ShoppingBag, Clock, Truck, CheckCircle2, XCircle, AlertCircle, Star, Search, RefreshCw, MessageCircle, Info, ChevronRight, Navigation
+  Package, ShoppingBag, Clock, Truck, CheckCircle2, XCircle, AlertCircle, Star, Search, RefreshCw, MessageCircle, Info, ChevronRight
 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";

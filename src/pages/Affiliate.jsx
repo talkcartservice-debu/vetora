@@ -6,7 +6,7 @@ import {
   Link2, Copy, DollarSign, MousePointerClick, ShoppingCart,
   Plus, Loader2, Check, Search, Package, Zap, Trophy,
   ChevronDown, ChevronUp, Instagram, Mail, MessageSquare,
-  Twitter, LayoutTemplate, Ruler, Medal, Crown, Star
+  Twitter, Ruler, Medal, Crown, Star
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
