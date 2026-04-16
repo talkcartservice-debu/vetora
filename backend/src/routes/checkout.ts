@@ -14,7 +14,7 @@ const checkoutSchema = z.object({
   items: z.array(z.object({
     product_id: z.string(),
     quantity: z.number().min(1),
-  })).optional(), // Optional if we want to use current cart
+  })).optional(),
   shipping_address: z.object({
     street: z.string(),
     city: z.string(),
@@ -22,12 +22,13 @@ const checkoutSchema = z.object({
     zip: z.string(),
     country: z.string().default('NG'),
     phone: z.string(),
-  }),
+  }).optional(),
   payment_method: z.enum(['card', 'mobile_money', 'bank_transfer', 'paystack']).default('paystack'),
   order_note: z.string().optional(),
   coupon_code: z.string().optional(),
   affiliate_ref: z.string().optional(),
   affiliate_time: z.string().optional(),
+  store_fulfillment_types: z.record(z.string(), z.enum(['shipping', 'delivery', 'pickup'])).optional(),
 });
 
 export async function checkoutRoutes(fastify: FastifyInstance) {
@@ -44,8 +45,6 @@ export async function checkoutRoutes(fastify: FastifyInstance) {
       // 1. Get items (either from body or current cart)
       let cartItemsToProcess = [];
       if (body.items && body.items.length > 0) {
-        // If items passed in body, we might still want to check for their affiliate_username in CartItem
-        // or just use what's provided. For simplicity, let's look them up.
         for (const item of body.items) {
            const ci = await CartItem.findOne({ user_username: user.username, product_id: item.product_id });
            cartItemsToProcess.push({
@@ -93,7 +92,7 @@ export async function checkoutRoutes(fastify: FastifyInstance) {
 
       // 4. Validate Coupon if provided
       let coupon = null;
-      let totalSubtotalAcrossStores = 0; // Needed for proportional global flat coupons
+      let totalSubtotalAcrossStores = 0;
 
       if (body.coupon_code) {
         coupon = await Coupon.findOne({ 
@@ -125,7 +124,7 @@ export async function checkoutRoutes(fastify: FastifyInstance) {
       if (coupon && !coupon.store_id && coupon.discount_type === 'flat') {
         for (const storeId in storeGroups) {
           const groupItems = storeGroups[storeId];
-          totalSubtotalAcrossStores += groupItems.reduce((sum, gi) => sum + (gi.product.price * gi.quantity), 0);
+          totalSubtotalAcrossStores += groupItems.reduce((sum: number, gi: any) => sum + (gi.product.price * gi.quantity), 0);
         }
       }
 
@@ -136,30 +135,26 @@ export async function checkoutRoutes(fastify: FastifyInstance) {
       for (const storeId in storeGroups) {
         const groupItems = storeGroups[storeId];
         const store = storeMap.get(storeId)!;
+        const storeSettings = store.delivery_settings || {};
         
         let subtotal = 0;
         let affiliate_commission = 0;
         let affiliate_username: string | undefined = undefined;
 
-        const orderItems = groupItems.map(gi => {
+        const orderItems = groupItems.map((gi: any) => {
           const price = gi.product.price;
           subtotal += price * gi.quantity;
           
-          // Affiliate logic per product
           let itemAffiliate = gi.affiliate_username;
           let itemCommissionPct = 0;
 
-          // If global ref matches this product
           if (globalAffLink && globalAffLink.product_id.toString() === gi.product_id.toString()) {
             itemAffiliate = globalAffLink.influencer_username;
             itemCommissionPct = globalAffLink.commission_pct;
           }
 
           if (itemAffiliate) {
-             affiliate_username = itemAffiliate; // Last one wins or we'd need multiple orders per store? Usually one influencer per product.
-             // If we didn't get Pct from global link, we might need a default or look it up?
-             // For now, let's assume if it came from cart, it might have a default or we'd need another lookup.
-             // But the original orders.ts ONLY gave commission if it matched a ref_code.
+             affiliate_username = itemAffiliate;
              if (itemCommissionPct > 0) {
                 affiliate_commission += (price * gi.quantity * itemCommissionPct) / 100;
              }
@@ -174,48 +169,101 @@ export async function checkoutRoutes(fastify: FastifyInstance) {
           };
         });
 
-        // Calculate Shipping for this store
-        let shipping_fee = 0;
-        const countryCode = body.shipping_address.country.toUpperCase();
-        const zones = await ShippingZone.find({
-          store_id: storeId,
-          is_active: true,
-          $or: [
-            { countries: { $in: [countryCode, 'WORLD'] } },
-            { countries: { $size: 0 } }
-          ]
-        }).sort({ countries: -1 });
+        // 5a. Determine fulfillment type for this store
+        const requestedFulfillment = body.store_fulfillment_types?.[storeId];
+        let fulfillmentType: 'shipping' | 'delivery' | 'pickup';
 
-        if (zones.length > 0) {
-          const zone = zones[0];
-          shipping_fee = zone.flat_rate;
-          if (zone.free_above > 0 && subtotal >= zone.free_above) {
-            shipping_fee = 0;
+        if (requestedFulfillment) {
+          fulfillmentType = requestedFulfillment;
+        } else {
+          // Default: first enabled method
+          if (storeSettings.shipping_enabled !== false) {
+            fulfillmentType = 'shipping';
+          } else if (storeSettings.delivery_enabled) {
+            fulfillmentType = 'delivery';
+          } else if (storeSettings.pickup_enabled) {
+            fulfillmentType = 'pickup';
+          } else {
+            fulfillmentType = 'shipping';
           }
         }
 
-        // Apply coupon discount if applicable to this store/products
+        // 5b. Validate the selected method is enabled for this store
+        if (fulfillmentType === 'pickup' && !storeSettings.pickup_enabled) {
+          throw new Error(`Store pickup is not available for: ${store.name}`);
+        }
+        if (fulfillmentType === 'delivery' && !storeSettings.delivery_enabled) {
+          throw new Error(`Local delivery is not available for: ${store.name}`);
+        }
+        if (fulfillmentType === 'shipping' && storeSettings.shipping_enabled === false) {
+          throw new Error(`Shipping is not available for: ${store.name}`);
+        }
+
+        // 5c. Require address for shipping/delivery
+        if (['shipping', 'delivery'].includes(fulfillmentType) && !body.shipping_address) {
+          throw new Error(`A delivery address is required for order from: ${store.name}`);
+        }
+
+        // 5d. Calculate fulfillment fee
+        let shipping_fee = 0;
+        let order_delivery_fee = 0;
+        let pickup_instructions_val: string | undefined;
+        let estimated_delivery: string | undefined;
+
+        if (fulfillmentType === 'pickup') {
+          shipping_fee = 0;
+          pickup_instructions_val = storeSettings.pickup_instructions;
+          estimated_delivery = storeSettings.delivery_time_est;
+        } else if (fulfillmentType === 'delivery') {
+          // Validate minimum order for delivery
+          if (storeSettings.min_order_for_delivery && subtotal < storeSettings.min_order_for_delivery) {
+            throw new Error(`Minimum order for local delivery from ${store.name} is $${storeSettings.min_order_for_delivery}`);
+          }
+          let fee = storeSettings.delivery_fee || 0;
+          if (storeSettings.free_delivery_above && subtotal >= storeSettings.free_delivery_above) {
+            fee = 0;
+          }
+          order_delivery_fee = fee;
+          shipping_fee = fee;
+          estimated_delivery = storeSettings.delivery_time_est;
+        } else {
+          // shipping - use ShippingZone configuration
+          const countryCode = body.shipping_address!.country.toUpperCase();
+          const zones = await ShippingZone.find({
+            store_id: storeId,
+            is_active: true,
+            $or: [
+              { countries: { $in: [countryCode, 'WORLD'] } },
+              { countries: { $size: 0 } }
+            ]
+          }).sort({ countries: -1 });
+
+          if (zones.length > 0) {
+            const zone = zones[0];
+            shipping_fee = zone.flat_rate;
+            if (zone.free_above > 0 && subtotal >= zone.free_above) {
+              shipping_fee = 0;
+            }
+          }
+        }
+
+        // 5e. Apply coupon discount
         let discount = 0;
         if (coupon) {
            if (coupon.store_id && coupon.store_id.toString() === storeId) {
-             // Store specific coupon
              if (coupon.discount_type === 'percentage') {
                discount = (subtotal * coupon.discount_value) / 100;
              } else {
                discount = Math.min(coupon.discount_value, subtotal);
              }
            } else if (!coupon.store_id) {
-             // Global coupon
              if (coupon.discount_type === 'percentage') {
                discount = (subtotal * coupon.discount_value) / 100;
              } else {
-               // Proportional flat discount
                if (totalSubtotalAcrossStores > 0) {
                  const proportionalDiscount = (subtotal / totalSubtotalAcrossStores) * coupon.discount_value;
-                 // Round to 2 decimal places to avoid floating point issues
                  discount = Math.min(Math.round(proportionalDiscount * 100) / 100, subtotal);
                } else {
-                 // Should not happen if subtotal is positive
                  discount = Math.min(coupon.discount_value, subtotal);
                }
              }
@@ -225,21 +273,34 @@ export async function checkoutRoutes(fastify: FastifyInstance) {
         const orderTotal = subtotal + shipping_fee - discount;
         totalAmount += orderTotal;
 
+        // Build shipping address string
+        let shippingAddressStr: string | undefined;
+        if (body.shipping_address && fulfillmentType !== 'pickup') {
+          const addr = body.shipping_address;
+          shippingAddressStr = `${addr.street}, ${addr.city}, ${addr.state} ${addr.zip}, ${addr.country}`;
+        } else if (fulfillmentType === 'pickup') {
+          shippingAddressStr = store.address ? `Store Pickup — ${store.address}` : 'Store Pickup';
+        }
+
         const order = new Order({
           buyer_username: user.username,
           buyer_name: user.display_name || user.full_name || user.username,
           buyer_email: user.email,
-          buyer_phone: body.shipping_address.phone,
-          vendor_username: store.owner_username, // Changed from store.vendor_username to owner_username based on Store model
+          buyer_phone: body.shipping_address?.phone || user.phone_number || '',
+          vendor_username: store.owner_username,
           store_id: store._id,
           store_name: store.name,
           items: orderItems,
           subtotal,
           shipping_fee,
+          delivery_fee: order_delivery_fee,
+          delivery_method: fulfillmentType,
           discount_amount: discount,
           total: orderTotal,
-          shipping_address: `${body.shipping_address.street}, ${body.shipping_address.city}, ${body.shipping_address.state} ${body.shipping_address.zip}, ${body.shipping_address.country}`,
-          shipping_country: body.shipping_address.country,
+          shipping_address: shippingAddressStr,
+          shipping_country: body.shipping_address?.country,
+          estimated_delivery,
+          pickup_instructions: pickup_instructions_val,
           order_note: body.order_note,
           status: 'pending',
           payment_status: 'pending',
@@ -275,7 +336,6 @@ export async function checkoutRoutes(fastify: FastifyInstance) {
         await order.save({ session });
         orders.push(order);
 
-        // Update Affiliate Link stats if used
         if (globalAffLink) {
            await AffiliateLink.findByIdAndUpdate(globalAffLink._id, {
              $inc: { 
@@ -301,7 +361,7 @@ export async function checkoutRoutes(fastify: FastifyInstance) {
           orderIds,
           'NGN',
           body.payment_method === 'mobile_money' ? ['mobile_money'] : ['card'],
-          body.shipping_address.phone
+          body.shipping_address?.phone || user.phone_number || ''
         );
       }
 

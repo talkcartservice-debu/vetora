@@ -6,14 +6,27 @@ import {
   ArrowLeft, CreditCard, Shield, Truck, 
   MapPin, CheckCircle2, Loader2,
   Info, Wallet, Plus, Trash2, Tag, 
-  ChevronRight, ShoppingBag, Store as StoreIcon
+  ChevronRight, ShoppingBag, Store as StoreIcon,
+  Package, Navigation
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { cartAPI, checkoutAPI, authAPI, couponsAPI, shippingZonesAPI } from "@/api/apiClient";
+import { cartAPI, checkoutAPI, authAPI, couponsAPI, shippingZonesAPI, storesAPI } from "@/api/apiClient";
 import { useAuth } from "@/lib/AuthContext";
+
+const FULFILLMENT_ICONS = {
+  shipping: Truck,
+  delivery: Navigation,
+  pickup: Package,
+};
+
+const FULFILLMENT_LABELS = {
+  shipping: "Shipping",
+  delivery: "Local Delivery",
+  pickup: "Store Pickup",
+};
 
 const CheckoutStep = ({ number, title, active, completed, children, onEdit, summary }) => (
   <div 
@@ -47,6 +60,73 @@ const CheckoutStep = ({ number, title, active, completed, children, onEdit, summ
   </div>
 );
 
+const FulfillmentMethodCard = ({ method, selected, onSelect, store, subtotal }) => {
+  const Icon = FULFILLMENT_ICONS[method];
+  const ds = store?.delivery_settings || {};
+
+  const getFee = () => {
+    if (method === "pickup") return "Free";
+    if (method === "delivery") {
+      const fee = ds.delivery_fee || 0;
+      if (ds.free_delivery_above && subtotal >= ds.free_delivery_above) return "Free";
+      return fee === 0 ? "Free" : `$${fee.toFixed(2)}`;
+    }
+    return null;
+  };
+
+  const getSubLabel = () => {
+    if (method === "pickup") return ds.pickup_instructions ? "See instructions below" : "Collect from store";
+    if (method === "delivery") {
+      const parts = [];
+      if (ds.delivery_time_est) parts.push(ds.delivery_time_est);
+      if (ds.delivery_radius_km) parts.push(`within ${ds.delivery_radius_km} km`);
+      if (ds.min_order_for_delivery && subtotal < ds.min_order_for_delivery) {
+        return `Min. order $${ds.min_order_for_delivery} required`;
+      }
+      return parts.length ? parts.join(" · ") : "To your location";
+    }
+    return "Tracked carrier delivery";
+  };
+
+  const isDisabled = () => {
+    if (method === "delivery" && ds.min_order_for_delivery && subtotal < ds.min_order_for_delivery) return true;
+    return false;
+  };
+
+  const fee = getFee();
+  const disabled = isDisabled();
+
+  return (
+    <button
+      onClick={() => !disabled && onSelect(method)}
+      disabled={disabled}
+      className={`w-full flex items-center justify-between p-4 rounded-2xl border-2 transition-all text-left ${
+        disabled
+          ? "border-slate-100 bg-slate-50/50 opacity-60 cursor-not-allowed"
+          : selected
+          ? "border-indigo-600 bg-indigo-50/40 ring-4 ring-indigo-50"
+          : "border-slate-100 hover:border-slate-200"
+      }`}
+    >
+      <div className="flex items-center gap-4">
+        <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${selected ? "bg-indigo-600 text-white" : "bg-slate-50 text-slate-500"}`}>
+          <Icon className="w-5 h-5" />
+        </div>
+        <div>
+          <p className={`font-black text-sm ${selected ? "text-indigo-900" : "text-slate-900"}`}>{FULFILLMENT_LABELS[method]}</p>
+          <p className="text-xs text-slate-500 font-medium mt-0.5">{getSubLabel()}</p>
+        </div>
+      </div>
+      <div className="flex items-center gap-3 flex-shrink-0">
+        {fee !== null && (
+          <span className={`text-sm font-black ${fee === "Free" ? "text-green-600" : "text-slate-900"}`}>{fee}</span>
+        )}
+        {selected && <div className="w-5 h-5 rounded-full bg-indigo-600 flex items-center justify-center"><CheckCircle2 className="w-3.5 h-3.5 text-white" /></div>}
+      </div>
+    </button>
+  );
+};
+
 export default function Checkout() {
   const [step, setStep] = useState(1);
   const [selectedAddressId, setSelectedAddressId] = useState(null);
@@ -56,7 +136,8 @@ export default function Checkout() {
   const [orderNote, setOrderNote] = useState("");
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState(null);
-  
+  const [storeDeliverySelections, setStoreDeliverySelections] = useState({});
+
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user: currentUser, isLoadingAuth, isAuthenticated } = useAuth();
@@ -67,7 +148,6 @@ export default function Checkout() {
     }
   }, [isLoadingAuth, isAuthenticated, navigate]);
 
-  // Queries
   const { data: cartResponse = {}, isLoading: cartLoading } = useQuery({
     queryKey: ["cart", currentUser?.username],
     queryFn: () => cartAPI.get(),
@@ -91,7 +171,23 @@ export default function Checkout() {
 
   const shippingZones = Array.isArray(shippingZonesResponse?.zones) ? shippingZonesResponse.zones : [];
 
-  // Group items by store
+  const { data: storesDataList = [] } = useQuery({
+    queryKey: ["checkout-stores", storeIds],
+    queryFn: async () => {
+      const results = await Promise.all(storeIds.map(id => storesAPI.get(id).catch(() => null)));
+      return results.filter(Boolean);
+    },
+    enabled: storeIds.length > 0,
+  });
+
+  const storesMap = useMemo(() => {
+    const map = {};
+    storesDataList.forEach(store => {
+      if (store?._id) map[store._id] = store;
+    });
+    return map;
+  }, [storesDataList]);
+
   const storeGroups = useMemo(() => {
     const groups = {};
     cartItems.forEach(item => {
@@ -102,7 +198,25 @@ export default function Checkout() {
     return Object.values(groups);
   }, [cartItems]);
 
-  // Selected address
+  // Init delivery selections from store settings when stores are loaded
+  useEffect(() => {
+    if (Object.keys(storesMap).length > 0) {
+      setStoreDeliverySelections(prev => {
+        const next = { ...prev };
+        Object.entries(storesMap).forEach(([storeId, store]) => {
+          if (!next[storeId]) {
+            const ds = store.delivery_settings || {};
+            if (ds.shipping_enabled !== false) next[storeId] = "shipping";
+            else if (ds.delivery_enabled) next[storeId] = "delivery";
+            else if (ds.pickup_enabled) next[storeId] = "pickup";
+            else next[storeId] = "shipping";
+          }
+        });
+        return next;
+      });
+    }
+  }, [storesMap]);
+
   const selectedAddress = useMemo(() => 
     addressResponse.addresses.find(a => a._id === selectedAddressId) || addressResponse.addresses.find(a => a.is_default) || addressResponse.addresses[0]
   , [addressResponse.addresses, selectedAddressId]);
@@ -113,7 +227,14 @@ export default function Checkout() {
     }
   }, [selectedAddress, selectedAddressId]);
 
-  // Calculations
+  // Whether any store requires an address (shipping or delivery selected)
+  const needsAddress = useMemo(() => {
+    return storeGroups.some(group => {
+      const method = storeDeliverySelections[group.store_id] || "shipping";
+      return method === "shipping" || method === "delivery";
+    });
+  }, [storeGroups, storeDeliverySelections]);
+
   const calculations = useMemo(() => {
     let subtotal = 0;
     let shipping = 0;
@@ -123,14 +244,25 @@ export default function Checkout() {
         const groupSubtotal = group.items.reduce((sum, item) => sum + (item.product_price || 0) * (item.quantity || 1), 0);
         subtotal += groupSubtotal;
 
-        // Find applicable shipping zone for this store and country
-        const storeZones = shippingZones.filter(z => z.store_id === group.store_id && z.is_active);
-        const zone = storeZones.find(z => Array.isArray(z.countries) && z.countries.includes(country)) || 
-                     storeZones.find(z => Array.isArray(z.countries) && z.countries.includes("WORLD"));
-        
-        let groupShipping = zone ? (zone.flat_rate || 0) : 0;
-        if (zone && zone.free_above > 0 && groupSubtotal >= zone.free_above) {
-            groupShipping = 0;
+        const store = storesMap[group.store_id];
+        const ds = store?.delivery_settings || {};
+        const method = storeDeliverySelections[group.store_id] || "shipping";
+
+        let groupShipping = 0;
+
+        if (method === "pickup") {
+          groupShipping = 0;
+        } else if (method === "delivery") {
+          let fee = ds.delivery_fee || 0;
+          if (ds.free_delivery_above && groupSubtotal >= ds.free_delivery_above) fee = 0;
+          groupShipping = fee;
+        } else {
+          // shipping - use shipping zones
+          const storeZones = shippingZones.filter(z => z.store_id === group.store_id && z.is_active);
+          const zone = storeZones.find(z => Array.isArray(z.countries) && z.countries.includes(country)) || 
+                       storeZones.find(z => Array.isArray(z.countries) && z.countries.includes("WORLD"));
+          groupShipping = zone ? (zone.flat_rate || 0) : 0;
+          if (zone && zone.free_above > 0 && groupSubtotal >= zone.free_above) groupShipping = 0;
         }
 
         shipping += groupShipping;
@@ -138,7 +270,8 @@ export default function Checkout() {
         return {
             ...group,
             subtotal: groupSubtotal,
-            shipping: groupShipping
+            shipping: groupShipping,
+            delivery_method: method,
         };
     });
 
@@ -158,9 +291,8 @@ export default function Checkout() {
         total: subtotal + shipping - discount,
         storeBreakdown
     };
-  }, [storeGroups, shippingZones, selectedAddress, appliedCoupon]);
+  }, [storeGroups, shippingZones, selectedAddress, appliedCoupon, storeDeliverySelections, storesMap]);
 
-  // Mutations
   const addAddressMutation = useMutation({
     mutationFn: (data) => authAPI.addAddress(data),
     onSuccess: () => {
@@ -183,23 +315,27 @@ export default function Checkout() {
 
   const checkoutMutation = useMutation({
     mutationFn: async () => {
-        if (!selectedAddress) throw new Error("Please select a shipping address");
+        if (needsAddress && !selectedAddress) throw new Error("Please select a delivery address");
         
         const payload = {
-            shipping_address: {
+            payment_method: paymentMethod,
+            order_note: orderNote,
+            coupon_code: appliedCoupon?.code,
+            affiliate_ref: localStorage.getItem('iqon_ref') || undefined,
+            affiliate_time: localStorage.getItem('iqon_ref_time') || undefined,
+            store_fulfillment_types: storeDeliverySelections,
+        };
+
+        if (needsAddress && selectedAddress) {
+            payload.shipping_address = {
                 street: selectedAddress.street,
                 city: selectedAddress.city,
                 state: selectedAddress.state,
                 zip: selectedAddress.zip,
                 country: selectedAddress.country,
                 phone: selectedAddress.phone || currentUser.phone_number || "",
-            },
-            payment_method: paymentMethod,
-            order_note: orderNote,
-            coupon_code: appliedCoupon?.code,
-            affiliate_ref: localStorage.getItem('iqon_ref') || undefined,
-            affiliate_time: localStorage.getItem('iqon_ref_time') || undefined,
-        };
+            };
+        }
 
         return await checkoutAPI.process(payload);
     },
@@ -227,6 +363,43 @@ export default function Checkout() {
     }
   }, [cartItems, cartLoading, navigate, checkoutMutation.isSuccess]);
 
+  const handleContinueFromStep1 = () => {
+    if (needsAddress && !selectedAddressId) {
+      return toast.error("Please select or add a delivery address");
+    }
+    setStep(2);
+  };
+
+  const getStep1Summary = () => {
+    const methodSummary = storeGroups.map(g => {
+      const method = storeDeliverySelections[g.store_id] || "shipping";
+      const Icon = FULFILLMENT_ICONS[method];
+      return (
+        <div key={g.store_id} className="flex items-center gap-2 text-xs text-slate-600 font-medium">
+          <Icon className="w-3.5 h-3.5 text-indigo-500 flex-shrink-0" />
+          <span className="font-bold text-slate-800">{g.store_name}</span>
+          <span className="text-slate-400">·</span>
+          <span className="capitalize">{FULFILLMENT_LABELS[method]}</span>
+        </div>
+      );
+    });
+
+    return (
+      <div className="bg-slate-50/80 p-5 rounded-2xl border border-slate-100 space-y-3">
+        {methodSummary}
+        {needsAddress && selectedAddress && (
+          <div className="flex items-start gap-3 pt-3 border-t border-slate-100 mt-3">
+            <MapPin className="w-4 h-4 text-indigo-500 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-xs font-bold text-slate-700">{selectedAddress.street}</p>
+              <p className="text-xs text-slate-500">{selectedAddress.city}, {selectedAddress.state} {selectedAddress.zip}</p>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   if (cartLoading || addressLoading) return <div className="flex h-screen items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-indigo-600" /></div>;
 
   return (
@@ -239,112 +412,166 @@ export default function Checkout() {
         <div className="lg:col-span-8">
           <h1 className="text-4xl font-black text-slate-900 mb-10 tracking-tight">Checkout</h1>
           
-          {/* STEP 1: SHIPPING ADDRESS */}
+          {/* STEP 1: DELIVERY OPTIONS */}
           <CheckoutStep 
             number="1" 
-            title="Shipping Address" 
+            title="Delivery Options" 
             active={step === 1} 
             completed={step > 1} 
             onEdit={() => setStep(1)}
-            summary={selectedAddress && (
-              <div className="flex items-center justify-between bg-slate-50/80 p-5 rounded-2xl border border-slate-100 backdrop-blur-sm">
-                  <div className="flex items-start gap-4">
-                      <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white flex-shrink-0 shadow-lg shadow-indigo-100">
-                          <MapPin className="w-5 h-5" />
-                      </div>
-                      <div>
-                          <p className="font-black text-slate-900 leading-tight uppercase text-[10px] tracking-widest text-indigo-600 mb-1">{selectedAddress.label || "Shipping to"}</p>
-                          <p className="font-bold text-slate-700 text-sm leading-snug">{selectedAddress.street}</p>
-                          <p className="text-xs text-slate-500 font-medium tracking-tight mt-0.5">{selectedAddress.city}, {selectedAddress.state} {selectedAddress.zip}</p>
-                      </div>
-                  </div>
-              </div>
-            )}
+            summary={getStep1Summary()}
           >
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {addressResponse.addresses.map((addr) => (
-                  <button
-                    key={addr._id}
-                    onClick={() => setSelectedAddressId(addr._id)}
-                    className={`flex flex-col text-left p-4 rounded-2xl border-2 transition-all relative ${
-                      selectedAddressId === addr._id ? "border-indigo-600 bg-indigo-50/30 ring-4 ring-indigo-50" : "border-slate-100 hover:border-slate-200"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 bg-indigo-100/50 px-2 py-0.5 rounded-full">{addr.label || "Address"}</span>
-                        {selectedAddressId === addr._id && <CheckCircle2 className="w-4 h-4 text-indigo-600" />}
-                    </div>
-                    <p className="font-bold text-slate-900 text-sm line-clamp-1">{addr.street}</p>
-                    <p className="text-xs text-slate-500 font-medium">{addr.city}, {addr.state} {addr.zip}</p>
-                    <p className="text-xs text-slate-400 mt-1">{addr.country}</p>
-                  </button>
-                ))}
-                
-                <button 
-                    onClick={() => setIsAddingAddress(true)}
-                    className="flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-dashed border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/30 transition-all group"
-                >
-                    <div className="w-10 h-10 rounded-full bg-slate-50 group-hover:bg-indigo-100 flex items-center justify-center mb-2 transition-colors">
-                        <Plus className="w-5 h-5 text-slate-400 group-hover:text-indigo-600" />
-                    </div>
-                    <span className="text-sm font-bold text-slate-500 group-hover:text-indigo-600">Add New Address</span>
-                </button>
-              </div>
+            <div className="space-y-6">
+              {/* Per-store delivery method selector */}
+              {storeGroups.map((group, idx) => {
+                const store = storesMap[group.store_id];
+                const ds = store?.delivery_settings || {};
+                const groupSubtotal = group.items.reduce((sum, item) => sum + (item.product_price || 0) * (item.quantity || 1), 0);
+                const enabledMethods = [];
+                if (ds.shipping_enabled !== false) enabledMethods.push("shipping");
+                if (ds.delivery_enabled) enabledMethods.push("delivery");
+                if (ds.pickup_enabled) enabledMethods.push("pickup");
+                if (enabledMethods.length === 0) enabledMethods.push("shipping");
 
-              {isAddingAddress && (
-                <div className="mt-6 p-6 bg-slate-50 rounded-2xl border border-slate-100 space-y-4 animate-in fade-in slide-in-from-top-4 duration-300">
-                  <div className="flex items-center justify-between mb-2">
-                      <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight">New Address Details</h4>
-                      <button onClick={() => setIsAddingAddress(false)} className="text-xs font-bold text-slate-400 hover:text-slate-600">Cancel</button>
+                const selectedMethod = storeDeliverySelections[group.store_id] || enabledMethods[0];
+                const storeHasPickup = selectedMethod === "pickup";
+
+                return (
+                  <div key={group.store_id} className={`space-y-3 ${idx !== 0 ? "pt-6 border-t border-slate-100" : ""}`}>
+                    <div className="flex items-center gap-2 mb-3">
+                      <StoreIcon className="w-4 h-4 text-indigo-500" />
+                      <h3 className="font-black text-sm text-slate-900 tracking-tight">{group.store_name}</h3>
+                      {enabledMethods.length === 1 && (
+                        <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full capitalize">{FULFILLMENT_LABELS[enabledMethods[0]]} only</span>
+                      )}
+                    </div>
+
+                    {enabledMethods.map(method => (
+                      <FulfillmentMethodCard
+                        key={method}
+                        method={method}
+                        selected={selectedMethod === method}
+                        onSelect={(m) => setStoreDeliverySelections(prev => ({ ...prev, [group.store_id]: m }))}
+                        store={store}
+                        subtotal={groupSubtotal}
+                      />
+                    ))}
+
+                    {storeHasPickup && ds.pickup_instructions && (
+                      <div className="flex items-start gap-3 bg-amber-50 border border-amber-100 rounded-2xl p-4 animate-in fade-in duration-300">
+                        <Info className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-xs font-black text-amber-900 uppercase tracking-wider mb-1">Pickup Instructions</p>
+                          <p className="text-xs text-amber-700 leading-relaxed">{ds.pickup_instructions}</p>
+                          {store?.address && (
+                            <p className="text-xs text-amber-600 font-bold mt-2 flex items-center gap-1">
+                              <MapPin className="w-3 h-3" /> {store.address}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {selectedMethod === "delivery" && ds.delivery_radius_km && (
+                      <div className="flex items-center gap-2 bg-blue-50 border border-blue-100 rounded-xl px-4 py-2.5 text-xs text-blue-700 font-medium">
+                        <Navigation className="w-3.5 h-3.5 flex-shrink-0" />
+                        Delivery available within {ds.delivery_radius_km} km from store
+                      </div>
+                    )}
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="col-span-2">
-                        <label htmlFor="addr-label" className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">Label (e.g. Home, Office)</label>
-                        <Input id="addr-label" value={newAddress.label} onChange={e => setNewAddress({...newAddress, label: e.target.value})} placeholder="Home" className="rounded-xl h-11 bg-white border-slate-200" />
-                    </div>
-                    <div className="col-span-2">
-                      <label htmlFor="addr-street" className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">Street Address</label>
-                      <Input id="addr-street" value={newAddress.street} onChange={e => setNewAddress({...newAddress, street: e.target.value})} placeholder="123 Main St" className="rounded-xl h-11 bg-white border-slate-200" />
-                    </div>
-                    <div>
-                      <label htmlFor="addr-city" className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">City</label>
-                      <Input id="addr-city" value={newAddress.city} onChange={e => setNewAddress({...newAddress, city: e.target.value})} placeholder="Lagos" className="rounded-xl h-11 bg-white border-slate-200" />
-                    </div>
-                    <div>
-                      <label htmlFor="addr-state" className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">State</label>
-                      <Input id="addr-state" value={newAddress.state} onChange={e => setNewAddress({...newAddress, state: e.target.value})} placeholder="Lagos" className="rounded-xl h-11 bg-white border-slate-200" />
-                    </div>
-                    <div>
-                      <label htmlFor="addr-zip" className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">ZIP Code</label>
-                      <Input id="addr-zip" value={newAddress.zip} onChange={e => setNewAddress({...newAddress, zip: e.target.value})} placeholder="100001" className="rounded-xl h-11 bg-white border-slate-200" />
-                    </div>
-                    <div>
-                      <label htmlFor="addr-phone" className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">Phone</label>
-                      <Input id="addr-phone" value={newAddress.phone} onChange={e => setNewAddress({...newAddress, phone: e.target.value})} placeholder="+234..." className="rounded-xl h-11 bg-white border-slate-200" />
-                    </div>
+                );
+              })}
+
+              {/* Delivery Address (only when needed) */}
+              {needsAddress && (
+                <div className="pt-6 border-t-2 border-slate-100 space-y-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <MapPin className="w-4 h-4 text-indigo-500" />
+                    <h3 className="font-black text-sm text-slate-900">Delivery Address</h3>
                   </div>
-                  <Button 
-                    onClick={() => {
-                        if (!newAddress.street || !newAddress.city || !newAddress.state || !newAddress.zip || !newAddress.phone) {
-                            return toast.error("Please fill in all address fields");
-                        }
-                        addAddressMutation.mutate(newAddress);
-                    }} 
-                    disabled={addAddressMutation.isPending}
-                    className="w-full bg-slate-900 hover:bg-black text-white rounded-xl h-12 font-bold"
-                  >
-                    {addAddressMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save Address"}
-                  </Button>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {addressResponse.addresses.map((addr) => (
+                      <button
+                        key={addr._id}
+                        onClick={() => setSelectedAddressId(addr._id)}
+                        className={`flex flex-col text-left p-4 rounded-2xl border-2 transition-all relative ${
+                          selectedAddressId === addr._id ? "border-indigo-600 bg-indigo-50/30 ring-4 ring-indigo-50" : "border-slate-100 hover:border-slate-200"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 bg-indigo-100/50 px-2 py-0.5 rounded-full">{addr.label || "Address"}</span>
+                            {selectedAddressId === addr._id && <CheckCircle2 className="w-4 h-4 text-indigo-600" />}
+                        </div>
+                        <p className="font-bold text-slate-900 text-sm line-clamp-1">{addr.street}</p>
+                        <p className="text-xs text-slate-500 font-medium">{addr.city}, {addr.state} {addr.zip}</p>
+                        <p className="text-xs text-slate-400 mt-1">{addr.country}</p>
+                      </button>
+                    ))}
+                    
+                    <button 
+                        onClick={() => setIsAddingAddress(true)}
+                        className="flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-dashed border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/30 transition-all group"
+                    >
+                        <div className="w-10 h-10 rounded-full bg-slate-50 group-hover:bg-indigo-100 flex items-center justify-center mb-2 transition-colors">
+                            <Plus className="w-5 h-5 text-slate-400 group-hover:text-indigo-600" />
+                        </div>
+                        <span className="text-sm font-bold text-slate-500 group-hover:text-indigo-600">Add New Address</span>
+                    </button>
+                  </div>
+
+                  {isAddingAddress && (
+                    <div className="mt-6 p-6 bg-slate-50 rounded-2xl border border-slate-100 space-y-4 animate-in fade-in slide-in-from-top-4 duration-300">
+                      <div className="flex items-center justify-between mb-2">
+                          <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight">New Address Details</h4>
+                          <button onClick={() => setIsAddingAddress(false)} className="text-xs font-bold text-slate-400 hover:text-slate-600">Cancel</button>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="col-span-2">
+                            <label htmlFor="addr-label" className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">Label (e.g. Home, Office)</label>
+                            <Input id="addr-label" value={newAddress.label} onChange={e => setNewAddress({...newAddress, label: e.target.value})} placeholder="Home" className="rounded-xl h-11 bg-white border-slate-200" />
+                        </div>
+                        <div className="col-span-2">
+                          <label htmlFor="addr-street" className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">Street Address</label>
+                          <Input id="addr-street" value={newAddress.street} onChange={e => setNewAddress({...newAddress, street: e.target.value})} placeholder="123 Main St" className="rounded-xl h-11 bg-white border-slate-200" />
+                        </div>
+                        <div>
+                          <label htmlFor="addr-city" className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">City</label>
+                          <Input id="addr-city" value={newAddress.city} onChange={e => setNewAddress({...newAddress, city: e.target.value})} placeholder="Lagos" className="rounded-xl h-11 bg-white border-slate-200" />
+                        </div>
+                        <div>
+                          <label htmlFor="addr-state" className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">State</label>
+                          <Input id="addr-state" value={newAddress.state} onChange={e => setNewAddress({...newAddress, state: e.target.value})} placeholder="Lagos" className="rounded-xl h-11 bg-white border-slate-200" />
+                        </div>
+                        <div>
+                          <label htmlFor="addr-zip" className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">ZIP Code</label>
+                          <Input id="addr-zip" value={newAddress.zip} onChange={e => setNewAddress({...newAddress, zip: e.target.value})} placeholder="100001" className="rounded-xl h-11 bg-white border-slate-200" />
+                        </div>
+                        <div>
+                          <label htmlFor="addr-phone" className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">Phone</label>
+                          <Input id="addr-phone" value={newAddress.phone} onChange={e => setNewAddress({...newAddress, phone: e.target.value})} placeholder="+234..." className="rounded-xl h-11 bg-white border-slate-200" />
+                        </div>
+                      </div>
+                      <Button 
+                        onClick={() => {
+                            if (!newAddress.street || !newAddress.city || !newAddress.state || !newAddress.zip || !newAddress.phone) {
+                                return toast.error("Please fill in all address fields");
+                            }
+                            addAddressMutation.mutate(newAddress);
+                        }} 
+                        disabled={addAddressMutation.isPending}
+                        className="w-full bg-slate-900 hover:bg-black text-white rounded-xl h-12 font-bold"
+                      >
+                        {addAddressMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save Address"}
+                      </Button>
+                    </div>
+                  )}
                 </div>
               )}
 
               <Button 
-                onClick={() => {
-                  if (!selectedAddressId) return toast.error("Please select or add an address");
-                  setStep(2);
-                }} 
-                className="w-full mt-6 bg-indigo-600 hover:bg-indigo-700 h-14 rounded-2xl font-black text-lg shadow-lg shadow-indigo-200 transition-all active:scale-[0.98]"
+                onClick={handleContinueFromStep1}
+                className="w-full mt-4 bg-indigo-600 hover:bg-indigo-700 h-14 rounded-2xl font-black text-lg shadow-lg shadow-indigo-200 transition-all active:scale-[0.98]"
               >
                 Continue to Payment
               </Button>
@@ -419,8 +646,13 @@ export default function Checkout() {
           {/* STEP 3: REVIEW ORDER */}
           <CheckoutStep number="3" title="Order Review" active={step === 3} completed={step > 3}>
             <div className="space-y-8">
-              {calculations.storeBreakdown.map((store, idx) => (
-                <div key={store.store_id} className={`space-y-4 ${idx !== 0 && "pt-8 border-t border-slate-100"}`}>
+              {calculations.storeBreakdown.map((store, idx) => {
+                const FulfillIcon = FULFILLMENT_ICONS[store.delivery_method] || Truck;
+                const storeInfo = storesMap[store.store_id];
+                const ds = storeInfo?.delivery_settings || {};
+
+                return (
+                  <div key={store.store_id} className={`space-y-4 ${idx !== 0 && "pt-8 border-t border-slate-100"}`}>
                     <div className="flex items-center gap-2 mb-4">
                         <StoreIcon className="w-4 h-4 text-indigo-600" />
                         <h3 className="font-black text-slate-900 tracking-tight">{store.store_name}</h3>
@@ -442,22 +674,31 @@ export default function Checkout() {
                             </div>
                         ))}
                     </div>
+
                     <div className="flex justify-between items-center py-3 px-4 bg-slate-50 rounded-2xl border border-slate-100/50">
                         <div className="flex items-center gap-2 text-xs text-slate-500 font-bold">
-                            <Truck className="w-3.5 h-3.5" />
-                            Shipping for this store
+                            <FulfillIcon className="w-3.5 h-3.5" />
+                            {FULFILLMENT_LABELS[store.delivery_method] || "Shipping"}
                         </div>
                         <span className="text-xs font-black text-slate-900">{store.shipping === 0 ? "FREE" : `$${store.shipping.toFixed(2)}`}</span>
                     </div>
-                </div>
-              ))}
+
+                    {store.delivery_method === "pickup" && ds.pickup_instructions && (
+                      <div className="flex items-start gap-3 bg-amber-50 border border-amber-100 rounded-2xl p-3">
+                        <Info className="w-3.5 h-3.5 text-amber-600 flex-shrink-0 mt-0.5" />
+                        <p className="text-xs text-amber-700 font-medium">{ds.pickup_instructions}</p>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
 
               <div className="space-y-4 pt-6 border-t-2 border-slate-100">
                   <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">Order Note (Optional)</label>
                   <Textarea 
                     value={orderNote} 
                     onChange={e => setOrderNote(e.target.value)} 
-                    placeholder="Anything we should know about your delivery?" 
+                    placeholder="Anything we should know about your order?" 
                     className="rounded-2xl min-h-[100px] border-slate-200 resize-none focus:ring-indigo-500 focus:border-indigo-500" 
                   />
               </div>
@@ -498,7 +739,7 @@ export default function Checkout() {
                   <span className="text-slate-900">${calculations.subtotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-slate-500 font-bold">
-                  <span>Shipping</span>
+                  <span>Fulfillment</span>
                   <span className="text-slate-900">{calculations.shipping === 0 ? "FREE" : `$${calculations.shipping.toFixed(2)}`}</span>
                 </div>
                 {calculations.discount > 0 && (

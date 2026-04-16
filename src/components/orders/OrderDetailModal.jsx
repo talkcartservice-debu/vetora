@@ -20,7 +20,9 @@ import {
   XCircle,
   AlertCircle,
   ShoppingBag,
-  User
+  User,
+  Navigation,
+  Info
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -190,17 +192,44 @@ export default function OrderDetailModal({
 
             <section>
               <h3 className="text-sm font-semibold text-slate-900 mb-4 flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-indigo-600" />
-                Delivery Address
+                {order.delivery_method === "pickup" ? (
+                  <Package className="w-4 h-4 text-indigo-600" />
+                ) : order.delivery_method === "delivery" ? (
+                  <Navigation className="w-4 h-4 text-indigo-600" />
+                ) : (
+                  <MapPin className="w-4 h-4 text-indigo-600" />
+                )}
+                {order.delivery_method === "pickup" ? "Store Pickup" : order.delivery_method === "delivery" ? "Local Delivery" : "Delivery Address"}
               </h3>
-              <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100 h-full min-h-[100px] flex flex-col">
-                <p className="text-xs text-slate-600 leading-relaxed flex-1">
-                  {order.shipping_address || "No address provided"}
-                </p>
+              <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100 h-full min-h-[100px] flex flex-col gap-3">
+                {order.delivery_method === "pickup" ? (
+                  <>
+                    {order.pickup_instructions && (
+                      <div className="flex items-start gap-2 bg-amber-50 border border-amber-100 rounded-xl p-3">
+                        <Info className="w-3.5 h-3.5 text-amber-600 flex-shrink-0 mt-0.5" />
+                        <p className="text-xs text-amber-700 leading-relaxed">{order.pickup_instructions}</p>
+                      </div>
+                    )}
+                    {order.shipping_address && (
+                      <p className="text-xs text-slate-600 leading-relaxed">{order.shipping_address}</p>
+                    )}
+                    {!order.pickup_instructions && !order.shipping_address && (
+                      <p className="text-xs text-slate-500">Collect from store location</p>
+                    )}
+                  </>
+                ) : (
+                  <p className="text-xs text-slate-600 leading-relaxed flex-1">
+                    {order.shipping_address || "No address provided"}
+                  </p>
+                )}
                 {order.delivery_method && (
-                  <div className="mt-3">
-                    <Badge variant="secondary" className="text-[10px] capitalize font-medium">
-                      {order.delivery_method}
+                  <div className="mt-auto">
+                    <Badge variant="secondary" className={`text-[10px] capitalize font-medium ${
+                      order.delivery_method === "pickup" ? "bg-amber-100 text-amber-700" :
+                      order.delivery_method === "delivery" ? "bg-blue-100 text-blue-700" :
+                      "bg-slate-100 text-slate-600"
+                    }`}>
+                      {order.delivery_method === "pickup" ? "Store Pickup" : order.delivery_method === "delivery" ? "Local Delivery" : "Shipping"}
                     </Badge>
                   </div>
                 )}
