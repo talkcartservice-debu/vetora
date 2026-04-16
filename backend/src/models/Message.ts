@@ -22,6 +22,7 @@ export interface IMessage extends Document {
   reply_to_content?: string;
   reply_to_name?: string;
   is_read: boolean;
+  read_at?: Date;
   is_edited: boolean;
   is_pinned: boolean;
   created_at: Date;
@@ -97,6 +98,9 @@ const MessageSchema = new Schema<IMessage>({
   is_read: {
     type: Boolean,
     default: false,
+  },
+  read_at: {
+    type: Date,
   },
   is_edited: {
     type: Boolean,

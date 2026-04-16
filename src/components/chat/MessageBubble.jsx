@@ -25,11 +25,15 @@ export default function MessageBubble({ msg, isMine, showAvatar, senderName, onR
   const [editText, setEditText] = useState(msg.content || "");
   const queryClient = useQueryClient();
 
+  const invalidateConvo = () => {
+    queryClient.invalidateQueries({ queryKey: ["conversationMessages"] });
+    queryClient.invalidateQueries({ queryKey: ["unreadMessages"] });
+  };
+
   const deleteMutation = useMutation({
     mutationFn: () => messagesAPI.delete(msg._id || msg.id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["allMessages"] });
-      queryClient.invalidateQueries({ queryKey: ["receivedMessages"] });
+      invalidateConvo();
       toast.success("Message deleted");
     },
   });
@@ -37,8 +41,7 @@ export default function MessageBubble({ msg, isMine, showAvatar, senderName, onR
   const editMutation = useMutation({
     mutationFn: (content) => messagesAPI.update(msg._id || msg.id, { content, is_edited: true }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["allMessages"] });
-      queryClient.invalidateQueries({ queryKey: ["receivedMessages"] });
+      invalidateConvo();
       setEditing(false);
       toast.success("Message edited");
     },
@@ -47,8 +50,7 @@ export default function MessageBubble({ msg, isMine, showAvatar, senderName, onR
   const pinMutation = useMutation({
     mutationFn: () => messagesAPI.update(msg._id || msg.id, { is_pinned: !msg.is_pinned }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["allMessages"] });
-      queryClient.invalidateQueries({ queryKey: ["receivedMessages"] });
+      invalidateConvo();
       toast.success(msg.is_pinned ? "Unpinned" : "Message pinned 📌");
     },
   });
@@ -59,7 +61,7 @@ export default function MessageBubble({ msg, isMine, showAvatar, senderName, onR
       message_type: 'text' 
     }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["allMessages"] });
+      invalidateConvo();
       toast.success("Offer accepted!");
     },
   });
@@ -70,7 +72,7 @@ export default function MessageBubble({ msg, isMine, showAvatar, senderName, onR
       message_type: 'text' 
     }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["allMessages"] });
+      invalidateConvo();
       toast.success("Offer declined");
     },
   });
@@ -232,7 +234,7 @@ export default function MessageBubble({ msg, isMine, showAvatar, senderName, onR
             {msg.is_edited && <span className={`text-[9px] italic ${isMine ? "text-indigo-200" : "text-slate-400"}`}> (edited)</span>}
             <div className={`flex items-center gap-1 mt-0.5 text-[10px] ${isMine ? "text-indigo-200 justify-end" : "text-slate-400"}`}>
               {new Date(msg.created_at || msg.created_date).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
-              {isMine && <CheckCheck className="w-3 h-3" />}
+              {isMine && <CheckCheck className={`w-3 h-3 ${msg.is_read ? "text-blue-300" : "text-indigo-300"}`} />}
             </div>
           </div>
         )}

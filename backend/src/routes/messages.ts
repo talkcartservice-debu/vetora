@@ -29,7 +29,7 @@ export async function messageRoutes(fastify: FastifyInstance) {
       const query = request.query as any;
       const { 
         sender_username, receiver_username,
-        sort = '-created_date', limit = 200, skip = 0 
+        sort = '-created_at', limit = 200, skip = 0 
       } = query;
 
       // Build filter

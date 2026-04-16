@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect, useMemo, useCallback } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Search, Send, ArrowLeft, MoreVertical, X, Phone, Video,
-  ShoppingBag, Star, Package, Loader2, Reply, Smile
+  ShoppingBag, Star, Package, Loader2, Reply, Smile, PenSquare, CheckCheck
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import MessageBubble from "@/components/chat/MessageBubble";
 import ChatImageUpload from "@/components/chat/ChatImageUpload";
-import { authAPI, productsAPI, messagesAPI, ordersAPI } from "@/api/apiClient";
+import { authAPI, productsAPI, messagesAPI, ordersAPI, usersAPI } from "@/api/apiClient";
 import { useSocket } from "@/lib/SocketContext";
 
 const EMOJI_QUICK = ["❤️", "😂", "🔥", "👍", "😍", "💯", "🎉", "😎", "✨", "🙌", "🤔", "👏", "🚀", "💡", "✅", "❌"];
@@ -140,6 +140,8 @@ export default function Chat() {
   const [forwardMsg, setForwardMsg] = useState(null);
   const [forwardToUsername, setForwardToUsername] = useState("");
   const [pendingImageUrl, setPendingImageUrl] = useState(null);
+  const [composing, setComposing] = useState(false);
+  const [userSearch, setUserSearch] = useState("");
   const messagesEndRef = useRef(null);
   const queryClient = useQueryClient();
   const { on } = useSocket();
@@ -156,39 +158,33 @@ export default function Chat() {
     refetchInterval: 5000,
   });
 
-  const { data: allMessagesResponse = {} } = useQuery({
-    queryKey: ["allMessages", currentUser?.username],
-    queryFn: async () => {
-      const res = await messagesAPI.query({ sender_username: currentUser?.username, sort: "-created_at", limit: 200 });
-      return res;
-    },
-    enabled: !!currentUser?.username,
-    refetchInterval: 3000,
+  const conversationId = useMemo(() => {
+    if (!selectedConvo || !currentUser?.username) return null;
+    const parts = [currentUser.username, selectedConvo].sort();
+    return `chat_${parts[0]}_${parts[1]}`;
+  }, [selectedConvo, currentUser?.username]);
+
+  const { data: conversationMessages = [] } = useQuery({
+    queryKey: ["conversationMessages", conversationId],
+    queryFn: () => messagesAPI.list(conversationId),
+    enabled: !!conversationId,
+    refetchInterval: 2000,
   });
 
-  const { data: receivedMessagesResponse = {} } = useQuery({
-    queryKey: ["receivedMessages", currentUser?.username],
-    queryFn: async () => {
-      const res = await messagesAPI.query({ receiver_username: currentUser?.username, sort: "-created_at", limit: 200 });
-      return res;
-    },
-    enabled: !!currentUser?.username,
-    refetchInterval: 3000,
+  const { data: userSearchResults = [] } = useQuery({
+    queryKey: ["userSearch", userSearch],
+    queryFn: () => usersAPI.search(userSearch),
+    enabled: composing && userSearch.trim().length >= 2,
+    staleTime: 10000,
   });
-  
-  const allMessages = Array.isArray(allMessagesResponse?.data) ? allMessagesResponse.data : [];
-  const receivedMessages = Array.isArray(receivedMessagesResponse?.data) ? receivedMessagesResponse.data : [];
 
   const markAsRead = useCallback(async () => {
     if (!selectedConvo || !currentUser?.username) return;
-    
-    // Find conversation_id
-    const usernames = [currentUser.username, selectedConvo].sort();
-    const conversationId = `chat_${usernames[0]}_${usernames[1]}`;
-    
+    const parts = [currentUser.username, selectedConvo].sort();
+    const cId = `chat_${parts[0]}_${parts[1]}`;
     try {
-      await messagesAPI.markConversationAsRead(conversationId);
-      queryClient.invalidateQueries({ queryKey: ["receivedMessages"] });
+      await messagesAPI.markConversationAsRead(cId);
+      queryClient.invalidateQueries({ queryKey: ["conversationMessages", cId] });
       queryClient.invalidateQueries({ queryKey: ["unreadMessages"] });
     } catch (error) {
       console.error("Failed to mark conversation as read:", error);
@@ -196,41 +192,27 @@ export default function Chat() {
   }, [selectedConvo, currentUser, queryClient]);
 
   useEffect(() => {
-    // Listen for new messages in real-time
     const unsubscribe = on("new-message", (msg) => {
-      // Refresh the queries to show the new message
-      queryClient.invalidateQueries({ queryKey: ["allMessages"] });
-      queryClient.invalidateQueries({ queryKey: ["receivedMessages"] });
       queryClient.invalidateQueries({ queryKey: ["unreadMessages"] });
-      
-      // If it's for the selected conversation, mark as read
+      queryClient.invalidateQueries({ queryKey: ["conversationMessages", conversationId] });
       if (selectedConvo && (msg.sender_username === selectedConvo || msg.receiver_username === selectedConvo)) {
         markAsRead();
       }
     });
     return unsubscribe;
-  }, [on, queryClient, selectedConvo, markAsRead]);
+  }, [on, queryClient, selectedConvo, markAsRead, conversationId]);
 
   // Real-time subscription replaced by refetchInterval
 
   const selectedMessages = useMemo(() => {
-    if (!selectedConvo) return [];
-    const msgs = [...allMessages, ...receivedMessages]
-      .filter(m =>
-        (m.sender_username === selectedConvo && m.receiver_username === currentUser?.username) ||
-        (m.sender_username === currentUser?.username && m.receiver_username === selectedConvo)
-      )
-      .sort((a, b) => new Date(a.created_at || a.created_date) - new Date(b.created_at || b.created_date));
-    
-    // Deduplicate by ID
     const seen = new Set();
-    return msgs.filter(m => {
+    return (Array.isArray(conversationMessages) ? conversationMessages : []).filter(m => {
       const id = m._id || m.id;
       if (seen.has(id)) return false;
       seen.add(id);
       return true;
     });
-  }, [allMessages, receivedMessages, selectedConvo, currentUser]);
+  }, [conversationMessages]);
 
   const sendMutation = useMutation({
     mutationFn: async (msgData) => {
@@ -254,8 +236,8 @@ export default function Chat() {
     },
     onSuccess: () => {
       setNewMessage("");
-      queryClient.invalidateQueries({ queryKey: ["allMessages"] });
-      queryClient.invalidateQueries({ queryKey: ["receivedMessages"] });
+      queryClient.invalidateQueries({ queryKey: ["conversationMessages", conversationId] });
+      queryClient.invalidateQueries({ queryKey: ["unreadMessages"] });
     },
   });
 
@@ -366,16 +348,76 @@ export default function Chat() {
                 <span className="ml-2 text-xs bg-indigo-600 text-white rounded-full px-1.5 py-0.5">{unreadTotal}</span>
               )}
             </h1>
+            <button
+              onClick={() => { setComposing(v => !v); setUserSearch(""); }}
+              className={`p-1.5 rounded-xl transition-colors ${composing ? "bg-indigo-100 text-indigo-600" : "hover:bg-slate-100 text-slate-400 hover:text-slate-600"}`}
+              title="New conversation"
+            >
+              <PenSquare className="w-4 h-4" />
+            </button>
           </div>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <Input
-              placeholder="Search conversations..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              className="pl-9 h-9 rounded-xl text-sm"
-            />
-          </div>
+
+          <AnimatePresence>
+            {composing && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="overflow-hidden mb-3"
+              >
+                <div className="relative mb-2">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+                  <Input
+                    autoFocus
+                    value={userSearch}
+                    onChange={e => setUserSearch(e.target.value)}
+                    placeholder="Search by name or username..."
+                    className="pl-8 h-9 rounded-xl text-sm bg-indigo-50 border-indigo-100 focus:border-indigo-300"
+                  />
+                </div>
+                {userSearch.trim().length >= 2 && (
+                  <div className="space-y-0.5">
+                    {userSearchResults.length === 0 ? (
+                      <p className="text-xs text-slate-400 text-center py-3">No users found</p>
+                    ) : userSearchResults.map(u => (
+                      <button
+                        key={u.username || u._id}
+                        onClick={() => {
+                          setSelectedConvo(u.username);
+                          setComposing(false);
+                          setUserSearch("");
+                        }}
+                        className="w-full flex items-center gap-2.5 px-2 py-2 hover:bg-indigo-50 rounded-xl transition-colors text-left"
+                      >
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white text-xs font-semibold shrink-0">
+                          {(u.display_name || u.username)?.[0]?.toUpperCase() || "U"}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-slate-800 truncate">{u.display_name || u.username}</p>
+                          <p className="text-xs text-slate-400">@{u.username}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {userSearch.trim().length === 0 && (
+                  <p className="text-xs text-slate-400 text-center py-1">Type at least 2 characters to search</p>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {!composing && (
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <Input
+                placeholder="Search conversations..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="pl-9 h-9 rounded-xl text-sm"
+              />
+            </div>
+          )}
         </div>
         <div className="flex-1 overflow-y-auto">
           {conversations.length === 0 ? (
@@ -599,18 +641,43 @@ export default function Chat() {
                   <motion.div
                     initial={{ scale: 0.95 }}
                     animate={{ scale: 1 }}
-                    className="bg-white rounded-2xl p-5 w-full max-w-xs shadow-2xl"
+                    className="bg-white rounded-2xl p-5 w-full max-w-sm shadow-2xl"
                   >
                     <h3 className="text-sm font-bold text-slate-900 mb-1">Forward Message</h3>
                     <p className="text-xs text-slate-500 mb-3 bg-slate-50 rounded-xl px-3 py-2 line-clamp-2">{forwardMsg.content}</p>
-                    <input
-                      value={forwardToUsername}
-                      onChange={e => setForwardToUsername(e.target.value)}
-                      placeholder="Recipient username..."
-                      className="w-full text-sm border border-slate-200 rounded-xl px-3 py-2.5 outline-none focus:border-indigo-300 mb-3"
-                    />
+                    <p className="text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wide">Send to</p>
+                    {conversations.length > 0 ? (
+                      <div className="space-y-1 max-h-52 overflow-y-auto mb-3">
+                        {conversations.map(c => (
+                          <button
+                            key={c.other_user_username}
+                            onClick={() => setForwardToUsername(c.other_user_username)}
+                            className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl transition-colors text-left border-2 ${
+                              forwardToUsername === c.other_user_username
+                                ? "border-indigo-500 bg-indigo-50"
+                                : "border-transparent hover:bg-slate-50"
+                            }`}
+                          >
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white text-xs font-semibold shrink-0">
+                              {(c.other_user_name)?.[0]?.toUpperCase() || "U"}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-sm font-semibold text-slate-800 truncate">{c.other_user_name}</p>
+                              <p className="text-xs text-slate-400">@{c.other_user_username}</p>
+                            </div>
+                            {forwardToUsername === c.other_user_username && (
+                              <div className="ml-auto w-4 h-4 rounded-full bg-indigo-600 flex items-center justify-center shrink-0">
+                                <CheckCheck className="w-2.5 h-2.5 text-white" />
+                              </div>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-slate-400 text-center py-4 mb-3">No conversations yet</p>
+                    )}
                     <div className="flex gap-2">
-                      <Button onClick={() => setForwardMsg(null)} variant="outline" className="flex-1 rounded-xl" size="sm">Cancel</Button>
+                      <Button onClick={() => { setForwardMsg(null); setForwardToUsername(""); }} variant="outline" className="flex-1 rounded-xl" size="sm">Cancel</Button>
                       <Button onClick={executeForward} disabled={!forwardToUsername.trim()} className="flex-1 bg-indigo-600 hover:bg-indigo-700 rounded-xl" size="sm">Forward</Button>
                     </div>
                   </motion.div>
