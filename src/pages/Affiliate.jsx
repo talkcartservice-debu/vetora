@@ -1,11 +1,12 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Link2, Copy, DollarSign, MousePointerClick, ShoppingCart,
   Plus, Loader2, Check, Search, Package, Zap, Trophy,
-  Download
+  ChevronDown, ChevronUp, Instagram, Mail, MessageSquare,
+  Twitter, LayoutTemplate, Ruler, Medal, Crown, Star
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,74 +17,232 @@ import { affiliateLinksAPI, productsAPI, vendorSubscriptionsAPI } from "@/api/ap
 import { useAuth } from "@/lib/AuthContext";
 import { createPageUrl } from "@/lib/utils";
 
-const MOCK_LEADERBOARD = [
-  { rank: 1, name: "Sarah J.", avatar: "https://i.pravatar.cc/150?u=sarah", earnings: 1250.50, sales: 84 },
-  { rank: 2, name: "Mike R.", avatar: "https://i.pravatar.cc/150?u=mike", earnings: 980.20, sales: 62 },
-  { rank: 3, name: "Alex K.", avatar: "https://i.pravatar.cc/150?u=alex", earnings: 840.00, sales: 55 },
-  { rank: 4, name: "Emma W.", avatar: "https://i.pravatar.cc/150?u=emma", earnings: 720.45, sales: 48 },
-  { rank: 5, name: "David L.", avatar: "https://i.pravatar.cc/150?u=david", earnings: 610.10, sales: 41 },
-];
+const RANK_MEDAL = {
+  1: { bg: "bg-yellow-100", text: "text-yellow-700", border: "border-yellow-200", icon: Crown },
+  2: { bg: "bg-slate-100", text: "text-slate-600", border: "border-slate-200", icon: Medal },
+  3: { bg: "bg-orange-100", text: "text-orange-700", border: "border-orange-200", icon: Medal },
+};
 
 const MARKETING_ASSETS = [
-  { id: 1, title: "Summer Sale Banner", type: "Banner", size: "1200x628", thumbnail: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400" },
-  { id: 2, title: "Social Story Template", type: "Story", size: "1080x1920", thumbnail: "https://images.unsplash.com/photo-1551434678-e076c223a692?w=400" },
-  { id: 3, title: "Platform Overview", type: "PDF", size: "2.4 MB", thumbnail: "https://images.unsplash.com/photo-1512428559087-560fa5ceab42?w=400" },
+  {
+    id: 1,
+    title: "Instagram Caption Pack",
+    type: "Caption",
+    icon: Instagram,
+    gradient: "from-pink-500 to-purple-600",
+    description: "Ready-to-post captions that convert followers into buyers.",
+    content: `✨ Found something AMAZING on IQON and I genuinely can't stop shopping 🛍️
+
+Quality products, great prices — and you can grab yours through my link:
+👉 {YOUR_LINK}
+
+Trust me, you need to check this out 🔥
+
+#IQON #ShopSmart #AffiliateLink #MustHave #ShoppingFinds`,
+  },
+  {
+    id: 2,
+    title: "TikTok / Reel Script",
+    type: "Script",
+    icon: Star,
+    gradient: "from-slate-800 to-slate-900",
+    description: "Short-form video script hooks optimised for engagement.",
+    content: `[Hook — 0–3s]
+"POV: You discovered the best deals on IQON 🤩"
+
+[Hold up product / screen record]
+"I've been obsessed with this store lately and honestly?
+Every order has been 10/10."
+
+[CTA — last 5s]
+"Link in bio → tap to shop. You'll thank me later."
+
+#IQON #TikTokMadeMeBuyIt #ShopWithMe`,
+  },
+  {
+    id: 3,
+    title: "WhatsApp / DM Template",
+    type: "Message",
+    icon: MessageSquare,
+    gradient: "from-green-500 to-emerald-600",
+    description: "Personal outreach message — feels natural, not spammy.",
+    content: `Hey! 👋
+
+I've been shopping on this platform called IQON and honestly the deals are crazy good. Thought you'd love it.
+
+Here's my personal link — it gives me a small commission at no extra cost to you 🙏
+👉 {YOUR_LINK}
+
+Let me know what you end up getting! 😄`,
+  },
+  {
+    id: 4,
+    title: "Email Newsletter Block",
+    type: "Email",
+    icon: Mail,
+    gradient: "from-blue-500 to-indigo-600",
+    description: "Drop this block into your email newsletter for instant affiliate revenue.",
+    content: `Subject: 🛍️ Something I've been loving lately
+
+Hi [First Name],
+
+I don't do this often, but I had to share this with you.
+
+I've been shopping on a platform called IQON — and the product quality + prices are genuinely impressive.
+
+→ Browse what I'm loving here: {YOUR_LINK}
+
+(Using my link supports me at no extra cost to you — thank you! 💛)
+
+Happy shopping,
+[Your Name]`,
+  },
+  {
+    id: 5,
+    title: "Twitter / X Thread Starter",
+    type: "Tweet",
+    icon: Twitter,
+    gradient: "from-sky-400 to-blue-600",
+    description: "Engagement-driving thread opener that seeds your affiliate link naturally.",
+    content: `Thread: 5 things I bought on IQON that genuinely changed my routine 🧵👇
+
+1/ [Product] — Was sceptical. Now I use it every day.
+
+2/ [Product] — The quality for the price is wild.
+
+3/ [Product] — Sold out twice while I debated buying it.
+
+4/ [Product] — Bought as a gift, kept it for myself.
+
+5/ [Product] — This one speaks for itself.
+
+All via my link if you want to grab any: {YOUR_LINK}`,
+  },
+  {
+    id: 6,
+    title: "Platform Size Guide",
+    type: "Guide",
+    icon: Ruler,
+    gradient: "from-amber-400 to-orange-500",
+    description: "Optimal image dimensions for every social platform.",
+    content: `📐 Social Media Image Size Cheat Sheet
+
+• Instagram Post .............. 1080 × 1080 px
+• Instagram Story / Reel ...... 1080 × 1920 px
+• Facebook Feed Post .......... 1200 × 630 px
+• Twitter / X Post ............ 1600 × 900 px
+• TikTok Cover ................ 1080 × 1920 px
+• Pinterest Pin ............... 1000 × 1500 px
+• YouTube Thumbnail ........... 1280 × 720 px
+• LinkedIn Post ............... 1200 × 627 px
+
+💡 Tip: Use Canva (free) to create on-brand visuals in seconds.
+      Replace {YOUR_LINK} with your IQON affiliate link in every post!`,
+  },
 ];
 
-function LeaderboardItem({ rank, name, avatar, earnings, sales }) {
+function LeaderboardItem({ rank, name, avatar_url, total_earned, total_sales, isMe }) {
+  const medal = RANK_MEDAL[rank];
+  const initials = name ? name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase() : "??";
+
   return (
-    <div className="flex items-center gap-4 p-3 bg-white rounded-2xl border border-slate-100 mb-2">
-      <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
-        rank === 1 ? "bg-yellow-100 text-yellow-700" :
-        rank === 2 ? "bg-slate-100 text-slate-700" :
-        rank === 3 ? "bg-orange-100 text-orange-700" : "bg-slate-50 text-slate-400"
+    <motion.div
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: rank * 0.04 }}
+      className={`flex items-center gap-4 p-3.5 rounded-2xl border mb-2 transition-all ${
+        isMe
+          ? "bg-indigo-50 border-indigo-200 shadow-sm shadow-indigo-100"
+          : "bg-white border-slate-100 hover:border-slate-200"
+      }`}
+    >
+      <div className={`w-9 h-9 rounded-full flex items-center justify-center font-black text-sm border-2 shrink-0 ${
+        medal ? `${medal.bg} ${medal.text} ${medal.border}` : "bg-slate-50 text-slate-400 border-slate-200"
       }`}>
-        {rank}
+        {rank <= 3 ? rank : rank}
       </div>
-      <img src={avatar} alt="" className="w-10 h-10 rounded-full border-2 border-slate-50" />
+      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white font-bold text-sm shrink-0 overflow-hidden border-2 border-white shadow-sm">
+        {avatar_url ? (
+          <img src={avatar_url} alt="" className="w-full h-full object-cover" />
+        ) : (
+          initials
+        )}
+      </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-bold text-slate-900 truncate">{name}</p>
-        <p className="text-xs text-slate-400">{sales} sales this month</p>
+        <p className="text-sm font-bold text-slate-900 truncate flex items-center gap-1.5">
+          {name}
+          {isMe && <span className="text-[9px] font-black text-indigo-600 bg-indigo-100 px-1.5 py-0.5 rounded-full">YOU</span>}
+        </p>
+        <p className="text-xs text-slate-400">{total_sales} sale{total_sales !== 1 ? "s" : ""}</p>
       </div>
       <div className="text-right shrink-0">
-        <p className="text-sm font-black text-indigo-600">${earnings.toFixed(2)}</p>
-        <p className="text-[10px] text-slate-400">Total Earned</p>
+        <p className={`text-sm font-black ${isMe ? "text-indigo-700" : "text-indigo-600"}`}>${total_earned.toFixed(2)}</p>
+        <p className="text-[10px] text-slate-400">earned</p>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
 function AssetCard({ asset }) {
-  const handleDownload = (e) => {
-    e.preventDefault();
-    // In a real app, this would be a direct download link
-    window.open(asset.thumbnail, "_blank");
-    toast.info(`Downloading ${asset.title}...`);
+  const [expanded, setExpanded] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const Icon = asset.icon;
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(asset.content);
+    setCopied(true);
+    toast.success(`${asset.title} copied to clipboard!`);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden hover:shadow-md transition-shadow">
-      <div className="aspect-[16/9] bg-slate-50 relative group">
-        <img src={asset.thumbnail} alt="" className="w-full h-full object-cover opacity-80" />
-        <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-          <Button 
-            size="sm" 
-            variant="secondary" 
-            className="rounded-lg h-8 gap-1.5 text-xs"
-            onClick={handleDownload}
-          >
-            <Download className="w-3.5 h-3.5" /> Download
-          </Button>
+    <div className={`bg-white rounded-2xl border border-slate-100 overflow-hidden transition-all duration-300 ${expanded ? "shadow-lg" : "hover:shadow-md"}`}>
+      <div className={`bg-gradient-to-br ${asset.gradient} p-5 flex items-start justify-between`}>
+        <div>
+          <div className={`w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center mb-3`}>
+            <Icon className="w-5 h-5 text-white" />
+          </div>
+          <Badge className="bg-white/20 text-white border-0 text-[10px] font-bold mb-2">{asset.type}</Badge>
+          <p className="text-white font-black text-sm leading-tight">{asset.title}</p>
         </div>
       </div>
-      <div className="p-3">
-        <div className="flex items-center justify-between mb-1">
-          <Badge variant="outline" className="text-[10px] py-0 h-5 border-slate-200 text-slate-500 font-medium">
-            {asset.type}
-          </Badge>
-          <span className="text-[10px] text-slate-400 font-medium">{asset.size}</span>
+      <div className="p-4">
+        <p className="text-xs text-slate-500 mb-3 leading-relaxed">{asset.description}</p>
+
+        <AnimatePresence>
+          {expanded && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="overflow-hidden"
+            >
+              <pre className="text-xs text-slate-700 bg-slate-50 border border-slate-100 rounded-xl p-4 whitespace-pre-wrap font-sans leading-relaxed mb-3 max-h-64 overflow-y-auto">
+                {asset.content}
+              </pre>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setExpanded(v => !v)}
+            className="flex-1 rounded-xl h-8 text-xs gap-1 border-slate-200"
+          >
+            {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+            {expanded ? "Hide" : "Preview"}
+          </Button>
+          <Button
+            size="sm"
+            onClick={handleCopy}
+            className={`flex-1 rounded-xl h-8 text-xs gap-1 transition-all ${copied ? "bg-green-600 hover:bg-green-600" : "bg-indigo-600 hover:bg-indigo-700"}`}
+          >
+            {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+            {copied ? "Copied!" : "Copy"}
+          </Button>
         </div>
-        <p className="text-xs font-bold text-slate-800 truncate">{asset.title}</p>
       </div>
     </div>
   );
@@ -123,6 +282,7 @@ export default function Affiliate() {
   const [creating, setCreating] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [pendingProductId, setPendingProductId] = useState(null);
+  const [leaderboardPeriod, setLeaderboardPeriod] = useState("month");
   const queryClient = useQueryClient();
   const { user: currentUser } = useAuth();
 
@@ -170,6 +330,12 @@ export default function Affiliate() {
   });
 
   const filteredProducts = search ? products : products.slice(0, 12);
+
+  const { data: leaderboardData, isLoading: leaderboardLoading } = useQuery({
+    queryKey: ["affiliateLeaderboard", leaderboardPeriod],
+    queryFn: () => affiliateLinksAPI.getLeaderboard({ period: leaderboardPeriod, limit: 10, username: currentUser?.username }),
+    staleTime: 60000,
+  });
 
   const createLinkMutation = useMutation({
     mutationFn: async (product) => {
@@ -384,45 +550,110 @@ export default function Affiliate() {
 
         <TabsContent value="leaderboard">
           <div className="bg-white rounded-3xl border border-slate-100 p-6">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-12 h-12 rounded-2xl bg-amber-50 flex items-center justify-center">
-                <Trophy className="w-6 h-6 text-amber-500" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h2 className="text-xl font-bold text-slate-900">Affiliate Leaderboard</h2>
-                  <Badge variant="outline" className="bg-amber-50 text-amber-600 border-amber-200 text-[10px] font-bold">Coming Soon</Badge>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-amber-50 flex items-center justify-center shrink-0">
+                  <Trophy className="w-6 h-6 text-amber-500" />
                 </div>
-                <p className="text-sm text-slate-500">Top performers this month based on earnings</p>
+                <div>
+                  <h2 className="text-xl font-bold text-slate-900">Affiliate Leaderboard</h2>
+                  <p className="text-sm text-slate-500">Top performers based on commissions earned</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl self-start sm:self-auto">
+                {[
+                  { value: "week", label: "This Week" },
+                  { value: "month", label: "This Month" },
+                  { value: "all", label: "All Time" },
+                ].map(opt => (
+                  <button
+                    key={opt.value}
+                    onClick={() => setLeaderboardPeriod(opt.value)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                      leaderboardPeriod === opt.value
+                        ? "bg-white text-slate-900 shadow-sm"
+                        : "text-slate-500 hover:text-slate-700"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
               </div>
             </div>
+
             <div className="max-w-2xl">
-              {MOCK_LEADERBOARD.map(item => (
-                <LeaderboardItem key={item.rank} {...item} />
-              ))}
-              <div className="mt-6 p-4 bg-indigo-50 rounded-2xl border border-indigo-100 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold text-xs">YOU</div>
-                  <div>
-                    <p className="text-sm font-bold text-indigo-900">Your Current Rank</p>
-                    <p className="text-xs text-indigo-600">Keep sharing to climb the leaderboard!</p>
-                  </div>
+              {leaderboardLoading ? (
+                <div className="flex justify-center py-16">
+                  <Loader2 className="w-6 h-6 animate-spin text-indigo-400" />
                 </div>
-                <div className="text-right">
-                  <p className="text-lg font-black text-indigo-700">#42</p>
+              ) : !leaderboardData?.leaderboard?.length ? (
+                <div className="text-center py-16 border-2 border-dashed border-slate-200 rounded-2xl">
+                  <Trophy className="w-10 h-10 text-slate-200 mx-auto mb-3" />
+                  <p className="text-sm font-semibold text-slate-600">No data yet for this period</p>
+                  <p className="text-xs text-slate-400 mt-1">Share your affiliate links to appear on the leaderboard!</p>
                 </div>
-              </div>
+              ) : (
+                <>
+                  {leaderboardData.leaderboard.map(item => (
+                    <LeaderboardItem
+                      key={item.username}
+                      {...item}
+                      isMe={item.username === currentUser?.username}
+                    />
+                  ))}
+
+                  {leaderboardData.my_rank !== null && leaderboardData.my_rank !== undefined && (
+                    <div className="mt-4 p-4 bg-indigo-50 rounded-2xl border border-indigo-100 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-black text-xs shrink-0">
+                          YOU
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-indigo-900">Your Current Rank</p>
+                          <p className="text-xs text-indigo-500">Keep sharing to climb higher!</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-2xl font-black text-indigo-700">#{leaderboardData.my_rank}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {leaderboardData.my_rank === null && currentUser && (
+                    <div className="mt-4 p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 font-black text-xs shrink-0">
+                          YOU
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-slate-700">Not ranked yet</p>
+                          <p className="text-xs text-slate-400">Generate affiliate links and make sales to appear here!</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           </div>
         </TabsContent>
 
         <TabsContent value="assets">
           <div className="space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex items-start justify-between gap-4">
               <div>
                 <h2 className="text-xl font-bold text-slate-900">Marketing Assets</h2>
-                <p className="text-sm text-slate-500">Download high-quality assets to help you promote products</p>
+                <p className="text-sm text-slate-500">Ready-to-use templates — preview, copy, and customise with your affiliate link.</p>
               </div>
+              <Badge className="bg-indigo-100 text-indigo-700 border-0 text-xs font-bold shrink-0 mt-1">
+                {MARKETING_ASSETS.length} templates
+              </Badge>
+            </div>
+            <div className="bg-amber-50 border border-amber-100 rounded-2xl px-4 py-3 flex items-center gap-3">
+              <Zap className="w-4 h-4 text-amber-600 shrink-0" />
+              <p className="text-xs text-amber-800 font-medium">
+                Replace <code className="font-mono bg-amber-100 px-1 py-0.5 rounded text-amber-900">{"{YOUR_LINK}"}</code> in each template with your personal affiliate link from the Links tab.
+              </p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {MARKETING_ASSETS.map(asset => (

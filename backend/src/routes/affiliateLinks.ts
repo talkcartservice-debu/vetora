@@ -2,6 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { AffiliateLink, IAffiliateLink } from '../models/AffiliateLink';
 import { Product } from '../models/Product';
 import { User } from '../models/User';
+import { Order } from '../models/Order';
 import { VendorSubscription } from '../models/VendorSubscription';
 import { PLAN_LIMITS } from '../middleware/subscription';
 
@@ -61,6 +62,88 @@ export async function affiliateLinkRoutes(fastify: FastifyInstance) {
       return reply.code(500).send({ 
         error: 'Internal server error', 
         message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      });
+    }
+  });
+
+  // Get affiliate leaderboard — aggregate paid orders this month by affiliate
+  fastify.get('/leaderboard', async (request, reply) => {
+    try {
+      const query = request.query as any;
+      const { period = 'month', limit = 10, username } = query;
+
+      const now = new Date();
+      const matchStage: any = {
+        affiliate_username: { $exists: true, $nin: [null, ''] },
+        payment_status: 'paid',
+      };
+
+      if (period === 'month') {
+        matchStage.created_at = { $gte: new Date(now.getFullYear(), now.getMonth(), 1) };
+      } else if (period === 'week') {
+        matchStage.created_at = { $gte: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000) };
+      }
+
+      const raw = await Order.aggregate([
+        { $match: matchStage },
+        { $group: {
+          _id: '$affiliate_username',
+          total_earned: { $sum: '$affiliate_commission' },
+          total_sales: { $sum: 1 },
+        }},
+        { $sort: { total_earned: -1 } },
+        { $limit: parseInt(limit) + 20 },
+      ]);
+
+      const usernames = raw.map((l: any) => l._id);
+      const users = await User.find({ username: { $in: usernames } }, { username: 1, display_name: 1, avatar_url: 1 });
+      const userMap = new Map(users.map(u => [u.username, u]));
+
+      const enriched = raw.map((item: any, index: number) => {
+        const u = userMap.get(item._id) as any;
+        return {
+          rank: index + 1,
+          username: item._id,
+          name: u?.display_name || item._id,
+          avatar_url: u?.avatar_url || null,
+          total_earned: item.total_earned,
+          total_sales: item.total_sales,
+        };
+      });
+
+      let my_rank: number | null = null;
+      if (username) {
+        const mine = enriched.find((e: any) => e.username === username);
+        if (mine) {
+          my_rank = mine.rank;
+        } else {
+          const myStats = await Order.aggregate([
+            { $match: { ...matchStage, affiliate_username: username } },
+            { $group: { _id: null, total_earned: { $sum: '$affiliate_commission' } } },
+          ]);
+          if (myStats.length > 0) {
+            const myEarned = myStats[0].total_earned;
+            const aheadResult = await Order.aggregate([
+              { $match: matchStage },
+              { $group: { _id: '$affiliate_username', total_earned: { $sum: '$affiliate_commission' } } },
+              { $match: { total_earned: { $gt: myEarned } } },
+              { $count: 'ahead' },
+            ]);
+            my_rank = (aheadResult[0]?.ahead || 0) + 1;
+          }
+        }
+      }
+
+      reply.send({
+        leaderboard: enriched.slice(0, parseInt(limit)),
+        my_rank,
+        period,
+      });
+    } catch (error: any) {
+      fastify.log.error(error);
+      return reply.code(500).send({
+        error: 'Internal server error',
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined,
       });
     }
   });

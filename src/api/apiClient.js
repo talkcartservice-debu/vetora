@@ -759,7 +759,11 @@ export const affiliateLinksAPI = {
   listByProduct: (productId, filters = {}) => {
     const query = apiClient.buildQueryString(filters);
     return apiClient.get(`/affiliate-links/product/${productId}?${query}`);
-  }
+  },
+  getLeaderboard: (params = {}) => {
+    const query = apiClient.buildQueryString(params);
+    return apiClient.get(`/affiliate-links/leaderboard?${query}`);
+  },
 };
 
 export const aiAPI = {
