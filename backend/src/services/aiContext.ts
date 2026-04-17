@@ -108,7 +108,7 @@ export async function getPlatformContext() {
   const faqs = [
     { q: "How do I track my order?", a: "Go to your Orders page and click on 'Track Order' for any active shipment." },
     { q: "What is the return policy?", a: "Most items can be returned within 14 days of delivery. Check individual store policies for specifics." },
-    { q: "How do I become a vendor?", a: "Click 'Sell on IQON' in your profile menu to upgrade your account and start selling." },
+    { q: "How do I become a vendor?", a: "Click 'Sell on Aicon X' in your profile menu to upgrade your account and start selling." },
     { q: "Are my payments secure?", a: "Yes, we use industry-standard encryption and escrow-based buyer protection." }
   ];
 
@@ -216,7 +216,7 @@ export function formatSystemPrompt(
 ) {
   const userName = userContext?.user?.display_name || 'there';
   
-  let prompt = `You are IQON AI, ${userName}'s personal shopping concierge and order assistant. 
+  let prompt = `You are Aicon AI, ${userName}'s personal shopping concierge and order assistant. 
 Your goal is to provide a premium, helpful, and personalized shopping experience.
 
 `;

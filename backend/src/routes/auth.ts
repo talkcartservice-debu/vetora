@@ -119,19 +119,22 @@ export async function authRoutes(fastify: FastifyInstance) {
         }
         user = finalUser;
       } else {
-        // Account already exists
+        // Account already exists — auto-link Google if not already linked
         if (!user.google_id) {
-          // Check if the user has an existing account with the same email but different auth method
-          // For security, we don't automatically merge unless they are already linked.
-          return reply.code(409).send({ 
-            error: 'An account with this email already exists. Please sign in with your password and link your Google account in settings.' 
-          });
-        }
-        
-        // Already linked, update profile if needed
-        if (!user.avatar_url && picture) {
-          user.avatar_url = picture;
+          user.google_id = googleId;
+          if (!user.avatar_url && picture) {
+            user.avatar_url = picture;
+          }
+          if (!user.is_verified) {
+            user.is_verified = true;
+          }
           await user.save();
+        } else {
+          // Already linked, update avatar if missing
+          if (!user.avatar_url && picture) {
+            user.avatar_url = picture;
+            await user.save();
+          }
         }
       }
 
@@ -353,7 +356,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       const { rpID } = getWebAuthnConfig(request);
 
       const options = await generateRegistrationOptions({
-        rpName: 'IQON',
+        rpName: 'Aicon X',
         rpID,
         userID: Buffer.from(user._id.toString()),
         userName: user.username,
@@ -1120,7 +1123,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       user.two_factor_secret = secret;
       await user.save();
 
-      const otpauth = generateURI({ secret, label: user.email, issuer: 'IQON' });
+      const otpauth = generateURI({ secret, label: user.email, issuer: 'Aicon X' });
       const qrCode = await QRCode.toDataURL(otpauth);
 
       return { secret, qrCode };

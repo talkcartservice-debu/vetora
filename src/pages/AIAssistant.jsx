@@ -19,7 +19,7 @@ import SmartActionChips from "@/components/chat/SmartActionChips";
 const WELCOME_MESSAGE = {
   id: "welcome",
   role: "assistant",
-  content: "Hi! I'm **IQON AI** 🛍️\n\nI can help you:\n- **Find products** based on your style & budget\n- **Discover deals** across all categories\n- **Answer questions** about shipping, returns & policies\n- **Give personalized recommendations** based on your preferences\n\nWhat are you looking for today?",
+  content: "Hi! I'm **Aicon AI** 🛍️\n\nI can help you:\n- **Find products** based on your style & budget\n- **Discover deals** across all categories\n- **Answer questions** about shipping, returns & policies\n- **Give personalized recommendations** based on your preferences\n\nWhat are you looking for today?",
   timestamp: new Date(),
 };
 
@@ -323,7 +323,7 @@ export default function AIAssistant() {
       };
       setMessages(prev => [...prev, aiMsg]);
     } catch (e) {
-      console.error("IQON AI Assistant Error:", e);
+      console.error("Aicon AI Assistant Error:", e);
       const errorMsg = {
         id: Date.now() + 1,
         role: "assistant",
@@ -348,7 +348,7 @@ export default function AIAssistant() {
             <Sparkles className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-base font-bold text-slate-900">IQON AI</h1>
+            <h1 className="text-base font-bold text-slate-900">Aicon AI</h1>
             <div className="flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
               <p className="text-xs text-slate-500">Shopping assistant · Online</p>
@@ -425,7 +425,7 @@ export default function AIAssistant() {
             {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           </Button>
         </div>
-        <p className="text-[10px] text-slate-400 text-center mt-2">Powered by IQON AI · Recommendations are personalized</p>
+        <p className="text-[10px] text-slate-400 text-center mt-2">Powered by Aicon AI · Recommendations are personalized</p>
       </div>
     </div>
   );

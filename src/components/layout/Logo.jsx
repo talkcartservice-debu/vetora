@@ -3,66 +3,81 @@ import React from 'react';
 const Logo = ({ size = "md", showText = true, className = "", subtext = "", showDecoration = false }) => {
   const sizes = {
     sm: {
-      container: "w-8 h-8 rounded-xl shadow-sm",
+      container: "w-8 h-8 rounded-xl",
       text: "text-lg",
+      brandX: "text-sm",
       decoration: "h-0.5 w-8",
-      i: {
-        dot: "w-1 h-1",
-        body: "w-1 h-3",
-        gap: "gap-0.5"
-      }
+      mark: "text-[13px] font-black",
+      gap: "gap-0.5"
     },
     md: {
-      container: "w-10 h-10 rounded-2xl shadow-md",
+      container: "w-10 h-10 rounded-2xl",
       text: "text-2xl",
+      brandX: "text-base",
       decoration: "h-1 w-12",
-      i: {
-        dot: "w-1.5 h-1.5",
-        body: "w-1.5 h-4",
-        gap: "gap-0.5"
-      }
+      mark: "text-[16px] font-black",
+      gap: "gap-0.5"
     },
     lg: {
-      container: "h-16 w-16 rounded-3xl shadow-xl",
+      container: "h-16 w-16 rounded-3xl",
       text: "text-[2.75rem]",
+      brandX: "text-2xl",
       decoration: "h-1.5 w-16",
-      i: {
-        dot: "w-2.5 h-2.5",
-        body: "w-2.5 h-7",
-        gap: "gap-1"
-      }
+      mark: "text-[26px] font-black",
+      gap: "gap-1"
     }
   };
 
   const currentSize = sizes[size] || sizes.md;
 
   return (
-    <div className={`flex items-center gap-2.5 transition-all ${className}`} role="img" aria-label="IQON Logo">
-      <div className={`${currentSize.container} bg-white flex items-center justify-center shrink-0 ring-1 ring-slate-100 transition-all hover:scale-110 active:scale-95 group/logo relative overflow-hidden`}>
-        {/* The "i" figure */}
-        <div className={`relative flex flex-col items-center justify-center ${currentSize.i.gap} z-10 transition-transform duration-300 group-hover/logo:-translate-y-0.5`}>
-          {/* Glowing Dot of "i" */}
-          <div className={`${currentSize.i.dot} bg-orange-500 rounded-full shadow-[0_0_12px_rgba(249,115,22,0.4)] animate-pulse group-hover/logo:scale-125 transition-transform`} />
-          {/* Body of "i" */}
-          <div className={`${currentSize.i.body} bg-orange-500 rounded-full shadow-sm`} />
-        </div>
+    <div className={`flex items-center gap-3 transition-all ${className}`} role="img" aria-label="Aicon X Logo">
+      {/* Icon Mark */}
+      <div
+        className={`${currentSize.container} shrink-0 relative overflow-hidden flex items-center justify-center transition-transform hover:scale-105 active:scale-95`}
+        style={{
+          background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
+          boxShadow: '0 4px 20px rgba(249,115,22,0.25), 0 1px 4px rgba(0,0,0,0.3)',
+        }}
+      >
+        {/* Glow orb */}
+        <div className="absolute top-0 right-0 w-4 h-4 rounded-full opacity-40" style={{ background: 'radial-gradient(circle, #f97316, transparent)', transform: 'translate(30%, -30%)' }} />
 
-        {/* Subtle inner glow */}
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-500/5 to-transparent pointer-events-none" />
+        {/* "Ai" text mark */}
+        <span
+          className={`${currentSize.mark} leading-none tracking-tight select-none z-10`}
+          style={{ fontFamily: 'system-ui, sans-serif', letterSpacing: '-0.04em' }}
+        >
+          <span style={{ color: '#ffffff', fontWeight: 900 }}>A</span>
+          <span style={{ color: '#f97316', fontWeight: 900 }}>i</span>
+        </span>
+
+        {/* Bottom edge accent */}
+        <div className="absolute bottom-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, #f97316, transparent)' }} />
       </div>
+
       {showText && (
-        <div className={`flex flex-col ${className.includes('flex-col') ? 'items-center' : ''} gap-1`}>
-          <div className={`${currentSize.text} font-black italic lowercase tracking-tight flex items-baseline leading-none`}>
-            <span className="text-orange-400 drop-shadow-[0_1px_1px_rgba(249,115,22,0.1)]">i</span>
-            <span className="text-slate-600 dark:text-slate-300 ml-[0.5px] opacity-80">qon</span>
-            {/* Subtle detailing: a tiny dot at the end */}
-            <span className="w-1 h-1 bg-orange-400/40 rounded-full ml-1 self-center" />
+        <div className={`flex flex-col gap-0.5 ${className.includes('flex-col') ? 'items-center' : ''}`}>
+          <div className={`${currentSize.text} font-black tracking-tight leading-none flex items-baseline gap-[2px]`}>
+            <span className="text-slate-800 dark:text-white" style={{ letterSpacing: '-0.03em' }}>aicon</span>
+            <span
+              className={`${currentSize.brandX} font-black`}
+              style={{
+                background: 'linear-gradient(135deg, #f97316, #ef4444)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+                letterSpacing: '-0.02em',
+              }}
+            >
+              x
+            </span>
           </div>
           {showDecoration && (
-            <div className={`${currentSize.decoration} bg-orange-500/80 rounded-full shadow-[0_0_10px_rgba(249,115,22,0.2)]`} />
+            <div className={`${currentSize.decoration} rounded-full`} style={{ background: 'linear-gradient(90deg, #f97316, #ef4444)' }} />
           )}
           {subtext && (
-            <p className="text-slate-400 font-bold tracking-[0.2em] text-[10px] uppercase pt-1">
+            <p className="text-slate-400 font-semibold tracking-[0.18em] text-[9px] uppercase">
               {subtext}
             </p>
           )}

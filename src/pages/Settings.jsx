@@ -316,7 +316,7 @@ export default function Settings() {
       <SettingSection 
         icon={User} 
         title="Public Profile" 
-        description="Manage how others see you on IQON"
+        description="Manage how others see you on Aicon X"
         active={activeSection === "profile"}
         onClick={() => setActiveSection(activeSection === "profile" ? "" : "profile")}
       >
@@ -378,7 +378,7 @@ export default function Settings() {
                   className="rounded-xl border-slate-200 dark:border-slate-800 dark:bg-slate-900 dark:text-white focus:border-indigo-500 pl-8"
                 />
               </div>
-              <p className="text-[10px] text-slate-400 mt-1 ml-1">Your unique identifier on IQON. Only lowercase letters, numbers, and underscores.</p>
+              <p className="text-[10px] text-slate-400 mt-1 ml-1">Your unique identifier on Aicon X. Only lowercase letters, numbers, and underscores.</p>
             </div>
             <div>
               <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1.5 ml-1">Display Name</label>
@@ -684,11 +684,11 @@ export default function Settings() {
           onClick={() => logout()}
           className="w-full border-red-100 dark:border-red-900/30 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 rounded-xl h-11 font-bold transition-all"
         >
-          <LogOut className="w-4 h-4 mr-2" /> Log Out of IQON
+          <LogOut className="w-4 h-4 mr-2" /> Log Out of Aicon X
         </Button>
         <p className="text-[10px] text-slate-400 dark:text-slate-500 text-center mt-6">
-          IQON Platform v2.4.0 • Build 2026.03.20<br/>
-          &copy; 2026 IQON Inc. All rights reserved.
+          Aicon X Platform v2.4.0 • Build 2026.03.20<br/>
+          &copy; 2026 Aicon X Inc. All rights reserved.
         </p>
       </div>
 

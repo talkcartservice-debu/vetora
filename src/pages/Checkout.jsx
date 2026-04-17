@@ -632,7 +632,7 @@ export default function Checkout() {
                   </div>
                   <p className="text-xs text-slate-600 leading-relaxed font-medium">
                       All transactions are processed through <strong>Paystack</strong>'s secure infrastructure. 
-                      IQON does not store or see your payment details.
+                      Aicon X does not store or see your payment details.
                   </p>
               </div>
 

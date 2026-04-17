@@ -163,7 +163,7 @@ export default function Home() {
               <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <EmptyState
                   icon={TrendingUp}
-                  title={activeTab === "following" ? "No followers yet" : "Welcome to IQON"}
+                  title={activeTab === "following" ? "No followers yet" : "Welcome to Aicon X"}
                   description={
                     activeTab === "following" 
                       ? "Follow people and stores to see their latest posts here in your feed!" 

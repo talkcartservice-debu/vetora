@@ -15,6 +15,7 @@ export async function adminRoutes(fastify: FastifyInstance) {
   // Add authentication and admin check to all routes in this plugin
   fastify.addHook('preHandler', async (request, reply) => {
     await authenticate(request, reply);
+    if (reply.sent) return;
     await isAdmin(request, reply);
   });
 
@@ -30,7 +31,8 @@ export async function adminRoutes(fastify: FastifyInstance) {
       if (search) {
         query.$or = [
           { email: { $regex: search, $options: 'i' } },
-          { display_name: { $regex: search, $options: 'i' } }
+          { display_name: { $regex: search, $options: 'i' } },
+          { username: { $regex: search, $options: 'i' } },
         ];
       }
 
@@ -92,6 +94,42 @@ export async function adminRoutes(fastify: FastifyInstance) {
       await logActivity(request, is_blocked ? 'bulk_block_users' : 'bulk_unblock_users', null, 'user', { count: userIds.length });
 
       return { success: true };
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return reply.code(400).send({ error: 'Invalid request data', details: error.errors });
+      }
+      fastify.log.error(error);
+      return reply.code(500).send({ error: 'Internal server error' });
+    }
+  });
+
+  // Delete user
+  fastify.delete('/users/:id', async (request, reply) => {
+    try {
+      const { id } = request.params as { id: string };
+      const user = await User.findByIdAndDelete(id);
+      if (!user) {
+        return reply.code(404).send({ error: 'User not found' });
+      }
+      await logActivity(request, 'delete_user', user._id, 'user', { email: user.email });
+      return { success: true };
+    } catch (error) {
+      fastify.log.error(error);
+      return reply.code(500).send({ error: 'Internal server error' });
+    }
+  });
+
+  // Toggle user email verification
+  fastify.patch('/users/:id/verify', async (request, reply) => {
+    try {
+      const { id } = request.params as { id: string };
+      const { is_verified } = z.object({ is_verified: z.boolean() }).parse(request.body);
+      const user = await User.findByIdAndUpdate(id, { is_verified }, { new: true });
+      if (!user) {
+        return reply.code(404).send({ error: 'User not found' });
+      }
+      await logActivity(request, is_verified ? 'verify_user' : 'unverify_user', user._id, 'user');
+      return user;
     } catch (error) {
       if (error instanceof z.ZodError) {
         return reply.code(400).send({ error: 'Invalid request data', details: error.errors });
@@ -350,7 +388,7 @@ export async function adminRoutes(fastify: FastifyInstance) {
         status,
         admin_notes,
         resolved_at: new Date(),
-        resolved_by: user._id
+        resolved_by: user.userId || user._id,
       }, { new: true });
 
       if (!report) {
@@ -435,6 +473,31 @@ export async function adminRoutes(fastify: FastifyInstance) {
         }
       };
     } catch (error) {
+      fastify.log.error(error);
+      return reply.code(500).send({ error: 'Internal server error' });
+    }
+  });
+
+  // Update order status
+  fastify.patch('/orders/:id/status', async (request, reply) => {
+    try {
+      const { id } = request.params as { id: string };
+      const { status } = z.object({
+        status: z.enum(['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded']),
+      }).parse(request.body);
+
+      const order = await Order.findByIdAndUpdate(id, { status }, { new: true });
+      if (!order) {
+        return reply.code(404).send({ error: 'Order not found' });
+      }
+
+      await logActivity(request, 'update_order_status', order._id, 'order', { status });
+
+      return order;
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return reply.code(400).send({ error: 'Invalid request data', details: error.errors });
+      }
       fastify.log.error(error);
       return reply.code(500).send({ error: 'Internal server error' });
     }

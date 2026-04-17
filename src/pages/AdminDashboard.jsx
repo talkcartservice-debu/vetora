@@ -210,6 +210,8 @@ const AdminDashboard = () => {
   const [userSearch, setUserSearch] = useState('');
   const [userLoading, setUserLoading] = useState(false);
   const [selectedUserIds, setSelectedUserIds] = useState([]);
+  const [userPage, setUserPage] = useState(1);
+  const [userPagination, setUserPagination] = useState(null);
 
   // Stores State
   const [stores, setStores] = useState([]);
@@ -219,33 +221,42 @@ const AdminDashboard = () => {
   const [selectedStore, setSelectedStore] = useState(null);
   const [isStoreModalOpen, setIsStoreModalOpen] = useState(false);
   const [selectedStoreIds, setSelectedStoreIds] = useState([]);
+  const [storePage, setStorePage] = useState(1);
+  const [storePagination, setStorePagination] = useState(null);
 
   // Products State
   const [products, setProducts] = useState([]);
   const [productSearch, setProductSearch] = useState('');
   const [productFilter, setProductFilter] = useState('all');
   const [productLoading, setProductLoading] = useState(false);
+  const [productPage, setProductPage] = useState(1);
+  const [productPagination, setProductPagination] = useState(null);
 
   // Orders State
   const [orders, setOrders] = useState([]);
   const [orderSearch, setOrderSearch] = useState('');
+  const [orderFilter, setOrderFilter] = useState('all');
   const [orderLoading, setOrderLoading] = useState(false);
+  const [orderPage, setOrderPage] = useState(1);
+  const [orderPagination, setOrderPagination] = useState(null);
 
   // Withdrawals State
   const [withdrawals, setWithdrawals] = useState([]);
   const [withdrawalLoading, setWithdrawalLoading] = useState(false);
+  const [withdrawalFilter, setWithdrawalFilter] = useState('all');
   const [selectedWithdrawal, setSelectedWithdrawal] = useState(null);
   const [withdrawalNotes, setWithdrawalNotes] = useState('');
   const [isWithdrawalModalOpen, setIsWithdrawalModalOpen] = useState(false);
-  const [withdrawalAction, setWithdrawalAction] = useState('completed'); // or 'rejected'
+  const [withdrawalAction, setWithdrawalAction] = useState('completed');
 
   // Reports State
   const [reports, setReports] = useState([]);
   const [reportsLoading, setReportsLoading] = useState(false);
+  const [reportFilter, setReportFilter] = useState('pending');
   const [selectedReport, setSelectedReport] = useState(null);
   const [reportNotes, setReportNotes] = useState('');
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
-  const [reportAction, setReportAction] = useState('resolved'); // or 'dismissed'
+  const [reportAction, setReportAction] = useState('resolved');
 
   // Activity Logs State
   const [activityLogs, setActivityLogs] = useState([]);
@@ -305,11 +316,12 @@ const AdminDashboard = () => {
     }
   };
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (page = userPage) => {
     try {
       setUserLoading(true);
-      const data = await adminAPI.getUsers({ search: userSearch });
+      const data = await adminAPI.getUsers({ search: userSearch, page, limit: 10 });
       setUsers(data.users);
+      setUserPagination(data.pagination);
     } catch (error) {
       toast({
         title: 'Error',
@@ -321,14 +333,17 @@ const AdminDashboard = () => {
     }
   };
 
-  const fetchStores = async () => {
+  const fetchStores = async (page = storePage) => {
     try {
       setStoreLoading(true);
       const data = await adminAPI.getStores({ 
         search: storeSearch,
-        status: storeFilter === 'all' ? undefined : storeFilter
+        status: storeFilter === 'all' ? undefined : storeFilter,
+        page,
+        limit: 10,
       });
       setStores(data.stores);
+      setStorePagination(data.pagination);
     } catch (error) {
       toast({
         title: 'Error',
@@ -340,14 +355,17 @@ const AdminDashboard = () => {
     }
   };
 
-  const fetchProducts = async () => {
+  const fetchProducts = async (page = productPage) => {
     try {
       setProductLoading(true);
       const data = await adminAPI.getProducts({ 
         search: productSearch,
-        status: productFilter === 'all' ? undefined : productFilter
+        status: productFilter === 'all' ? undefined : productFilter,
+        page,
+        limit: 10,
       });
       setProducts(data.products || []);
+      setProductPagination(data.pagination);
     } catch (error) {
       toast({
         title: 'Error',
@@ -359,11 +377,17 @@ const AdminDashboard = () => {
     }
   };
 
-  const fetchOrders = async () => {
+  const fetchOrders = async (page = orderPage) => {
     try {
       setOrderLoading(true);
-      const data = await adminAPI.getOrders({ search: orderSearch });
-      setOrders(data.orders);
+      const data = await adminAPI.getOrders({ 
+        search: orderSearch,
+        status: orderFilter === 'all' ? undefined : orderFilter,
+        page,
+        limit: 10,
+      });
+      setOrders(data.orders || []);
+      setOrderPagination(data.pagination);
     } catch (error) {
       toast({
         title: 'Error',
@@ -375,11 +399,13 @@ const AdminDashboard = () => {
     }
   };
 
-  const fetchWithdrawals = async () => {
+  const fetchWithdrawals = async (filter = withdrawalFilter) => {
     try {
       setWithdrawalLoading(true);
-      const data = await adminAPI.getWithdrawals();
-      setWithdrawals(data.withdrawals);
+      const data = await adminAPI.getWithdrawals({
+        status: filter === 'all' ? undefined : filter,
+      });
+      setWithdrawals(data.withdrawals || []);
     } catch (error) {
       toast({
         title: 'Error',
@@ -391,11 +417,13 @@ const AdminDashboard = () => {
     }
   };
 
-  const fetchReports = async () => {
+  const fetchReports = async (filter = reportFilter) => {
     try {
       setReportsLoading(true);
-      const data = await adminAPI.getReports();
-      setReports(data.reports);
+      const data = await adminAPI.getReports({
+        status: filter === 'all' ? undefined : filter,
+      });
+      setReports(data.reports || []);
     } catch (error) {
       toast({
         title: 'Error',
@@ -440,12 +468,16 @@ const AdminDashboard = () => {
   };
 
   useEffect(() => {
-    if (activeTab === 'stores') fetchStores();
+    if (activeTab === 'stores') { setStorePage(1); fetchStores(1); }
   }, [storeFilter]);
 
   useEffect(() => {
-    if (activeTab === 'products') fetchProducts();
+    if (activeTab === 'products') { setProductPage(1); fetchProducts(1); }
   }, [productFilter]);
+
+  useEffect(() => {
+    if (activeTab === 'orders') { setOrderPage(1); fetchOrders(1); }
+  }, [orderFilter]);
 
   const fetchSubscriptions = async () => {
     try {
@@ -699,6 +731,70 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleVerifyUser = async (userId, isVerified) => {
+    try {
+      await adminAPI.updateUserVerification(userId, !isVerified);
+      toast({
+        title: 'Success',
+        description: `User ${!isVerified ? 'verified' : 'unverified'} successfully`,
+      });
+      fetchUsers();
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to update user verification', variant: 'destructive' });
+    }
+  };
+
+  const handleDeleteUser = async (userId) => {
+    if (!window.confirm('Are you sure you want to permanently delete this user? This cannot be undone.')) return;
+    try {
+      await adminAPI.deleteUser(userId);
+      toast({ title: 'Success', description: 'User deleted successfully' });
+      fetchUsers();
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to delete user', variant: 'destructive' });
+    }
+  };
+
+  const handleUpdateOrderStatus = async (orderId, status) => {
+    try {
+      await adminAPI.updateOrderStatus(orderId, status);
+      toast({ title: 'Success', description: `Order status updated to ${status}` });
+      fetchOrders();
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to update order status', variant: 'destructive' });
+    }
+  };
+
+  const PaginationControls = ({ pagination, page, setPage, onFetch }) => {
+    if (!pagination || pagination.pages <= 1) return null;
+    return (
+      <div className="flex items-center justify-between pt-4">
+        <p className="text-sm text-muted-foreground">
+          Showing {((page - 1) * pagination.limit) + 1}–{Math.min(page * pagination.limit, pagination.total)} of {pagination.total}
+        </p>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={page <= 1}
+            onClick={() => { const p = page - 1; setPage(p); onFetch(p); }}
+          >
+            Previous
+          </Button>
+          <span className="text-sm font-medium">{page} / {pagination.pages}</span>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={page >= pagination.pages}
+            onClick={() => { const p = page + 1; setPage(p); onFetch(p); }}
+          >
+            Next
+          </Button>
+        </div>
+      </div>
+    );
+  };
+
   if (user?.role !== 'super_admin') {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
@@ -934,10 +1030,10 @@ const AdminDashboard = () => {
                       className="pl-8 w-[250px] h-9"
                       value={userSearch}
                       onChange={(e) => setUserSearch(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && fetchUsers()}
+                      onKeyDown={(e) => e.key === 'Enter' && (setUserPage(1), fetchUsers(1))}
                     />
                   </div>
-                  <Button onClick={fetchUsers} disabled={userLoading} size="sm" className="h-9">
+                  <Button onClick={() => { setUserPage(1); fetchUsers(1); }} disabled={userLoading} size="sm" className="h-9">
                     Search
                   </Button>
                 </div>
@@ -957,8 +1053,10 @@ const AdminDashboard = () => {
                       />
                     </TableHead>
                     <TableHead>User</TableHead>
+                    <TableHead>Email</TableHead>
                     <TableHead>Role</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Verified</TableHead>
                     <TableHead>Joined</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -966,8 +1064,8 @@ const AdminDashboard = () => {
                 <TableBody>
                   {users.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                        No users found.
+                      <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                        {userLoading ? 'Loading users...' : 'No users found.'}
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -983,17 +1081,27 @@ const AdminDashboard = () => {
                           />
                         </TableCell>
                         <TableCell>
-                          <div className="font-medium">{u.display_name}</div>
+                          <div className="font-medium">{u.display_name || u.username}</div>
                           <div className="text-xs text-muted-foreground">@{u.username}</div>
                         </TableCell>
+                        <TableCell className="text-xs text-muted-foreground">{u.email}</TableCell>
                         <TableCell>
-                          <Badge variant="outline">{u.role}</Badge>
+                          <Badge variant={u.role === 'super_admin' ? 'default' : u.role === 'vendor' ? 'secondary' : 'outline'}>
+                            {u.role}
+                          </Badge>
                         </TableCell>
                         <TableCell>
                           {u.is_blocked ? (
                             <Badge variant="destructive">Blocked</Badge>
                           ) : (
                             <Badge variant="success">Active</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {u.is_verified ? (
+                            <Badge variant="success" className="bg-blue-500 hover:bg-blue-600">Verified</Badge>
+                          ) : (
+                            <Badge variant="outline">Unverified</Badge>
                           )}
                         </TableCell>
                         <TableCell>{new Date(u.created_at).toLocaleDateString()}</TableCell>
@@ -1013,15 +1121,28 @@ const AdminDashboard = () => {
                                   <><UserX className="mr-2 h-4 w-4" /> Block</>
                                 )}
                               </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleVerifyUser(u._id, u.is_verified)}>
+                                <ShieldCheckIcon className="mr-2 h-4 w-4 text-blue-500" />
+                                {u.is_verified ? 'Unverify' : 'Verify'} Account
+                              </DropdownMenuItem>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem onClick={() => {
-                                const newRole = u.role === 'vendor' ? 'user' : 'vendor';
-                                adminAPI.updateUserRole(u._id, newRole).then(() => {
-                                  toast({ title: 'Success', description: 'Role updated' });
+                                const roles = ['user', 'vendor', 'super_admin'];
+                                const next = roles[(roles.indexOf(u.role) + 1) % roles.length];
+                                adminAPI.updateUserRole(u._id, next).then(() => {
+                                  toast({ title: 'Success', description: `Role changed to ${next}` });
                                   fetchUsers();
-                                });
+                                }).catch(() => toast({ title: 'Error', description: 'Failed to update role', variant: 'destructive' }));
                               }}>
-                                Make {u.role === 'vendor' ? 'User' : 'Vendor'}
+                                <ShieldAlert className="mr-2 h-4 w-4" />
+                                Change Role
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                className="text-destructive focus:text-destructive"
+                                onClick={() => handleDeleteUser(u._id)}
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" /> Delete User
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -1031,6 +1152,12 @@ const AdminDashboard = () => {
                   )}
                 </TableBody>
               </Table>
+              <PaginationControls
+                pagination={userPagination}
+                page={userPage}
+                setPage={setUserPage}
+                onFetch={fetchUsers}
+              />
             </CardContent>
           </Card>
         </TabsContent>
@@ -1079,10 +1206,10 @@ const AdminDashboard = () => {
                       className="pl-8 w-[200px] h-9"
                       value={storeSearch}
                       onChange={(e) => setStoreSearch(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && fetchStores()}
+                      onKeyDown={(e) => e.key === 'Enter' && (setStorePage(1), fetchStores(1))}
                     />
                   </div>
-                  <Button onClick={fetchStores} disabled={storeLoading} size="sm" className="h-9">
+                  <Button onClick={() => { setStorePage(1); fetchStores(1); }} disabled={storeLoading} size="sm" className="h-9">
                     Search
                   </Button>
                 </div>
@@ -1195,6 +1322,12 @@ const AdminDashboard = () => {
                   )}
                 </TableBody>
               </Table>
+              <PaginationControls
+                pagination={storePagination}
+                page={storePage}
+                setPage={setStorePage}
+                onFetch={fetchStores}
+              />
             </CardContent>
           </Card>
 
@@ -1238,10 +1371,10 @@ const AdminDashboard = () => {
                       className="pl-8 w-[200px] h-9"
                       value={productSearch}
                       onChange={(e) => setProductSearch(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && fetchProducts()}
+                      onKeyDown={(e) => e.key === 'Enter' && (setProductPage(1), fetchProducts(1))}
                     />
                   </div>
-                  <Button onClick={fetchProducts} disabled={productLoading} size="sm" className="h-9">
+                  <Button onClick={() => { setProductPage(1); fetchProducts(1); }} disabled={productLoading} size="sm" className="h-9">
                     Search
                   </Button>
                 </div>
@@ -1346,6 +1479,12 @@ const AdminDashboard = () => {
                   )}
                 </TableBody>
               </Table>
+              <PaginationControls
+                pagination={productPagination}
+                page={productPage}
+                setPage={setProductPage}
+                onFetch={fetchProducts}
+              />
             </CardContent>
           </Card>
         </TabsContent>
@@ -1359,17 +1498,35 @@ const AdminDashboard = () => {
                   <CardDescription>View all orders across the platform.</CardDescription>
                 </div>
                 <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2">
+                    <Filter className="w-4 h-4 text-muted-foreground" />
+                    <Select value={orderFilter} onValueChange={(v) => { setOrderFilter(v); setOrderPage(1); }}>
+                      <SelectTrigger className="w-[140px] h-9">
+                        <SelectValue placeholder="All Status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Status</SelectItem>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="confirmed">Confirmed</SelectItem>
+                        <SelectItem value="processing">Processing</SelectItem>
+                        <SelectItem value="shipped">Shipped</SelectItem>
+                        <SelectItem value="delivered">Delivered</SelectItem>
+                        <SelectItem value="cancelled">Cancelled</SelectItem>
+                        <SelectItem value="refunded">Refunded</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                   <div className="relative">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
-                      placeholder="Search email or store..."
-                      className="pl-8 w-[250px]"
+                      placeholder="Search buyer, vendor or store..."
+                      className="pl-8 w-[230px] h-9"
                       value={orderSearch}
                       onChange={(e) => setOrderSearch(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && fetchOrders()}
+                      onKeyDown={(e) => e.key === 'Enter' && fetchOrders(1)}
                     />
                   </div>
-                  <Button onClick={fetchOrders} disabled={orderLoading} size="sm">
+                  <Button onClick={() => fetchOrders(1)} disabled={orderLoading} size="sm" className="h-9">
                     Search
                   </Button>
                 </div>
@@ -1384,30 +1541,86 @@ const AdminDashboard = () => {
                     <TableHead>Store</TableHead>
                     <TableHead>Amount</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Payment</TableHead>
                     <TableHead>Date</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {orders.map((o) => (
-                    <TableRow key={o._id}>
-                      <TableCell className="font-mono text-xs">{o._id.substring(0, 8)}...</TableCell>
-                      <TableCell>{o.buyer_email}</TableCell>
-                      <TableCell>{o.store_name}</TableCell>
-                      <TableCell className="font-medium">${o.total}</TableCell>
-                      <TableCell>
-                        <Badge variant={
-                          o.status === 'delivered' ? 'success' : 
-                          o.status === 'cancelled' ? 'destructive' : 
-                          o.status === 'pending' ? 'warning' : 'default'
-                        }>
-                          {o.status}
-                        </Badge>
+                  {orders.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                        {orderLoading ? 'Loading orders...' : 'No orders found.'}
                       </TableCell>
-                      <TableCell>{new Date(o.created_at).toLocaleDateString()}</TableCell>
                     </TableRow>
-                  ))}
+                  ) : (
+                    orders.map((o) => (
+                      <TableRow key={o._id}>
+                        <TableCell className="font-mono text-xs">{o._id.substring(0, 8)}...</TableCell>
+                        <TableCell>
+                          <div className="flex flex-col">
+                            <span className="text-sm font-medium">@{o.buyer_username}</span>
+                            <span className="text-xs text-muted-foreground">{o.buyer_email}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col">
+                            <span className="text-sm">{o.store_name}</span>
+                            <span className="text-xs text-muted-foreground">@{o.vendor_username}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="font-medium">${o.total?.toFixed(2)}</TableCell>
+                        <TableCell>
+                          <Badge variant={
+                            o.status === 'delivered' ? 'success' :
+                            o.status === 'cancelled' || o.status === 'refunded' ? 'destructive' :
+                            o.status === 'pending' ? 'warning' : 'default'
+                          }>
+                            {o.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={o.payment_status === 'paid' ? 'success' : o.payment_status === 'failed' ? 'destructive' : 'warning'} className="capitalize">
+                            {o.payment_status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground">
+                          {new Date(o.created_at).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuLabel>Update Status</DropdownMenuLabel>
+                              <DropdownMenuSeparator />
+                              {['confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded'].map((s) => (
+                                <DropdownMenuItem
+                                  key={s}
+                                  disabled={o.status === s}
+                                  onClick={() => handleUpdateOrderStatus(o._id, s)}
+                                  className="capitalize"
+                                >
+                                  {s}
+                                </DropdownMenuItem>
+                              ))}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
+              <PaginationControls
+                pagination={orderPagination}
+                page={orderPage}
+                setPage={setOrderPage}
+                onFetch={fetchOrders}
+              />
             </CardContent>
           </Card>
         </TabsContent>
@@ -1419,10 +1632,24 @@ const AdminDashboard = () => {
                 <CardTitle>Withdrawal Requests</CardTitle>
                 <CardDescription>Process vendor withdrawal requests.</CardDescription>
               </div>
-              <Button onClick={fetchWithdrawals} disabled={withdrawalLoading} variant="ghost" size="sm">
-                <RefreshCw className={`h-4 w-4 mr-2 ${withdrawalLoading ? 'animate-spin' : ''}`} />
-                Refresh
-              </Button>
+              <div className="flex items-center gap-2">
+                <Select value={withdrawalFilter} onValueChange={(v) => { setWithdrawalFilter(v); fetchWithdrawals(v); }}>
+                  <SelectTrigger className="w-[140px] h-9">
+                    <SelectValue placeholder="All Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="processing">Processing</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                    <SelectItem value="rejected">Rejected</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button onClick={() => fetchWithdrawals(withdrawalFilter)} disabled={withdrawalLoading} variant="ghost" size="sm">
+                  <RefreshCw className={`h-4 w-4 mr-2 ${withdrawalLoading ? 'animate-spin' : ''}`} />
+                  Refresh
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               <Table>
@@ -1449,9 +1676,9 @@ const AdminDashboard = () => {
                         <TableCell>
                           <div className="flex flex-col">
                             <span className="font-medium text-sm">@{w.vendor_username}</span>
-                            {w.admin_notes && (
-                              <span className="text-xs text-muted-foreground italic truncate max-w-[200px]" title={w.admin_notes}>
-                                Note: {w.admin_notes}
+                            {w.notes && (
+                              <span className="text-xs text-muted-foreground italic truncate max-w-[200px]" title={w.notes}>
+                                Note: {w.notes}
                               </span>
                             )}
                           </div>
@@ -1659,10 +1886,23 @@ const AdminDashboard = () => {
                 <CardTitle>Moderation Queue</CardTitle>
                 <CardDescription>Review and resolve user-reported content.</CardDescription>
               </div>
-              <Button onClick={fetchReports} disabled={reportsLoading} variant="ghost" size="sm">
-                <RefreshCw className={`h-4 w-4 mr-2 ${reportsLoading ? 'animate-spin' : ''}`} />
-                Refresh
-              </Button>
+              <div className="flex items-center gap-2">
+                <Select value={reportFilter} onValueChange={(v) => { setReportFilter(v); fetchReports(v); }}>
+                  <SelectTrigger className="w-[140px] h-9">
+                    <SelectValue placeholder="Filter status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Reports</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="resolved">Resolved</SelectItem>
+                    <SelectItem value="dismissed">Dismissed</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button onClick={() => fetchReports(reportFilter)} disabled={reportsLoading} variant="ghost" size="sm">
+                  <RefreshCw className={`h-4 w-4 mr-2 ${reportsLoading ? 'animate-spin' : ''}`} />
+                  Refresh
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               <Table>
@@ -2014,26 +2254,34 @@ const AdminDashboard = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {activityLogs.map((log) => (
-                    <TableRow key={log._id}>
-                      <TableCell>
-                        <div className="font-medium">{log.user_id?.display_name}</div>
-                        <div className="text-[10px] text-muted-foreground">{log.user_id?.email}</div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="capitalize">
-                          {log.action.replace(/_/g, ' ')}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <span className="text-xs">{log.target_type || '-'}</span>
-                      </TableCell>
-                      <TableCell className="font-mono text-xs">{log.ip_address || 'Internal'}</TableCell>
-                      <TableCell className="text-xs">
-                        {new Date(log.created_at).toLocaleString()}
+                  {activityLogs.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                        {activityLogsLoading ? 'Loading logs...' : 'No activity logs found.'}
                       </TableCell>
                     </TableRow>
-                  ))}
+                  ) : (
+                    activityLogs.map((log) => (
+                      <TableRow key={log._id}>
+                        <TableCell>
+                          <div className="font-medium">{log.user_id?.display_name || 'System'}</div>
+                          <div className="text-[10px] text-muted-foreground">{log.user_id?.email}</div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="capitalize">
+                            {log.action.replace(/_/g, ' ')}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-xs capitalize">{log.target_type || '-'}</span>
+                        </TableCell>
+                        <TableCell className="font-mono text-xs">{log.ip_address || 'Internal'}</TableCell>
+                        <TableCell className="text-xs">
+                          {new Date(log.created_at).toLocaleString()}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </CardContent>

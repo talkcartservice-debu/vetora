@@ -14,7 +14,7 @@ const transporter = nodemailer.createTransport({
 export const sendEmail = async (to: string, subject: string, html: string) => {
   try {
     const info = await transporter.sendMail({
-      from: `"IQON" <${process.env.SMTP_USER}>`,
+      from: `"Aicon X" <${process.env.SMTP_USER}>`,
       to,
       subject,
       html,
@@ -29,10 +29,10 @@ export const sendEmail = async (to: string, subject: string, html: string) => {
 };
 
 export const sendVerificationCode = async (to: string, code: string) => {
-  const subject = 'Your IQON Verification Code';
+  const subject = 'Your Aicon X Verification Code';
   const html = `
     <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px;">
-      <h2 style="color: #4f46e5; margin-bottom: 24px;">IQON Verification</h2>
+      <h2 style="color: #f97316; margin-bottom: 24px;">Aicon X Verification</h2>
       <p style="color: #475569; font-size: 16px; line-height: 24px;">Use the following code to verify your action:</p>
       <div style="background: #f8fafc; padding: 16px; border-radius: 8px; text-align: center; margin: 24px 0;">
         <span style="font-size: 32px; font-weight: bold; letter-spacing: 4px; color: #1e293b;">${code}</span>

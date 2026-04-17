@@ -51,7 +51,7 @@ const UserNotRegisteredError = () => {
               <div className="space-y-3">
                 <h1 className="text-3xl font-black text-white tracking-tighter uppercase">Access Restricted</h1>
                 <p className="text-sm text-slate-500 leading-relaxed font-medium">
-                  Identity not found in our records. This workspace is reserved for registered members of the IQON network.
+                  Identity not found in our records. This workspace is reserved for registered members of the Aicon X network.
                 </p>
               </div>
 

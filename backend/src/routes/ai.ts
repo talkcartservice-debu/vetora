@@ -22,9 +22,9 @@ const getMockResponse = (prompt: string): string => {
     return "I found some trending fashion items for you! Check out our latest **Oversized Cotton Hoodies** ($45), **Vintage Denim Jackets** ($89), and **Urban Streetwear Tees** ($29).";
   }
   if (p.includes('shipping')) {
-    return "Standard shipping on IQON takes **3-7 business days**. Many stores offer free shipping on orders over $75.";
+    return "Standard shipping on Aicon X takes **3-7 business days**. Many stores offer free shipping on orders over $75.";
   }
-  return "I'm currently running in **demo mode** because the AI API key is not configured correctly. However, I can still help you with general information about IQON!";
+  return "I'm currently running in **demo mode** because the AI API key is not configured correctly. However, I can still help you with general information about Aicon X!";
 };
 
 // Schemas for input validation
@@ -98,7 +98,7 @@ async function handleAiRequest(params: {
       headers: {
         'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
         'HTTP-Referer': process.env.FRONTEND_URL || 'http://localhost:5173',
-        'X-Title': 'IQON Social Commerce',
+        'X-Title': 'Aicon X Social Commerce',
       },
       timeout: 30000 // 30s timeout
     });
@@ -173,7 +173,7 @@ export async function aiRoutes(fastify: FastifyInstance) {
       const systemPrompt = formatSystemPrompt(userContext, discoveryContext, searchContext, platformContext, storeContext);
 
       // 5. Call AI
-      const userPrompt = body.message || (body.init ? "Hello! Introduce yourself as my IQON personal shopping assistant and show me some daily picks based on my interests or what's trending." : "");
+      const userPrompt = body.message || (body.init ? "Hello! Introduce yourself as my Aicon X personal shopping assistant and show me some daily picks based on my interests or what's trending." : "");
       
       const result = await handleAiRequest({
         prompt: userPrompt,

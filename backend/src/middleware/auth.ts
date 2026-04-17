@@ -54,7 +54,7 @@ export async function logActivity(request: FastifyRequest, action: string, targe
     if (!user) return;
 
     await ActivityLog.create({
-      user_id: user._id,
+      user_id: user.userId || user._id,
       action,
       target_id: targetId,
       target_type: targetType,
@@ -88,7 +88,7 @@ export async function checkMaintenance(request: FastifyRequest, reply: FastifyRe
       
       return reply.code(503).send({ 
         error: 'Service Unavailable', 
-        message: settings.maintenance_message || 'IQON is currently under maintenance. Please check back later.',
+        message: settings.maintenance_message || 'Aicon X is currently under maintenance. Please check back later.',
         maintenance: true
       });
     }

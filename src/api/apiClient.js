@@ -1,7 +1,7 @@
 /// <reference types="vite/client" />
 
 /**
- * API Client for IQON Backend
+ * API Client for Aicon X Backend
  * Replaces Base44 SDK with direct API calls
  */
 
@@ -484,6 +484,8 @@ export const adminAPI = {
   updateUserBlockStatus: (id, is_blocked) => apiClient.patch(`/admin/users/${id}/block`, { is_blocked }),
   bulkUpdateUserBlockStatus: (userIds, is_blocked) => apiClient.patch('/admin/users/bulk-block', { userIds, is_blocked }),
   updateUserRole: (id, role) => apiClient.patch(`/admin/users/${id}/role`, { role }),
+  updateUserVerification: (id, is_verified) => apiClient.patch(`/admin/users/${id}/verify`, { is_verified }),
+  deleteUser: (id) => apiClient.delete(`/admin/users/${id}`),
   // Stores
   getStores: (params) => {
     const query = apiClient.buildQueryString(params);
@@ -504,6 +506,7 @@ export const adminAPI = {
     const query = apiClient.buildQueryString(params);
     return apiClient.get(`/admin/orders?${query}`);
   },
+  updateOrderStatus: (id, status) => apiClient.patch(`/admin/orders/${id}/status`, { status }),
   // Withdrawals
   getWithdrawals: (params) => {
     const query = apiClient.buildQueryString(params);

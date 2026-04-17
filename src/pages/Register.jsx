@@ -176,7 +176,7 @@ const Register = () => {
                 <Logo 
                   size="lg" 
                   className="flex-col !gap-6 mx-auto" 
-                  subtext="Join the IQON Network" 
+                  subtext="Join the Aicon X Network" 
                   showDecoration={true} 
                 />
               </div>
@@ -365,7 +365,7 @@ const Register = () => {
             transition={{ delay: 1 }}
             className="mt-8 text-center text-slate-700 text-[9px] font-black uppercase tracking-[0.4em]"
           >
-            Powered by IQON Decentralized Protocol
+            Powered by Aicon X Decentralized Protocol
           </motion.p>
         </motion.div>
       </div>

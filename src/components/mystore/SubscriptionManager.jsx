@@ -182,7 +182,7 @@ function CustomDomainManager({ subscription, vendorUsername }) {
         )}
       </div>
       <p className="text-xs text-slate-500 mb-3">
-        Point your domain to IQON to use a branded store URL.
+        Point your domain to Aicon X to use a branded store URL.
         {isElite && " Elite stores include free automatic SSL encryption."}
       </p>
       <div className="flex gap-2">

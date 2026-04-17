@@ -453,7 +453,7 @@ const Login = () => {
             transition={{ delay: 1 }}
             className="mt-8 text-center text-slate-700 text-[9px] font-black uppercase tracking-[0.4em]"
           >
-            Secured by IQON Quantum Encryption
+            Secured by Aicon X Quantum Encryption
           </motion.p>
         </motion.div>
       </div>

@@ -31,14 +31,14 @@ const MARKETING_ASSETS = [
     icon: Instagram,
     gradient: "from-pink-500 to-purple-600",
     description: "Ready-to-post captions that convert followers into buyers.",
-    content: `✨ Found something AMAZING on IQON and I genuinely can't stop shopping 🛍️
+    content: `✨ Found something AMAZING on Aicon X and I genuinely can't stop shopping 🛍️
 
 Quality products, great prices — and you can grab yours through my link:
 👉 {YOUR_LINK}
 
 Trust me, you need to check this out 🔥
 
-#IQON #ShopSmart #AffiliateLink #MustHave #ShoppingFinds`,
+#AiconX #ShopSmart #AffiliateLink #MustHave #ShoppingFinds`,
   },
   {
     id: 2,
@@ -48,7 +48,7 @@ Trust me, you need to check this out 🔥
     gradient: "from-slate-800 to-slate-900",
     description: "Short-form video script hooks optimised for engagement.",
     content: `[Hook — 0–3s]
-"POV: You discovered the best deals on IQON 🤩"
+"POV: You discovered the best deals on Aicon X 🤩"
 
 [Hold up product / screen record]
 "I've been obsessed with this store lately and honestly?
@@ -57,7 +57,7 @@ Every order has been 10/10."
 [CTA — last 5s]
 "Link in bio → tap to shop. You'll thank me later."
 
-#IQON #TikTokMadeMeBuyIt #ShopWithMe`,
+#AiconX #TikTokMadeMeBuyIt #ShopWithMe`,
   },
   {
     id: 3,
@@ -68,7 +68,7 @@ Every order has been 10/10."
     description: "Personal outreach message — feels natural, not spammy.",
     content: `Hey! 👋
 
-I've been shopping on this platform called IQON and honestly the deals are crazy good. Thought you'd love it.
+I've been shopping on this platform called Aicon X and honestly the deals are crazy good. Thought you'd love it.
 
 Here's my personal link — it gives me a small commission at no extra cost to you 🙏
 👉 {YOUR_LINK}
@@ -88,7 +88,7 @@ Hi [First Name],
 
 I don't do this often, but I had to share this with you.
 
-I've been shopping on a platform called IQON — and the product quality + prices are genuinely impressive.
+I've been shopping on a platform called Aicon X — and the product quality + prices are genuinely impressive.
 
 → Browse what I'm loving here: {YOUR_LINK}
 
@@ -104,7 +104,7 @@ Happy shopping,
     icon: Twitter,
     gradient: "from-sky-400 to-blue-600",
     description: "Engagement-driving thread opener that seeds your affiliate link naturally.",
-    content: `Thread: 5 things I bought on IQON that genuinely changed my routine 🧵👇
+    content: `Thread: 5 things I bought on Aicon X that genuinely changed my routine 🧵👇
 
 1/ [Product] — Was sceptical. Now I use it every day.
 
@@ -137,7 +137,7 @@ All via my link if you want to grab any: {YOUR_LINK}`,
 • LinkedIn Post ............... 1200 × 627 px
 
 💡 Tip: Use Canva (free) to create on-brand visuals in seconds.
-      Replace {YOUR_LINK} with your IQON affiliate link in every post!`,
+      Replace {YOUR_LINK} with your Aicon X affiliate link in every post!`,
   },
 ];
 
