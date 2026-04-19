@@ -145,8 +145,12 @@ export default function PostDetail() {
   });
 
   const { data: commentsData = [], isLoading: commentsLoading, error: commentsError } = useQuery({
-    queryKey: ["postComments", postId],
-    queryFn: () => commentsAPI.list(postId, { sort: "-created_date", limit: 50 }),
+    queryKey: ["postComments", postId, currentUser?.username],
+    queryFn: () => {
+      const params = { sort: "-created_at", limit: 50 };
+      if (currentUser?.username) params.user_username = currentUser.username;
+      return commentsAPI.list(postId, params);
+    },
     enabled: !!postId,
     retry: false,
   });

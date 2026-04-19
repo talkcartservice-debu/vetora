@@ -120,9 +120,11 @@ export default function Profile() {
   });
 
   const { data: posts = [], isLoading: postsLoading } = useQuery({
-    queryKey: ["userPosts", targetUsername],
+    queryKey: ["userPosts", targetUsername, currentUser?.username],
     queryFn: async () => {
-      const res = await postsAPI.list({ author_username: targetUsername, sort: "-created_date", limit: 50 });
+      const params = { author_username: targetUsername, sort: "-created_at", limit: 50 };
+      if (currentUser?.username) params.user_username = currentUser.username;
+      const res = await postsAPI.list(params);
       return res.data || [];
     },
     enabled: !!targetUsername,
@@ -197,7 +199,8 @@ export default function Profile() {
       const posts = await Promise.all(
         likes.slice(0, 20).map(async (like) => {
           try {
-            return await postsAPI.get(like.target_id);
+            const params = currentUser?.username ? { user_username: currentUser.username } : {};
+            return await postsAPI.get(like.target_id, params);
           } catch (e) {
             return null;
           }
