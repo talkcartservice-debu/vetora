@@ -8,15 +8,19 @@ export function setupWebSocket(fastify: FastifyInstance) {
   io = new SocketIOServer(fastify.server, {
     cors: {
       origin: (origin, callback) => {
+        const extraOrigins = (process.env.CORS_ORIGINS || '')
+          .split(',')
+          .map(o => o.trim())
+          .filter(Boolean);
+
         const allowedOrigins = [
           process.env.FRONTEND_URL,
-          'https://iqon-1.vercel.app',
-          'https://iqon-nu.vercel.app',
-          'https://iqon.vercel.app',
           'http://localhost:5173',
-          'http://127.0.0.1:5173'
+          'http://localhost:3000',
+          'http://127.0.0.1:5173',
+          ...extraOrigins,
         ].filter(Boolean);
-        
+
         if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
           callback(null, true);
         } else {

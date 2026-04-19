@@ -100,7 +100,11 @@ const AppRoutes = () => {
 function App() {
 
   return (
-    <GoogleOAuthProvider clientId={googleClientId}>
+    <GoogleOAuthProvider
+      clientId={googleClientId}
+      onScriptLoadError={() => console.warn('Google OAuth script failed to load.')}
+      onScriptLoadSuccess={() => console.info('Google OAuth ready.')}
+    >
       <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
         <AuthProvider>
           <SocketProvider>

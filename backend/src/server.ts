@@ -60,24 +60,25 @@ if (!JWT_SECRET) {
 // Register plugins
 fastify.register(cors, {
   origin: (origin, cb) => {
-    // Log origin for debugging in deployment logs
-    console.log(`CORS check for origin: ${origin}`);
-    
+    const extraOrigins = (process.env.CORS_ORIGINS || '')
+      .split(',')
+      .map(o => o.trim())
+      .filter(Boolean);
+
     const allowedOrigins = [
       process.env.FRONTEND_URL,
-      'https://iqon-1.vercel.app',
-      'https://iqon-nu.vercel.app',
-      'https://iqon.vercel.app',
       'http://localhost:5173',
-      'http://127.0.0.1:5173'
+      'http://localhost:3000',
+      'http://127.0.0.1:5173',
+      ...extraOrigins,
     ].filter(Boolean);
-    
-    // Allow if no origin (local tools), matches whitelist, or is any vercel subdomain
+
+    // Allow: no origin (server-to-server / mobile), explicit whitelist, any *.vercel.app
     if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
       cb(null, true);
       return;
     }
-    
+
     console.warn(`CORS rejected origin: ${origin}`);
     cb(null, false);
   },

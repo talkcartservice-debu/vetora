@@ -88,6 +88,10 @@ const Login = () => {
   };
 
   const handleGoogleSuccess = async (credentialResponse) => {
+    if (!credentialResponse?.credential) {
+      setError('Google login failed: no credential received. Please try again.');
+      return;
+    }
     setIsLoading(true);
     setError('');
     try {
@@ -100,8 +104,9 @@ const Login = () => {
     }
   };
 
-  const handleGoogleError = () => {
-    setError('Google login failed. Please try again.');
+  const handleGoogleError = (err) => {
+    console.error('Google OAuth error:', err);
+    setError('Google login failed. Make sure pop-ups are not blocked and try again.');
   };
 
   const handleSubmit = async (e) => {

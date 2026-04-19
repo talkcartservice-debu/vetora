@@ -89,7 +89,7 @@ class APIClient {
       if (response.status === 401) {
         this.clearToken();
         localStorage.removeItem('iqon_token');
-        // We throw the error and let the AuthContext/UI handle the redirect if needed
+        window.dispatchEvent(new CustomEvent('auth:unauthorized'));
         throw new Error('Unauthorized - Please login again');
       }
 

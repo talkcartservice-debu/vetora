@@ -65,20 +65,25 @@ const Register = () => {
   }, []);
 
   const handleGoogleSuccess = async (credentialResponse) => {
+    if (!credentialResponse?.credential) {
+      setError('Google sign-up failed: no credential received. Please try again.');
+      return;
+    }
     setIsLoading(true);
     setError('');
     try {
       const res = await googleLogin(credentialResponse.credential);
       navigate(getRedirectPath(res.user));
     } catch (err) {
-      setError(err.message || 'Google login failed. Please try again.');
+      setError(err.message || 'Google sign-up failed. Please try again.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleGoogleError = () => {
-    setError('Google login failed. Please try again.');
+  const handleGoogleError = (err) => {
+    console.error('Google OAuth error:', err);
+    setError('Google sign-up failed. Make sure pop-ups are not blocked and try again.');
   };
 
   const handleChange = (e) => {

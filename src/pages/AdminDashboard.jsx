@@ -468,14 +468,17 @@ const AdminDashboard = () => {
   };
 
   useEffect(() => {
+    if (!user || user.role !== 'super_admin') return;
     if (activeTab === 'stores') { setStorePage(1); fetchStores(1); }
   }, [storeFilter]);
 
   useEffect(() => {
+    if (!user || user.role !== 'super_admin') return;
     if (activeTab === 'products') { setProductPage(1); fetchProducts(1); }
   }, [productFilter]);
 
   useEffect(() => {
+    if (!user || user.role !== 'super_admin') return;
     if (activeTab === 'orders') { setOrderPage(1); fetchOrders(1); }
   }, [orderFilter]);
 
@@ -496,6 +499,7 @@ const AdminDashboard = () => {
   };
 
   useEffect(() => {
+    if (!user || user.role !== 'super_admin') return;
     if (activeTab === 'users') fetchUsers();
     if (activeTab === 'stores') fetchStores();
     if (activeTab === 'products') fetchProducts();
@@ -505,7 +509,7 @@ const AdminDashboard = () => {
     if (activeTab === 'logs') fetchActivityLogs();
     if (activeTab === 'subscriptions') fetchSubscriptions();
     if (activeTab === 'announcements') fetchAnnouncements();
-  }, [activeTab]);
+  }, [activeTab, user]);
 
   const handleBlockUser = async (userId, isBlocked) => {
     try {
