@@ -118,14 +118,29 @@ export default function OrderDetailModal({
             </section>
           )}
 
-          {/* Status Tracker */}
-          {["pending", "processing", "shipped", "delivered", "confirmed"].includes(order.status) && (
+          {/* Status Tracker — only for shipped/shipping orders, not pickup */}
+          {["pending", "processing", "shipped", "delivered", "confirmed"].includes(order.status) && order.delivery_method !== "pickup" && (
             <div className="bg-white border rounded-2xl p-4 shadow-sm">
               <h3 className="text-sm font-semibold text-slate-900 mb-4 flex items-center gap-2">
-                <Truck className="w-4 h-4 text-indigo-600" />
-                Tracking Status
+                {order.delivery_method === "delivery" ? (
+                  <Navigation className="w-4 h-4 text-indigo-600" />
+                ) : (
+                  <Truck className="w-4 h-4 text-indigo-600" />
+                )}
+                {order.delivery_method === "delivery" ? "Delivery Status" : "Tracking Status"}
               </h3>
               <OrderTrackingPanel order={order} />
+            </div>
+          )}
+
+          {/* Pickup status info */}
+          {order.delivery_method === "pickup" && ["pending", "confirmed", "processing"].includes(order.status) && order.pickup_instructions && (
+            <div className="flex items-start gap-3 bg-amber-50 border border-amber-100 rounded-2xl p-4">
+              <Package className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-xs font-black text-amber-900 uppercase tracking-wider mb-1">Pickup Instructions</p>
+                <p className="text-xs text-amber-700 leading-relaxed">{order.pickup_instructions}</p>
+              </div>
             </div>
           )}
 

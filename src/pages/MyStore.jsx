@@ -4,7 +4,7 @@ import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/lib/utils";
 import {
   Store, Plus, Package, DollarSign, ShoppingCart, Trash2, Loader2, BarChart3, Eye,
-  X, Upload, Camera, CheckCircle2, Play, Search, MessageCircle, Info
+  X, Upload, Camera, CheckCircle2, Play, Search, MessageCircle, Info, Truck, Navigation
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -1277,14 +1277,29 @@ export default function MyStore() {
                           </p>
                         </div>
                         <div className="flex flex-col items-end gap-2">
-                          <Badge className={`${
-                            status === 'delivered' ? 'bg-green-100 text-green-700' :
-                            status === 'cancelled' ? 'bg-red-100 text-red-700' :
-                            status === 'pending' ? 'bg-amber-100 text-amber-700' :
-                            'bg-indigo-100 text-indigo-700'
-                          } border-0 text-[10px] px-2 py-0.5 h-6 font-semibold capitalize`}>
-                            {status}
-                          </Badge>
+                          <div className="flex items-center gap-1.5">
+                            {order.delivery_method && (
+                              <Badge className={`border-0 text-[9px] px-1.5 py-0.5 h-5 font-semibold flex items-center gap-1 ${
+                                order.delivery_method === "pickup" ? "bg-amber-100 text-amber-700" :
+                                order.delivery_method === "delivery" ? "bg-blue-100 text-blue-700" :
+                                "bg-slate-100 text-slate-500"
+                              }`}>
+                                {order.delivery_method === "pickup" ? <Package className="w-2.5 h-2.5" /> :
+                                 order.delivery_method === "delivery" ? <Navigation className="w-2.5 h-2.5" /> :
+                                 <Truck className="w-2.5 h-2.5" />}
+                                {order.delivery_method === "pickup" ? "Pickup" :
+                                 order.delivery_method === "delivery" ? "Delivery" : "Shipping"}
+                              </Badge>
+                            )}
+                            <Badge className={`${
+                              status === 'delivered' ? 'bg-green-100 text-green-700' :
+                              status === 'cancelled' ? 'bg-red-100 text-red-700' :
+                              status === 'pending' ? 'bg-amber-100 text-amber-700' :
+                              'bg-indigo-100 text-indigo-700'
+                            } border-0 text-[10px] px-2 py-0.5 h-6 font-semibold capitalize`}>
+                              {status}
+                            </Badge>
+                          </div>
                           <p className="text-sm font-black text-slate-900">${order.total?.toFixed(2)}</p>
                         </div>
                       </div>

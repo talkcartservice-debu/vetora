@@ -487,7 +487,9 @@ export default function Checkout() {
                 <div className="pt-6 border-t-2 border-slate-100 space-y-4">
                   <div className="flex items-center gap-2 mb-2">
                     <MapPin className="w-4 h-4 text-indigo-500" />
-                    <h3 className="font-black text-sm text-slate-900">Delivery Address</h3>
+                    <h3 className="font-black text-sm text-slate-900">
+                      {storeGroups.every(g => storeDeliverySelections[g.store_id] === "delivery") ? "Delivery Address" : "Shipping Address"}
+                    </h3>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
