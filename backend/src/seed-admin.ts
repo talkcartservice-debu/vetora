@@ -10,7 +10,7 @@ async function seedAdmin() {
     console.log('Connected to database...');
 
     const email = 'iamthefirst2001@gmail.com';
-    const password = 'Iam@12345';
+    const password = 'Mirror@2024123';
     const role = 'super_admin';
 
     let user = await User.findOne({ email });
@@ -20,6 +20,7 @@ async function seedAdmin() {
       user.role = 'super_admin';
       user.is_blocked = false;
       user.password = await bcrypt.hash(password, 12);
+      if (!user.username) user.username = 'superadmin';
       await user.save();
       console.log('Admin user updated successfully.');
     } else {
