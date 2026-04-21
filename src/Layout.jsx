@@ -46,7 +46,7 @@ const NAV_ITEMS = [
 ];
 
 const ADMIN_NAV_ITEMS = [
-  { name: "Admin", icon: Shield, page: "AdminDashboard" },
+  { name: "Admin", icon: Shield, page: "AdminDashboard", href: "/admin-dashboard" },
   { name: "Messages", icon: MessageCircle, page: "Chat" },
   { name: "Notifications", icon: Bell, page: "Notifications" },
   { name: "Settings", icon: SettingsIcon, page: "Settings" },
@@ -75,7 +75,7 @@ const SIDEBAR_ITEMS = [
   { name: "Affiliate", icon: Link2, page: "Affiliate" },
   { name: "Notifications", icon: Bell, page: "Notifications" },
   { name: "Settings", icon: SettingsIcon, page: "Settings" },
-  { name: "Admin", icon: Shield, page: "AdminDashboard", adminOnly: true },
+  { name: "Admin", icon: Shield, page: "AdminDashboard", href: "/admin-dashboard", adminOnly: true },
 ];
 
 const HIDE_LAYOUT_PAGES = [];
@@ -145,7 +145,7 @@ export default function Layout({ children, currentPageName }) {
         <div className="p-4 flex flex-col gap-4">
           <div className="flex items-center justify-between">
             <Link 
-              to={createPageUrl(currentUser?.role === 'super_admin' ? "admindashboard" : "home")} 
+              to={currentUser?.role === 'super_admin' ? "/admin-dashboard" : "/"} 
               onClick={() => isMobile && setSidebarOpen(false)}
               className={`flex items-center gap-2 ${!sidebarOpen && !isMobile && "justify-center w-full"}`}
             >
@@ -182,7 +182,7 @@ export default function Layout({ children, currentPageName }) {
             return (
               <Link
                 key={item.name}
-                to={createPageUrl(item.page) + (item.params || "")}
+                to={item.href || createPageUrl(item.page) + (item.params || "")}
                 onClick={() => isMobile && setSidebarOpen(false)}
                 title={!sidebarOpen && !isMobile ? item.name : ""}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
@@ -249,7 +249,7 @@ export default function Layout({ children, currentPageName }) {
           >
             <Menu className="w-6 h-6" />
           </button>
-          <Link to={createPageUrl(currentUser?.role === 'super_admin' ? "admindashboard" : "home")} className="flex items-center gap-2.5">
+          <Link to={currentUser?.role === 'super_admin' ? "/admin-dashboard" : "/"} className="flex items-center gap-2.5">
             <Logo size="sm" showText={true} />
           </Link>
         </div>
@@ -298,7 +298,7 @@ export default function Layout({ children, currentPageName }) {
             return (
               <Link
                 key={item.name}
-                to={createPageUrl(item.page)}
+                to={item.href || createPageUrl(item.page)}
                 className="flex flex-col items-center gap-0.5 relative"
               >
                 <item.icon

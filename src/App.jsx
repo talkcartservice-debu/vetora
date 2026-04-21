@@ -64,7 +64,7 @@ const AppRoutes = () => {
       {Object.entries(Pages).map(([path, Page]) => {
         const lowerPath = path.toLowerCase();
         // Skip Login and Register as they are handled above
-        if (['Login', 'Register', 'ForgotPassword', 'ResetPassword'].includes(path)) return null;
+        if (['Login', 'Register', 'ForgotPassword', 'ResetPassword', 'AdminDashboard'].includes(path)) return null;
         
         return (
           <Route
