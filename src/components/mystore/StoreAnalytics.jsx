@@ -4,26 +4,22 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from "recharts";
 import { motion } from "framer-motion";
-import { TrendingUp, TrendingDown, DollarSign, ShoppingCart, Users, Package, Star } from "lucide-react";
+import { DollarSign, ShoppingCart, Users, Package, Star, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const COLORS = ["#6366f1", "#8b5cf6", "#ec4899", "#f59e0b", "#10b981", "#3b82f6"];
 
-function StatCard({ label, value, change, icon: Icon, color }) {
-  const isPositive = change >= 0;
+function StatCard({ label, value, sub, icon: Icon, color }) {
   return (
     <div className="bg-white rounded-2xl border border-slate-100 p-4">
       <div className="flex items-center justify-between mb-3">
         <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${color}`}>
           <Icon className="w-4 h-4" />
         </div>
-        <span className={`flex items-center gap-1 text-xs font-semibold ${isPositive ? "text-green-600" : "text-red-500"}`}>
-          {isPositive ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-          {Math.abs(change)}%
-        </span>
       </div>
       <p className="text-2xl font-bold text-slate-900">{value}</p>
       <p className="text-xs text-slate-500 mt-0.5">{label}</p>
+      {sub && <p className="text-[10px] text-slate-400 mt-0.5">{sub}</p>}
     </div>
   );
 }
@@ -46,55 +42,74 @@ const CustomTooltip = ({ active, payload, label, prefix = "" }) => {
 
 export default function StoreAnalytics({ orders, products, plan = 'free', onUpgrade }) {
   const isFree = plan === 'free';
+
+  const totalRevenue = useMemo(() => orders.reduce((s, o) => s + (o.total || 0), 0), [orders]);
+  const avgOrderValue = useMemo(() => orders.length ? totalRevenue / orders.length : 0, [orders, totalRevenue]);
+  const uniqueBuyers = useMemo(() => new Set(orders.map(o => o.buyer_username).filter(Boolean)).size, [orders]);
+  const paidOrders = useMemo(() => orders.filter(o => o.payment_status === 'paid').length, [orders]);
+
   const dailyRevenue = useMemo(() => {
-    const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-    const base = [1200, 890, 1560, 2100, 1890, 3200, 2780];
-    return days.map((day, i) => ({
-      day,
-      revenue: base[i] + Math.floor(Math.random() * 300),
-      orders: Math.floor(base[i] / 120),
-    }));
-  }, []);
+    const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const today = new Date();
+    const result = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(today);
+      d.setDate(today.getDate() - (6 - i));
+      return { day: days[d.getDay()], date: d.toDateString(), revenue: 0, orders: 0 };
+    });
+
+    orders.forEach(o => {
+      const oDate = new Date(o.created_at || o.created_date);
+      const entry = result.find(r => r.date === oDate.toDateString());
+      if (entry) {
+        entry.revenue += o.total || 0;
+        entry.orders += 1;
+      }
+    });
+
+    return result;
+  }, [orders]);
 
   const topProducts = useMemo(() => {
-    const all = products.slice(0, 5).map((p, i) => ({
-      name: p.title?.length > 18 ? p.title.slice(0, 18) + "…" : p.title,
-      sales: p.sales_count || (500 - i * 80),
-      revenue: (p.sales_count || 500 - i * 80) * (p.price || 50),
+    const map = {};
+    orders.forEach(o => {
+      (o.items || []).forEach(item => {
+        const key = item.product_id || item.product_title;
+        if (!map[key]) {
+          map[key] = { name: item.product_title?.length > 18 ? item.product_title.slice(0, 18) + "…" : item.product_title, sales: 0, revenue: 0 };
+        }
+        map[key].sales += item.quantity || 1;
+        map[key].revenue += (item.price || 0) * (item.quantity || 1);
+      });
+    });
+    const sorted = Object.values(map).sort((a, b) => b.sales - a.sales).slice(0, 5);
+    if (sorted.length) return sorted;
+    return products.slice(0, 5).map(p => ({
+      name: p.title?.length > 18 ? p.title.slice(0, 18) + "…" : (p.title || "Product"),
+      sales: p.sales_count || 0,
+      revenue: (p.sales_count || 0) * (p.price || 0),
     }));
-    return all.length ? all : [
-      { name: "Vintage Hoodie", sales: 890, revenue: 80010 },
-      { name: "Canvas Sneakers", sales: 420, revenue: 27296 },
-      { name: "Summer Tee", sales: 310, revenue: 9610 },
-      { name: "Cargo Pants", sales: 245, revenue: 19600 },
-      { name: "Cap", sales: 180, revenue: 5400 },
-    ];
-  }, [products]);
+  }, [orders, products]);
 
-  const demographics = [
-    { name: "18-24", value: 32 },
-    { name: "25-34", value: 41 },
-    { name: "35-44", value: 18 },
-    { name: "45+", value: 9 },
-  ];
+  const orderStatusData = useMemo(() => {
+    const counts = {};
+    orders.forEach(o => {
+      counts[o.status] = (counts[o.status] || 0) + 1;
+    });
+    return Object.entries(counts).map(([name, value]) => ({ name: name.charAt(0).toUpperCase() + name.slice(1), value }));
+  }, [orders]);
 
-  const conversionData = [
-    { stage: "Views", count: 12400 },
-    { stage: "Product Clicks", count: 4890 },
-    { stage: "Add to Cart", count: 1240 },
-    { stage: "Checkout", count: 680 },
-    { stage: "Purchased", count: 512 },
-  ];
-
-  const totalRevenue = orders.reduce((s, o) => s + (o.total || 0), 0);
-  const avgOrderValue = orders.length ? totalRevenue / orders.length : 0;
+  const lowStockProducts = useMemo(() => (
+    products.filter(p => p.inventory_count !== undefined && p.inventory_count !== null && p.inventory_count <= 5)
+      .sort((a, b) => a.inventory_count - b.inventory_count)
+      .slice(0, 5)
+  ), [products]);
 
   return (
     <div className="space-y-6">
       {isFree && (
-        <motion.div 
-          initial={{ opacity: 0, y: -10 }} 
-          animate={{ opacity: 1, y: 0 }} 
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
           className="bg-gradient-to-r from-indigo-500/10 to-purple-500/10 border border-indigo-100 rounded-2xl p-4 flex flex-col md:flex-row items-center justify-between gap-4"
         >
           <div className="flex items-center gap-3 text-center md:text-left">
@@ -103,7 +118,7 @@ export default function StoreAnalytics({ orders, products, plan = 'free', onUpgr
             </div>
             <div>
               <p className="text-sm font-bold text-slate-900">Unlock Advanced Insights</p>
-              <p className="text-xs text-slate-500">Upgrade to Pro or Elite to access detailed CTR, customer demographics, and location data.</p>
+              <p className="text-xs text-slate-500">Upgrade to Pro or Elite to access CTR, product performance tables, location data and monthly trends.</p>
             </div>
           </div>
           <Button onClick={onUpgrade} size="sm" className="bg-indigo-600 hover:bg-indigo-700 rounded-xl whitespace-nowrap">Upgrade Plan</Button>
@@ -112,102 +127,107 @@ export default function StoreAnalytics({ orders, products, plan = 'free', onUpgr
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <StatCard label="Total Revenue" value={`$${totalRevenue > 0 ? totalRevenue.toFixed(0) : "13,240"}`} change={18.4} icon={DollarSign} color="bg-indigo-50 text-indigo-600" />
-        <StatCard label="Total Orders" value={orders.length || 128} change={12.1} icon={ShoppingCart} color="bg-purple-50 text-purple-600" />
-        <StatCard label="Avg. Order Value" value={`$${avgOrderValue > 0 ? avgOrderValue.toFixed(2) : "103.44"}`} change={5.7} icon={Package} color="bg-pink-50 text-pink-600" />
-        <StatCard label="Unique Customers" value={Math.max(orders.length, 94)} change={-2.3} icon={Users} color="bg-amber-50 text-amber-600" />
+        <StatCard label="Total Revenue" value={`$${totalRevenue.toFixed(2)}`} icon={DollarSign} color="bg-indigo-50 text-indigo-600" />
+        <StatCard label="Total Orders" value={orders.length} sub={`${paidOrders} paid`} icon={ShoppingCart} color="bg-purple-50 text-purple-600" />
+        <StatCard label="Avg. Order Value" value={`$${avgOrderValue.toFixed(2)}`} icon={Package} color="bg-pink-50 text-pink-600" />
+        <StatCard label="Unique Customers" value={uniqueBuyers || orders.length} icon={Users} color="bg-amber-50 text-amber-600" />
       </div>
 
       {/* Daily Revenue Chart */}
       <div className="bg-white rounded-2xl border border-slate-100 p-5">
-        <h3 className="text-sm font-semibold text-slate-900 mb-1">Daily Revenue (This Week)</h3>
-        <p className="text-xs text-slate-400 mb-4">Revenue and order volume per day</p>
-        <ResponsiveContainer width="100%" height={200}>
-          <AreaChart data={dailyRevenue}>
-            <defs>
-              <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-            <XAxis dataKey="day" tick={{ fontSize: 11, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fontSize: 11, fill: "#94a3b8" }} axisLine={false} tickLine={false} width={40} />
-            <Tooltip content={<CustomTooltip prefix="$" />} />
-            <Area type="monotone" dataKey="revenue" stroke="#6366f1" strokeWidth={2.5} fill="url(#revGrad)" dot={false} activeDot={{ r: 4, fill: "#6366f1" }} />
-          </AreaChart>
-        </ResponsiveContainer>
+        <h3 className="text-sm font-semibold text-slate-900 mb-1">Daily Revenue (Last 7 Days)</h3>
+        <p className="text-xs text-slate-400 mb-4">Revenue from completed orders per day</p>
+        {dailyRevenue.every(d => d.revenue === 0) ? (
+          <div className="h-[200px] flex items-center justify-center text-sm text-slate-400">No order data for the past 7 days</div>
+        ) : (
+          <ResponsiveContainer width="100%" height={200}>
+            <AreaChart data={dailyRevenue}>
+              <defs>
+                <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+              <XAxis dataKey="day" tick={{ fontSize: 11, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 11, fill: "#94a3b8" }} axisLine={false} tickLine={false} width={40} />
+              <Tooltip content={<CustomTooltip prefix="$" />} />
+              <Area type="monotone" dataKey="revenue" stroke="#6366f1" strokeWidth={2.5} fill="url(#revGrad)" dot={false} activeDot={{ r: 4, fill: "#6366f1" }} />
+            </AreaChart>
+          </ResponsiveContainer>
+        )}
       </div>
 
       {/* Top Products */}
       <div className="bg-white rounded-2xl border border-slate-100 p-5">
         <h3 className="text-sm font-semibold text-slate-900 mb-1">Top Performing Products</h3>
-        <p className="text-xs text-slate-400 mb-4">Units sold this month</p>
-        <ResponsiveContainer width="100%" height={180}>
-          <BarChart data={topProducts} layout="vertical">
-            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
-            <XAxis type="number" tick={{ fontSize: 11, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
-            <YAxis dataKey="name" type="category" tick={{ fontSize: 11, fill: "#94a3b8" }} axisLine={false} tickLine={false} width={90} />
-            <Tooltip content={<CustomTooltip />} />
-            <Bar dataKey="sales" fill="#8b5cf6" radius={[0, 6, 6, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
+        <p className="text-xs text-slate-400 mb-4">Units sold across all orders</p>
+        {topProducts.length === 0 || topProducts.every(p => p.sales === 0) ? (
+          <div className="h-[180px] flex items-center justify-center text-sm text-slate-400">No sales data yet</div>
+        ) : (
+          <ResponsiveContainer width="100%" height={180}>
+            <BarChart data={topProducts} layout="vertical">
+              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
+              <XAxis type="number" tick={{ fontSize: 11, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
+              <YAxis dataKey="name" type="category" tick={{ fontSize: 11, fill: "#94a3b8" }} axisLine={false} tickLine={false} width={90} />
+              <Tooltip content={<CustomTooltip />} />
+              <Bar dataKey="sales" fill="#8b5cf6" radius={[0, 6, 6, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        )}
       </div>
 
-      {/* Demographics & Conversion side by side */}
+      {/* Order Status & Low Stock */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Customer Demographics */}
+        {/* Order Status Breakdown */}
         <div className="bg-white rounded-2xl border border-slate-100 p-5">
-          <h3 className="text-sm font-semibold text-slate-900 mb-1">Customer Demographics</h3>
-          <p className="text-xs text-slate-400 mb-4">Age group distribution</p>
-          <div className="flex items-center gap-4">
-            <ResponsiveContainer width="50%" height={140}>
-              <PieChart>
-                <Pie data={demographics} cx="50%" cy="50%" innerRadius={40} outerRadius={60} dataKey="value" paddingAngle={3}>
-                  {demographics.map((_, i) => <Cell key={i} fill={COLORS[i]} />)}
-                </Pie>
-                <Tooltip formatter={(v) => `${v}%`} />
-              </PieChart>
-            </ResponsiveContainer>
+          <h3 className="text-sm font-semibold text-slate-900 mb-1">Order Status Breakdown</h3>
+          <p className="text-xs text-slate-400 mb-4">Distribution of your orders by status</p>
+          {orderStatusData.length === 0 ? (
+            <div className="h-[140px] flex items-center justify-center text-sm text-slate-400">No orders yet</div>
+          ) : (
+            <div className="flex items-center gap-4">
+              <ResponsiveContainer width="50%" height={140}>
+                <PieChart>
+                  <Pie data={orderStatusData} cx="50%" cy="50%" innerRadius={40} outerRadius={60} dataKey="value" paddingAngle={3}>
+                    {orderStatusData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                  </Pie>
+                  <Tooltip formatter={(v, n) => [v, n]} />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="space-y-2">
+                {orderStatusData.map((d, i) => (
+                  <div key={d.name} className="flex items-center gap-2">
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
+                    <span className="text-xs text-slate-600">{d.name}</span>
+                    <span className="text-xs font-semibold text-slate-900 ml-auto">{d.value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Low Stock Alert */}
+        <div className="bg-white rounded-2xl border border-slate-100 p-5">
+          <h3 className="text-sm font-semibold text-slate-900 mb-1 flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-amber-500" /> Low Stock Alert
+          </h3>
+          <p className="text-xs text-slate-400 mb-4">Products with 5 or fewer units remaining</p>
+          {lowStockProducts.length === 0 ? (
+            <div className="h-[100px] flex items-center justify-center text-sm text-slate-400">All products are well stocked</div>
+          ) : (
             <div className="space-y-2">
-              {demographics.map((d, i) => (
-                <div key={d.name} className="flex items-center gap-2">
-                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: COLORS[i] }} />
-                  <span className="text-xs text-slate-600">{d.name}</span>
-                  <span className="text-xs font-semibold text-slate-900 ml-auto">{d.value}%</span>
+              {lowStockProducts.map(p => (
+                <div key={p._id || p.id} className="flex items-center justify-between py-2 border-b border-slate-50 last:border-0">
+                  <span className="text-xs font-medium text-slate-700 truncate max-w-[60%]">{p.title}</span>
+                  <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${p.inventory_count === 0 ? "bg-red-100 text-red-600" : "bg-amber-100 text-amber-700"}`}>
+                    {p.inventory_count === 0 ? "Out of stock" : `${p.inventory_count} left`}
+                  </span>
                 </div>
               ))}
             </div>
-          </div>
-        </div>
-
-        {/* Conversion Funnel */}
-        <div className="bg-white rounded-2xl border border-slate-100 p-5">
-          <h3 className="text-sm font-semibold text-slate-900 mb-1">Conversion Funnel</h3>
-          <p className="text-xs text-slate-400 mb-4">From views to purchases</p>
-          <div className="space-y-2">
-            {conversionData.map((stage, i) => {
-              const pct = Math.round((stage.count / conversionData[0].count) * 100);
-              return (
-                <div key={stage.stage}>
-                  <div className="flex justify-between text-xs mb-0.5">
-                    <span className="text-slate-600">{stage.stage}</span>
-                    <span className="font-semibold text-slate-900">{stage.count.toLocaleString()} <span className="text-slate-400 font-normal">({pct}%)</span></span>
-                  </div>
-                  <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${pct}%` }}
-                      transition={{ duration: 0.8, delay: i * 0.1 }}
-                      style={{ backgroundColor: COLORS[i] }}
-                      className="h-full rounded-full"
-                    />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-          <p className="text-xs text-slate-400 mt-3">Overall conversion: <span className="text-indigo-600 font-semibold">4.1%</span></p>
+          )}
         </div>
       </div>
     </div>

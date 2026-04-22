@@ -1,12 +1,14 @@
 import React, { useMemo } from "react";
 import {
-  AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
+  AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
 } from "recharts";
 import { motion } from "framer-motion";
 import {
-  TrendingUp, TrendingDown, MousePointer, ShoppingCart, Eye,
-  MapPin, Smartphone, Globe, Share2, Search, Star, DollarSign
+  TrendingUp, TrendingDown, ShoppingCart,
+  MapPin, Star, DollarSign, Package, Users, AlertTriangle
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const COLORS = ["#6366f1", "#8b5cf6", "#ec4899", "#f59e0b", "#10b981", "#3b82f6", "#ef4444"];
 
@@ -34,10 +36,12 @@ function KpiCard({ icon: Icon, label, value, change, color, sub }) {
         <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${color}`}>
           <Icon className="w-4 h-4" />
         </div>
-        <span className={`flex items-center gap-1 text-xs font-semibold ${isPos ? "text-green-600" : "text-red-500"}`}>
-          {isPos ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-          {Math.abs(change)}%
-        </span>
+        {change !== undefined && (
+          <span className={`flex items-center gap-1 text-xs font-semibold ${isPos ? "text-green-600" : "text-red-500"}`}>
+            {isPos ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+            {Math.abs(change)}%
+          </span>
+        )}
       </div>
       <p className="text-2xl font-bold text-slate-900">{value}</p>
       <p className="text-xs text-slate-500 mt-0.5">{label}</p>
@@ -48,263 +52,272 @@ function KpiCard({ icon: Icon, label, value, change, color, sub }) {
 
 export default function AdvancedAnalytics({ orders, products, plan = 'free', onUpgrade }) {
   const isElite = plan === 'elite';
-  const isPro = plan === 'pro' || plan === 'elite';
-  // Derived real data
-  const totalRevenue = orders.reduce((s, o) => s + (o.total || 0), 0);
-  const avgOrderValue = orders.length ? totalRevenue / orders.length : 0;
-  const deliveredOrders = orders.filter(o => o.status === "delivered").length;
-  const conversionRate = orders.length > 0 ? ((deliveredOrders / orders.length) * 100).toFixed(1) : "4.1";
 
-  // Monthly revenue trend (real + simulated growth)
+  const totalRevenue = useMemo(() => orders.reduce((s, o) => s + (o.total || 0), 0), [orders]);
+  const avgOrderValue = useMemo(() => orders.length ? totalRevenue / orders.length : 0, [orders, totalRevenue]);
+  const uniqueBuyers = useMemo(() => new Set(orders.map(o => o.buyer_username).filter(Boolean)).size, [orders]);
+  const paidOrders = useMemo(() => orders.filter(o => o.payment_status === 'paid').length, [orders]);
+  const deliveredOrders = useMemo(() => orders.filter(o => o.status === "delivered").length, [orders]);
+  const completionRate = useMemo(() => orders.length > 0 ? ((deliveredOrders / orders.length) * 100).toFixed(1) : "0.0", [orders, deliveredOrders]);
+
   const monthlyRevenue = useMemo(() => {
-    const map = {};
-    orders.forEach(o => {
-      const m = new Date(o.created_at || o.created_date).toLocaleString("default", { month: "short" });
-      map[m] = (map[m] || 0) + (o.total || 0);
-    });
     const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-    const base = [820,1050,940,1320,1580,1890,2100,1760,2340,2680,2900,3200];
-    return months.slice(0, 8).map((m, i) => ({
+    const revenueMap = {};
+    const orderCountMap = {};
+    orders.forEach(o => {
+      const d = new Date(o.created_at || o.created_date);
+      if (isNaN(d)) return;
+      const m = months[d.getMonth()];
+      revenueMap[m] = (revenueMap[m] || 0) + (o.total || 0);
+      orderCountMap[m] = (orderCountMap[m] || 0) + 1;
+    });
+    const currentMonth = new Date().getMonth();
+    return months.slice(0, currentMonth + 1).map(m => ({
       month: m,
-      revenue: map[m] || base[i],
-      visitors: Math.floor((map[m] || base[i]) * 8.4),
+      revenue: revenueMap[m] || 0,
+      orders: orderCountMap[m] || 0,
     }));
   }, [orders]);
 
-  // Product performance
   const productPerf = useMemo(() => {
-    const base = products.slice(0, 6).map((p, i) => ({
-      name: p.title?.length > 16 ? p.title.slice(0, 16) + "…" : (p.title || `Product ${i+1}`),
-      views: (p.sales_count || 80 - i * 10) * 12 + 300,
-      clicks: (p.sales_count || 80 - i * 10) * 4 + 80,
-      purchases: p.sales_count || (80 - i * 10),
-      ctr: ((((p.sales_count || 80 - i * 10) * 4 + 80) / ((p.sales_count || 80 - i * 10) * 12 + 300)) * 100).toFixed(1),
-      convRate: ((p.sales_count || (80 - i * 10)) / ((p.sales_count || 80 - i * 10) * 4 + 80) * 100).toFixed(1),
-      revenue: (p.sales_count || 80 - i * 10) * (p.price || 49),
+    const map = {};
+    orders.forEach(o => {
+      (o.items || []).forEach(item => {
+        const key = item.product_id || item.product_title;
+        if (!map[key]) {
+          map[key] = {
+            name: item.product_title?.length > 16 ? item.product_title.slice(0, 16) + "…" : (item.product_title || "Unknown"),
+            purchases: 0,
+            revenue: 0,
+          };
+        }
+        map[key].purchases += item.quantity || 1;
+        map[key].revenue += (item.price || 0) * (item.quantity || 1);
+      });
+    });
+    return Object.values(map).sort((a, b) => b.revenue - a.revenue).slice(0, 6);
+  }, [orders]);
+
+  const deliveryMethodData = useMemo(() => {
+    const counts = { shipping: 0, delivery: 0, pickup: 0 };
+    orders.forEach(o => {
+      if (o.delivery_method && counts[o.delivery_method] !== undefined) {
+        counts[o.delivery_method]++;
+      }
+    });
+    return [
+      { name: "Shipping", value: counts.shipping, color: COLORS[0] },
+      { name: "Local Delivery", value: counts.delivery, color: COLORS[1] },
+      { name: "Pickup", value: counts.pickup, color: COLORS[2] },
+    ].filter(d => d.value > 0);
+  }, [orders]);
+
+  const orderStatusData = useMemo(() => {
+    const counts = {};
+    orders.forEach(o => { counts[o.status] = (counts[o.status] || 0) + 1; });
+    return Object.entries(counts).map(([name, value], i) => ({
+      name: name.charAt(0).toUpperCase() + name.slice(1),
+      value,
+      color: COLORS[i % COLORS.length],
     }));
-    return base.length ? base : [
-      { name: "Vintage Hoodie", views: 9840, clicks: 2890, purchases: 312, ctr: "29.4", convRate: "10.8", revenue: 28003 },
-      { name: "Canvas Sneakers", views: 6200, clicks: 1540, purchases: 186, ctr: "24.8", convRate: "12.1", revenue: 12088 },
-      { name: "Summer Tee", views: 4100, clicks: 820, purchases: 98, ctr: "20.0", convRate: "12.0", revenue: 3038 },
-    ];
-  }, [products]);
+  }, [orders]);
 
-  // Traffic sources
-  const trafficSources = [
-    { name: "Social Media", value: 38, icon: Share2, color: "#6366f1" },
-    { name: "Direct Search", value: 27, icon: Search, color: "#8b5cf6" },
-    { name: "Live Streams", value: 18, icon: Star, color: "#ec4899" },
-    { name: "Referrals", value: 11, icon: Globe, color: "#f59e0b" },
-    { name: "Email", value: 6, icon: Smartphone, color: "#10b981" },
-  ];
+  const topCountries = useMemo(() => {
+    const counts = {};
+    orders.forEach(o => {
+      const country = o.shipping_country || "Unknown";
+      counts[country] = (counts[country] || 0) + 1;
+    });
+    const total = orders.length || 1;
+    return Object.entries(counts)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 6)
+      .map(([country, count]) => ({ country, count, pct: Math.round((count / total) * 100) }));
+  }, [orders]);
 
-  // Demographics
-  const ageGroups = [
-    { age: "18-24", value: 32, color: COLORS[0] },
-    { age: "25-34", value: 41, color: COLORS[1] },
-    { age: "35-44", value: 18, color: COLORS[2] },
-    { age: "45-54", value: 6, color: COLORS[3] },
-    { age: "55+", value: 3, color: COLORS[4] },
-  ];
+  const categoryRevenue = useMemo(() => {
+    const map = {};
+    orders.forEach(o => {
+      (o.items || []).forEach(item => {
+        const product = products.find(p => (p._id || p.id) === item.product_id);
+        const cat = product?.category || "Other";
+        map[cat] = (map[cat] || 0) + (item.price || 0) * (item.quantity || 1);
+      });
+    });
+    return Object.entries(map)
+      .map(([name, revenue]) => ({ name: name.charAt(0).toUpperCase() + name.slice(1), revenue: Math.round(revenue) }))
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 6);
+  }, [orders, products]);
 
-  const topLocations = [
-    { city: "New York", pct: 18 }, { city: "Los Angeles", pct: 14 }, { city: "Chicago", pct: 9 },
-    { city: "Houston", pct: 7 }, { city: "Phoenix", pct: 5 }, { city: "Other", pct: 47 },
-  ];
+  const lowStockProducts = useMemo(() => (
+    products.filter(p => p.inventory_count !== undefined && p.inventory_count !== null && p.inventory_count <= 5)
+      .sort((a, b) => a.inventory_count - b.inventory_count)
+      .slice(0, 5)
+  ), [products]);
 
-  // Funnel
-  const funnel = [
-    { stage: "Store Views", count: 12400, pct: 100 },
-    { stage: "Product Clicks", count: 4920, pct: 39.7 },
-    { stage: "Add to Cart", count: 1380, pct: 11.1 },
-    { stage: "Checkout", count: 740, pct: 6.0 },
-    { stage: "Purchased", count: orders.length || 512, pct: ((orders.length || 512) / 12400 * 100).toFixed(1) },
-  ];
-
-  // Device split
-  const devices = [
-    { name: "Mobile", value: 64, color: COLORS[0] },
-    { name: "Desktop", value: 29, color: COLORS[1] },
-    { name: "Tablet", value: 7, color: COLORS[2] },
-  ];
+  const revenueOrderData = monthlyRevenue.map(m => ({ ...m, revenue: Math.round(m.revenue * 100) / 100 }));
 
   return (
     <div className="space-y-5">
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <KpiCard icon={Eye} label="Total Store Views" value={(12400 + orders.length * 100).toLocaleString()} change={22.4} color="bg-indigo-50 text-indigo-600" />
-        <KpiCard icon={MousePointer} label="Avg. CTR" value="29.4%" change={8.1} color="bg-purple-50 text-purple-600" sub="Product click-through rate" />
-        <KpiCard icon={ShoppingCart} label="Conversion Rate" value={`${conversionRate}%`} change={3.2} color="bg-pink-50 text-pink-600" sub="Views to purchase" />
-        <KpiCard icon={DollarSign} label="Avg. Order Value" value={`$${avgOrderValue > 0 ? avgOrderValue.toFixed(2) : "98.44"}`} change={5.7} color="bg-green-50 text-green-600" />
+        <KpiCard icon={DollarSign} label="Total Revenue" value={`$${totalRevenue.toFixed(2)}`} color="bg-indigo-50 text-indigo-600" />
+        <KpiCard icon={ShoppingCart} label="Total Orders" value={orders.length} sub={`${paidOrders} paid`} color="bg-purple-50 text-purple-600" />
+        <KpiCard icon={Users} label="Unique Customers" value={uniqueBuyers || orders.length} color="bg-pink-50 text-pink-600" />
+        <KpiCard icon={Package} label="Avg. Order Value" value={`$${avgOrderValue.toFixed(2)}`} sub={`${completionRate}% completion`} color="bg-green-50 text-green-600" />
       </div>
 
-      {/* Revenue + Visitors Trend */}
+      {/* Monthly Revenue & Orders Trend */}
       <div className="bg-white rounded-2xl border border-slate-100 p-5">
-        <h3 className="text-sm font-semibold text-slate-900 mb-0.5">Revenue & Visitor Trend</h3>
-        <p className="text-xs text-slate-400 mb-4">Monthly revenue and unique visitors</p>
-        <ResponsiveContainer width="100%" height={200}>
-          <AreaChart data={monthlyRevenue}>
-            <defs>
-              <linearGradient id="revG" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#6366f1" stopOpacity={0.25} />
-                <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
-              </linearGradient>
-              <linearGradient id="visG" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.15} />
-                <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-            <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fontSize: 11, fill: "#94a3b8" }} axisLine={false} tickLine={false} width={38} />
-            <Tooltip content={<CustomTooltip />} />
-            <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: "11px" }} />
-            <Area type="monotone" dataKey="revenue" name="Revenue ($)" stroke="#6366f1" strokeWidth={2} fill="url(#revG)" dot={false} />
-            <Area type="monotone" dataKey="visitors" name="Visitors" stroke="#8b5cf6" strokeWidth={2} fill="url(#visG)" dot={false} />
-          </AreaChart>
-        </ResponsiveContainer>
+        <h3 className="text-sm font-semibold text-slate-900 mb-0.5">Revenue & Orders Trend</h3>
+        <p className="text-xs text-slate-400 mb-4">Monthly revenue and order volume (this year)</p>
+        {revenueOrderData.every(d => d.revenue === 0) ? (
+          <div className="h-[200px] flex items-center justify-center text-sm text-slate-400">No order history yet</div>
+        ) : (
+          <ResponsiveContainer width="100%" height={200}>
+            <AreaChart data={revenueOrderData}>
+              <defs>
+                <linearGradient id="revG" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#6366f1" stopOpacity={0.25} />
+                  <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                </linearGradient>
+                <linearGradient id="ordG" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.15} />
+                  <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+              <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 11, fill: "#94a3b8" }} axisLine={false} tickLine={false} width={38} />
+              <Tooltip content={<CustomTooltip />} />
+              <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: "11px" }} />
+              <Area type="monotone" dataKey="revenue" name="Revenue ($)" stroke="#6366f1" strokeWidth={2} fill="url(#revG)" dot={false} />
+              <Area type="monotone" dataKey="orders" name="Orders" stroke="#8b5cf6" strokeWidth={2} fill="url(#ordG)" dot={false} />
+            </AreaChart>
+          </ResponsiveContainer>
+        )}
       </div>
 
       {/* Product Performance Table */}
       <div className="bg-white rounded-2xl border border-slate-100 p-5">
         <h3 className="text-sm font-semibold text-slate-900 mb-1">Product Performance</h3>
-        <p className="text-xs text-slate-400 mb-3">Click-through rates and conversions per product</p>
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs">
-            <thead>
-              <tr className="border-b border-slate-100">
-                {["Product", "Views", "Clicks", "CTR", "Purchases", "Conv. Rate", "Revenue"].map(h => (
-                  <th key={h} className="text-left pb-2 text-slate-500 font-medium pr-3 whitespace-nowrap">{h}</th>
+        <p className="text-xs text-slate-400 mb-3">Units sold and revenue per product (from orders)</p>
+        {productPerf.length === 0 ? (
+          <div className="py-8 text-center text-sm text-slate-400">No sales data yet</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="border-b border-slate-100">
+                  {["Product", "Units Sold", "Revenue"].map(h => (
+                    <th key={h} className="text-left pb-2 text-slate-500 font-medium pr-3 whitespace-nowrap">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {productPerf.map((p, i) => (
+                  <motion.tr
+                    key={i}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: i * 0.05 }}
+                    className="border-b border-slate-50 hover:bg-slate-50 transition-colors"
+                  >
+                    <td className="py-2.5 pr-3 font-semibold text-slate-800">{p.name}</td>
+                    <td className="py-2.5 pr-3 text-slate-600">{p.purchases.toLocaleString()}</td>
+                    <td className="py-2.5 font-bold text-indigo-600">${p.revenue.toLocaleString()}</td>
+                  </motion.tr>
                 ))}
-              </tr>
-            </thead>
-            <tbody>
-              {productPerf.map((p, i) => (
-                <motion.tr
-                  key={i}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: i * 0.05 }}
-                  className="border-b border-slate-50 hover:bg-slate-50 transition-colors"
-                >
-                  <td className="py-2.5 pr-3 font-semibold text-slate-800">{p.name}</td>
-                  <td className="py-2.5 pr-3 text-slate-600">{p.views.toLocaleString()}</td>
-                  <td className="py-2.5 pr-3 text-slate-600">{p.clicks.toLocaleString()}</td>
-                  <td className="py-2.5 pr-3">
-                    <span className={`font-semibold ${parseFloat(p.ctr) > 20 ? "text-green-600" : "text-amber-600"}`}>{p.ctr}%</span>
-                  </td>
-                  <td className="py-2.5 pr-3 text-slate-600">{p.purchases}</td>
-                  <td className="py-2.5 pr-3">
-                    <span className={`font-semibold ${parseFloat(p.convRate) > 10 ? "text-green-600" : "text-slate-600"}`}>{p.convRate}%</span>
-                  </td>
-                  <td className="py-2.5 font-bold text-indigo-600">${p.revenue.toLocaleString()}</td>
-                </motion.tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
-      {/* Traffic Sources + Devices */}
+      {/* Category Revenue + Delivery Methods */}
       <div className="grid lg:grid-cols-2 gap-4">
         <div className="bg-white rounded-2xl border border-slate-100 p-5">
-          <h3 className="text-sm font-semibold text-slate-900 mb-1">Traffic Sources</h3>
-          <p className="text-xs text-slate-400 mb-4">Where your visitors come from</p>
-          <div className="space-y-2.5">
-            {trafficSources.map(s => (
-              <div key={s.name}>
-                <div className="flex items-center justify-between mb-0.5">
-                  <div className="flex items-center gap-1.5">
-                    <s.icon className="w-3.5 h-3.5" style={{ color: s.color }} />
-                    <span className="text-xs text-slate-700">{s.name}</span>
-                  </div>
-                  <span className="text-xs font-semibold text-slate-900">{s.value}%</span>
-                </div>
-                <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${s.value}%` }}
-                    transition={{ duration: 0.8 }}
-                    className="h-full rounded-full"
-                    style={{ backgroundColor: s.color }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
+          <h3 className="text-sm font-semibold text-slate-900 mb-1">Revenue by Category</h3>
+          <p className="text-xs text-slate-400 mb-4">Which product categories earn the most</p>
+          {categoryRevenue.length === 0 ? (
+            <div className="h-[160px] flex items-center justify-center text-sm text-slate-400">No category data yet</div>
+          ) : (
+            <ResponsiveContainer width="100%" height={160}>
+              <BarChart data={categoryRevenue} layout="vertical">
+                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
+                <XAxis type="number" tick={{ fontSize: 11, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
+                <YAxis dataKey="name" type="category" tick={{ fontSize: 11, fill: "#94a3b8" }} axisLine={false} tickLine={false} width={70} />
+                <Tooltip content={<CustomTooltip prefix="$" />} />
+                <Bar dataKey="revenue" radius={[0, 6, 6, 0]}>
+                  {categoryRevenue.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          )}
         </div>
 
-        <div className="bg-white rounded-2xl border border-slate-100 p-5 relative overflow-hidden">
-          {!isElite && (
-            <div className="absolute inset-0 bg-white/80 backdrop-blur-[1px] z-10 flex flex-col items-center justify-center p-6 text-center">
-              <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center mb-3">
-                <Star className="w-5 h-5 text-amber-600" />
+        <div className="bg-white rounded-2xl border border-slate-100 p-5">
+          <h3 className="text-sm font-semibold text-slate-900 mb-1">Delivery Methods</h3>
+          <p className="text-xs text-slate-400 mb-4">How customers choose to receive orders</p>
+          {deliveryMethodData.length === 0 ? (
+            <div className="h-[160px] flex items-center justify-center text-sm text-slate-400">No order data yet</div>
+          ) : (
+            <div className="flex items-center gap-4 h-[160px]">
+              <ResponsiveContainer width="50%" height={140}>
+                <PieChart>
+                  <Pie data={deliveryMethodData} cx="50%" cy="50%" innerRadius={38} outerRadius={58} dataKey="value" paddingAngle={3}>
+                    {deliveryMethodData.map((d, i) => <Cell key={i} fill={d.color} />)}
+                  </Pie>
+                  <Tooltip formatter={(v, n) => [v, n]} />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="flex-1 space-y-2.5">
+                {deliveryMethodData.map(d => (
+                  <div key={d.name} className="flex items-center gap-2">
+                    <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: d.color }} />
+                    <span className="text-xs text-slate-600 flex-1">{d.name}</span>
+                    <span className="text-xs font-semibold text-slate-900">{d.value}</span>
+                  </div>
+                ))}
               </div>
-              <h4 className="text-sm font-bold text-slate-900 mb-1">Elite Analytics Feature</h4>
-              <p className="text-[11px] text-slate-500 mb-4 max-w-[180px]">Upgrade your subscription to access detailed audience demographics and deeper insights.</p>
-              <Button onClick={onUpgrade} size="sm" variant="outline" className="h-8 text-[10px] rounded-lg border-amber-200 text-amber-700 hover:bg-amber-50">Upgrade Plan</Button>
             </div>
           )}
-          <h3 className="text-sm font-semibold text-slate-900 mb-1">Audience Demographics</h3>
-          <p className="text-xs text-slate-400 mb-3">Age groups & device breakdown</p>
-          <div className="flex items-center gap-3 mb-4">
-            <ResponsiveContainer width="50%" height={120}>
-              <PieChart>
-                <Pie data={ageGroups} cx="50%" cy="50%" innerRadius={32} outerRadius={52} dataKey="value" paddingAngle={2}>
-                  {ageGroups.map((d, i) => <Cell key={i} fill={d.color} />)}
-                </Pie>
-                <Tooltip formatter={(v) => `${v}%`} />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="flex-1 space-y-1.5">
-              {ageGroups.map(d => (
-                <div key={d.age} className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: d.color }} />
-                  <span className="text-xs text-slate-600 flex-1">{d.age}</span>
-                  <span className="text-xs font-semibold text-slate-900">{d.value}%</span>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="border-t border-slate-100 pt-3">
-            <p className="text-xs font-medium text-slate-600 mb-2">Devices</p>
-            <div className="flex gap-2">
-              {devices.map(d => (
-                <div key={d.name} className="flex-1 text-center p-2 rounded-xl" style={{ backgroundColor: d.color + "15" }}>
-                  <p className="text-base font-bold" style={{ color: d.color }}>{d.value}%</p>
-                  <p className="text-[10px] text-slate-500">{d.name}</p>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
       </div>
 
-      {/* Conversion Funnel + Top Locations */}
+      {/* Order Status + Top Locations */}
       <div className="grid lg:grid-cols-2 gap-4">
         <div className="bg-white rounded-2xl border border-slate-100 p-5">
-          <h3 className="text-sm font-semibold text-slate-900 mb-1">Conversion Funnel</h3>
-          <p className="text-xs text-slate-400 mb-4">From store view to purchase</p>
-          <div className="space-y-2">
-            {funnel.map((f, i) => (
-              <div key={f.stage}>
-                <div className="flex justify-between text-xs mb-0.5">
-                  <span className="text-slate-600">{f.stage}</span>
-                  <span className="font-semibold text-slate-900">{typeof f.count === "number" ? f.count.toLocaleString() : f.count} <span className="text-slate-400 font-normal">({f.pct}%)</span></span>
-                </div>
-                <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${f.pct}%` }}
-                    transition={{ duration: 0.7, delay: i * 0.08 }}
-                    className="h-full rounded-full"
-                    style={{ backgroundColor: COLORS[i] }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-          <p className="text-xs text-slate-400 mt-3">Overall conversion: <span className="text-indigo-600 font-semibold">{conversionRate}%</span></p>
+          <h3 className="text-sm font-semibold text-slate-900 mb-1">Order Status Pipeline</h3>
+          <p className="text-xs text-slate-400 mb-4">Current state of all your orders</p>
+          {orderStatusData.length === 0 ? (
+            <div className="py-8 text-center text-sm text-slate-400">No orders yet</div>
+          ) : (
+            <div className="space-y-2">
+              {orderStatusData.map((s, i) => {
+                const pct = Math.round((s.value / orders.length) * 100);
+                return (
+                  <div key={s.name}>
+                    <div className="flex justify-between text-xs mb-0.5">
+                      <span className="text-slate-600">{s.name}</span>
+                      <span className="font-semibold text-slate-900">{s.value} <span className="text-slate-400 font-normal">({pct}%)</span></span>
+                    </div>
+                    <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${pct}%` }}
+                        transition={{ duration: 0.7, delay: i * 0.08 }}
+                        className="h-full rounded-full"
+                        style={{ backgroundColor: s.color }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+              <p className="text-xs text-slate-400 mt-3">Order completion rate: <span className="text-indigo-600 font-semibold">{completionRate}%</span></p>
+            </div>
+          )}
         </div>
 
         <div className="bg-white rounded-2xl border border-slate-100 p-5 relative overflow-hidden">
@@ -314,27 +327,53 @@ export default function AdvancedAnalytics({ orders, products, plan = 'free', onU
                 <Star className="w-5 h-5 text-amber-600" />
               </div>
               <h4 className="text-sm font-bold text-slate-900 mb-1">Elite Analytics Feature</h4>
-              <p className="text-[11px] text-slate-500 mb-4 max-w-[180px]">Upgrade your subscription to see customer location data and target your audience better.</p>
+              <p className="text-[11px] text-slate-500 mb-4 max-w-[180px]">Upgrade to see where your customers are shipping from.</p>
               <Button onClick={onUpgrade} size="sm" variant="outline" className="h-8 text-[10px] rounded-lg border-amber-200 text-amber-700 hover:bg-amber-50">Upgrade Plan</Button>
             </div>
           )}
           <h3 className="text-sm font-semibold text-slate-900 mb-1 flex items-center gap-1.5">
-            <MapPin className="w-4 h-4 text-red-500" /> Top Locations
+            <MapPin className="w-4 h-4 text-red-500" /> Top Shipping Countries
           </h3>
-          <p className="text-xs text-slate-400 mb-3">Where your customers are from</p>
-          <div className="space-y-2">
-            {topLocations.map((loc, i) => (
-              <div key={loc.city} className="flex items-center gap-2">
-                <span className="text-xs font-bold text-slate-400 w-4">{i + 1}</span>
-                <span className="text-xs text-slate-700 flex-1">{loc.city}</span>
-                <div className="w-20 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-indigo-500 rounded-full" style={{ width: `${loc.pct * 2}%` }} />
+          <p className="text-xs text-slate-400 mb-3">Where your customers are located</p>
+          {topCountries.length === 0 ? (
+            <div className="py-8 text-center text-sm text-slate-400">No shipping data yet</div>
+          ) : (
+            <div className="space-y-2">
+              {topCountries.map((loc, i) => (
+                <div key={loc.country} className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-slate-400 w-4">{i + 1}</span>
+                  <span className="text-xs text-slate-700 flex-1">{loc.country}</span>
+                  <div className="w-20 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                    <div className="h-full rounded-full" style={{ width: `${loc.pct}%`, backgroundColor: COLORS[i % COLORS.length] }} />
+                  </div>
+                  <span className="text-xs font-semibold text-slate-900 w-7 text-right">{loc.pct}%</span>
                 </div>
-                <span className="text-xs font-semibold text-slate-900 w-7 text-right">{loc.pct}%</span>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Low Stock */}
+      <div className="bg-white rounded-2xl border border-slate-100 p-5">
+        <h3 className="text-sm font-semibold text-slate-900 mb-1 flex items-center gap-2">
+          <AlertTriangle className="w-4 h-4 text-amber-500" /> Low Stock Alert
+        </h3>
+        <p className="text-xs text-slate-400 mb-4">Products with 5 or fewer units remaining</p>
+        {lowStockProducts.length === 0 ? (
+          <p className="text-sm text-slate-400">All products are well stocked.</p>
+        ) : (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {lowStockProducts.map(p => (
+              <div key={p._id || p.id} className="flex items-center justify-between p-3 rounded-xl bg-amber-50 border border-amber-100">
+                <span className="text-xs font-medium text-slate-700 truncate max-w-[60%]">{p.title}</span>
+                <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${p.inventory_count === 0 ? "bg-red-100 text-red-600" : "bg-amber-200 text-amber-800"}`}>
+                  {p.inventory_count === 0 ? "Out of stock" : `${p.inventory_count} left`}
+                </span>
               </div>
             ))}
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
