@@ -228,7 +228,11 @@ export default function SubscriptionManager({ store, vendorUsername }) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["vendorSubscription"] });
-      toast.success("Payment verified! Subscription active.");
+      toast.success("Payment verified! Your subscription is now active.");
+    },
+    onError: (err) => {
+      queryClient.invalidateQueries({ queryKey: ["vendorSubscription"] });
+      toast.error(err?.message || "Payment verification failed. Contact support if you were charged.");
     },
   });
 
@@ -264,11 +268,18 @@ export default function SubscriptionManager({ store, vendorUsername }) {
         setShowConfirm(null);
         queryClient.invalidateQueries({ queryKey: ["vendorSubscription"] });
       } else {
-        const annualPrice = data.plan.priceAnnual * 12;
-        const monthlyPrice = data.plan.price;
-        const price = billing === "annual" ? annualPrice : monthlyPrice;
-        
+        // When upgrading from an active paid plan, the backend stores the target in
+        // pending_plan instead of changing the plan directly.  Use the returned
+        // pending_plan (if present) to determine the price; fall back to plan.id.
+        const targetPlanId = data.sub.pending_plan || data.plan.id;
+        const targetBillingCycle = data.sub.pending_billing_cycle || billing;
+        const targetPlanMeta = PLANS.find(p => p.id === targetPlanId) || data.plan;
+        const price = targetBillingCycle === "annual"
+          ? targetPlanMeta.priceAnnual * 12
+          : targetPlanMeta.price;
+
         setShowConfirm(null);
+        queryClient.invalidateQueries({ queryKey: ["vendorSubscription"] });
         try {
           await initializePaystackPayment({
             amount: price,
@@ -291,8 +302,14 @@ export default function SubscriptionManager({ store, vendorUsername }) {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const reference = params.get('reference') || params.get('trxref');
-    
-    if (reference && subscription?.status === 'pending' && (subscription.id || subscription._id)) {
+
+    // Trigger verification if:
+    // - status is 'pending' (first-time or free→paid subscription), OR
+    // - pending_plan is set (active paid plan upgrading to a higher tier, e.g. pro→elite)
+    const needsVerification =
+      subscription?.status === 'pending' || !!subscription?.pending_plan;
+
+    if (reference && needsVerification && (subscription?.id || subscription?._id)) {
       verifyPayment({ 
         id: subscription.id || subscription._id, 
         reference 
@@ -307,7 +324,13 @@ export default function SubscriptionManager({ store, vendorUsername }) {
   }, [subscription, verifyPayment]);
 
   const currentPlanInfo = PLANS.find(p => p.id === (subscription?.plan || "free"));
-  const isPending = subscription?.status === "pending";
+  // pending_plan is set when upgrading from an active paid plan (pro → elite).
+  // In that case the subscription stays active at the current plan; pending_plan
+  // holds the target tier that awaits payment.
+  const pendingUpgradePlan = subscription?.pending_plan
+    ? PLANS.find(p => p.id === subscription.pending_plan)
+    : null;
+  const isPending = subscription?.status === "pending" || !!pendingUpgradePlan;
 
   if (isLoading) return <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-slate-400" /></div>;
 
@@ -344,9 +367,13 @@ export default function SubscriptionManager({ store, vendorUsername }) {
               variant="default" 
               className="h-8 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 rounded-lg px-4 shadow-sm shadow-indigo-100"
               onClick={async () => {
-                const plan = PLANS.find(p => p.id === subscription.plan);
+                // Use pending_plan/pending_billing_cycle when upgrading from an active
+                // paid plan (pro → elite), otherwise use the subscription's own fields.
+                const targetPlanId = subscription.pending_plan || subscription.plan;
+                const targetBillingCycle = subscription.pending_billing_cycle || subscription.billing_cycle;
+                const plan = PLANS.find(p => p.id === targetPlanId);
                 if (!plan) return;
-                const price = subscription.billing_cycle === "annual" ? plan.priceAnnual * 12 : plan.price;
+                const price = targetBillingCycle === "annual" ? plan.priceAnnual * 12 : plan.price;
                 try {
                   await initializePaystackPayment({
                     amount: price,
@@ -374,7 +401,12 @@ export default function SubscriptionManager({ store, vendorUsername }) {
         <div className="bg-amber-50/50 border border-amber-100 rounded-xl p-4 flex items-start gap-3">
           <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
           <div className="text-xs text-amber-700 leading-relaxed">
-            <strong>Payment Required:</strong> Your {currentPlanInfo?.name} features will be unlocked once payment is confirmed. 
+            <strong>Payment Required:</strong> Your{" "}
+            {pendingUpgradePlan ? pendingUpgradePlan.name : currentPlanInfo?.name} plan features will be
+            unlocked once payment is confirmed.{" "}
+            {pendingUpgradePlan && (
+              <span>You remain on the <strong>{currentPlanInfo?.name}</strong> plan until then. </span>
+            )}
             If you've already paid, it may take a few minutes to update.
           </div>
         </div>

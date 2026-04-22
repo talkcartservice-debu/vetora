@@ -223,20 +223,9 @@ export async function vendorSubscriptionRoutes(fastify: FastifyInstance) {
         return reply.code(403).send({ error: 'You can only update your own subscription' });
       }
 
-      // Update allowed fields
-      const allowedUpdates = [
-        'plan',
-        'billing_cycle',
-        'custom_domain',
-        'payment_method'
-      ];
-
-      allowedUpdates.forEach(field => {
-        const key = field as keyof IVendorSubscription;
-        if (body[key] !== undefined) {
-          (subscription as any)[key] = body[key];
-        }
-      });
+      // Update allowed non-plan fields
+      if (body.custom_domain !== undefined) subscription.custom_domain = body.custom_domain;
+      if (body.payment_method !== undefined) subscription.payment_method = body.payment_method;
 
       // Validate plan if being updated
       if (body.plan) {
@@ -244,26 +233,31 @@ export async function vendorSubscriptionRoutes(fastify: FastifyInstance) {
         if (!validPlans.includes(body.plan)) {
           return reply.code(400).send({ error: 'Invalid plan. Must be free, pro, or elite' });
         }
-        
-        // If switching from free to paid or upgrading, set to pending
-        if (body.plan !== 'free' && subscription.plan !== body.plan) {
-          subscription.status = 'pending';
-        } else if (body.plan === 'free') {
-          subscription.status = 'active';
-          subscription.set('custom_domain', null); // explicit null marks path as modified for Mongoose
-        }
-      }
 
-      // Update expiration if billing cycle changed
-      if (body.billing_cycle) {
-        const currentExpiry = subscription.expires_at && subscription.expires_at > new Date() 
-          ? subscription.expires_at 
-          : new Date();
-          
-        if (body.billing_cycle === 'annual') {
-          subscription.expires_at = new Date(currentExpiry.getTime() + 365 * 24 * 60 * 60 * 1000);
-        } else {
-          subscription.expires_at = new Date(currentExpiry.getTime() + 30 * 24 * 60 * 60 * 1000);
+        if (body.plan === 'free') {
+          // Downgrade to free: apply immediately, clear any pending upgrade
+          subscription.plan = 'free';
+          subscription.status = 'active';
+          subscription.pending_plan = undefined;
+          subscription.pending_billing_cycle = undefined;
+          subscription.set('custom_domain', null);
+        } else if (subscription.status === 'active' && subscription.plan !== 'free' && subscription.plan !== body.plan) {
+          // Upgrading from an active PAID plan (pro → elite):
+          // Do NOT downgrade current plan — store target in pending_plan so the user
+          // keeps their existing paid features while the new payment is processed.
+          subscription.pending_plan = body.plan as 'pro' | 'elite';
+          subscription.pending_billing_cycle = (body.billing_cycle || subscription.billing_cycle) as 'monthly' | 'annual';
+          // status and plan remain unchanged
+        } else if (subscription.plan !== body.plan || subscription.status !== 'active') {
+          // First-time paid sub, or free → paid upgrade, or re-attempting a pending payment:
+          // Change plan and mark pending until payment is verified.
+          subscription.plan = body.plan;
+          subscription.status = 'pending';
+          subscription.pending_plan = undefined;
+          subscription.pending_billing_cycle = undefined;
+          if (body.billing_cycle) {
+            subscription.billing_cycle = body.billing_cycle;
+          }
         }
       }
 
@@ -561,23 +555,37 @@ export async function vendorSubscriptionRoutes(fastify: FastifyInstance) {
           return reply.code(402).send({ error: 'Payment verification failed' });
         }
 
-        // Verify amount matches plan price
+        // Determine which plan and billing cycle we're verifying payment for.
+        // If there's a pending upgrade (active paid → higher tier), use those fields.
+        // Otherwise use the subscription's own plan/billing_cycle (first-time or free→paid).
+        const targetPlan = subscription.pending_plan || subscription.plan;
+        const targetBillingCycle = subscription.pending_billing_cycle || subscription.billing_cycle || 'monthly';
+
+        // Verify amount matches the target plan price
         const prices: Record<string, Record<string, number>> = {
           pro: { monthly: 29, annual: 276 },
           elite: { monthly: 79, annual: 756 }
         };
 
-        const planPrice = prices[subscription.plan]?.[subscription.billing_cycle || 'monthly'] || 0;
+        const planPrice = prices[targetPlan]?.[targetBillingCycle] || 0;
         // Paystack amount is in kobo (kobo = price * 100)
-        if (data.amount < planPrice * 100) {
+        if (planPrice > 0 && data.amount < planPrice * 100) {
           return reply.code(402).send({ error: 'Payment amount mismatch. Incorrect price paid.' });
         }
-        
+
+        // Promote pending upgrade fields to the active plan
+        if (subscription.pending_plan) {
+          subscription.plan = subscription.pending_plan;
+          subscription.billing_cycle = (subscription.pending_billing_cycle || subscription.billing_cycle) as 'monthly' | 'annual';
+          subscription.pending_plan = undefined;
+          subscription.pending_billing_cycle = undefined;
+        }
+
         subscription.status = 'active';
         subscription.payment_reference = reference;
         subscription.last_payment_date = new Date();
         
-        // Recalculate expiration from today
+        // Recalculate expiration from today based on the now-active billing cycle
         const now = new Date();
         if (subscription.billing_cycle === 'annual') {
           subscription.expires_at = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000);
