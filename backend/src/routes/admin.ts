@@ -255,6 +255,22 @@ export async function adminRoutes(fastify: FastifyInstance) {
     }
   });
 
+  // Delete store
+  fastify.delete('/stores/:id', async (request, reply) => {
+    try {
+      const { id } = request.params as { id: string };
+      const store = await Store.findByIdAndDelete(id);
+      if (!store) {
+        return reply.code(404).send({ error: 'Store not found' });
+      }
+      await logActivity(request, 'delete_store', store._id, 'store', { name: store.name });
+      return { success: true };
+    } catch (error) {
+      fastify.log.error(error);
+      return reply.code(500).send({ error: 'Internal server error' });
+    }
+  });
+
   // Verify store
   fastify.patch('/stores/:id/verify', async (request, reply) => {
     try {

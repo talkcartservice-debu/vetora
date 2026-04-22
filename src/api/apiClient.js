@@ -494,6 +494,7 @@ export const adminAPI = {
   updateStoreStatus: (id, status) => apiClient.patch(`/admin/stores/${id}/status`, { status }),
   bulkUpdateStoreStatus: (storeIds, status) => apiClient.patch('/admin/stores/bulk-status', { storeIds, status }),
   updateStoreVerification: (id, is_verified) => apiClient.patch(`/admin/stores/${id}/verify`, { is_verified }),
+  deleteStore: (id) => apiClient.delete(`/admin/stores/${id}`),
   // Products
   getProducts: (params) => {
     const query = apiClient.buildQueryString(params);

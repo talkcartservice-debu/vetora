@@ -90,7 +90,7 @@ import {
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
 
-const StoreDetailsModal = ({ store, isOpen, onOpenChange, onUpdateStatus, onUpdateVerification }) => {
+const StoreDetailsModal = ({ store, isOpen, onOpenChange, onUpdateStatus, onUpdateVerification, onDelete }) => {
   if (!store) return null;
 
   return (
@@ -190,6 +190,12 @@ const StoreDetailsModal = ({ store, isOpen, onOpenChange, onUpdateStatus, onUpda
             onClick={() => onUpdateVerification(store._id, !store.is_verified)}
           >
             {store.is_verified ? 'Remove Verification' : 'Verify Store'}
+          </Button>
+          <Button
+            variant="destructive"
+            onClick={() => onDelete(store._id)}
+          >
+            <Trash2 className="w-4 h-4 mr-2" /> Delete Store
           </Button>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>Close</Button>
         </DialogFooter>
@@ -807,6 +813,18 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleDeleteStore = async (storeId) => {
+    if (!window.confirm('Are you sure you want to permanently delete this store? This cannot be undone.')) return;
+    try {
+      await adminAPI.deleteStore(storeId);
+      toast({ title: 'Success', description: 'Store deleted successfully' });
+      if (selectedStore?._id === storeId) setIsStoreModalOpen(false);
+      fetchStores();
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to delete store', variant: 'destructive' });
+    }
+  };
+
   const handleUpdateOrderStatus = async (orderId, status) => {
     try {
       await adminAPI.updateOrderStatus(orderId, status);
@@ -1366,6 +1384,13 @@ const AdminDashboard = () => {
                                   <ShieldCheckIcon className="w-4 h-4 mr-2 text-blue-500" /> 
                                   {s.is_verified ? 'Remove Verification' : 'Verify Store'}
                                 </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  className="text-destructive focus:text-destructive"
+                                  onClick={() => handleDeleteStore(s._id)}
+                                >
+                                  <Trash2 className="w-4 h-4 mr-2" /> Delete Store
+                                </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </div>
@@ -1390,6 +1415,7 @@ const AdminDashboard = () => {
             onOpenChange={setIsStoreModalOpen}
             onUpdateStatus={handleUpdateStoreStatus}
             onUpdateVerification={handleUpdateStoreVerification}
+            onDelete={handleDeleteStore}
           />
         </TabsContent>
 
