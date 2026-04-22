@@ -258,7 +258,7 @@ export default function SubscriptionManager({ store, vendorUsername }) {
 
       return { sub, needsPayment: true, plan };
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       if (!data.needsPayment) {
         toast.success(`Plan updated to ${data.sub.plan}!`);
         setShowConfirm(null);
@@ -268,19 +268,22 @@ export default function SubscriptionManager({ store, vendorUsername }) {
         const monthlyPrice = data.plan.price;
         const price = billing === "annual" ? annualPrice : monthlyPrice;
         
-        // Backend expects amount in NGN/USD (converts to kobo itself)
-        initializePaystackPayment({
-          amount: price,
-          email: user.email,
-          order_id: `SUB-${data.sub.id || data.sub._id}`,
-          onSuccess: (res) => {
-            verifyPayment({ 
-              id: data.sub.id || data.sub._id, 
-              reference: res.reference 
-            });
-          }
-        });
         setShowConfirm(null);
+        try {
+          await initializePaystackPayment({
+            amount: price,
+            email: user.email,
+            order_id: `SUB-${data.sub.id || data.sub._id}`,
+            onSuccess: (res) => {
+              verifyPayment({ 
+                id: data.sub.id || data.sub._id, 
+                reference: res.reference 
+              });
+            }
+          });
+        } catch (err) {
+          toast.error(err.message || "Payment initialization failed. Please try again or contact support.");
+        }
       }
     },
   });
@@ -340,21 +343,25 @@ export default function SubscriptionManager({ store, vendorUsername }) {
               size="sm" 
               variant="default" 
               className="h-8 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 rounded-lg px-4 shadow-sm shadow-indigo-100"
-              onClick={() => {
+              onClick={async () => {
                 const plan = PLANS.find(p => p.id === subscription.plan);
                 if (!plan) return;
                 const price = subscription.billing_cycle === "annual" ? plan.priceAnnual * 12 : plan.price;
-                initializePaystackPayment({
-                  amount: price,
-                  email: user.email,
-                  order_id: `SUB-${subscription.id || subscription._id}`,
-                  onSuccess: (res) => {
-                    verifyPayment({ 
-                      id: subscription.id || subscription._id, 
-                      reference: res.reference 
-                    });
-                  }
-                });
+                try {
+                  await initializePaystackPayment({
+                    amount: price,
+                    email: user.email,
+                    order_id: `SUB-${subscription.id || subscription._id}`,
+                    onSuccess: (res) => {
+                      verifyPayment({ 
+                        id: subscription.id || subscription._id, 
+                        reference: res.reference 
+                      });
+                    }
+                  });
+                } catch (err) {
+                  toast.error(err.message || "Payment initialization failed. Please try again or contact support.");
+                }
               }}
             >
               Pay Now
