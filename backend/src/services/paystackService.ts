@@ -118,7 +118,16 @@ export const paystackService = {
    */
   async handleSuccessfulPayment(orderIdsString: string, reference: string) {
     try {
-      const orderIds = orderIdsString.split(',').filter(id => id.trim() !== '');
+      const allIds = orderIdsString.split(',').filter(id => id.trim() !== '');
+
+      // Subscription payments have SUB- prefix and are handled separately via their own verify endpoint
+      const orderIds = allIds.filter(id => !id.trim().startsWith('SUB-'));
+
+      if (orderIds.length === 0) {
+        console.log(`ℹ️ Webhook: Non-order payment (${orderIdsString}) handled separately.`);
+        return;
+      }
+
       const result = await Order.updateMany(
         { _id: { $in: orderIds }, payment_status: { $ne: 'paid' } },
         { 

@@ -21,17 +21,29 @@ export async function paymentRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     try {
       const { amount: clientAmount, email, phone, order_id, currency, channels } = initializePaymentSchema.parse(request.body);
-      
-      // Calculate total from all orders (comma-separated IDs)
-      const orderIds = order_id.split(',');
-      const orders = await Order.find({ _id: { $in: orderIds } });
-      
-      if (orders.length === 0) {
-        return reply.code(404).send({ error: 'Orders not found' });
+
+      let totalAmount: number;
+
+      // Subscription payments use a "SUB-" prefixed ID and don't map to Order documents
+      const isSubscriptionPayment = order_id.split(',').every(id => id.trim().startsWith('SUB-'));
+
+      if (isSubscriptionPayment) {
+        if (!clientAmount || clientAmount <= 0) {
+          return reply.code(400).send({ error: 'Amount is required for subscription payments' });
+        }
+        totalAmount = clientAmount;
+      } else {
+        // Calculate total from all orders (comma-separated IDs)
+        const orderIds = order_id.split(',').map(id => id.trim());
+        const orders = await Order.find({ _id: { $in: orderIds } });
+
+        if (orders.length === 0) {
+          return reply.code(404).send({ error: 'Orders not found' });
+        }
+
+        totalAmount = orders.reduce((sum, order) => sum + order.total, 0);
       }
 
-      const totalAmount = orders.reduce((sum, order) => sum + order.total, 0);
-      
       // Use the server-side total amount
       const data = await paystackService.initializeTransaction(email, totalAmount, order_id, currency, channels, phone);
       return data;
