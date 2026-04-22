@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { createPageUrl } from "@/lib/utils";
+import { createPageUrl, formatCurrency } from "@/lib/utils";
 import PostCard from "@/components/shared/PostCard";
 import ProductCard from "@/components/shared/ProductCard";
 import { PostSkeleton, ProductSkeleton } from "@/components/shared/LoadingSkeleton";
@@ -640,7 +640,7 @@ export default function Profile() {
                     ))}
                   </div>
                   <div className="mt-2 pt-2 border-t border-slate-50 flex justify-between">
-                    <span className="text-xs font-bold text-slate-800">Total: ${order.total?.toFixed(2)}</span>
+                    <span className="text-xs font-bold text-slate-800">Total: {formatCurrency(order.total)}</span>
                     <Link to={createPageUrl("Orders")} className="text-xs text-indigo-500 font-semibold hover:underline">Details →</Link>
                   </div>
                 </motion.div>

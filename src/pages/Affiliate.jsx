@@ -15,7 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { affiliateLinksAPI, productsAPI, vendorSubscriptionsAPI } from "@/api/apiClient";
 import { useAuth } from "@/lib/AuthContext";
-import { createPageUrl } from "@/lib/utils";
+import { createPageUrl, formatCurrency } from "@/lib/utils";
 
 const RANK_MEDAL = {
   1: { bg: "bg-yellow-100", text: "text-yellow-700", border: "border-yellow-200", icon: Crown },
@@ -176,7 +176,7 @@ function LeaderboardItem({ rank, name, avatar_url, total_earned, total_sales, is
         <p className="text-xs text-slate-400">{total_sales} sale{total_sales !== 1 ? "s" : ""}</p>
       </div>
       <div className="text-right shrink-0">
-        <p className={`text-sm font-black ${isMe ? "text-indigo-700" : "text-indigo-600"}`}>${total_earned.toFixed(2)}</p>
+        <p className={`text-sm font-black ${isMe ? "text-indigo-700" : "text-indigo-600"}`}>{formatCurrency(total_earned)}</p>
         <p className="text-[10px] text-slate-400">earned</p>
       </div>
     </motion.div>
@@ -392,7 +392,7 @@ export default function Affiliate() {
         <StatCard icon={Link2} label="Active Links" value={myLinks.filter(l => l.status === "active").length} color="bg-indigo-50 text-indigo-600" />
         <StatCard icon={MousePointerClick} label="Total Clicks" value={totalClicks.toLocaleString()} color="bg-blue-50 text-blue-600" />
         <StatCard icon={ShoppingCart} label="Conversions" value={totalConversions} sub={totalClicks ? `${((totalConversions/totalClicks)*100).toFixed(1)}% rate` : ""} color="bg-green-50 text-green-600" />
-        <StatCard icon={DollarSign} label="Pending Payout" value={`$${pendingPayout.toFixed(2)}`} sub={`$${totalEarned.toFixed(2)} total earned`} color="bg-amber-50 text-amber-600" />
+        <StatCard icon={DollarSign} label="Pending Payout" value={formatCurrency(pendingPayout)} sub={`${formatCurrency(totalEarned)} total earned`} color="bg-amber-50 text-amber-600" />
       </div>
 
       <Tabs defaultValue="links" className="w-full">
@@ -429,7 +429,7 @@ export default function Affiliate() {
                       <div className="flex items-start justify-between gap-3 mb-3">
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-bold text-slate-900 truncate">{link.product_title}</p>
-                          <p className="text-xs text-slate-400">{link.store_name} · ${link.product_price}</p>
+                          <p className="text-xs text-slate-400">{link.store_name} · {formatCurrency(link.product_price)}</p>
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
                           <Badge className={`text-[10px] border-0 capitalize ${link.status === "active" ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-500"}`}>
@@ -449,7 +449,7 @@ export default function Affiliate() {
                           <p className="text-[10px] text-slate-400">Sales</p>
                         </div>
                         <div className="bg-green-50 rounded-xl py-2">
-                          <p className="text-lg font-black text-green-700">${(link.total_commission_earned || 0).toFixed(2)}</p>
+                          <p className="text-lg font-black text-green-700">{formatCurrency(link.total_commission_earned || 0)}</p>
                           <p className="text-[10px] text-slate-400">Earned</p>
                         </div>
                       </div>
@@ -528,7 +528,7 @@ export default function Affiliate() {
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-xs font-semibold text-slate-800 line-clamp-2">{product.title}</p>
-                            <p className="text-xs text-indigo-600 font-bold">${product.price}</p>
+                            <p className="text-xs text-indigo-600 font-bold">{formatCurrency(product.price)}</p>
                             <p className="text-[10px] text-slate-400">{product.affiliate_commission_pct || 10}% commission</p>
                           </div>
                           {pendingProductId === productId ? (

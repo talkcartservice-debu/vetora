@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { toast } from "sonner";
 import { storesAPI, ordersAPI, withdrawalsAPI } from "@/api/apiClient";
 import { useAuth } from "@/lib/AuthContext";
+import { formatCurrency } from "@/lib/utils";
 
 function StatCard({ icon: Icon, label, value, sub, color }) {
   // Icon is a component, rendered as <Icon />
@@ -198,8 +199,8 @@ export default function VendorFinance() {
       const title = item.product_title?.length > 40 ? item.product_title.slice(0, 40) + "…" : (item.product_title || "Product");
       doc.text(title, 18, y);
       doc.text(String(item.quantity || 1), 133, y);
-      doc.text(`$${(item.price || 0).toFixed(2)}`, 150, y);
-      doc.text(`$${((item.price || 0) * (item.quantity || 1)).toFixed(2)}`, 176, y);
+      doc.text(`RWF ${Math.round(item.price || 0)}`, 150, y);
+      doc.text(`RWF ${Math.round((item.price || 0) * (item.quantity || 1))}`, 176, y);
       y += 10;
     });
 
@@ -210,10 +211,10 @@ export default function VendorFinance() {
     y += 8;
 
     const rows = [
-      ["Subtotal", `$${(order.subtotal || order.total || 0).toFixed(2)}`],
-      ["Shipping", `$${(order.shipping_fee || 0).toFixed(2)}`],
-      ["Gross Total", `$${(order.total || 0).toFixed(2)}`],
-      ["Platform Fee (10%)", `-$${((order.total || 0) * 0.1).toFixed(2)}`],
+      ["Subtotal", `RWF ${Math.round(order.subtotal || order.total || 0)}`],
+      ["Shipping", `RWF ${Math.round(order.shipping_fee || 0)}`],
+      ["Gross Total", `RWF ${Math.round(order.total || 0)}`],
+      ["Platform Fee (10%)", `-RWF ${Math.round((order.total || 0) * 0.1)}`],
     ];
     rows.forEach(([label, val]) => {
       doc.setFont("helvetica", "normal");
@@ -228,7 +229,7 @@ export default function VendorFinance() {
     doc.setTextColor(255, 255, 255);
     doc.setFont("helvetica", "bold");
     doc.text("Net Payout", 134, y + 5);
-    doc.text(`$${((order.total || 0) * 0.9).toFixed(2)}`, 185, y + 5, { align: "right" });
+    doc.text(`RWF ${Math.round((order.total || 0) * 0.9)}`, 185, y + 5, { align: "right" });
 
     // Footer
     doc.setTextColor(148, 163, 184);
@@ -414,10 +415,10 @@ export default function VendorFinance() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-        <StatCard icon={DollarSign} label="Available Balance" value={`$${availableBalance.toFixed(2)}`} color="bg-indigo-50 text-indigo-600" />
-        <StatCard icon={TrendingUp} label="Total Earned" value={`$${totalEarned.toFixed(2)}`} sub="After platform fee" color="bg-green-50 text-green-600" />
-        <StatCard icon={Clock} label="Pending Earnings" value={`$${pendingEarnings.toFixed(2)}`} sub="From active orders" color="bg-amber-50 text-amber-600" />
-        <StatCard icon={CheckCircle2} label="Total Withdrawn" value={`$${totalWithdrawn.toFixed(2)}`} color="bg-purple-50 text-purple-600" />
+        <StatCard icon={DollarSign} label="Available Balance" value={formatCurrency(availableBalance)} color="bg-indigo-50 text-indigo-600" />
+        <StatCard icon={TrendingUp} label="Total Earned" value={formatCurrency(totalEarned)} sub="After platform fee" color="bg-green-50 text-green-600" />
+        <StatCard icon={Clock} label="Pending Earnings" value={formatCurrency(pendingEarnings)} sub="From active orders" color="bg-amber-50 text-amber-600" />
+        <StatCard icon={CheckCircle2} label="Total Withdrawn" value={formatCurrency(totalWithdrawn)} color="bg-purple-50 text-purple-600" />
       </div>
 
       {/* Monthly Chart */}
@@ -470,8 +471,8 @@ export default function VendorFinance() {
                       </p>
                     </div>
                     <div className="text-right shrink-0">
-                      <p className="text-sm font-bold text-green-600">+${(order.total * 0.9).toFixed(2)}</p>
-                      <p className="text-[10px] text-slate-400 line-through">${order.total?.toFixed(2)}</p>
+                      <p className="text-sm font-bold text-green-600">+{formatCurrency(order.total * 0.9)}</p>
+                      <p className="text-[10px] text-slate-400 line-through">{formatCurrency(order.total)}</p>
                     </div>
                     {expandedOrder === order.id ? <ChevronUp className="w-4 h-4 text-slate-400 shrink-0" /> : <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />}
                   </button>
@@ -487,15 +488,15 @@ export default function VendorFinance() {
                         <div className="mx-2.5 mb-2 p-3 bg-slate-50 rounded-xl space-y-1.5">
                           <div className="flex justify-between text-xs">
                             <span className="text-slate-500">Gross</span>
-                            <span className="font-medium">${order.total?.toFixed(2)}</span>
+                            <span className="font-medium">{formatCurrency(order.total)}</span>
                           </div>
                           <div className="flex justify-between text-xs">
                             <span className="text-slate-500">Platform fee (10%)</span>
-                            <span className="text-red-500">-${(order.total * 0.1).toFixed(2)}</span>
+                            <span className="text-red-500">-{formatCurrency(order.total * 0.1)}</span>
                           </div>
                           <div className="flex justify-between text-xs font-semibold border-t border-slate-200 pt-1.5">
                             <span>Net payout</span>
-                            <span className="text-green-600">${(order.total * 0.9).toFixed(2)}</span>
+                            <span className="text-green-600">{formatCurrency(order.total * 0.9)}</span>
                           </div>
                           <div className="flex justify-between text-[10px] text-slate-400 pt-1 capitalize">
                             <span>Payment Method</span>
@@ -542,7 +543,7 @@ export default function VendorFinance() {
                     <ArrowDownCircle className="w-4 h-4" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-slate-900">${w.amount?.toFixed(2)}</p>
+                    <p className="text-sm font-semibold text-slate-900">{formatCurrency(w.amount)}</p>
                     <p className="text-xs text-slate-400">
                       {w.payment_method === 'mobile_money'
                         ? (w.mobile_money_number || 'Mobile Money')

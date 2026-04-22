@@ -1,7 +1,7 @@
 import React from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { createPageUrl } from "@/lib/utils";
+import { createPageUrl, formatCurrency } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { Heart, ShoppingCart, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -141,9 +141,9 @@ export default function Wishlist() {
                     <p className="text-[10px] text-slate-400 font-medium mb-0.5">{item.store_name}</p>
                     <p className="text-xs font-semibold text-slate-900 line-clamp-2 leading-tight mb-2">{item.product_title}</p>
                     <div className="flex items-center gap-1.5 mb-3">
-                      <span className="text-sm font-bold text-slate-900">${item.product_price?.toFixed(2)}</span>
+                      <span className="text-sm font-bold text-slate-900">{formatCurrency(item.product_price)}</span>
                       {item.compare_at_price > 0 && (
-                        <span className="text-xs text-slate-400 line-through">${item.compare_at_price?.toFixed(2)}</span>
+                        <span className="text-xs text-slate-400 line-through">{formatCurrency(item.compare_at_price)}</span>
                       )}
                     </div>
                     <div className="flex gap-1.5">

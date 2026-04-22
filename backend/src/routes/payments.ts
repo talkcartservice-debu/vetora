@@ -10,7 +10,7 @@ const initializePaymentSchema = z.object({
   email: z.string().email(),
   phone: z.string().optional(),
   order_id: z.string(),
-  currency: z.string().default('NGN'),
+  currency: z.string().optional(),
   channels: z.array(z.enum(VALID_PAYSTACK_CHANNELS)).optional(),
 });
 

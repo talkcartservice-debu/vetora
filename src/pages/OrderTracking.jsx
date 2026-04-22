@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { createPageUrl } from "@/lib/utils";
+import { createPageUrl, formatCurrency } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Package, Search, Truck, CheckCircle2, Clock, MapPin,
@@ -134,7 +134,7 @@ function OrderTrackCard({ order, defaultExpanded = false }) {
         <div className="flex-1 min-w-0">
           <p className="text-xs text-slate-400">#{order.id?.slice(-8)} · {new Date(order.created_at || order.created_date).toLocaleDateString()}</p>
           <p className="text-sm font-semibold text-slate-900 truncate">{order.store_name || "Store"}</p>
-          <p className="text-xs text-slate-500">{order.items?.length || 0} item(s) · <span className="font-semibold text-slate-700">${order.total?.toFixed(2)}</span></p>
+          <p className="text-xs text-slate-500">{order.items?.length || 0} item(s) · <span className="font-semibold text-slate-700">{formatCurrency(order.total)}</span></p>
         </div>
         <div className="flex flex-col items-end gap-2 shrink-0">
           <Badge className={`${statusColors[order.status] || statusColors.pending} border-0 text-xs capitalize`}>
@@ -181,7 +181,7 @@ function OrderTrackCard({ order, defaultExpanded = false }) {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-medium text-slate-700 truncate">{item.product_title}</p>
-                      <p className="text-xs text-slate-400">Qty: {item.quantity} · ${item.price?.toFixed(2)}</p>
+                      <p className="text-xs text-slate-400">Qty: {item.quantity} · {formatCurrency(item.price)}</p>
                     </div>
                   </div>
                 ))}

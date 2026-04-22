@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import { Order } from '../models/Order';
 
 const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY || '';
+const PAYSTACK_CURRENCY = process.env.PAYSTACK_CURRENCY || 'RWF';
 
 export interface PaystackInitializeResponse {
   status: boolean;
@@ -18,7 +19,7 @@ export const paystackService = {
   /**
    * Initialize a Paystack transaction
    */
-  async initializeTransaction(email: string, amount: number, orderId: string, currency: string = 'NGN', channels: string[] = [], phone?: string): Promise<PaystackInitializeResponse> {
+  async initializeTransaction(email: string, amount: number, orderId: string, currency: string = PAYSTACK_CURRENCY, channels: string[] = [], phone?: string): Promise<PaystackInitializeResponse> {
     if (!PAYSTACK_SECRET_KEY || PAYSTACK_SECRET_KEY === 'your_paystack_secret_key' || PAYSTACK_SECRET_KEY === '') {
       const error: any = new Error('Paystack secret key is not configured. Please set PAYSTACK_SECRET_KEY in your environment variables.');
       error.statusCode = 503;
@@ -28,11 +29,14 @@ export const paystackService = {
       const data: any = {
         amount: Math.round(amount * 100), // Convert to kobo/cents
         email,
-        currency,
         metadata: {
           order_id: orderId,
         },
       };
+
+      if (currency) {
+        data.currency = currency;
+      }
 
       if (phone) {
         data.metadata.phone = phone;

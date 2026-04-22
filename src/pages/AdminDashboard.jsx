@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/AuthContext';
+import { formatCurrency } from '@/lib/utils';
 import { adminAPI, vendorSubscriptionsAPI } from '@/api/apiClient';
 import { useToast } from '@/components/ui/use-toast';
 import { 
@@ -144,7 +145,7 @@ const StoreDetailsModal = ({ store, isOpen, onOpenChange, onUpdateStatus, onUpda
                 </div>
                 <div>
                   <div className="text-xs text-muted-foreground uppercase">Revenue</div>
-                  <div className="text-xl font-bold text-success">${store.total_revenue || 0}</div>
+                  <div className="text-xl font-bold text-success">{formatCurrency(store.total_revenue || 0)}</div>
                 </div>
                 <div>
                   <div className="text-xs text-muted-foreground uppercase">Rating</div>
@@ -946,7 +947,7 @@ const AdminDashboard = () => {
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${stats?.counts?.total_sales?.toLocaleString() || '0'}</div>
+            <div className="text-2xl font-bold">{formatCurrency(stats?.counts?.total_sales || 0)}</div>
             <p className="text-xs text-muted-foreground">Total platform volume</p>
           </CardContent>
         </Card>
@@ -986,7 +987,7 @@ const AdminDashboard = () => {
                     <YAxis />
                     <RechartsTooltip 
                       labelFormatter={(val) => new Date(val).toLocaleDateString()}
-                      formatter={(val) => [`$${val}`, 'Sales']}
+                      formatter={(val) => [formatCurrency(val), 'Sales']}
                     />
                     <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                   </BarChart>
@@ -1504,9 +1505,9 @@ const AdminDashboard = () => {
                         </TableCell>
                         <TableCell>
                           <div className="flex flex-col">
-                            <span className="font-semibold">${p.price}</span>
+                            <span className="font-semibold">{formatCurrency(p.price)}</span>
                             {p.compare_at_price > p.price && (
-                              <span className="text-xs text-muted-foreground line-through">${p.compare_at_price}</span>
+                              <span className="text-xs text-muted-foreground line-through">{formatCurrency(p.compare_at_price)}</span>
                             )}
                           </div>
                         </TableCell>
@@ -1648,7 +1649,7 @@ const AdminDashboard = () => {
                             <span className="text-xs text-muted-foreground">@{o.vendor_username}</span>
                           </div>
                         </TableCell>
-                        <TableCell className="font-medium">${o.total?.toFixed(2)}</TableCell>
+                        <TableCell className="font-medium">{formatCurrency(o.total)}</TableCell>
                         <TableCell>
                           <Badge variant={
                             o.status === 'delivered' ? 'success' :
@@ -1762,7 +1763,7 @@ const AdminDashboard = () => {
                             )}
                           </div>
                         </TableCell>
-                        <TableCell className="font-bold text-success">${w.amount}</TableCell>
+                        <TableCell className="font-bold text-success">{formatCurrency(w.amount)}</TableCell>
                         <TableCell className="capitalize">
                           <Badge variant="outline" className="font-normal">
                             {w.payment_method?.replace('_', ' ')}
@@ -1826,7 +1827,7 @@ const AdminDashboard = () => {
               <DialogHeader>
                 <DialogTitle>{withdrawalAction === 'completed' ? 'Approve' : 'Reject'} Withdrawal</DialogTitle>
                 <DialogDescription>
-                  Reviewing withdrawal request for @{selectedWithdrawal?.vendor_username} of ${selectedWithdrawal?.amount}.
+                  Reviewing withdrawal request for @{selectedWithdrawal?.vendor_username} of {formatCurrency(selectedWithdrawal?.amount)}.
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-2">
@@ -1922,7 +1923,7 @@ const AdminDashboard = () => {
                           </Badge>
                         </TableCell>
                         <TableCell className="font-medium">
-                          ${sub.amount || 0}
+                          {formatCurrency(sub.amount || 0)}
                         </TableCell>
                         <TableCell className="text-sm">
                           {sub.expires_at ? new Date(sub.expires_at).toLocaleDateString() : 'Never'}

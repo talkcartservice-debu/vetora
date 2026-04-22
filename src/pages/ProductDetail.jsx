@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { createPageUrl } from "@/lib/utils";
+import { createPageUrl, formatCurrency } from "@/lib/utils";
 import ReviewGallery from "@/components/reviews/ReviewGallery";
 import ReviewForm from "@/components/reviews/ReviewForm";
 import SimilarProducts from "@/components/product/SimilarProducts";
@@ -270,9 +270,9 @@ export default function ProductDetail() {
           )}
 
           <div className="flex items-baseline gap-3 mb-6">
-            <span className="text-3xl font-bold text-slate-900">${product.price?.toFixed(2)}</span>
+            <span className="text-3xl font-bold text-slate-900">{formatCurrency(product.price)}</span>
             {product.compare_at_price > 0 && (
-              <span className="text-lg text-slate-400 line-through">${product.compare_at_price?.toFixed(2)}</span>
+              <span className="text-lg text-slate-400 line-through">{formatCurrency(product.compare_at_price)}</span>
             )}
           </div>
 

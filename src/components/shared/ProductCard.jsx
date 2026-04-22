@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { createPageUrl } from "@/lib/utils";
+import { createPageUrl, formatCurrency } from "@/lib/utils";
 import { Star, Heart, Share2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { authAPI, wishlistAPI } from "@/api/apiClient";
@@ -130,9 +130,9 @@ export default function ProductCard({ product, compact = false }) {
             <p className="text-xs text-slate-400 dark:text-slate-500 font-medium mb-1">{product.store_name || "Store"}</p>
             <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 line-clamp-2 leading-tight">{product.title}</h3>
             <div className="flex items-center gap-2 mt-2">
-              <span className="text-base font-bold text-slate-900 dark:text-slate-100">${product.price?.toFixed(2)}</span>
+              <span className="text-base font-bold text-slate-900 dark:text-slate-100">{formatCurrency(product.price)}</span>
               {product.compare_at_price > 0 && (
-                <span className="text-xs text-slate-400 dark:text-slate-500 line-through">${product.compare_at_price?.toFixed(2)}</span>
+                <span className="text-xs text-slate-400 dark:text-slate-500 line-through">{formatCurrency(product.compare_at_price)}</span>
               )}
             </div>
             {product.rating_avg > 0 && (

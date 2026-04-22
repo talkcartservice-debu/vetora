@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
-import { createPageUrl } from "@/lib/utils";
+import { createPageUrl, formatCurrency } from "@/lib/utils";
 import EmptyState from "@/components/shared/EmptyState";
 import { Minus, Plus, Trash2, ArrowLeft, CreditCard, Loader2, ShoppingBag, Tag, X, CheckCircle2
 } from "lucide-react";
@@ -60,10 +60,10 @@ export default function Cart() {
       if (coupon.max_uses > 0 && coupon.uses_count >= coupon.max_uses) { setCouponError("This coupon has reached its usage limit"); return; }
       const sub = cartItems.reduce((s, i) => s + (i.product_price || 0) * (i.quantity || 1), 0);
       if (coupon.min_order_amount > 0 && sub < coupon.min_order_amount) {
-        setCouponError(`Minimum order of $${coupon.min_order_amount} required`); return;
+        setCouponError(`Minimum order of ${formatCurrency(coupon.min_order_amount)} required`); return;
       }
       setAppliedCoupon(coupon);
-      toast.success(`Coupon applied! ${coupon.discount_type === "percentage" ? `${coupon.discount_value}% off` : `$${coupon.discount_value} off`}`);
+      toast.success(`Coupon applied! ${coupon.discount_type === "percentage" ? `${coupon.discount_value}% off` : `${formatCurrency(coupon.discount_value)} off`}`);
     } catch (e) {
       setCouponError("Invalid coupon code");
     } finally {
@@ -131,7 +131,7 @@ export default function Cart() {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-slate-900 truncate">{item.product_title}</p>
                     <p className="text-xs text-slate-400 mb-2">{item.store_name}</p>
-                    <p className="text-base font-bold text-indigo-600">${item.product_price?.toFixed(2)}</p>
+                    <p className="text-base font-bold text-indigo-600">{formatCurrency(item.product_price)}</p>
                   </div>
                   <div className="flex flex-col items-end justify-between">
                     <button onClick={() => removeItemMutation.mutate(item._id || item.id)} className="text-slate-400 hover:text-red-500 p-1">
@@ -159,23 +159,23 @@ export default function Cart() {
               <div className="space-y-3 mb-4">
                 <div className="flex justify-between text-sm">
                   <span className="text-slate-500">Subtotal</span>
-                  <span className="font-medium">${subtotal.toFixed(2)}</span>
+                  <span className="font-medium">{formatCurrency(subtotal)}</span>
                 </div>
                 {discount > 0 && (
                   <div className="flex justify-between text-sm">
                     <span className="text-green-600 flex items-center gap-1">
                       <Tag className="w-3.5 h-3.5" /> Discount ({appliedCoupon.code})
                     </span>
-                    <span className="font-medium text-green-600">-${discount.toFixed(2)}</span>
+                    <span className="font-medium text-green-600">-{formatCurrency(discount)}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-sm">
                   <span className="text-slate-500">Shipping</span>
-                  <span className="font-medium">{shipping === 0 ? "Free" : `$${shipping.toFixed(2)}`}</span>
+                  <span className="font-medium">{shipping === 0 ? "Free" : formatCurrency(shipping)}</span>
                 </div>
                 <div className="border-t border-slate-100 pt-3 flex justify-between text-base">
                   <span className="font-bold text-slate-900">Total</span>
-                  <span className="font-bold text-slate-900">${total.toFixed(2)}</span>
+                  <span className="font-bold text-slate-900">{formatCurrency(total)}</span>
                 </div>
               </div>
 
@@ -223,7 +223,7 @@ export default function Cart() {
 
               {subtotal < 50 && (
                 <p className="text-xs text-center text-slate-400 mt-3">
-                  Add ${(50 - subtotal).toFixed(2)} more for free shipping
+                  Add {formatCurrency(50 - subtotal)} more for free shipping
                 </p>
               )}
             </div>

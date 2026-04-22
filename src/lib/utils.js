@@ -15,3 +15,15 @@ export function getRedirectPath(user) {
 }
 
 export const isIframe = window.self !== window.top;
+
+const _rwfFormatter = new Intl.NumberFormat('en-RW', {
+  style: 'currency',
+  currency: 'RWF',
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 0,
+});
+
+export function formatCurrency(amount) {
+  if (amount === undefined || amount === null || isNaN(amount)) return 'RWF 0';
+  return _rwfFormatter.format(Number(amount));
+}

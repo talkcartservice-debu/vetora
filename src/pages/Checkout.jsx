@@ -15,6 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { cartAPI, checkoutAPI, authAPI, couponsAPI, shippingZonesAPI, storesAPI } from "@/api/apiClient";
 import { useAuth } from "@/lib/AuthContext";
+import { formatCurrency } from "@/lib/utils";
 
 const FULFILLMENT_ICONS = {
   shipping: Truck,
@@ -69,7 +70,7 @@ const FulfillmentMethodCard = ({ method, selected, onSelect, store, subtotal }) 
     if (method === "delivery") {
       const fee = ds.delivery_fee || 0;
       if (ds.free_delivery_above && subtotal >= ds.free_delivery_above) return "Free";
-      return fee === 0 ? "Free" : `$${fee.toFixed(2)}`;
+      return fee === 0 ? "Free" : formatCurrency(fee);
     }
     return null;
   };
@@ -81,7 +82,7 @@ const FulfillmentMethodCard = ({ method, selected, onSelect, store, subtotal }) 
       if (ds.delivery_time_est) parts.push(ds.delivery_time_est);
       if (ds.delivery_radius_km) parts.push(`within ${ds.delivery_radius_km} km`);
       if (ds.min_order_for_delivery && subtotal < ds.min_order_for_delivery) {
-        return `Min. order $${ds.min_order_for_delivery} required`;
+        return `Min. order ${formatCurrency(ds.min_order_for_delivery)} required`;
       }
       return parts.length ? parts.join(" · ") : "To your location";
     }
@@ -668,10 +669,10 @@ export default function Checkout() {
                                 </div>
                                 <div className="flex-1 min-w-0 flex flex-col justify-center">
                                     <h4 className="font-bold text-slate-900 text-sm truncate">{item.product_title}</h4>
-                                    <p className="text-xs text-slate-500 font-medium">Qty: {item.quantity} × ${item.product_price}</p>
+                                    <p className="text-xs text-slate-500 font-medium">Qty: {item.quantity} × {formatCurrency(item.product_price)}</p>
                                 </div>
                                 <div className="text-right flex flex-col justify-center">
-                                    <p className="font-black text-slate-900 text-sm">${(item.product_price * item.quantity).toFixed(2)}</p>
+                                    <p className="font-black text-slate-900 text-sm">{formatCurrency(item.product_price * item.quantity)}</p>
                                 </div>
                             </div>
                         ))}
@@ -682,7 +683,7 @@ export default function Checkout() {
                             <FulfillIcon className="w-3.5 h-3.5" />
                             {FULFILLMENT_LABELS[store.delivery_method] || "Shipping"}
                         </div>
-                        <span className="text-xs font-black text-slate-900">{store.shipping === 0 ? "FREE" : `$${store.shipping.toFixed(2)}`}</span>
+                        <span className="text-xs font-black text-slate-900">{store.shipping === 0 ? "FREE" : formatCurrency(store.shipping)}</span>
                     </div>
 
                     {store.delivery_method === "pickup" && ds.pickup_instructions && (
@@ -738,16 +739,16 @@ export default function Checkout() {
               <div className="space-y-5 relative z-10">
                 <div className="flex justify-between text-slate-500 font-bold">
                   <span>Subtotal</span>
-                  <span className="text-slate-900">${calculations.subtotal.toFixed(2)}</span>
+                  <span className="text-slate-900">{formatCurrency(calculations.subtotal)}</span>
                 </div>
                 <div className="flex justify-between text-slate-500 font-bold">
                   <span>Fulfillment</span>
-                  <span className="text-slate-900">{calculations.shipping === 0 ? "FREE" : `$${calculations.shipping.toFixed(2)}`}</span>
+                  <span className="text-slate-900">{calculations.shipping === 0 ? "FREE" : formatCurrency(calculations.shipping)}</span>
                 </div>
                 {calculations.discount > 0 && (
                   <div className="flex justify-between text-green-600 font-bold bg-green-50 px-3 py-2 rounded-xl border border-green-100">
                     <span className="flex items-center gap-2"><Tag className="w-3.5 h-3.5" /> Discount</span>
-                    <span>-${calculations.discount.toFixed(2)}</span>
+                    <span>-{formatCurrency(calculations.discount)}</span>
                   </div>
                 )}
                 
@@ -756,7 +757,7 @@ export default function Checkout() {
                 <div className="flex justify-between items-end pt-2">
                   <div className="flex flex-col">
                       <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Total Amount</span>
-                      <span className="text-3xl font-black text-slate-900 tracking-tighter">${calculations.total.toFixed(2)}</span>
+                      <span className="text-3xl font-black text-slate-900 tracking-tighter">{formatCurrency(calculations.total)}</span>
                   </div>
                 </div>
 

@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/compone
 import { toast } from "sonner";
 import { liveSessionsAPI, liveChatMessagesAPI, productsAPI, cartAPI, authAPI, storesAPI, followsAPI, vendorSubscriptionsAPI } from "@/api/apiClient";
 import { useAuth } from "@/lib/AuthContext";
-import { createPageUrl } from "@/lib/utils";
+import { createPageUrl, formatCurrency } from "@/lib/utils";
 
 const MessageCircleIcon = (props) => (
   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
@@ -59,7 +59,7 @@ function ProductPill({ product, currentUser }) {
       <img src={product.image} alt={product.title} className="w-11 h-11 rounded-xl object-cover shrink-0" />
       <div className="flex-1 min-w-0">
         <p className="text-white text-xs font-semibold truncate">{product.title}</p>
-        <p className="text-indigo-300 text-xs font-bold">${product.price}</p>
+        <p className="text-indigo-300 text-xs font-bold">{formatCurrency(product.price)}</p>
       </div>
       <button
         onClick={() => currentUser ? addMutation.mutate() : toast.error("Sign in to buy")}
@@ -723,7 +723,7 @@ function VendorBroadcast({ onClose, currentUser, store }) {
                   <img src={p.image} alt="" className="w-10 h-10 rounded-xl object-cover shrink-0" />
                   <div className="flex-1 min-w-0">
                     <p className="text-white text-xs font-semibold truncate">{p.title}</p>
-                    <p className="text-indigo-300 text-xs font-bold">${p.price}</p>
+                    <p className="text-indigo-300 text-xs font-bold">{formatCurrency(p.price)}</p>
                   </div>
                   <span className="text-xs bg-white text-slate-900 font-bold px-2 py-1 rounded-lg">Buy Now</span>
                   <button onClick={() => unpinProduct(p.id)} className="shrink-0 w-6 h-6 bg-red-500/80 rounded-lg flex items-center justify-center">
@@ -812,7 +812,7 @@ function VendorBroadcast({ onClose, currentUser, store }) {
                         {p.images?.[0] && <img src={p.images[0]} alt="" className="w-full h-full object-cover" />}
                       </div>
                       <p className="text-xs text-white flex-1 truncate">{p.title}</p>
-                      <p className="text-xs text-indigo-300 font-bold shrink-0">${p.price}</p>
+                      <p className="text-xs text-indigo-300 font-bold shrink-0">{formatCurrency(p.price)}</p>
                       <button
                         onClick={() => isPinned ? unpinProduct(p.id) : pinProductMutation.mutate(p)}
                         className={`shrink-0 w-6 h-6 rounded-lg flex items-center justify-center transition-colors ${isPinned ? "bg-red-500/80 hover:bg-red-500" : "bg-indigo-600 hover:bg-indigo-500"}`}

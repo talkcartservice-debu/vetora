@@ -359,7 +359,7 @@ export async function checkoutRoutes(fastify: FastifyInstance) {
           user.email,
           totalAmount,
           orderIds,
-          'NGN',
+          undefined,
           body.payment_method === 'mobile_money' ? ['mobile_money'] : ['card'],
           body.shipping_address?.phone || user.phone_number || ''
         );

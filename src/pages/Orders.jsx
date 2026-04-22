@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
-import { createPageUrl } from "@/lib/utils";
+import { createPageUrl, formatCurrency } from "@/lib/utils";
 import EmptyState from "@/components/shared/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -189,7 +189,7 @@ export default function Orders() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-slate-800 truncate">{item.product_title}</p>
-                          <p className="text-xs text-slate-400 mt-0.5">Qty: {item.quantity} · ${item.price?.toFixed(2)}</p>
+                          <p className="text-xs text-slate-400 mt-0.5">Qty: {item.quantity} · {formatCurrency(item.price)}</p>
                         </div>
                       </div>
                     ))}
@@ -210,7 +210,7 @@ export default function Orders() {
                   <div className="flex items-center justify-between pt-4 border-t border-slate-50">
                     <div className="flex flex-col gap-1">
                       <span className="text-[10px] text-slate-400 uppercase tracking-tight">Total Amount</span>
-                      <span className="text-sm font-extrabold text-slate-900">${order.total?.toFixed(2)}</span>
+                      <span className="text-sm font-extrabold text-slate-900">{formatCurrency(order.total)}</span>
                       {order.delivery_method && (
                         <span className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full w-fit ${
                           order.delivery_method === "pickup" ? "bg-amber-100 text-amber-700" :

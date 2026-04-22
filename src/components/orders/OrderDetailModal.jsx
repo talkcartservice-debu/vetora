@@ -1,4 +1,5 @@
 import React from "react";
+import { formatCurrency } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -165,11 +166,11 @@ export default function OrderDetailModal({
                   <div className="flex-1 min-w-0 flex flex-col justify-center">
                     <p className="text-sm font-medium text-slate-900 truncate">{item.product_title}</p>
                     <p className="text-xs text-slate-500 mt-0.5">
-                      {item.quantity} x ${item.price?.toFixed(2)}
+                      {item.quantity} x {formatCurrency(item.price)}
                     </p>
                   </div>
                   <div className="text-sm font-bold text-slate-900 flex items-center">
-                    ${(item.quantity * item.price).toFixed(2)}
+                    {formatCurrency(item.quantity * item.price)}
                   </div>
                 </div>
               ))}
@@ -200,7 +201,7 @@ export default function OrderDetailModal({
                 </div>
                 <div className="pt-2 flex items-center justify-between text-xs font-bold text-slate-900 border-t border-slate-200/60">
                   <span>Total Amount</span>
-                  <span>${order.total?.toFixed(2)}</span>
+                  <span>{formatCurrency(order.total)}</span>
                 </div>
               </div>
             </section>

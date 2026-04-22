@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
-import { createPageUrl } from "@/lib/utils";
+import { createPageUrl, formatCurrency } from "@/lib/utils";
 import {
   Store, Plus, Package, DollarSign, ShoppingCart, Trash2, Loader2, BarChart3, Eye,
   X, Upload, Camera, CheckCircle2, Play, Search, MessageCircle, Info, Truck, Navigation, Tag
@@ -988,7 +988,7 @@ export default function MyStore() {
           {[
             { label: "Products", value: products.length, icon: Package, color: "text-indigo-500 bg-indigo-50" },
             { label: "Orders", value: orders.length, icon: ShoppingCart, color: "text-purple-500 bg-purple-50" },
-            { label: "Revenue", value: `$${totalRevenue.toFixed(2)}`, icon: DollarSign, color: "text-green-500 bg-green-50" },
+            { label: "Revenue", value: formatCurrency(totalRevenue), icon: DollarSign, color: "text-green-500 bg-green-50" },
             { label: "Pending", value: pendingOrders, icon: BarChart3, color: "text-amber-500 bg-amber-50" },
           ].map((stat) => (
             <div key={stat.label} className="bg-slate-50 rounded-xl p-3">
@@ -1142,7 +1142,7 @@ export default function MyStore() {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-slate-900 truncate">{product.title}</p>
                     <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-sm font-bold text-indigo-600">${product.price?.toFixed(2)}</span>
+                      <span className="text-sm font-bold text-indigo-600">{formatCurrency(product.price)}</span>
                       <Badge variant="secondary" className="text-[10px]">{product.status}</Badge>
                       <span className="text-xs text-slate-400">Stock: {product.inventory_count || 0}</span>
                     </div>
@@ -1300,7 +1300,7 @@ export default function MyStore() {
                               {status}
                             </Badge>
                           </div>
-                          <p className="text-sm font-black text-slate-900">${order.total?.toFixed(2)}</p>
+                          <p className="text-sm font-black text-slate-900">{formatCurrency(order.total)}</p>
                         </div>
                       </div>
 

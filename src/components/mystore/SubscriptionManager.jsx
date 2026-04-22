@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { initializePaystackPayment } from "@/lib/paystack";
 import { useAuth } from "@/lib/AuthContext";
+import { formatCurrency } from "@/lib/utils";
 
 const PLANS = [
   {
@@ -99,11 +100,11 @@ function PlanCard({ plan, currentPlan, onSelect, billing }) {
         </div>
         <h3 className="text-lg font-bold text-slate-900">{plan.name}</h3>
         <div className="flex items-end gap-1 mt-1">
-          <span className="text-3xl font-black text-slate-900">${price}</span>
+          <span className="text-3xl font-black text-slate-900">{formatCurrency(price)}</span>
           <span className="text-slate-500 text-sm mb-0.5">/mo</span>
         </div>
         {billing === "annual" && plan.price > 0 && (
-          <p className="text-xs text-green-600 font-medium mt-0.5">Save ${(plan.price - plan.priceAnnual) * 12}/yr</p>
+          <p className="text-xs text-green-600 font-medium mt-0.5">Save {formatCurrency((plan.price - plan.priceAnnual) * 12)}/yr</p>
         )}
       </div>
 

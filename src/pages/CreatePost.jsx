@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { createPageUrl } from "@/lib/utils";
+import { createPageUrl, formatCurrency } from "@/lib/utils";
 import {
   Image, Video, X, Send, Loader2, Globe, Users, Lock, Smile, ShoppingBag
 } from "lucide-react";
@@ -303,7 +303,7 @@ export default function CreatePost() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-semibold text-slate-800 truncate">{p.title}</p>
-                      <p className="text-xs text-indigo-600 font-bold">${p.price}</p>
+                      <p className="text-xs text-indigo-600 font-bold">{formatCurrency(p.price)}</p>
                     </div>
                     {taggedProducts.find(tp => tp.id === p.id) && (
                       <Badge className="bg-indigo-100 text-indigo-700 text-[10px] border-0">Tagged</Badge>

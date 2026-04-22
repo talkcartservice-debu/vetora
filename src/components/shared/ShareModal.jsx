@@ -12,7 +12,7 @@ import { Search, Send, Check, Copy, User, Store, Loader2 } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { usersAPI, storesAPI, messagesAPI, postsAPI } from "@/api/apiClient";
 import { toast } from "sonner";
-import { createPageUrl } from "@/lib/utils";
+import { createPageUrl, formatCurrency } from "@/lib/utils";
 
 export default function ShareModal({ isOpen, onOpenChange, post, product, currentUser }) {
   const [searchQuery, setSearchQuery] = useState("");
@@ -114,7 +114,7 @@ export default function ShareModal({ isOpen, onOpenChange, post, product, curren
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-bold text-slate-900 truncate">{isProduct ? product.title : post.content?.slice(0, 50)}</p>
-                {isProduct && <p className="text-xs font-bold text-indigo-600">${product.price?.toFixed(2)}</p>}
+                {isProduct && <p className="text-xs font-bold text-indigo-600">{formatCurrency(product.price)}</p>}
               </div>
             </div>
           )}

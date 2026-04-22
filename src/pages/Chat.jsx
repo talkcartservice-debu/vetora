@@ -1,3 +1,4 @@
+import { formatCurrency } from "@/lib/utils";
 import React, { useState, useRef, useEffect, useMemo, useCallback } from "react";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -95,7 +96,7 @@ function ProductSharePicker({ onShare, onClose, currentUser }) {
                 {p.images?.[0] ? <img src={p.images[0]} alt="" className="w-full h-full object-cover" /> : <Package className="w-5 h-5 text-slate-300 m-auto mt-2" />}
               </div>
               <p className="text-[10px] text-slate-700 line-clamp-2 font-medium">{p.title}</p>
-              <p className="text-[10px] font-bold text-indigo-600">${p.price}</p>
+              <p className="text-[10px] font-bold text-indigo-600">{formatCurrency(p.price)}</p>
             </button>
           ))}
         </div>
@@ -119,7 +120,7 @@ function OfferModal({ onSend, onClose }) {
       </div>
       <p className="text-xs text-slate-500 mb-2">Enter your price offer</p>
       <div className="flex gap-2">
-        <Input type="number" placeholder="$0.00" value={amount} onChange={e => setAmount(e.target.value)} className="rounded-xl" />
+        <Input type="number" placeholder="RWF 0" value={amount} onChange={e => setAmount(e.target.value)} className="rounded-xl" />
         <Button onClick={() => { onSend(parseFloat(amount)); onClose(); }} disabled={!amount} className="bg-indigo-600 hover:bg-indigo-700 rounded-xl shrink-0">Send</Button>
       </div>
     </motion.div>
@@ -317,7 +318,7 @@ export default function Chat() {
       }
       sendMutation.mutate({
         recipient_username: selectedConvo,
-        content: `💰 Offer: $${amount}${productData ? ` for "${productData.title}"` : ""}`,
+        content: `💰 Offer: ${formatCurrency(amount)}${productData ? ` for "${productData.title}"` : ""}`,
         message_type: "offer",
         offer_amount: amount,
         order_id: orderId,
