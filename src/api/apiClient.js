@@ -531,6 +531,13 @@ export const adminAPI = {
   createAnnouncement: (data) => apiClient.post('/admin/announcements', data),
   updateAnnouncement: (id, data) => apiClient.patch(`/admin/announcements/${id}`, data),
   deleteAnnouncement: (id) => apiClient.delete(`/admin/announcements/${id}`),
+  // Posts
+  getPosts: (params) => {
+    const query = apiClient.buildQueryString(params);
+    return apiClient.get(`/admin/posts?${query}`);
+  },
+  updatePostVisibility: (id, visibility) => apiClient.patch(`/admin/posts/${id}/visibility`, { visibility }),
+  deletePost: (id) => apiClient.delete(`/admin/posts/${id}`),
 };
 
 export const announcementsAPI = {

@@ -9,6 +9,7 @@ import { Order } from '../models/Order';
 import { Settings } from '../models/Settings';
 import { Report } from '../models/Report';
 import { ActivityLog } from '../models/ActivityLog';
+import { Post } from '../models/Post';
 import { authenticate, isAdmin, logActivity } from '../middleware/auth';
 
 export async function adminRoutes(fastify: FastifyInstance) {
@@ -780,6 +781,89 @@ export async function adminRoutes(fastify: FastifyInstance) {
           platform_fee_percent: 5
         }
       };
+    } catch (error) {
+      fastify.log.error(error);
+      return reply.code(500).send({ error: 'Internal server error' });
+    }
+  });
+
+  // --- Post Management ---
+
+  // Get all posts
+  fastify.get('/posts', async (request, reply) => {
+    try {
+      const { page = 1, limit = 10, search = '', visibility } = request.query as any;
+      const skip = (parseInt(page) - 1) * parseInt(limit);
+
+      const query: any = {};
+      if (visibility && visibility !== 'all') query.visibility = visibility;
+      if (search) {
+        query.$or = [
+          { content: { $regex: search, $options: 'i' } },
+          { author_username: { $regex: search, $options: 'i' } },
+          { author_name: { $regex: search, $options: 'i' } },
+        ];
+      }
+
+      const posts = await Post.find(query)
+        .sort({ created_at: -1 })
+        .skip(skip)
+        .limit(parseInt(limit));
+
+      const total = await Post.countDocuments(query);
+
+      return {
+        posts,
+        pagination: {
+          total,
+          page: parseInt(page),
+          limit: parseInt(limit),
+          pages: Math.ceil(total / parseInt(limit)),
+        },
+      };
+    } catch (error) {
+      fastify.log.error(error);
+      return reply.code(500).send({ error: 'Internal server error' });
+    }
+  });
+
+  // Update post visibility
+  fastify.patch('/posts/:id/visibility', async (request, reply) => {
+    try {
+      const { id } = request.params as { id: string };
+      const { visibility } = z.object({
+        visibility: z.enum(['public', 'followers', 'community']),
+      }).parse(request.body);
+
+      const post = await Post.findByIdAndUpdate(id, { visibility }, { new: true });
+      if (!post) {
+        return reply.code(404).send({ error: 'Post not found' });
+      }
+
+      await logActivity(request, 'update_post_visibility', post._id, 'post', { visibility });
+
+      return post;
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return reply.code(400).send({ error: 'Invalid request data', details: error.errors });
+      }
+      fastify.log.error(error);
+      return reply.code(500).send({ error: 'Internal server error' });
+    }
+  });
+
+  // Delete post
+  fastify.delete('/posts/:id', async (request, reply) => {
+    try {
+      const { id } = request.params as { id: string };
+      const post = await Post.findByIdAndDelete(id);
+      if (!post) {
+        return reply.code(404).send({ error: 'Post not found' });
+      }
+
+      await logActivity(request, 'delete_post', post._id, 'post', { author: post.author_username });
+
+      return { success: true };
     } catch (error) {
       fastify.log.error(error);
       return reply.code(500).send({ error: 'Internal server error' });

@@ -281,6 +281,14 @@ const AdminDashboard = () => {
   const [subscriptionsLoading, setSubscriptionsLoading] = useState(false);
   const [subscriptionSearch, setSubscriptionSearch] = useState('');
 
+  // Posts State
+  const [posts, setPosts] = useState([]);
+  const [postSearch, setPostSearch] = useState('');
+  const [postFilter, setPostFilter] = useState('all');
+  const [postLoading, setPostLoading] = useState(false);
+  const [postPage, setPostPage] = useState(1);
+  const [postPagination, setPostPagination] = useState(null);
+
   // Settings State
   const [settings, setSettings] = useState({
     maintenance_mode: false,
@@ -498,6 +506,24 @@ const AdminDashboard = () => {
     }
   };
 
+  const fetchPosts = async (page = postPage) => {
+    try {
+      setPostLoading(true);
+      const data = await adminAPI.getPosts({
+        search: postSearch,
+        visibility: postFilter === 'all' ? undefined : postFilter,
+        page,
+        limit: 10,
+      });
+      setPosts(data.posts || []);
+      setPostPagination(data.pagination);
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to fetch posts', variant: 'destructive' });
+    } finally {
+      setPostLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!user || user.role !== 'super_admin') return;
     if (activeTab === 'users') fetchUsers();
@@ -509,6 +535,7 @@ const AdminDashboard = () => {
     if (activeTab === 'logs') fetchActivityLogs();
     if (activeTab === 'subscriptions') fetchSubscriptions();
     if (activeTab === 'announcements') fetchAnnouncements();
+    if (activeTab === 'posts') { setPostPage(1); fetchPosts(1); }
   }, [activeTab, user]);
 
   const handleBlockUser = async (userId, isBlocked) => {
@@ -638,6 +665,27 @@ const AdminDashboard = () => {
         description: 'Failed to delete product',
         variant: 'destructive',
       });
+    }
+  };
+
+  const handleDeletePost = async (postId) => {
+    if (!window.confirm('Are you sure you want to delete this post?')) return;
+    try {
+      await adminAPI.deletePost(postId);
+      toast({ title: 'Success', description: 'Post deleted successfully' });
+      fetchPosts();
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to delete post', variant: 'destructive' });
+    }
+  };
+
+  const handleUpdatePostVisibility = async (postId, visibility) => {
+    try {
+      await adminAPI.updatePostVisibility(postId, visibility);
+      toast({ title: 'Success', description: `Post visibility updated to ${visibility}` });
+      fetchPosts();
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to update post visibility', variant: 'destructive' });
     }
   };
 
@@ -887,11 +935,12 @@ const AdminDashboard = () => {
       </div>
 
       <Tabs defaultValue="overview" className="space-y-4" onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-11 lg:w-[1350px]">
+        <TabsList className="grid w-full grid-cols-12 lg:w-[1470px]">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="users">Users</TabsTrigger>
           <TabsTrigger value="stores">Stores</TabsTrigger>
           <TabsTrigger value="products">Products</TabsTrigger>
+          <TabsTrigger value="posts">Posts</TabsTrigger>
           <TabsTrigger value="announcements">Announcements</TabsTrigger>
           <TabsTrigger value="subscriptions">Subscriptions</TabsTrigger>
           <TabsTrigger value="moderation">Moderation</TabsTrigger>
@@ -2032,6 +2081,129 @@ const AdminDashboard = () => {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+        </TabsContent>
+
+        <TabsContent value="posts" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Eye className="w-5 h-5" />
+                Post Management
+              </CardTitle>
+              <CardDescription>View, moderate, and delete user posts.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex gap-2 mb-4">
+                <div className="relative flex-1">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search by content or author..."
+                    value={postSearch}
+                    onChange={(e) => setPostSearch(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { setPostPage(1); fetchPosts(1); } }}
+                    className="pl-8"
+                  />
+                </div>
+                <Select value={postFilter} onValueChange={(v) => { setPostFilter(v); setPostPage(1); }}>
+                  <SelectTrigger className="w-[160px]">
+                    <SelectValue placeholder="Visibility" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All</SelectItem>
+                    <SelectItem value="public">Public</SelectItem>
+                    <SelectItem value="followers">Followers</SelectItem>
+                    <SelectItem value="community">Community</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button variant="outline" onClick={() => { setPostPage(1); fetchPosts(1); }} disabled={postLoading}>
+                  <Search className="w-4 h-4 mr-1" /> Search
+                </Button>
+              </div>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Author</TableHead>
+                    <TableHead>Content</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Visibility</TableHead>
+                    <TableHead>Likes</TableHead>
+                    <TableHead>Comments</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {postLoading ? (
+                    <TableRow><TableCell colSpan={8} className="text-center py-8">Loading...</TableCell></TableRow>
+                  ) : posts.length === 0 ? (
+                    <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">No posts found</TableCell></TableRow>
+                  ) : posts.map((post) => (
+                    <TableRow key={post._id}>
+                      <TableCell>
+                        <div className="font-medium">@{post.author_username}</div>
+                        {post.author_name && <div className="text-xs text-muted-foreground">{post.author_name}</div>}
+                      </TableCell>
+                      <TableCell className="max-w-[200px]">
+                        <p className="truncate text-sm">{post.content || <span className="text-muted-foreground italic">No text</span>}</p>
+                        {post.media_urls?.length > 0 && (
+                          <span className="text-xs text-muted-foreground">{post.media_urls.length} media file(s)</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="capitalize">{post.media_type}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={post.visibility === 'public' ? 'default' : post.visibility === 'followers' ? 'secondary' : 'outline'} className="capitalize">
+                          {post.visibility}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{post.likes_count}</TableCell>
+                      <TableCell>{post.comments_count}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {new Date(post.created_at).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm"><MoreVertical className="w-4 h-4" /></Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => handleUpdatePostVisibility(post._id, 'public')}>
+                              Set Public
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleUpdatePostVisibility(post._id, 'followers')}>
+                              Set Followers Only
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleUpdatePostVisibility(post._id, 'community')}>
+                              Set Community Only
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem className="text-destructive" onClick={() => handleDeletePost(post._id)}>
+                              <Trash2 className="w-4 h-4 mr-2" /> Delete Post
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              {postPagination && postPagination.pages > 1 && (
+                <div className="flex justify-between items-center mt-4">
+                  <p className="text-sm text-muted-foreground">
+                    Showing {posts.length} of {postPagination.total} posts
+                  </p>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" disabled={postPage <= 1} onClick={() => { setPostPage(p => p - 1); fetchPosts(postPage - 1); }}>Previous</Button>
+                    <span className="text-sm px-2 py-1">Page {postPage} of {postPagination.pages}</span>
+                    <Button variant="outline" size="sm" disabled={postPage >= postPagination.pages} onClick={() => { setPostPage(p => p + 1); fetchPosts(postPage + 1); }}>Next</Button>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="announcements" className="space-y-4">
