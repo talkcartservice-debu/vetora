@@ -27,6 +27,7 @@ import VendorFinance from "./VendorFinance";
 import OrderDetailModal from "@/components/orders/OrderDetailModal";
 import { storesAPI, productsAPI, ordersAPI, filesAPI, vendorSubscriptionsAPI } from "@/api/apiClient";
 import { useAuth } from "@/lib/AuthContext";
+import { usePlatformSettings } from "@/hooks/usePlatformSettings";
 
 const CATEGORIES = ["fashion", "electronics", "home", "beauty", "sports", "food", "art", "books", "handmade", "other"];
 
@@ -198,7 +199,8 @@ export default function MyStore() {
     enabled: !!currentUser?.username,
   });
 
-  const currentPlan = subscription?.plan || 'free';
+  const { isSubscriptionEnforced } = usePlatformSettings();
+  const currentPlan = isSubscriptionEnforced ? (subscription?.plan || 'free') : 'elite';
   const limits = PLAN_LIMITS[currentPlan];
 
   // Auto-redirect to subscription if limit reached and trying to add product

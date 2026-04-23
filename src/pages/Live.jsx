@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { liveSessionsAPI, liveChatMessagesAPI, productsAPI, cartAPI, authAPI, storesAPI, followsAPI, vendorSubscriptionsAPI } from "@/api/apiClient";
 import { useAuth } from "@/lib/AuthContext";
 import { createPageUrl, formatCurrency } from "@/lib/utils";
+import { usePlatformSettings } from "@/hooks/usePlatformSettings";
 
 const MessageCircleIcon = (props) => (
   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
@@ -891,7 +892,8 @@ export default function Live() {
     enabled: !!currentUser?.username,
   });
 
-  const currentPlan = subscription?.plan || 'free';
+  const { isSubscriptionEnforced } = usePlatformSettings();
+  const currentPlan = isSubscriptionEnforced ? (subscription?.plan || 'free') : 'elite';
 
   const { data: activeSessionsRes = {} } = useQuery({
     queryKey: ["liveSessions", "active"],

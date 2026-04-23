@@ -2,6 +2,7 @@ import { FastifyInstance } from 'fastify';
 import axios from 'axios';
 import { VendorSubscription, IVendorSubscription } from '../models/VendorSubscription';
 import { Product } from '../models/Product';
+import { Settings } from '../models/Settings';
 import { checkCustomDomainLimit, PLAN_PRIORITY } from '../middleware/subscription';
 
 const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY || 'sk_test_mock_key';
@@ -508,7 +509,10 @@ export async function vendorSubscriptionRoutes(fastify: FastifyInstance) {
         }
       };
 
-      reply.send({ plans });
+      const settings = await Settings.findOne().select('subscription_mode').lean();
+      const subscription_mode = settings?.subscription_mode ?? false;
+
+      reply.send({ plans, subscription_mode });
     } catch (error) {
       fastify.log.error(error);
       reply.code(500).send({ error: 'Internal server error' });
