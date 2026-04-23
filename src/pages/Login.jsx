@@ -172,23 +172,6 @@ const Login = () => {
               Welcome to the elite social commerce network. Connect, showcase, and grow your digital empire.
             </p>
           </div>
-
-          <div className="flex gap-4 pt-4">
-            <div className="flex -space-x-3">
-              {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="w-10 h-10 rounded-full border-2 border-[#0a0a0c] bg-slate-800 flex items-center justify-center text-[10px] font-bold text-white overflow-hidden">
-                  <img src={`https://i.pravatar.cc/100?img=${i+10}`} alt="User" className="w-full h-full object-cover opacity-80" />
-                </div>
-              ))}
-              <div className="w-10 h-10 rounded-full border-2 border-[#0a0a0c] bg-orange-600 flex items-center justify-center text-[10px] font-bold text-white">
-                +2k
-              </div>
-            </div>
-            <div className="flex flex-col justify-center">
-              <div className="text-white font-bold text-sm tracking-tight">Joined the network</div>
-              <div className="text-slate-500 text-[10px] font-bold uppercase tracking-widest">In the last 24h</div>
-            </div>
-          </div>
         </motion.div>
 
         {/* Login Form Section */}
