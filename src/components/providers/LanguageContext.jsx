@@ -1,12 +1,12 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import { aiAPI, authAPI } from "@/api/apiClient";
 import { useAuth } from "@/lib/AuthContext";
-import i18n from "@/lib/i18n";
+import i18n, { SUPPORTED_LANG_CODES } from "@/lib/i18n";
 export { useTranslation } from "react-i18next";
 
 const RTL_LANGS = ["ar"];
 
-export const SUPPORTED_LANGS = [
+const LANG_META = [
   { code: "en", label: "English", flag: "🇺🇸" },
   { code: "es", label: "Español", flag: "🇪🇸" },
   { code: "fr", label: "Français", flag: "🇫🇷" },
@@ -18,6 +18,8 @@ export const SUPPORTED_LANGS = [
   { code: "rw", label: "Kinyarwanda", flag: "🇷🇼" },
   { code: "sw", label: "Kiswahili", flag: "🇰🇪" },
 ];
+
+export const SUPPORTED_LANGS = LANG_META.filter(l => SUPPORTED_LANG_CODES.includes(l.code));
 
 const LanguageContext = createContext(null);
 
@@ -50,6 +52,12 @@ export function LanguageProvider({ children }) {
     document.documentElement.dir = RTL_LANGS.includes(lang) ? "rtl" : "ltr";
     document.documentElement.lang = lang;
   }, [lang]);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      hasSyncedUserLang.current = false;
+    }
+  }, [isAuthenticated]);
 
   // Sync with user preference from backend once on load/login
   useEffect(() => {

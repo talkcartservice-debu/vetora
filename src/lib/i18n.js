@@ -13,7 +13,7 @@ import ja from "@/locales/ja/translation.json";
 import rw from "@/locales/rw/translation.json";
 import sw from "@/locales/sw/translation.json";
 
-const SUPPORTED_LANG_CODES = ["en", "es", "fr", "de", "ar", "zh", "pt", "ja", "rw", "sw"];
+export const SUPPORTED_LANG_CODES = ["en", "es", "fr", "de", "ar", "zh", "pt", "ja", "rw", "sw"];
 
 i18n
   .use(LanguageDetector)
@@ -31,7 +31,6 @@ i18n
       rw: { translation: rw },
       sw: { translation: sw },
     },
-    lng: localStorage.getItem("iqon_lang") || undefined,
     fallbackLng: "en",
     supportedLngs: SUPPORTED_LANG_CODES,
     interpolation: {
