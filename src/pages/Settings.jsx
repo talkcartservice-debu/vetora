@@ -139,17 +139,25 @@ export default function Settings() {
   };
 
   const [selectedLang, setSelectedLang] = useState(currentLang);
+  const [langSaving, setLangSaving] = useState(false);
+
+  React.useEffect(() => {
+    setSelectedLang(currentLang);
+  }, [currentLang]);
 
   const handleLanguageChange = (code) => {
     setSelectedLang(code);
   };
 
-  const handleSaveLanguage = () => {
-    setLang(selectedLang);
-    if (currentUser) {
-      updateMutation.mutate({ preferences: { ...currentUser.preferences, language: selectedLang } });
-    } else {
+  const handleSaveLanguage = async () => {
+    setLangSaving(true);
+    try {
+      await setLang(selectedLang);
       toast.success("Language updated successfully!");
+    } catch {
+      toast.error("Failed to update language");
+    } finally {
+      setLangSaving(false);
     }
   };
 
@@ -650,10 +658,10 @@ export default function Settings() {
             </div>
             <Button 
               onClick={handleSaveLanguage}
-              disabled={selectedLang === currentLang || updateMutation.isPending}
+              disabled={selectedLang === currentLang || langSaving}
               className="w-full bg-slate-900 dark:bg-indigo-600 hover:bg-slate-800 dark:hover:bg-indigo-700 text-white rounded-xl h-10 text-xs font-bold"
             >
-              {updateMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : "Save Language"}
+              {langSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : "Save Language"}
             </Button>
           </div>
           <div className="flex items-center justify-between p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700">
