@@ -56,7 +56,8 @@ import {
   Trash2,
   Archive,
   Ban,
-  Plus
+  Plus,
+  Crown
 } from 'lucide-react';
 import { 
   Dialog,
@@ -302,7 +303,8 @@ const AdminDashboard = () => {
     maintenance_message: '',
     allow_registration: true,
     min_withdrawal_amount: 10,
-    platform_fee_percent: 5
+    platform_fee_percent: 5,
+    subscription_mode: false
   });
   const [settingsLoading, setSettingsLoading] = useState(false);
 
@@ -2538,6 +2540,34 @@ const AdminDashboard = () => {
                     Save Message
                   </Button>
                 </div>
+              </div>
+
+              <div className="space-y-4 pt-4 border-t">
+                <h3 className="text-lg font-semibold">Subscription Management</h3>
+                <div className="flex items-center justify-between space-x-2 border p-4 rounded-lg bg-slate-50/50">
+                  <div className="flex flex-col space-y-1">
+                    <Label htmlFor="subscription-mode" className="text-base flex items-center gap-2">
+                      <Crown className="w-4 h-4 text-yellow-500" />
+                      Subscription Mode
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      {settings.subscription_mode
+                        ? 'Enabled — vendors must subscribe to a paid plan to access premium features.'
+                        : 'Disabled — all vendors have free access to all features regardless of their plan.'}
+                    </p>
+                  </div>
+                  <Switch
+                    id="subscription-mode"
+                    checked={settings.subscription_mode ?? false}
+                    onCheckedChange={(checked) => handleUpdateSettings({ subscription_mode: checked })}
+                    disabled={settingsLoading}
+                  />
+                </div>
+                {!settings.subscription_mode && (
+                  <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
+                    ⚠️ Subscription mode is currently <strong>disabled</strong>. All vendors have elite-level access for free. Enabling it will immediately enforce plan limits and payment requirements.
+                  </p>
+                )}
               </div>
 
               <div className="space-y-4 pt-4 border-t">

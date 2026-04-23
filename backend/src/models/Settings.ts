@@ -6,6 +6,7 @@ export interface ISettings extends Document {
   allow_registration: boolean;
   min_withdrawal_amount: number;
   platform_fee_percent: number;
+  subscription_mode: boolean;
   updated_at: Date;
 }
 
@@ -29,6 +30,10 @@ const SettingsSchema = new Schema<ISettings>({
   platform_fee_percent: {
     type: Number,
     default: 5,
+  },
+  subscription_mode: {
+    type: Boolean,
+    default: false,
   },
 }, {
   timestamps: {

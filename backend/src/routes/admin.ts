@@ -794,7 +794,8 @@ export async function adminRoutes(fastify: FastifyInstance) {
           maintenance_message: '',
           allow_registration: true,
           min_withdrawal_amount: 10,
-          platform_fee_percent: 5
+          platform_fee_percent: 5,
+          subscription_mode: false
         }
       };
     } catch (error) {
@@ -896,13 +897,15 @@ export async function adminRoutes(fastify: FastifyInstance) {
         maintenance_message,
         allow_registration,
         min_withdrawal_amount,
-        platform_fee_percent
+        platform_fee_percent,
+        subscription_mode
       } = z.object({
         maintenance_mode: z.boolean().optional(),
         maintenance_message: z.string().optional(),
         allow_registration: z.boolean().optional(),
         min_withdrawal_amount: z.number().optional(),
-        platform_fee_percent: z.number().optional()
+        platform_fee_percent: z.number().optional(),
+        subscription_mode: z.boolean().optional()
       }).parse(request.body);
 
       let settings = await Settings.findOne();
@@ -917,6 +920,7 @@ export async function adminRoutes(fastify: FastifyInstance) {
       if (allow_registration !== undefined) settings.allow_registration = allow_registration;
       if (min_withdrawal_amount !== undefined) settings.min_withdrawal_amount = min_withdrawal_amount;
       if (platform_fee_percent !== undefined) settings.platform_fee_percent = platform_fee_percent;
+      if (subscription_mode !== undefined) settings.subscription_mode = subscription_mode;
 
       await settings.save();
       

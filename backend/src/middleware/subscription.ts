@@ -2,6 +2,7 @@ import { FastifyRequest, FastifyReply } from 'fastify';
 import { VendorSubscription } from '../models/VendorSubscription';
 import { Product } from '../models/Product';
 import { Notification } from '../models/Notification';
+import { Settings } from '../models/Settings';
 
 export const PLAN_LIMITS = {
   free: { 
@@ -55,6 +56,15 @@ export const PLAN_PRIORITY = {
 };
 
 /**
+ * Check if subscription mode is enabled globally.
+ * When disabled, all vendors get elite-level access for free.
+ */
+async function isSubscriptionModeEnabled(): Promise<boolean> {
+  const settings = await Settings.findOne().select('subscription_mode').lean();
+  return settings?.subscription_mode ?? false;
+}
+
+/**
  * Helper to get the active plan and its limits for a vendor
  * Caches the plan in the request object if provided
  */
@@ -64,6 +74,22 @@ async function getVendorPlan(username: string, request?: FastifyRequest) {
   // Check if already cached in request
   if (request && (request as any).cached_vendor_plan) {
     return (request as any).cached_vendor_plan;
+  }
+
+  // When subscription mode is disabled, all vendors get elite access for free
+  const subscriptionEnabled = await isSubscriptionModeEnabled();
+  if (!subscriptionEnabled) {
+    const vendorPlan = {
+      plan: 'elite' as keyof typeof PLAN_PRIORITY,
+      limits: PLAN_LIMITS.elite,
+      priority: PLAN_PRIORITY.elite,
+      normalizedUsername,
+      subscription_mode_disabled: true
+    };
+    if (request) {
+      (request as any).cached_vendor_plan = vendorPlan;
+    }
+    return vendorPlan;
   }
 
   // Find active subscription
@@ -82,7 +108,8 @@ async function getVendorPlan(username: string, request?: FastifyRequest) {
     plan,
     limits: PLAN_LIMITS[plan],
     priority: PLAN_PRIORITY[plan],
-    normalizedUsername
+    normalizedUsername,
+    subscription_mode_disabled: false
   };
 
   // Cache in request if provided
