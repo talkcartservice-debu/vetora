@@ -1,6 +1,10 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import { aiAPI, authAPI } from "@/api/apiClient";
 import { useAuth } from "@/lib/AuthContext";
+import i18n from "@/lib/i18n";
+export { useTranslation } from "react-i18next";
+
+const RTL_LANGS = ["ar"];
 
 export const SUPPORTED_LANGS = [
   { code: "en", label: "English", flag: "🇺🇸" },
@@ -11,6 +15,8 @@ export const SUPPORTED_LANGS = [
   { code: "zh", label: "中文", flag: "🇨🇳" },
   { code: "pt", label: "Português", flag: "🇧🇷" },
   { code: "ja", label: "日本語", flag: "🇯🇵" },
+  { code: "rw", label: "Kinyarwanda", flag: "🇷🇼" },
+  { code: "sw", label: "Kiswahili", flag: "🇰🇪" },
 ];
 
 const LanguageContext = createContext(null);
@@ -40,12 +46,18 @@ export function LanguageProvider({ children }) {
   });
   const hasSyncedUserLang = useRef(false);
 
+  useEffect(() => {
+    document.documentElement.dir = RTL_LANGS.includes(lang) ? "rtl" : "ltr";
+    document.documentElement.lang = lang;
+  }, [lang]);
+
   // Sync with user preference from backend once on load/login
   useEffect(() => {
     if (isAuthenticated && user?.preferences?.language && !hasSyncedUserLang.current) {
       if (user.preferences.language !== lang) {
         setLangState(user.preferences.language);
         localStorage.setItem("iqon_lang", user.preferences.language);
+        i18n.changeLanguage(user.preferences.language);
       }
       hasSyncedUserLang.current = true;
     }
@@ -55,8 +67,8 @@ export function LanguageProvider({ children }) {
     if (code === lang) return;
     localStorage.setItem("iqon_lang", code);
     setLangState(code);
-    
-    // Sync with backend if logged in and different from saved preference
+    i18n.changeLanguage(code);
+
     if (isAuthenticated && user && user.preferences?.language !== code) {
       try {
         await authAPI.updateProfile({ 
