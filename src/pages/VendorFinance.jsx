@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { storesAPI, ordersAPI, withdrawalsAPI } from "@/api/apiClient";
 import { useAuth } from "@/lib/AuthContext";
 import { formatCurrency } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
 function StatCard({ icon: Icon, label, value, sub, color }) {
   // Icon is a component, rendered as <Icon />
@@ -33,6 +34,7 @@ function StatCard({ icon: Icon, label, value, sub, color }) {
 const PAYOUT_RATE = 0.9; // 90% after platform fee
 
 export default function VendorFinance() {
+  const { t } = useTranslation();
   const [withdrawOpen, setWithdrawOpen] = useState(false);
   const [withdrawForm, setWithdrawForm] = useState({
     amount: "", 
@@ -107,7 +109,7 @@ export default function VendorFinance() {
       status: "pending",
     }),
     onSuccess: () => {
-      toast.success("Withdrawal request submitted!");
+      toast.success(t("finance.withdrawalSubmitted"));
       setWithdrawOpen(false);
       setWithdrawForm({ amount: "", payment_method: store?.payment_method || "bank_transfer", bank_name: store?.bank_name || "", bank_account_name: store?.bank_account_name || "", bank_account_number: store?.bank_account_number || "", routing_number: store?.routing_number || "", paypal_email: store?.paypal_email || "", mobile_money_number: store?.mobile_money_number || "" });
       queryClient.invalidateQueries({ queryKey: ["withdrawals"] });
@@ -239,7 +241,7 @@ export default function VendorFinance() {
     doc.text(`Payment Method: ${order.payment_method || "card"}`, 14, 287);
 
     doc.save(`invoice-${invoiceId}.pdf`);
-    toast.success("PDF Invoice downloaded!");
+    toast.success(t("finance.invoiceDownloaded"));
   };
 
   const statusColors = {
@@ -262,27 +264,27 @@ export default function VendorFinance() {
     <div className="max-w-4xl mx-auto px-4 py-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Financial Dashboard</h1>
-          <p className="text-sm text-slate-500 mt-0.5">Platform fee: 10% · Payout rate: 90%</p>
+          <h1 className="text-2xl font-bold text-slate-900">{t("finance.title")}</h1>
+          <p className="text-sm text-slate-500 mt-0.5">{t("finance.subtitle")}</p>
         </div>
         <Dialog open={withdrawOpen} onOpenChange={setWithdrawOpen}>
           <DialogTrigger asChild>
             <Button className="bg-indigo-600 hover:bg-indigo-700 rounded-xl gap-2">
-              <Wallet className="w-4 h-4" /> Request Withdrawal
+              <Wallet className="w-4 h-4" /> {t("finance.requestWithdrawal")}
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>Request Withdrawal</DialogTitle>
+              <DialogTitle>{t("finance.requestWithdrawal")}</DialogTitle>
               {store?.payment_method && (
                 <p className="text-[10px] text-indigo-600 font-medium flex items-center gap-1 mt-1">
-                  <CheckCircle2 className="w-3 h-3" /> Payout details pre-filled from store settings
+                  <CheckCircle2 className="w-3 h-3" /> {t("finance.preFilledFromStore")}
                 </p>
               )}
             </DialogHeader>
             <div className="space-y-4 mt-2">
               <div className="p-3 bg-indigo-50 rounded-xl">
-                <p className="text-xs text-slate-500">Available Balance</p>
+                <p className="text-xs text-slate-500">{t("finance.availableBalance")}</p>
                 <p className="text-2xl font-bold text-indigo-700">${availableBalance.toFixed(2)}</p>
               </div>
 
@@ -290,16 +292,15 @@ export default function VendorFinance() {
                 <div className="p-3 bg-amber-50 border border-amber-100 rounded-xl flex gap-3 items-start">
                   <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-xs font-bold text-amber-900">Payout method not set</p>
+                    <p className="text-xs font-bold text-amber-900">{t("finance.payoutMethodNotSet")}</p>
                     <p className="text-[10px] text-amber-700 mt-0.5 leading-relaxed">
-                      You haven't configured a default payout method in your store settings. 
-                      Setting this up will save you time on future withdrawals.
+                      {t("finance.payoutMethodNotSetDesc")}
                     </p>
                   </div>
                 </div>
               )}
               <div>
-                <label className="text-xs font-medium text-slate-600 mb-1 block">Withdrawal Amount *</label>
+                <label className="text-xs font-medium text-slate-600 mb-1 block">{t("finance.withdrawalAmount")} *</label>
                 <Input
                   type="number"
                   placeholder="0.00"
@@ -308,15 +309,15 @@ export default function VendorFinance() {
                   max={availableBalance}
                 />
                 {parseFloat(withdrawForm.amount) > availableBalance && (
-                  <p className="text-xs text-red-500 mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> Exceeds available balance</p>
+                  <p className="text-xs text-red-500 mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {t("finance.exceedsBalance")}</p>
                 )}
                 {parseFloat(withdrawForm.amount) > 0 && parseFloat(withdrawForm.amount) < 20 && (
-                  <p className="text-xs text-amber-600 mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> Minimum withdrawal is $20.00</p>
+                  <p className="text-xs text-amber-600 mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {t("finance.minimumWithdrawal")}</p>
                 )}
               </div>
               
               <div className="pt-2 border-t border-slate-100">
-                <label className="text-xs font-medium text-slate-600 mb-1 block">Payout Method</label>
+                <label className="text-xs font-medium text-slate-600 mb-1 block">{t("finance.payoutMethod")}</label>
                 <div className="flex gap-2">
                   <button 
                     type="button"
@@ -406,7 +407,7 @@ export default function VendorFinance() {
                 className="w-full bg-indigo-600 hover:bg-indigo-700 mt-2"
               >
                 {withdrawMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <ArrowDownCircle className="w-4 h-4 mr-2" />}
-                Submit Withdrawal Request
+                {t("finance.submitWithdrawal")}
               </Button>
             </div>
           </DialogContent>
@@ -415,10 +416,10 @@ export default function VendorFinance() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-        <StatCard icon={DollarSign} label="Available Balance" value={formatCurrency(availableBalance)} color="bg-indigo-50 text-indigo-600" />
-        <StatCard icon={TrendingUp} label="Total Earned" value={formatCurrency(totalEarned)} sub="After platform fee" color="bg-green-50 text-green-600" />
-        <StatCard icon={Clock} label="Pending Earnings" value={formatCurrency(pendingEarnings)} sub="From active orders" color="bg-amber-50 text-amber-600" />
-        <StatCard icon={CheckCircle2} label="Total Withdrawn" value={formatCurrency(totalWithdrawn)} color="bg-purple-50 text-purple-600" />
+        <StatCard icon={DollarSign} label={t("finance.availableBalance")} value={formatCurrency(availableBalance)} color="bg-indigo-50 text-indigo-600" />
+        <StatCard icon={TrendingUp} label={t("finance.totalEarned")} value={formatCurrency(totalEarned)} sub={t("finance.afterPlatformFee")} color="bg-green-50 text-green-600" />
+        <StatCard icon={Clock} label={t("finance.pendingEarnings")} value={formatCurrency(pendingEarnings)} sub={t("finance.fromActiveOrders")} color="bg-amber-50 text-amber-600" />
+        <StatCard icon={CheckCircle2} label={t("finance.totalWithdrawn")} value={formatCurrency(totalWithdrawn)} color="bg-purple-50 text-purple-600" />
       </div>
 
       {/* Monthly Chart */}
@@ -426,7 +427,7 @@ export default function VendorFinance() {
         <div className="bg-white rounded-2xl border border-slate-100 p-5 mb-6">
           <div className="flex items-center gap-2 mb-4">
             <BarChart3 className="w-5 h-5 text-indigo-500" />
-            <h3 className="font-semibold text-slate-900">Monthly Revenue</h3>
+            <h3 className="font-semibold text-slate-900">{t("finance.monthlyRevenue")}</h3>
           </div>
           <div className="flex items-end gap-2 h-28">
             {chartData.map(([month, val]) => (
@@ -447,11 +448,11 @@ export default function VendorFinance() {
         {/* Transaction History */}
         <div className="bg-white rounded-2xl border border-slate-100 p-5">
           <h3 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
-            <CreditCard className="w-5 h-5 text-slate-500" /> Transaction History
+            <CreditCard className="w-5 h-5 text-slate-500" /> {t("finance.transactionHistory")}
           </h3>
           <div className="space-y-2 max-h-96 overflow-y-auto">
             {orders.length === 0 ? (
-              <p className="text-center py-8 text-slate-400 text-sm">No transactions yet</p>
+              <p className="text-center py-8 text-slate-400 text-sm">{t("finance.noTransactions")}</p>
             ) : (
               orders.map(order => (
                 <div key={order.id}>
@@ -487,26 +488,26 @@ export default function VendorFinance() {
                       >
                         <div className="mx-2.5 mb-2 p-3 bg-slate-50 rounded-xl space-y-1.5">
                           <div className="flex justify-between text-xs">
-                            <span className="text-slate-500">Gross</span>
+                            <span className="text-slate-500">{t("finance.gross")}</span>
                             <span className="font-medium">{formatCurrency(order.total)}</span>
                           </div>
                           <div className="flex justify-between text-xs">
-                            <span className="text-slate-500">Platform fee (10%)</span>
+                            <span className="text-slate-500">{t("finance.platformFee")}</span>
                             <span className="text-red-500">-{formatCurrency(order.total * 0.1)}</span>
                           </div>
                           <div className="flex justify-between text-xs font-semibold border-t border-slate-200 pt-1.5">
-                            <span>Net payout</span>
+                            <span>{t("finance.netPayout")}</span>
                             <span className="text-green-600">{formatCurrency(order.total * 0.9)}</span>
                           </div>
                           <div className="flex justify-between text-[10px] text-slate-400 pt-1 capitalize">
-                            <span>Payment Method</span>
+                            <span>{t("checkout.paymentMethod")}</span>
                             <span>{order.payment_method?.replaceAll('_', ' ') || 'card'}</span>
                           </div>
                           <button
                             onClick={() => downloadTaxInvoice(order)}
                             className="w-full flex items-center justify-center gap-1.5 mt-2 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors"
                           >
-                            <FileText className="w-3.5 h-3.5" /> Download Invoice
+                            <FileText className="w-3.5 h-3.5" /> {t("finance.downloadInvoice")}
                           </button>
                         </div>
                       </motion.div>
@@ -521,20 +522,20 @@ export default function VendorFinance() {
         {/* Withdrawal History */}
         <div className="bg-white rounded-2xl border border-slate-100 p-5">
           <h3 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
-            <Building2 className="w-5 h-5 text-slate-500" /> Withdrawal Requests
+            <Building2 className="w-5 h-5 text-slate-500" /> {t("finance.withdrawalRequests")}
           </h3>
           {pendingWithdrawals > 0 && (
             <div className="flex items-center gap-2 p-3 bg-amber-50 rounded-xl mb-3">
               <Clock className="w-4 h-4 text-amber-600 shrink-0" />
-              <p className="text-xs text-amber-700">${pendingWithdrawals.toFixed(2)} pending processing (1–3 business days)</p>
+              <p className="text-xs text-amber-700">{t("finance.pendingProcessing", { amount: pendingWithdrawals.toFixed(2) })}</p>
             </div>
           )}
           <div className="space-y-2 max-h-80 overflow-y-auto">
             {withdrawals.length === 0 ? (
               <div className="text-center py-8">
                 <Wallet className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                <p className="text-sm text-slate-400">No withdrawals yet</p>
-                <p className="text-xs text-slate-300 mt-0.5">Your available balance: ${availableBalance.toFixed(2)}</p>
+                <p className="text-sm text-slate-400">{t("finance.noWithdrawals")}</p>
+                <p className="text-xs text-slate-300 mt-0.5">{t("finance.yourAvailableBalance", { balance: availableBalance.toFixed(2) })}</p>
               </div>
             ) : (
               withdrawals.map(w => (

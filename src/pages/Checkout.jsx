@@ -15,6 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { cartAPI, checkoutAPI, authAPI, couponsAPI, shippingZonesAPI, storesAPI } from "@/api/apiClient";
 import { useAuth } from "@/lib/AuthContext";
+import { useTranslation } from "react-i18next";
 import { formatCurrency } from "@/lib/utils";
 
 const FULFILLMENT_ICONS = {
@@ -129,6 +130,7 @@ const FulfillmentMethodCard = ({ method, selected, onSelect, store, subtotal }) 
 };
 
 export default function Checkout() {
+  const { t } = useTranslation();
   const [step, setStep] = useState(1);
   const [selectedAddressId, setSelectedAddressId] = useState(null);
   const [isAddingAddress, setIsAddingAddress] = useState(false);
@@ -411,12 +413,12 @@ export default function Checkout() {
 
       <div className="grid lg:grid-cols-12 gap-8 lg:gap-12">
         <div className="lg:col-span-8">
-          <h1 className="text-4xl font-black text-slate-900 mb-10 tracking-tight">Checkout</h1>
+          <h1 className="text-4xl font-black text-slate-900 mb-10 tracking-tight">{t("common.checkout")}</h1>
           
           {/* STEP 1: DELIVERY OPTIONS */}
           <CheckoutStep 
             number="1" 
-            title="Delivery Options" 
+            title={t("checkout.deliveryOptions")} 
             active={step === 1} 
             completed={step > 1} 
             onEdit={() => setStep(1)}
@@ -489,7 +491,7 @@ export default function Checkout() {
                   <div className="flex items-center gap-2 mb-2">
                     <MapPin className="w-4 h-4 text-indigo-500" />
                     <h3 className="font-black text-sm text-slate-900">
-                      {storeGroups.every(g => storeDeliverySelections[g.store_id] === "delivery") ? "Delivery Address" : "Shipping Address"}
+                      {storeGroups.every(g => storeDeliverySelections[g.store_id] === "delivery") ? t("checkout.deliveryAddress") : t("checkout.shippingAddress")}
                     </h3>
                   </div>
 
@@ -519,7 +521,7 @@ export default function Checkout() {
                         <div className="w-10 h-10 rounded-full bg-slate-50 group-hover:bg-indigo-100 flex items-center justify-center mb-2 transition-colors">
                             <Plus className="w-5 h-5 text-slate-400 group-hover:text-indigo-600" />
                         </div>
-                        <span className="text-sm font-bold text-slate-500 group-hover:text-indigo-600">Add New Address</span>
+                        <span className="text-sm font-bold text-slate-500 group-hover:text-indigo-600">{t("checkout.addNewAddress")}</span>
                     </button>
                   </div>
 
@@ -565,7 +567,7 @@ export default function Checkout() {
                         disabled={addAddressMutation.isPending}
                         className="w-full bg-slate-900 hover:bg-black text-white rounded-xl h-12 font-bold"
                       >
-                        {addAddressMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save Address"}
+                        {addAddressMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : t("checkout.saveAddress")}
                       </Button>
                     </div>
                   )}
@@ -576,7 +578,7 @@ export default function Checkout() {
                 onClick={handleContinueFromStep1}
                 className="w-full mt-4 bg-indigo-600 hover:bg-indigo-700 h-14 rounded-2xl font-black text-lg shadow-lg shadow-indigo-200 transition-all active:scale-[0.98]"
               >
-                Continue to Payment
+                {t("checkout.continueToPayment")}
               </Button>
             </div>
           </CheckoutStep>
@@ -584,7 +586,7 @@ export default function Checkout() {
           {/* STEP 2: PAYMENT METHOD */}
           <CheckoutStep 
             number="2" 
-            title="Payment Method" 
+            title={t("checkout.paymentMethod")} 
             active={step === 2} 
             completed={step > 2} 
             onEdit={() => setStep(2)}
@@ -641,7 +643,7 @@ export default function Checkout() {
 
               <div className="flex gap-4 mt-8">
                 <Button variant="outline" onClick={() => setStep(1)} className="flex-1 h-14 rounded-2xl font-black text-slate-600 border-slate-200">Back</Button>
-                <Button onClick={() => setStep(3)} className="flex-2 bg-indigo-600 hover:bg-indigo-700 h-14 rounded-2xl font-black text-lg">Review Order</Button>
+                <Button onClick={() => setStep(3)} className="flex-2 bg-indigo-600 hover:bg-indigo-700 h-14 rounded-2xl font-black text-lg">{t("checkout.reviewOrder")}</Button>
               </div>
             </div>
           </CheckoutStep>
@@ -717,7 +719,7 @@ export default function Checkout() {
                         <Loader2 className="w-6 h-6 animate-spin" />
                     ) : (
                         <>
-                            Place Order <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                            {t("checkout.placeOrder")} <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                         </>
                     )}
                 </Button>
@@ -733,16 +735,16 @@ export default function Checkout() {
               <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-full -mr-16 -mt-16 opacity-50" />
               
               <h3 className="font-black text-xl text-slate-900 mb-8 tracking-tight flex items-center gap-3">
-                  <ShoppingBag className="w-5 h-5 text-indigo-600" /> Order Summary
+                  <ShoppingBag className="w-5 h-5 text-indigo-600" /> {t("cart.orderSummary")}
               </h3>
 
               <div className="space-y-5 relative z-10">
                 <div className="flex justify-between text-slate-500 font-bold">
-                  <span>Subtotal</span>
+                  <span>{t("cart.subtotal")}</span>
                   <span className="text-slate-900">{formatCurrency(calculations.subtotal)}</span>
                 </div>
                 <div className="flex justify-between text-slate-500 font-bold">
-                  <span>Fulfillment</span>
+                  <span>{t("checkout.fulfillment")}</span>
                   <span className="text-slate-900">{calculations.shipping === 0 ? "FREE" : formatCurrency(calculations.shipping)}</span>
                 </div>
                 {calculations.discount > 0 && (
@@ -756,7 +758,7 @@ export default function Checkout() {
                 
                 <div className="flex justify-between items-end pt-2">
                   <div className="flex flex-col">
-                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Total Amount</span>
+                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{t("cart.total")}</span>
                       <span className="text-3xl font-black text-slate-900 tracking-tighter">{formatCurrency(calculations.total)}</span>
                   </div>
                 </div>
@@ -765,7 +767,7 @@ export default function Checkout() {
                 <div className="mt-8 pt-8 border-t border-slate-100">
                     {!appliedCoupon ? (
                         <div className="space-y-3">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Coupon Code</label>
+                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">{t("checkout.couponCode")}</label>
                             <div className="flex gap-2">
                                 <Input 
                                     value={couponCode} 

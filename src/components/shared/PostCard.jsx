@@ -1,4 +1,5 @@
 import React, { useState, useEffect, memo, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { postsAPI, bookmarksAPI, followsAPI } from "@/api/apiClient";
 import { Heart, MessageCircle, Share2, ShoppingBag, MoreHorizontal, Bookmark, ChevronLeft, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -12,6 +13,7 @@ import useEmblaCarousel from 'embla-carousel-react';
 import { useSocket } from "@/lib/SocketContext";
 
 const PostCard = memo(function PostCard({ post, currentUser }) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { on } = useSocket();
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
@@ -261,7 +263,7 @@ const PostCard = memo(function PostCard({ post, currentUser }) {
                         : "text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300"
                     }`}
                   >
-                    {isFollowing ? "Following" : "Follow"}
+                    {isFollowing ? t("common.following") : t("common.follow")}
                   </button>
                 </>
               )}
@@ -294,7 +296,7 @@ const PostCard = memo(function PostCard({ post, currentUser }) {
               onClick={() => setShowFullContent(!showFullContent)}
               className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 mt-1 hover:text-indigo-700 dark:hover:text-indigo-300"
             >
-              {showFullContent ? "Show Less" : "Read More"}
+              {showFullContent ? t("common.seeLess") : t("common.seeMore")}
             </button>
           )}
         </div>
@@ -438,14 +440,14 @@ const PostCard = memo(function PostCard({ post, currentUser }) {
               />
             </motion.div>
             <span className={`text-[13px] font-semibold transition-colors ${optimisticLiked ? "text-red-500" : "text-slate-500 dark:text-slate-400"}`}>
-              {optimisticCount > 0 ? optimisticCount.toLocaleString() : "Like"}
+              {optimisticCount > 0 ? optimisticCount.toLocaleString() : t("common.like")}
             </span>
           </button>
 
           <Link to={createPageUrl("PostDetail") + `?id=${postId}`} className="flex items-center gap-1.5 group outline-none">
             <MessageCircle className="w-5 h-5 text-slate-500 dark:text-slate-400 group-hover:text-indigo-500 transition-colors" />
             <span className="text-[13px] font-semibold text-slate-500 dark:text-slate-400 group-hover:text-indigo-500 transition-colors">
-              {post.comments_count > 0 ? post.comments_count.toLocaleString() : "Comment"}
+              {post.comments_count > 0 ? post.comments_count.toLocaleString() : t("common.comment")}
             </span>
           </Link>
 
@@ -455,7 +457,7 @@ const PostCard = memo(function PostCard({ post, currentUser }) {
           >
             <Share2 className="w-5 h-5 text-slate-500 dark:text-slate-400 group-hover:text-indigo-500 transition-colors" />
             <span className="text-[13px] font-semibold text-slate-500 dark:text-slate-400 group-hover:text-indigo-500 transition-colors">
-              {post.shares_count > 0 ? post.shares_count.toLocaleString() : "Share"}
+              {post.shares_count > 0 ? post.shares_count.toLocaleString() : t("common.share")}
             </span>
           </button>
         </div>

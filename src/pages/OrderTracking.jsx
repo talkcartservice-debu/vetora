@@ -13,13 +13,14 @@ import { Badge } from "@/components/ui/badge";
 import EmptyState from "@/components/shared/EmptyState";
 import { ordersAPI } from "@/api/apiClient";
 import { useAuth } from "@/lib/AuthContext";
+import { useTranslation } from "react-i18next";
 
 const TRACKING_STEPS = [
-  { key: "pending",    label: "Order Placed",      icon: Clock,         desc: "Your order has been received" },
-  { key: "confirmed",  label: "Confirmed",          icon: CheckCircle2,  desc: "Vendor confirmed your order" },
-  { key: "processing", label: "Processing",         icon: Package,       desc: "Being packed and prepared" },
-  { key: "shipped",    label: "Shipped",            icon: Truck,         desc: "On its way to you" },
-  { key: "delivered",  label: "Delivered",          icon: MapPin,        desc: "Arrived at destination" },
+  { key: "pending",    icon: Clock },
+  { key: "confirmed",  icon: CheckCircle2 },
+  { key: "processing", icon: Package },
+  { key: "shipped",    icon: Truck },
+  { key: "delivered",  icon: MapPin },
 ];
 
 const STATUS_ORDER = ["pending", "confirmed", "processing", "shipped", "delivered"];
@@ -30,6 +31,7 @@ function getStepIndex(status) {
 }
 
 function TrackingTimeline({ status }) {
+  const { t } = useTranslation();
   const currentIndex = getStepIndex(status);
   const isCancelled = status === "cancelled" || status === "refunded";
 
@@ -39,7 +41,7 @@ function TrackingTimeline({ status }) {
         <XCircle className="w-6 h-6 text-red-500 shrink-0" />
         <div>
           <p className="font-semibold text-red-700 text-sm capitalize">{status}</p>
-          <p className="text-xs text-red-500">This order has been {status}</p>
+          <p className="text-xs text-red-500">{t("orderTracking.orderCancelled", { status })}</p>
         </div>
       </div>
     );
@@ -83,16 +85,16 @@ function TrackingTimeline({ status }) {
             <div className={`pb-5 flex-1 ${isLast ? "" : ""}`}>
               <div className="flex items-center gap-2 mt-1.5">
                 <p className={`text-sm font-semibold ${isPending ? "text-slate-400" : "text-slate-900"}`}>
-                  {step.label}
+                  {t(`orderTracking.steps.${step.key}.label`)}
                 </p>
                 {isCurrent && (
                   <span className="text-[10px] font-bold bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full uppercase tracking-wide">
-                    Current
+                    {t("orderTracking.current")}
                   </span>
                 )}
               </div>
               <p className={`text-xs mt-0.5 ${isPending ? "text-slate-300" : "text-slate-500"}`}>
-                {step.desc}
+                {t(`orderTracking.steps.${step.key}.desc`)}
               </p>
             </div>
           </div>
@@ -103,6 +105,7 @@ function TrackingTimeline({ status }) {
 }
 
 function OrderTrackCard({ order, defaultExpanded = false }) {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(defaultExpanded);
 
   const statusColors = {
@@ -134,7 +137,7 @@ function OrderTrackCard({ order, defaultExpanded = false }) {
         <div className="flex-1 min-w-0">
           <p className="text-xs text-slate-400">#{order.id?.slice(-8)} · {new Date(order.created_at || order.created_date).toLocaleDateString()}</p>
           <p className="text-sm font-semibold text-slate-900 truncate">{order.store_name || "Store"}</p>
-          <p className="text-xs text-slate-500">{order.items?.length || 0} item(s) · <span className="font-semibold text-slate-700">{formatCurrency(order.total)}</span></p>
+          <p className="text-xs text-slate-500">{t("orderTracking.itemCount", { count: order.items?.length || 0 })} · <span className="font-semibold text-slate-700">{formatCurrency(order.total)}</span></p>
         </div>
         <div className="flex flex-col items-end gap-2 shrink-0">
           <Badge className={`${statusColors[order.status] || statusColors.pending} border-0 text-xs capitalize`}>
@@ -155,12 +158,12 @@ function OrderTrackCard({ order, defaultExpanded = false }) {
             className="overflow-hidden"
           >
             <div className="px-5 pb-5 border-t border-slate-50">
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-4 mb-4">Shipping Progress</p>
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-4 mb-4">{t("orderTracking.shippingProgress")}</p>
               <TrackingTimeline status={order.status} />
 
               {order.tracking_number && (
                 <div className="mt-4 p-3 bg-indigo-50 rounded-xl">
-                  <p className="text-xs text-slate-500">Tracking Number</p>
+                  <p className="text-xs text-slate-500">{t("orderTracking.trackingNumber")}</p>
                   <p className="text-sm font-bold text-indigo-700 font-mono">{order.tracking_number}</p>
                 </div>
               )}
@@ -181,7 +184,7 @@ function OrderTrackCard({ order, defaultExpanded = false }) {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-medium text-slate-700 truncate">{item.product_title}</p>
-                      <p className="text-xs text-slate-400">Qty: {item.quantity} · {formatCurrency(item.price)}</p>
+                      <p className="text-xs text-slate-400">{t("orderTracking.qty", { qty: item.quantity })} · {formatCurrency(item.price)}</p>
                     </div>
                   </div>
                 ))}
@@ -195,6 +198,7 @@ function OrderTrackCard({ order, defaultExpanded = false }) {
 }
 
 export default function OrderTracking() {
+  const { t } = useTranslation();
   const [searchId, setSearchId] = useState("");
   const [searchedOrder, setSearchedOrder] = useState(null);
   const [searching, setSearching] = useState(false);
@@ -243,8 +247,8 @@ export default function OrderTracking() {
   return (
     <div className="max-w-2xl mx-auto px-4 py-6">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-900 mb-1">Track Order</h1>
-        <p className="text-slate-500 text-sm">Enter an order ID or view your recent purchases below</p>
+        <h1 className="text-2xl font-bold text-slate-900 mb-1">{t("orderTracking.title")}</h1>
+        <p className="text-slate-500 text-sm">{t("orderTracking.subtitle")}</p>
       </div>
 
       {/* Search */}
@@ -253,7 +257,7 @@ export default function OrderTracking() {
           value={searchId}
           onChange={e => setSearchId(e.target.value)}
           onKeyDown={e => e.key === "Enter" && handleSearch()}
-          placeholder="Enter order ID (e.g. a1b2c3d4)"
+          placeholder={t("orderTracking.placeholder")}
           className="rounded-xl border-slate-200"
         />
         <Button
@@ -273,7 +277,7 @@ export default function OrderTracking() {
       <AnimatePresence>
         {searchedOrder && (
           <div className="mb-8">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Search Result</p>
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">{t("orderTracking.searchResult")}</p>
             <OrderTrackCard order={searchedOrder} defaultExpanded={true} />
           </div>
         )}
@@ -283,7 +287,7 @@ export default function OrderTracking() {
             className="mb-8 p-4 bg-red-50 rounded-2xl flex items-center gap-3"
           >
             <AlertCircle className="w-5 h-5 text-red-500 shrink-0" />
-            <p className="text-sm text-red-700">No order found with that ID. Please double-check and try again.</p>
+            <p className="text-sm text-red-700">{t("orderTracking.notFound")}</p>
           </motion.div>
         )}
       </AnimatePresence>
@@ -291,7 +295,7 @@ export default function OrderTracking() {
       {/* Recent orders */}
       <div>
         <p className="text-sm font-semibold text-slate-700 mb-3">
-          {currentUser ? "Your Recent Orders" : "Sign in to see your orders"}
+          {currentUser ? t("orderTracking.recentOrders") : t("orderTracking.signInToSee")}
         </p>
         {isLoading ? (
           <div className="space-y-3">
@@ -308,11 +312,11 @@ export default function OrderTracking() {
         ) : myOrders.length === 0 ? (
           <EmptyState
             icon={ShoppingBag}
-            title="No orders yet"
-            description="Your orders will appear here once you make a purchase"
+            title={t("orderTracking.noOrders")}
+            description={t("orderTracking.noOrdersDesc")}
             action={
               <Link to={createPageUrl("Marketplace")}>
-                <Button className="bg-indigo-600 hover:bg-indigo-700 rounded-xl">Browse Marketplace</Button>
+                <Button className="bg-indigo-600 hover:bg-indigo-700 rounded-xl">{t("orderTracking.browseMarketplace")}</Button>
               </Link>
             }
           />

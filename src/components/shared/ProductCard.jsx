@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { createPageUrl, formatCurrency } from "@/lib/utils";
 import { Star, Heart, Share2 } from "lucide-react";
@@ -9,6 +10,7 @@ import { toast } from "sonner";
 import ShareModal from "./ShareModal";
 
 export default function ProductCard({ product, compact = false }) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [isShareModalOpen, setIsShareModalOpen] = React.useState(false);
   const productId = product?.id || product?._id;
@@ -96,7 +98,7 @@ export default function ProductCard({ product, compact = false }) {
             )}
             {product.status === "sold_out" && (
               <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                <span className="text-white font-bold text-sm uppercase tracking-wider">Sold Out</span>
+                <span className="text-white font-bold text-sm uppercase tracking-wider">{t("product.outOfStock")}</span>
               </div>
             )}
             <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-opacity">

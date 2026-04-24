@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { initializePaystackPayment } from "@/lib/paystack";
 import { useAuth } from "@/lib/AuthContext";
 import { formatCurrency } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
 const PLANS = [
   {
@@ -79,6 +80,7 @@ const PLANS = [
 ];
 
 function PlanCard({ plan, currentPlan, onSelect, billing }) {
+  const { t } = useTranslation();
   const isActive = currentPlan?.plan === plan.id;
   const isDowngrade = currentPlan && PLANS.findIndex(p => p.id === plan.id) < PLANS.findIndex(p => p.id === currentPlan.plan);
   const price = billing === "annual" ? plan.priceAnnual : plan.price;
@@ -120,7 +122,7 @@ function PlanCard({ plan, currentPlan, onSelect, billing }) {
 
         {isActive ? (
           <div className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-green-50 border border-green-200 text-green-700 text-sm font-semibold">
-            <BadgeCheck className="w-4 h-4" /> Current Plan
+            <BadgeCheck className="w-4 h-4" /> {t("subscription.currentPlan")}
           </div>
         ) : (
           <Button
@@ -128,7 +130,7 @@ function PlanCard({ plan, currentPlan, onSelect, billing }) {
             className={`w-full rounded-xl ${plan.id === "free" ? "variant-outline border border-slate-200" : plan.id === "pro" ? "bg-indigo-600 hover:bg-indigo-700" : "bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600"}`}
             variant={plan.id === "free" ? "outline" : "default"}
           >
-            {isDowngrade ? "Downgrade" : "Upgrade"} to {plan.name}
+            {t("subscription.upgradeButton", { action: isDowngrade ? t("subscription.downgrade") : t("subscription.upgrade"), name: plan.name })}
           </Button>
         )}
       </div>
@@ -137,6 +139,7 @@ function PlanCard({ plan, currentPlan, onSelect, billing }) {
 }
 
 function CustomDomainManager({ subscription, vendorUsername }) {
+  const { t } = useTranslation();
   const [domain, setDomain] = useState(subscription?.custom_domain || "");
   const [saving, setSaving] = useState(false);
   const queryClient = useQueryClient();
@@ -150,9 +153,9 @@ function CustomDomainManager({ subscription, vendorUsername }) {
     try {
       await vendorSubscriptionsAPI.update(subscription.id || subscription._id, { custom_domain: domain });
       queryClient.invalidateQueries({ queryKey: ["vendorSubscription"] });
-      toast.success("Custom domain saved!");
+      toast.success(t("subscription.customDomainSaved"));
     } catch (err) {
-      toast.error(err.message || "Failed to save domain");
+      toast.error(err.message || t("subscription.customDomainFailed"));
     } finally {
       setSaving(false);
     }
@@ -163,8 +166,8 @@ function CustomDomainManager({ subscription, vendorUsername }) {
       <div className="bg-slate-50 rounded-2xl border border-slate-200 p-5 flex items-center gap-3">
         <Shield className="w-8 h-8 text-slate-400 shrink-0" />
         <div>
-          <p className="text-sm font-semibold text-slate-700">Custom Domain Mapping</p>
-          <p className="text-xs text-slate-500">Upgrade to Pro or Elite to use a custom domain</p>
+          <p className="text-sm font-semibold text-slate-700">{t("subscription.customDomainTitle")}</p>
+          <p className="text-xs text-slate-500">{t("subscription.customDomainUpgradeHint")}</p>
         </div>
         <Badge className="ml-auto bg-indigo-600 text-white text-xs">Pro+</Badge>
       </div>
@@ -175,16 +178,16 @@ function CustomDomainManager({ subscription, vendorUsername }) {
     <div className="bg-white rounded-2xl border border-slate-100 p-5">
       <div className="flex items-center gap-2 mb-3">
         <Globe className="w-5 h-5 text-indigo-500" />
-        <h4 className="text-sm font-semibold text-slate-900">Custom Domain {isElite && "& SSL"}</h4>
+        <h4 className="text-sm font-semibold text-slate-900">{t("subscription.customDomainTitle")}{isElite && " & SSL"}</h4>
         {subscription?.custom_domain ? (
-          <Badge className="ml-auto bg-green-100 text-green-700 border-0 text-xs">Active</Badge>
+          <Badge className="ml-auto bg-green-100 text-green-700 border-0 text-xs">{t("subscription.domainActive")}</Badge>
         ) : (
-          <Badge className="ml-auto bg-slate-100 text-slate-500 border-0 text-xs">Not configured</Badge>
+          <Badge className="ml-auto bg-slate-100 text-slate-500 border-0 text-xs">{t("subscription.domainNotConfigured")}</Badge>
         )}
       </div>
       <p className="text-xs text-slate-500 mb-3">
-        Point your domain to Aicon X to use a branded store URL.
-        {isElite && " Elite stores include free automatic SSL encryption."}
+        {t("subscription.domainDescription")}
+        {isElite && ` ${t("subscription.domainEliteSSL")}`}
       </p>
       <div className="flex gap-2">
         <Input
@@ -207,6 +210,7 @@ function CustomDomainManager({ subscription, vendorUsername }) {
 }
 
 export default function SubscriptionManager({ store, vendorUsername }) {
+  const { t } = useTranslation();
   const [billing, setBilling] = useState("monthly");
   const [showConfirm, setShowConfirm] = useState(null);
   const queryClient = useQueryClient();
@@ -345,7 +349,7 @@ export default function SubscriptionManager({ store, vendorUsername }) {
               You are on the <span className={subscription?.plan === "elite" ? "text-amber-600" : subscription?.plan === "pro" ? "text-indigo-600" : "text-slate-600"}>{currentPlanInfo?.name}</span> plan
             </p>
             {isPending && (
-              <Badge variant="outline" className="bg-amber-50 text-amber-600 border-amber-200 animate-pulse">Pending Payment</Badge>
+              <Badge variant="outline" className="bg-amber-50 text-amber-600 border-amber-200 animate-pulse">{t("subscription.pendingPayment")}</Badge>
             )}
           </div>
           {subscription?.expires_at && (
@@ -391,7 +395,7 @@ export default function SubscriptionManager({ store, vendorUsername }) {
                 }
               }}
             >
-              Pay Now
+              {t("subscription.payNow")}
             </Button>
           )}
         </div>
@@ -414,7 +418,7 @@ export default function SubscriptionManager({ store, vendorUsername }) {
 
       {/* Billing toggle */}
       <div className="flex items-center justify-center gap-3">
-        <span className={`text-sm font-medium ${billing === "monthly" ? "text-slate-900" : "text-slate-400"}`}>Monthly</span>
+        <span className={`text-sm font-medium ${billing === "monthly" ? "text-slate-900" : "text-slate-400"}`}>{t("subscription.monthly")}</span>
         <button
           onClick={() => setBilling(b => b === "monthly" ? "annual" : "monthly")}
           className={`relative w-12 h-6 rounded-full transition-colors ${billing === "annual" ? "bg-indigo-600" : "bg-slate-200"}`}
@@ -422,7 +426,7 @@ export default function SubscriptionManager({ store, vendorUsername }) {
           <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all ${billing === "annual" ? "left-7" : "left-1"}`} />
         </button>
         <span className={`text-sm font-medium ${billing === "annual" ? "text-slate-900" : "text-slate-400"}`}>
-          Annual <span className="text-green-600 text-xs font-bold">Save 20%</span>
+          {t("subscription.annual")} <span className="text-green-600 text-xs font-bold">{t("subscription.save20")}</span>
         </span>
       </div>
 
@@ -445,9 +449,9 @@ export default function SubscriptionManager({ store, vendorUsername }) {
       {/* Feature comparison callout */}
       <div className="grid grid-cols-3 gap-3 text-center">
         {[
-          { icon: TrendingUp, label: "Priority Search", plans: ["Pro", "Elite"], color: "text-indigo-500" },
-          { icon: Image, label: "Unlimited Media", plans: ["Elite"], color: "text-amber-500" },
-          { icon: Globe, label: "Custom Domain", plans: ["Pro", "Elite"], color: "text-green-500" },
+          { icon: TrendingUp, label: t("subscription.prioritySearch"), plans: ["Pro", "Elite"], color: "text-indigo-500" },
+          { icon: Image, label: t("subscription.unlimitedMedia"), plans: ["Elite"], color: "text-amber-500" },
+          { icon: Globe, label: t("subscription.customDomain"), plans: ["Pro", "Elite"], color: "text-green-500" },
         ].map(f => (
           <div key={f.label} className="bg-white rounded-xl border border-slate-100 p-3">
             <f.icon className={`w-5 h-5 mx-auto mb-1.5 ${f.color}`} />
@@ -463,21 +467,21 @@ export default function SubscriptionManager({ store, vendorUsername }) {
           <div className="fixed inset-0 bg-black/50 z-50 flex items-end lg:items-center justify-center p-4">
             <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 30 }} className="bg-white rounded-2xl p-6 w-full max-w-sm">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-slate-900">Confirm Upgrade</h3>
+                <h3 className="text-lg font-bold text-slate-900">{t("subscription.confirmUpgrade")}</h3>
                 <button onClick={() => setShowConfirm(null)}><X className="w-5 h-5 text-slate-400" /></button>
               </div>
               <p className="text-slate-600 text-sm mb-2">
                 Upgrade to <strong>{showConfirm.name}</strong> for <strong>${billing === "annual" ? showConfirm.priceAnnual : showConfirm.price}/mo</strong> ({billing}).
               </p>
               <div className="flex gap-3">
-                <Button variant="outline" className="flex-1 rounded-xl" onClick={() => setShowConfirm(null)}>Cancel</Button>
+                <Button variant="outline" className="flex-1 rounded-xl" onClick={() => setShowConfirm(null)}>{t("common.cancel")}</Button>
                 <Button
                   className="flex-1 rounded-xl bg-indigo-600 hover:bg-indigo-700"
                   onClick={() => subscribeMutation.mutate(showConfirm)}
                   disabled={subscribeMutation.isPending}
                 >
                   {subscribeMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
-                  Confirm
+                  {t("subscription.confirm")}
                 </Button>
               </div>
             </motion.div>

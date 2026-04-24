@@ -15,6 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { affiliateLinksAPI, productsAPI, vendorSubscriptionsAPI } from "@/api/apiClient";
 import { useAuth } from "@/lib/AuthContext";
+import { useTranslation } from "react-i18next";
 import { createPageUrl, formatCurrency } from "@/lib/utils";
 
 const RANK_MEDAL = {
@@ -278,6 +279,7 @@ function ConversionBar({ clicks, conversions }) {
 }
 
 export default function Affiliate() {
+  const { t } = useTranslation();
   const [search, setSearch] = useState("");
   const [creating, setCreating] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -397,9 +399,9 @@ export default function Affiliate() {
 
       <Tabs defaultValue="links" className="w-full">
         <TabsList className="bg-slate-100 p-1 rounded-2xl mb-6 w-full lg:w-auto overflow-x-auto justify-start lg:justify-center">
-          <TabsTrigger value="links" className="rounded-xl px-6 py-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">Links</TabsTrigger>
-          <TabsTrigger value="leaderboard" className="rounded-xl px-6 py-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">Leaderboard</TabsTrigger>
-          <TabsTrigger value="assets" className="rounded-xl px-6 py-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">Marketing Assets</TabsTrigger>
+          <TabsTrigger value="links" className="rounded-xl px-6 py-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">{t("affiliate.links")}</TabsTrigger>
+          <TabsTrigger value="leaderboard" className="rounded-xl px-6 py-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">{t("affiliate.leaderboard")}</TabsTrigger>
+          <TabsTrigger value="assets" className="rounded-xl px-6 py-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">{t("affiliate.marketingAssets")}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="links" className="mt-0">
@@ -407,9 +409,9 @@ export default function Affiliate() {
             {/* My Links */}
             <div className="lg:col-span-3 space-y-3">
               <div className="flex items-center justify-between mb-2">
-                <h2 className="text-lg font-bold text-slate-900">My Affiliate Links</h2>
+                <h2 className="text-lg font-bold text-slate-900">{t("affiliate.myLinks")}</h2>
                 <Button onClick={() => setCreating(v => !v)} size="sm" className={`rounded-xl gap-1.5 ${creating ? "bg-slate-200 text-slate-700 hover:bg-slate-300" : "bg-indigo-600 hover:bg-indigo-700"}`}>
-                  <Plus className="w-4 h-4" /> New Link
+                  <Plus className="w-4 h-4" /> {t("affiliate.newLink")}
                 </Button>
               </div>
 
@@ -418,7 +420,7 @@ export default function Affiliate() {
               ) : myLinks.length === 0 ? (
                 <div className="text-center py-16 border-2 border-dashed border-slate-200 rounded-2xl">
                   <Link2 className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-                  <p className="text-sm font-semibold text-slate-600">No affiliate links yet</p>
+                  <p className="text-sm font-semibold text-slate-600">{t("affiliate.noLinks")}</p>
                   <p className="text-xs text-slate-400 mt-1">Pick a product from the right to create your first link</p>
                 </div>
               ) : (
@@ -442,15 +444,15 @@ export default function Affiliate() {
                       <div className="grid grid-cols-3 gap-2 mb-3 text-center">
                         <div className="bg-slate-50 rounded-xl py-2">
                           <p className="text-lg font-black text-slate-900">{link.clicks || 0}</p>
-                          <p className="text-[10px] text-slate-400">Clicks</p>
+                          <p className="text-[10px] text-slate-400">{t("affiliate.clicks")}</p>
                         </div>
                         <div className="bg-slate-50 rounded-xl py-2">
                           <p className="text-lg font-black text-slate-900">{link.conversions || 0}</p>
-                          <p className="text-[10px] text-slate-400">Sales</p>
+                          <p className="text-[10px] text-slate-400">{t("affiliate.sales")}</p>
                         </div>
                         <div className="bg-green-50 rounded-xl py-2">
                           <p className="text-lg font-black text-green-700">{formatCurrency(link.total_commission_earned || 0)}</p>
-                          <p className="text-[10px] text-slate-400">Earned</p>
+                          <p className="text-[10px] text-slate-400">{t("affiliate.earned")}</p>
                         </div>
                       </div>
 
@@ -494,7 +496,7 @@ export default function Affiliate() {
               )}
               <div className="bg-white rounded-2xl border border-slate-100 p-4 sticky top-4">
                 <h3 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
-                  <Package className="w-4 h-4 text-indigo-500" /> Choose a Product
+                  <Package className="w-4 h-4 text-indigo-500" /> {t("affiliate.chooseProduct")}
                 </h3>
                 <div className="relative mb-3">
                   <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />

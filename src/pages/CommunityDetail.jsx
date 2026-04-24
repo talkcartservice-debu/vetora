@@ -1,5 +1,6 @@
 import React, { useState } from "react"; 
- import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"; 
+ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+ import { useTranslation } from "react-i18next"; 
  import { Link, useSearchParams } from "react-router-dom"; 
  import { communitiesAPI, postsAPI, authAPI, communityMembersAPI } from "@/api/apiClient"; 
  import PostCard from "@/components/shared/PostCard"; 
@@ -21,6 +22,7 @@ const COMMUNITY_CATEGORIES = [
  ]; 
 
  export default function CommunityDetail() { 
+   const { t } = useTranslation();
    const [searchParams] = useSearchParams(); 
    const communityId = searchParams.get("id"); 
    const [activeTab, setActiveTab] = useState("posts"); 
@@ -102,7 +104,7 @@ const COMMUNITY_CATEGORIES = [
    return ( 
      <div className="max-w-2xl mx-auto px-4 py-4 lg:py-6"> 
        <Link to="/communities" className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 mb-4"> 
-         <ArrowLeft className="w-4 h-4" /> Communities 
+         <ArrowLeft className="w-4 h-4" /> {t("communities.title")}
        </Link> 
 
        {/* Banner */} 
@@ -124,8 +126,8 @@ const COMMUNITY_CATEGORIES = [
                <h1 className="text-2xl font-bold text-slate-900 mb-1">{community.name}</h1> 
                <p className="text-sm text-slate-500 mb-3">{community.description}</p> 
                <div className="flex items-center gap-4 text-sm text-slate-500"> 
-                 <span className="flex items-center gap-1.5"><Users className="w-4 h-4" /> {community.member_count || 0} members</span> 
-                 <span className="flex items-center gap-1.5"><MessageSquare className="w-4 h-4" /> {posts.length} posts</span> 
+                 <span className="flex items-center gap-1.5"><Users className="w-4 h-4" /> {t("communities.members_other", { count: community.member_count || 0 })}</span> 
+                 <span className="flex items-center gap-1.5"><MessageSquare className="w-4 h-4" /> {posts.length} {t("communities.posts")}</span> 
                </div> 
              </div> 
              <div className="flex items-center gap-2 shrink-0 mt-1"> 
@@ -136,7 +138,7 @@ const COMMUNITY_CATEGORIES = [
                    variant={isMember ? "secondary" : "default"} 
                    className={`rounded-xl ${!isMember ? "bg-indigo-600 hover:bg-indigo-700" : ""}`} 
                  > 
-                   {isMember ? <><UserCheck className="w-4 h-4 mr-1.5" /> Joined</> : <><UserPlus className="w-4 h-4 mr-1.5" /> Join</>} 
+                   {isMember ? <><UserCheck className="w-4 h-4 mr-1.5" /> {t("communities.joined")}</> : <><UserPlus className="w-4 h-4 mr-1.5" /> {t("communities.join")}</>} 
                  </Button> 
                )} 
              </div> 
@@ -160,9 +162,9 @@ const COMMUNITY_CATEGORIES = [
        {/* Tabs */} 
        <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-4"> 
          <TabsList className="bg-white border border-slate-100 w-full rounded-xl"> 
-           <TabsTrigger value="posts" className="flex-1 rounded-lg">Posts</TabsTrigger> 
-           <TabsTrigger value="members" className="flex-1 rounded-lg">Members</TabsTrigger> 
-           <TabsTrigger value="about" className="flex-1 rounded-lg">About</TabsTrigger> 
+           <TabsTrigger value="posts" className="flex-1 rounded-lg">{t("communities.posts")}</TabsTrigger> 
+           <TabsTrigger value="members" className="flex-1 rounded-lg">{t("communities.membersTab")}</TabsTrigger> 
+           <TabsTrigger value="about" className="flex-1 rounded-lg">{t("communities.about")}</TabsTrigger> 
          </TabsList> 
        </Tabs> 
 

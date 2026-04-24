@@ -9,10 +9,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTranslation } from "react-i18next";
 
 import { authAPI, cartAPI, couponsAPI } from "@/api/apiClient";
 
 export default function Cart() {
+  const { t } = useTranslation();
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [couponError, setCouponError] = useState("");
@@ -86,10 +88,10 @@ export default function Cart() {
   return (
     <div className="max-w-3xl mx-auto px-4 py-6">
       <Link to={createPageUrl("Marketplace")} className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 mb-4">
-        <ArrowLeft className="w-4 h-4" /> Continue Shopping
+        <ArrowLeft className="w-4 h-4" /> {t("common.continueShopping")}
       </Link>
 
-      <h1 className="text-2xl font-bold text-slate-900 mb-6">Shopping Cart ({cartItems.length})</h1>
+      <h1 className="text-2xl font-bold text-slate-900 mb-6">{t("cart.title")} ({cartItems.length})</h1>
 
       {isLoading ? (
         <div className="space-y-3">
@@ -106,7 +108,7 @@ export default function Cart() {
       ) : cartItems.length === 0 ? (
         <EmptyState
           icon={ShoppingBag}
-          title="Your cart is empty"
+          title={t("cart.empty")}
           description="Browse the marketplace to find products you love"
           action={
             <Link to={createPageUrl("Marketplace")}>
@@ -155,10 +157,10 @@ export default function Cart() {
           {/* Order Summary */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-2xl border border-slate-100 p-6 sticky top-6">
-              <h3 className="text-lg font-bold text-slate-900 mb-4">Order Summary</h3>
+              <h3 className="text-lg font-bold text-slate-900 mb-4">{t("cart.orderSummary")}</h3>
               <div className="space-y-3 mb-4">
                 <div className="flex justify-between text-sm">
-                  <span className="text-slate-500">Subtotal</span>
+                  <span className="text-slate-500">{t("cart.subtotal")}</span>
                   <span className="font-medium">{formatCurrency(subtotal)}</span>
                 </div>
                 {discount > 0 && (
@@ -170,11 +172,11 @@ export default function Cart() {
                   </div>
                 )}
                 <div className="flex justify-between text-sm">
-                  <span className="text-slate-500">Shipping</span>
-                  <span className="font-medium">{shipping === 0 ? "Free" : formatCurrency(shipping)}</span>
+                  <span className="text-slate-500">{t("cart.shipping")}</span>
+                  <span className="font-medium">{shipping === 0 ? t("product.freeShipping") : formatCurrency(shipping)}</span>
                 </div>
                 <div className="border-t border-slate-100 pt-3 flex justify-between text-base">
-                  <span className="font-bold text-slate-900">Total</span>
+                  <span className="font-bold text-slate-900">{t("common.total")}</span>
                   <span className="font-bold text-slate-900">{formatCurrency(total)}</span>
                 </div>
               </div>
@@ -193,7 +195,7 @@ export default function Cart() {
                   <div>
                     <div className="flex gap-2">
                       <Input
-                        placeholder="Coupon code"
+                        placeholder={t("cart.couponPlaceholder")}
                         value={couponCode}
                         onChange={e => { setCouponCode(e.target.value.toUpperCase()); setCouponError(""); }}
                         onKeyDown={e => e.key === "Enter" && applyCoupon()}
@@ -205,7 +207,7 @@ export default function Cart() {
                         disabled={checkingCoupon || !couponCode.trim()}
                         className="shrink-0 rounded-xl px-3"
                       >
-                        {checkingCoupon ? <Loader2 className="w-4 h-4 animate-spin" /> : "Apply"}
+                        {checkingCoupon ? <Loader2 className="w-4 h-4 animate-spin" /> : t("cart.applyCoupon")}
                       </Button>
                     </div>
                     {couponError && <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1"><X className="w-3 h-3" />{couponError}</p>}
@@ -218,7 +220,7 @@ export default function Cart() {
                 disabled={cartItems.length === 0}
                 className="w-full h-12 bg-indigo-600 hover:bg-indigo-700 rounded-xl text-base font-semibold"
               >
-                <CreditCard className="w-5 h-5 mr-2" /> Checkout
+                <CreditCard className="w-5 h-5 mr-2" /> {t("cart.proceedToCheckout")}
               </Button>
 
               {subtotal < 50 && (

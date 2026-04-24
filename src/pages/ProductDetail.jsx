@@ -9,6 +9,7 @@ import SentimentSummary from "@/components/product/SentimentSummary";
 import ShareModal from "@/components/shared/ShareModal";
 import { productsAPI, reviewsAPI, cartAPI, wishlistAPI } from "@/api/apiClient";
 import { useAuth } from "@/lib/AuthContext";
+import { useTranslation } from "react-i18next";
 import {
   Star, Heart, ShoppingCart, Share2, Truck, Shield, ArrowLeft,
   ChevronLeft, ChevronRight, Minus, Plus, Store, Check, PenLine, Images
@@ -36,6 +37,7 @@ export default function ProductDetail() {
   const [addedToCart, setAddedToCart] = useState(false);
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { user: currentUser } = useAuth();
 
@@ -282,7 +284,7 @@ export default function ProductDetail() {
 
           {/* Quantity */}
           <div className="flex items-center gap-3 mb-6">
-            <span className="text-sm font-medium text-slate-700">Quantity:</span>
+            <span className="text-sm font-medium text-slate-700">{t("product.quantity")}:</span>
             <div className="flex items-center border border-slate-200 rounded-xl overflow-hidden">
               <button onClick={() => setQuantity(q => Math.max(1, q - 1))} className="w-10 h-10 flex items-center justify-center hover:bg-slate-50">
                 <Minus className="w-4 h-4" />
@@ -303,7 +305,7 @@ export default function ProductDetail() {
                 addedToCart ? "bg-green-600 hover:bg-green-700" : "bg-indigo-600 hover:bg-indigo-700"
               }`}
             >
-              {addedToCart ? <><Check className="w-5 h-5 mr-2" /> Added!</> : <><ShoppingCart className="w-5 h-5 mr-2" /> Add to Cart</>}
+              {addedToCart ? <><Check className="w-5 h-5 mr-2" /> {t("product.added")}</> : <><ShoppingCart className="w-5 h-5 mr-2" /> {t("product.addToCart")}</>}
             </Button>
             <Button
               onClick={() => wishlistMutation.mutate()}
@@ -346,14 +348,14 @@ export default function ProductDetail() {
       {/* ===== REVIEWS SECTION ===== */}
       <div className="mt-12 border-t border-slate-100 pt-8">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-slate-900">Customer Reviews</h2>
+          <h2 className="text-xl font-bold text-slate-900">{t("product.customerReviews")}</h2>
           {currentUser && !showReviewForm && (
             <Button
               onClick={() => setShowReviewForm(true)}
               variant="outline"
               className="rounded-xl gap-1.5"
             >
-              <PenLine className="w-4 h-4" /> Write a Review
+              <PenLine className="w-4 h-4" /> {t("product.writeReview")}
             </Button>
           )}
         </div>

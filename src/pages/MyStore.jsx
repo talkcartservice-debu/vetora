@@ -27,6 +27,7 @@ import VendorFinance from "./VendorFinance";
 import OrderDetailModal from "@/components/orders/OrderDetailModal";
 import { storesAPI, productsAPI, ordersAPI, filesAPI, vendorSubscriptionsAPI } from "@/api/apiClient";
 import { useAuth } from "@/lib/AuthContext";
+import { useTranslation } from "react-i18next";
 import { usePlatformSettings } from "@/hooks/usePlatformSettings";
 
 const CATEGORIES = ["fashion", "electronics", "home", "beauty", "sports", "food", "art", "books", "handmade", "other"];
@@ -38,6 +39,7 @@ const PLAN_LIMITS = {
 };
 
 export default function MyStore() {
+  const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const defaultTab = searchParams.get("tab") || "products";
   const [activeTab, setActiveTab] = useState(defaultTab);
@@ -342,7 +344,7 @@ export default function MyStore() {
         <Dialog open={showCreateStore} onOpenChange={setShowCreateStore}>
           <DialogTrigger asChild>
             <Button className="bg-indigo-600 hover:bg-indigo-700 rounded-xl px-8 h-12 text-base">
-              <Plus className="w-5 h-5 mr-2" /> Create Store
+              <Plus className="w-5 h-5 mr-2" /> {t("store.createStore")}
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl">
@@ -628,7 +630,7 @@ export default function MyStore() {
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-2xl">
-                <DialogHeader><DialogTitle>Edit Store Details</DialogTitle></DialogHeader>
+                <DialogHeader><DialogTitle>{t("store.editStoreDetails")}</DialogTitle></DialogHeader>
                 <Tabs defaultValue="general" className="w-full">
                   <TabsList className="grid grid-cols-4 mb-4">
                     <TabsTrigger value="general">General</TabsTrigger>
@@ -988,10 +990,10 @@ export default function MyStore() {
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {[
-            { label: "Products", value: products.length, icon: Package, color: "text-indigo-500 bg-indigo-50" },
-            { label: "Orders", value: orders.length, icon: ShoppingCart, color: "text-purple-500 bg-purple-50" },
-            { label: "Revenue", value: formatCurrency(totalRevenue), icon: DollarSign, color: "text-green-500 bg-green-50" },
-            { label: "Pending", value: pendingOrders, icon: BarChart3, color: "text-amber-500 bg-amber-50" },
+            { label: t("store.products"), value: products.length, icon: Package, color: "text-indigo-500 bg-indigo-50" },
+            { label: t("store.orders"), value: orders.length, icon: ShoppingCart, color: "text-purple-500 bg-purple-50" },
+            { label: t("store.revenue"), value: formatCurrency(totalRevenue), icon: DollarSign, color: "text-green-500 bg-green-50" },
+            { label: t("store.pending"), value: pendingOrders, icon: BarChart3, color: "text-amber-500 bg-amber-50" },
           ].map((stat) => (
             <div key={stat.label} className="bg-slate-50 rounded-xl p-3">
               <div className={`w-8 h-8 rounded-lg ${stat.color} flex items-center justify-center mb-2`}>
@@ -1008,11 +1010,11 @@ export default function MyStore() {
       <div className="flex items-center justify-between mb-4">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="bg-white border border-slate-100">
-            <TabsTrigger value="products">Products</TabsTrigger>
-            <TabsTrigger value="orders">Orders</TabsTrigger>
+            <TabsTrigger value="products">{t("store.products")}</TabsTrigger>
+            <TabsTrigger value="orders">{t("store.orders")}</TabsTrigger>
             <TabsTrigger value="coupons">Coupons</TabsTrigger>
             <TabsTrigger value="analytics" className="gap-1.5">
-              Analytics 
+              {t("store.analytics")} 
               {currentPlan === 'free' ? <Badge className="px-1 py-0 text-[8px] bg-indigo-100 text-indigo-600 border-0">Standard</Badge> : <Badge className="px-1 py-0 text-[8px] bg-amber-100 text-amber-600 border-0">Pro+</Badge>}
             </TabsTrigger>
             <TabsTrigger value="shipping" className="gap-1.5">
@@ -1020,7 +1022,7 @@ export default function MyStore() {
               {currentPlan === 'free' && <Badge className="px-1 py-0 text-[8px] bg-slate-100 text-slate-400 border-0">Pro+</Badge>}
             </TabsTrigger>
             <TabsTrigger value="subscription">Plan</TabsTrigger>
-            <TabsTrigger value="finance">Finance</TabsTrigger>
+            <TabsTrigger value="finance">{t("store.finance")}</TabsTrigger>
           </TabsList>
         </Tabs>
 
@@ -1044,7 +1046,7 @@ export default function MyStore() {
               </DialogTrigger>
             )}
             <DialogContent className="max-w-lg">
-              <DialogHeader><DialogTitle>Add Product</DialogTitle></DialogHeader>
+              <DialogHeader><DialogTitle>{t("store.addProduct")}</DialogTitle></DialogHeader>
               <div className="space-y-3 max-h-[80vh] overflow-y-auto pr-1">
                 <AIProductGenerator 
                   plan={currentPlan} 
@@ -1120,7 +1122,7 @@ export default function MyStore() {
                 >
                   {addProductMutation.isPending || uploading ? (
                     <><Loader2 className="w-4 h-4 animate-spin mr-2" /> {uploading ? "Uploading media..." : "Adding product..."}</>
-                  ) : "Add Product"}
+                  ) : t("store.addProduct")}
                 </Button>
               </div>
             </DialogContent>
@@ -1132,7 +1134,7 @@ export default function MyStore() {
       {activeTab === "products" && (
         <div className="space-y-2">
           {products.length === 0 ? (
-            <div className="text-center py-16 text-slate-400">No products yet. Add your first product!</div>
+            <div className="text-center py-16 text-slate-400">{t("store.noProductsDesc")}</div>
           ) : (
             products.map((product, idx) => {
               const productId = product.id || product._id || `product-${idx}`;

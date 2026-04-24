@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { authAPI } from "@/api/apiClient";
+import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,7 @@ import { toast } from "sonner";
 import { motion } from "framer-motion";
 
 export default function ResetPassword() {
+  const { t } = useTranslation();
   const [token, setToken] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -113,7 +115,7 @@ export default function ResetPassword() {
                 </div>
 
                 <div className="space-y-2 text-left">
-                  <Label htmlFor="newPassword" className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">New Secret Key</Label>
+                  <Label htmlFor="newPassword" className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">{t("settings.newPassword")}</Label>
                   <div className="relative group">
                     <Input 
                       id="newPassword"
@@ -138,7 +140,7 @@ export default function ResetPassword() {
                 </div>
 
                 <div className="space-y-2 text-left">
-                  <Label htmlFor="confirmPassword" className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Confirm Secret Key</Label>
+                  <Label htmlFor="confirmPassword" className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">{t("settings.confirmNewPassword")}</Label>
                   <div className="relative group">
                     <Input 
                       id="confirmPassword"
@@ -167,7 +169,7 @@ export default function ResetPassword() {
                   disabled={loading}
                   className="group w-full bg-orange-600 text-white py-8 rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-orange-500 active:scale-[0.98] transition-all duration-500 flex items-center justify-center disabled:opacity-70 disabled:active:scale-100 shadow-[0_20px_40px_-10px_rgba(249,115,22,0.4)] hover:shadow-orange-500/60 mt-8 border-t border-white/20"
                 >
-                  {loading ? <Loader2 className="h-5 w-5 animate-spin text-white" /> : "Override Password"}
+                  {loading ? <Loader2 className="h-5 w-5 animate-spin text-white" /> : t("auth.resetPassword")}
                 </Button>
               </form>
             </div>

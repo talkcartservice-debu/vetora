@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { createPageUrl, formatCurrency } from "@/lib/utils";
@@ -99,6 +100,7 @@ const STATUS_CONFIG = {
 };
 
 export default function Profile() {
+  const { t } = useTranslation();
   const params = new URLSearchParams(window.location.search);
   const profileUsername = params.get("username");
   const [activeTab, setActiveTab] = useState("posts");
@@ -335,7 +337,7 @@ export default function Profile() {
                     onClick={() => setEditOpen(true)} 
                     className="rounded-xl gap-1.5 border-slate-200 hover:bg-slate-50 hover:text-indigo-600 transition-all font-semibold h-9"
                   >
-                    <Pencil className="w-3.5 h-3.5" /> Edit Profile
+                    <Pencil className="w-3.5 h-3.5" /> {t("profile.editProfile")}
                   </Button>
                   <Button 
                     variant="outline" 
@@ -359,11 +361,11 @@ export default function Profile() {
                     variant={isFollowing ? "secondary" : "default"}
                   >
                     {isFollowing ? (
-                      <><UserCheck className="w-3.5 h-3.5 mr-1.5" />Following</>
+                      <><UserCheck className="w-3.5 h-3.5 mr-1.5" />{t("common.following")}</>
                     ) : isFollowedBy ? (
-                      <><UserPlus className="w-3.5 h-3.5 mr-1.5" />Follow Back</>
+                      <><UserPlus className="w-3.5 h-3.5 mr-1.5" />{t("common.follow")}</>
                     ) : (
-                      <><UserPlus className="w-3.5 h-3.5 mr-1.5" />Follow</>
+                      <><UserPlus className="w-3.5 h-3.5 mr-1.5" />{t("common.follow")}</>
                     )}
                   </Button>
                   <Link to={createPageUrl("Chat") + `?to=${targetUsername || profileUser?.username}`}>
@@ -427,25 +429,25 @@ export default function Profile() {
           {/* Stats row */}
           <div className="flex gap-5 mt-4 pt-4 border-t border-slate-50">
             {[
-              { label: "Posts", value: posts.length, onClick: null },
+              { label: t("profile.posts"), value: posts.length, onClick: null },
               { 
-                label: "Followers", 
+                label: t("profile.followers"), 
                 value: followersCount, 
                 onClick: async () => {
                   const res = await followsAPI.getFollowers({ following_username: targetUsername });
-                  setUserList({ open: true, title: "Followers", users: res.followers || res.data || res || [] });
+                  setUserList({ open: true, title: t("profile.followers"), users: res.followers || res.data || res || [] });
                 }
               },
               { 
-                label: "Following", 
+                label: t("profile.following"), 
                 value: followingCount, 
                 onClick: async () => {
                   const res = await followsAPI.getFollowing({ follower_username: targetUsername });
-                  setUserList({ open: true, title: "Following", users: res.following || res.data || res || [] });
+                  setUserList({ open: true, title: t("profile.following"), users: res.following || res.data || res || [] });
                 }
               },
-              ...(userProducts.length > 0 ? [{ label: "Products", value: userProducts.length, onClick: null }] : []),
-              ...(isOwnProfile && completedOrders > 0 ? [{ label: "Orders Done", value: completedOrders, onClick: null }] : []),
+              ...(userProducts.length > 0 ? [{ label: t("nav.shop"), value: userProducts.length, onClick: null }] : []),
+              ...(isOwnProfile && completedOrders > 0 ? [{ label: t("orders.title"), value: completedOrders, onClick: null }] : []),
             ].map(stat => (
               <div 
                 key={stat.label} 
@@ -541,10 +543,10 @@ export default function Profile() {
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-4">
         <TabsList id="profile-tabs-list" className="bg-white border border-slate-100 w-full">
-          <TabsTrigger value="posts" className="flex-1 gap-1.5"><Grid3X3 className="w-4 h-4" />Posts</TabsTrigger>
-          <TabsTrigger value="products" className="flex-1 gap-1.5"><ShoppingBag className="w-4 h-4" />Products</TabsTrigger>
-          {isOwnProfile && <TabsTrigger value="orders" className="flex-1 gap-1.5"><Package className="w-4 h-4" />Orders</TabsTrigger>}
-          {isOwnProfile && <TabsTrigger value="liked" className="flex-1 gap-1.5"><Heart className="w-4 h-4" />Liked</TabsTrigger>}
+          <TabsTrigger value="posts" className="flex-1 gap-1.5"><Grid3X3 className="w-4 h-4" />{t("profile.posts")}</TabsTrigger>
+          <TabsTrigger value="products" className="flex-1 gap-1.5"><ShoppingBag className="w-4 h-4" />{t("shop.products")}</TabsTrigger>
+          {isOwnProfile && <TabsTrigger value="orders" className="flex-1 gap-1.5"><Package className="w-4 h-4" />{t("orders.title")}</TabsTrigger>}
+          {isOwnProfile && <TabsTrigger value="liked" className="flex-1 gap-1.5"><Heart className="w-4 h-4" />{t("common.liked")}</TabsTrigger>}
           {isOwnProfile && (currentUser?.role === 'vendor' || profileUser?.role === 'vendor' || currentUser?.role === 'super_admin' || store) && (
             <TabsTrigger value="plan" className="flex-1 gap-1.5 text-indigo-600 font-bold border-indigo-100 data-[state=active]:bg-indigo-50/50 relative">
               <CreditCard className="w-4 h-4" />
@@ -570,7 +572,7 @@ export default function Profile() {
                 />
               ))}
           {!postsLoading && posts.length === 0 && (
-            <div className="text-center py-16 text-slate-400 text-sm">No posts yet</div>
+            <div className="text-center py-16 text-slate-400 text-sm">{t("profile.noPosts")}</div>
           )}
         </div>
       )}

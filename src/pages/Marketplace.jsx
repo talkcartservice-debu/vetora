@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import ProductCard from "@/components/shared/ProductCard";
 import { ProductSkeleton, StoreSkeleton } from "@/components/shared/LoadingSkeleton";
@@ -14,6 +15,7 @@ import {
 import { productsAPI, storesAPI } from "@/api/apiClient";
 
 export default function Marketplace() {
+  const { t } = useTranslation();
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
   const [sort, setSort] = useState("-created_date");
@@ -66,7 +68,7 @@ export default function Marketplace() {
       {/* Featured Stores */}
       {(stores.length > 0 || storesLoading) && (
         <div className="mb-8">
-          <h2 className="text-lg font-bold text-slate-900 mb-3">Featured Stores</h2>
+          <h2 className="text-lg font-bold text-slate-900 mb-3">{t("shop.stores")}</h2>
           <div className="overflow-x-auto -mx-4 px-4 hide-scrollbar">
             <div className="flex gap-3" style={{ width: "max-content" }}>
               {storesLoading ? (
@@ -103,7 +105,7 @@ export default function Marketplace() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <Input
-            placeholder="Search products..."
+            placeholder={t("shop.searchProducts")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-10 h-10 rounded-xl"
@@ -144,7 +146,7 @@ export default function Marketplace() {
           : filtered.map((product, idx) => <ProductCard key={product.id || product._id || `m-prod-${idx}`} product={product} />)}
       </div>
       {!isLoading && filtered.length === 0 && (
-        <div className="text-center py-16 text-slate-400">No products found</div>
+        <div className="text-center py-16 text-slate-400">{t("shop.noProducts")}</div>
       )}
     </div>
   );

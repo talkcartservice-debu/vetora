@@ -1,4 +1,5 @@
 import React, { useState } from "react"; 
+ import { useTranslation } from "react-i18next";
  import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"; 
  import { Link } from "react-router-dom"; 
  import { communitiesAPI, communityMembersAPI } from "@/api/apiClient"; 
@@ -25,6 +26,7 @@ import React, { useState } from "react";
  ]; 
  
  export default function Communities() { 
+   const { t } = useTranslation();
    const [search, setSearch] = useState(""); 
    const [createOpen, setCreateOpen] = useState(false); 
    const [newCommunity, setNewCommunity] = useState({ name: "", description: "", category: "tech" }); 
@@ -79,40 +81,40 @@ import React, { useState } from "react";
    return ( 
      <div className="max-w-4xl mx-auto px-4 py-6"> 
        <div className="flex items-center justify-between mb-6"> 
-         <h1 className="text-2xl font-bold text-slate-900">Communities</h1> 
+         <h1 className="text-2xl font-bold text-slate-900">{t("communities.title")}</h1> 
          <Dialog open={createOpen} onOpenChange={setCreateOpen}> 
            <DialogTrigger asChild> 
              <Button className="bg-indigo-600 hover:bg-indigo-700 rounded-xl"> 
-               <Plus className="w-4 h-4 mr-1.5" /> Create 
+               <Plus className="w-4 h-4 mr-1.5" /> {t("communities.create")}
              </Button> 
            </DialogTrigger> 
            <DialogContent className="rounded-2xl"> 
              <DialogHeader> 
-               <DialogTitle>Create Community</DialogTitle> 
+               <DialogTitle>{t("communities.createCommunity")}</DialogTitle> 
              </DialogHeader> 
              <div className="space-y-4 pt-4"> 
                <div className="space-y-2">
-                 <label className="text-sm font-medium">Name</label>
+                 <label className="text-sm font-medium">{t("common.required")}</label>
                  <Input 
-                   placeholder="Community name" 
+                   placeholder={t("communities.namePlaceholder")} 
                    value={newCommunity.name} 
                    onChange={(e) => setNewCommunity(p => ({ ...p, name: e.target.value }))} 
                    className="rounded-xl"
                  /> 
                </div>
                <div className="space-y-2">
-                 <label className="text-sm font-medium">Description</label>
+                 <label className="text-sm font-medium">{t("product.description")}</label>
                  <Textarea 
-                   placeholder="What is this community about?" 
+                   placeholder={t("communities.descriptionPlaceholder")} 
                    value={newCommunity.description} 
                    onChange={(e) => setNewCommunity(p => ({ ...p, description: e.target.value }))} 
                    className="rounded-xl min-h-[100px]"
                  /> 
                </div>
                <div className="space-y-2">
-                 <label className="text-sm font-medium">Category</label>
+                 <label className="text-sm font-medium">{t("communities.category")}</label>
                  <Select value={newCommunity.category} onValueChange={(v) => setNewCommunity(p => ({ ...p, category: v }))}> 
-                   <SelectTrigger className="rounded-xl"><SelectValue placeholder="Category" /></SelectTrigger> 
+                   <SelectTrigger className="rounded-xl"><SelectValue placeholder={t("communities.category")} /></SelectTrigger> 
                    <SelectContent className="rounded-xl"> 
                      {COMMUNITY_CATEGORIES.map(c => ( 
                        <SelectItem key={c.id} value={c.id}>{c.emoji} {c.label}</SelectItem> 
@@ -126,7 +128,7 @@ import React, { useState } from "react";
                  className="w-full bg-indigo-600 hover:bg-indigo-700 rounded-xl py-6 text-base font-bold shadow-lg shadow-indigo-100" 
                > 
                  {createMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null} 
-                 Create Community 
+                 {t("communities.createCommunity")}
                </Button> 
              </div> 
            </DialogContent> 
@@ -136,7 +138,7 @@ import React, { useState } from "react";
        <div className="relative mb-8"> 
          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" /> 
          <Input 
-           placeholder="Search communities..." 
+           placeholder={t("communities.searchCommunities")} 
            value={search} 
            onChange={(e) => setSearch(e.target.value)} 
            className="pl-9 h-12 rounded-xl shadow-sm border-slate-200" 
@@ -147,7 +149,7 @@ import React, { useState } from "react";
        {myCommunities.length > 0 && ( 
          <div className="mb-10"> 
            <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-             <Users className="w-5 h-5 text-indigo-500" /> My Communities
+             <Users className="w-5 h-5 text-indigo-500" /> {t("communities.myCommunities")}
            </h2> 
            <div className="grid sm:grid-cols-2 gap-4"> 
              {myCommunities.map((c) => ( 
@@ -160,7 +162,7 @@ import React, { useState } from "react";
        {/* Discover */} 
        <div> 
          <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2"> 
-           <TrendingUp className="w-5 h-5 text-green-500" /> Discover 
+           <TrendingUp className="w-5 h-5 text-green-500" /> {t("communities.discover")}
          </h2> 
          {isLoading ? (
            <div className="grid sm:grid-cols-2 gap-4">
@@ -171,7 +173,7 @@ import React, { useState } from "react";
          ) : discoverCommunities.length === 0 ? ( 
            <div className="text-center py-16 bg-white rounded-3xl border border-dashed border-slate-200"> 
              <Users className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-             <p className="text-slate-500 font-medium">No communities to discover</p> 
+             <p className="text-slate-500 font-medium">{t("communities.noDiscover")}</p> 
            </div> 
          ) : ( 
            <div className="grid sm:grid-cols-2 gap-4"> 
@@ -186,6 +188,7 @@ import React, { useState } from "react";
  } 
  
  function CommunityCard({ community, joined = false }) { 
+   const { t } = useTranslation();
    const catEmoji = COMMUNITY_CATEGORIES.find(c => c.id === community.category)?.emoji || "👥"; 
  
    return ( 
@@ -198,7 +201,7 @@ import React, { useState } from "react";
            {community.cover_image && <img src={community.cover_image} alt="" className="w-full h-full object-cover" />} 
            {joined && ( 
              <div className="absolute top-3 right-3 px-2.5 py-1 bg-white/90 backdrop-blur-sm rounded-full text-[10px] font-bold uppercase tracking-wider text-indigo-600 shadow-sm"> 
-               Joined 
+               {t("communities.joined")}
              </div> 
            )} 
          </div> 
@@ -211,7 +214,7 @@ import React, { useState } from "react";
            <div className="flex items-center gap-3 mt-4 pt-4 border-t border-slate-50 text-[11px] font-bold text-slate-400 uppercase tracking-tight"> 
              <span className="flex items-center gap-1">
                <Users className="w-3.5 h-3.5" /> 
-               {community.member_count || 0} members 
+               {t("communities.members_other", { count: community.member_count || 0 })}
              </span>
            </div> 
          </div> 

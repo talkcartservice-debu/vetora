@@ -11,9 +11,11 @@ import StoreReviewSection from "@/components/store/StoreReviewSection";
 import StarRating from "@/components/reviews/StarRating";
 import { storesAPI, productsAPI, reviewsAPI, followsAPI } from "@/api/apiClient";
 import { useAuth } from "@/lib/AuthContext";
+import { useTranslation } from "react-i18next";
 import toast from "react-hot-toast";
 
 export default function StoreDetail() {
+  const { t } = useTranslation();
   const params = new URLSearchParams(window.location.search);
   const storeId = params.get("id");
   const { user: currentUser } = useAuth();

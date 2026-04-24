@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import EmptyState from "@/components/shared/EmptyState";
@@ -24,6 +25,7 @@ const TYPE_ICONS = {
 };
 
 export default function Notifications() {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { user: currentUser } = useAuth();
@@ -78,7 +80,7 @@ export default function Notifications() {
     <div className="max-w-2xl mx-auto px-4 py-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Notifications</h1>
+          <h1 className="text-2xl font-bold text-slate-900">{t("notifications.title")}</h1>
           {unreadCount > 0 && (
             <p className="text-sm text-slate-500">{unreadCount} unread</p>
           )}
@@ -91,7 +93,7 @@ export default function Notifications() {
             className="text-indigo-600 hover:text-indigo-700"
           >
             <CheckCheck className="w-4 h-4 mr-1.5" />
-            Mark all read
+            {t("notifications.markAllRead")}
           </Button>
         )}
       </div>
@@ -111,7 +113,7 @@ export default function Notifications() {
       ) : notifications.length === 0 ? (
         <EmptyState
           icon={Bell}
-          title="No notifications"
+          title={t("notifications.noNotifications")}
           description="You're all caught up!"
         />
       ) : (

@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/input-otp";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
-import { useLang } from "@/components/providers/LanguageContext";
+import { useLang, useTranslation } from "@/components/providers/LanguageContext";
 import { useTheme } from "next-themes";
 
 function SettingSection({ icon: Icon, title, description, children, active, onClick }) {
@@ -58,6 +58,7 @@ function SettingSection({ icon: Icon, title, description, children, active, onCl
 }
 
 export default function Settings() {
+  const { t } = useTranslation();
   const { user: currentUser, logout, checkUserAuth, registerBiometrics } = useAuth();
   const { lang: currentLang, setLang, SUPPORTED_LANGS, currentLangInfo } = useLang();
   const [activeSection, setActiveSection] = useState("profile");
@@ -316,15 +317,15 @@ export default function Settings() {
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
       <div className="mb-8 text-center">
-        <h1 className="text-2xl font-black text-slate-900 dark:text-white mb-1">Settings</h1>
-        <p className="text-sm text-slate-500 dark:text-slate-400">Manage your account and preferences</p>
+        <h1 className="text-2xl font-black text-slate-900 dark:text-white mb-1">{t("settings.title")}</h1>
+        <p className="text-sm text-slate-500 dark:text-slate-400">{t("settings.appearanceDesc")}</p>
       </div>
 
       {/* Profile Section */}
       <SettingSection 
         icon={User} 
-        title="Public Profile" 
-        description="Manage how others see you on Aicon X"
+        title={t("settings.profile")}
+        description={t("settings.profileDesc")}
         active={activeSection === "profile"}
         onClick={() => setActiveSection(activeSection === "profile" ? "" : "profile")}
       >
@@ -414,7 +415,7 @@ export default function Settings() {
               className="w-full bg-slate-900 dark:bg-indigo-600 hover:bg-slate-800 dark:hover:bg-indigo-700 text-white rounded-xl h-11 font-semibold"
             >
               {updateMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-              Save Changes
+              {t("settings.saveChanges")}
             </Button>
           </div>
         </div>
@@ -423,8 +424,8 @@ export default function Settings() {
       {/* Account Section */}
       <SettingSection 
         icon={Lock} 
-        title="Account & Security" 
-        description="Email, Password and 2FA settings"
+        title={t("settings.account")}
+        description={t("settings.accountDesc")}
         active={activeSection === "account"}
         onClick={() => setActiveSection(activeSection === "account" ? "" : "account")}
       >
@@ -592,8 +593,8 @@ export default function Settings() {
       {/* Notifications */}
       <SettingSection 
         icon={Bell} 
-        title="Notifications" 
-        description="Choose what you want to be notified about"
+        title={t("settings.notifications")}
+        description={t("settings.notificationsDesc")}
         active={activeSection === "notifications"}
         onClick={() => setActiveSection(activeSection === "notifications" ? "" : "notifications")}
       >
@@ -625,8 +626,8 @@ export default function Settings() {
       {/* Preferences */}
       <SettingSection 
         icon={Globe} 
-        title="Preferences" 
-        description="Language, Theme and Regional settings"
+        title={t("settings.language")}
+        description={t("settings.languageDesc")}
         active={activeSection === "preferences"}
         onClick={() => setActiveSection(activeSection === "preferences" ? "" : "preferences")}
       >
@@ -635,7 +636,7 @@ export default function Settings() {
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-3">
                 <Globe className="w-4 h-4 text-slate-400 dark:text-slate-500" />
-                <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">Language</span>
+                <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">{t("common.language")}</span>
               </div>
               <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20 px-2 py-1 rounded-lg">
                 {currentLangInfo?.flag} {currentLangInfo?.label}
@@ -661,13 +662,13 @@ export default function Settings() {
               disabled={selectedLang === currentLang || langSaving}
               className="w-full bg-slate-900 dark:bg-indigo-600 hover:bg-slate-800 dark:hover:bg-indigo-700 text-white rounded-xl h-10 text-xs font-bold"
             >
-              {langSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : "Save Language"}
+              {langSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : `${t("common.save")} ${t("common.language")}`}
             </Button>
           </div>
           <div className="flex items-center justify-between p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700">
             <div className="flex items-center gap-3">
               <Moon className="w-4 h-4 text-slate-400 dark:text-slate-500" />
-              <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">Dark Mode</span>
+              <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">{t("common.darkMode")}</span>
             </div>
             <div 
               onClick={() => {
@@ -692,7 +693,7 @@ export default function Settings() {
           onClick={() => logout()}
           className="w-full border-red-100 dark:border-red-900/30 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 rounded-xl h-11 font-bold transition-all"
         >
-          <LogOut className="w-4 h-4 mr-2" /> Log Out of Aicon X
+          <LogOut className="w-4 h-4 mr-2" /> {t("common.logout")}
         </Button>
         <p className="text-[10px] text-slate-400 dark:text-slate-500 text-center mt-6">
           Aicon X Platform v2.4.0 • Build 2026.03.20<br/>

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { authAPI } from "@/api/apiClient";
+import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,7 @@ import { toast } from "sonner";
 import { motion } from "framer-motion";
 
 export default function ForgotPassword() {
+  const { t } = useTranslation();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -99,7 +101,7 @@ export default function ForgotPassword() {
                   disabled={loading}
                   className="group w-full bg-orange-600 text-white py-8 rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-orange-500 active:scale-[0.98] transition-all duration-500 flex items-center justify-center disabled:opacity-70 disabled:active:scale-100 shadow-[0_20px_40px_-10px_rgba(249,115,22,0.4)] hover:shadow-orange-500/60 mt-8 border-t border-white/20"
                 >
-                  {loading ? <Loader2 className="h-5 w-5 animate-spin text-white" /> : "Send Reset Link"}
+                  {loading ? <Loader2 className="h-5 w-5 animate-spin text-white" /> : t("auth.resetPassword")}
                 </Button>
               </form>
             </div>

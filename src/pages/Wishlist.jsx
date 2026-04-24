@@ -9,8 +9,10 @@ import { toast } from "sonner";
 import EmptyState from "@/components/shared/EmptyState";
 import { wishlistAPI, cartAPI } from "@/api/apiClient";
 import { useAuth } from "@/lib/AuthContext";
+import { useTranslation } from "react-i18next";
 
 export default function Wishlist() {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { user: currentUser } = useAuth();
 
@@ -71,16 +73,16 @@ export default function Wishlist() {
         <div>
           <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
             <Heart className="w-6 h-6 fill-red-500 text-red-500" />
-            Wishlist
+            {t("common.wishlist")}
           </h1>
-          <p className="text-slate-500 text-sm mt-0.5">{wishlistItems.length} saved item{wishlistItems.length !== 1 ? "s" : ""}</p>
+          <p className="text-slate-500 text-sm mt-0.5">{t("wishlist.savedItems_other", { count: wishlistItems.length })}</p>
         </div>
         {wishlistItems.length > 0 && (
           <Button
             onClick={moveAllToCart}
             className="bg-indigo-600 hover:bg-indigo-700 rounded-xl gap-1.5"
           >
-            <ShoppingCart className="w-4 h-4" /> Add All to Cart
+            <ShoppingCart className="w-4 h-4" /> {t("wishlist.addAllToCart")}
           </Button>
         )}
       </div>
@@ -100,8 +102,8 @@ export default function Wishlist() {
       ) : wishlistItems.length === 0 ? (
         <EmptyState
           icon={Heart}
-          title="Your wishlist is empty"
-          description="Tap the heart icon on any product to save it here"
+          title={t("wishlist.empty")}
+          description={t("wishlist.emptyDesc")}
           action={
             <Link to={createPageUrl("Marketplace")}>
               <Button className="bg-indigo-600 hover:bg-indigo-700 rounded-xl">Browse Products</Button>

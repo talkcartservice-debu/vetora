@@ -1,5 +1,6 @@
 import { formatCurrency } from "@/lib/utils";
 import React, { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -128,6 +129,7 @@ function OfferModal({ onSend, onClose }) {
 }
 
 export default function Chat() {
+  const { t } = useTranslation();
   const params = new URLSearchParams(window.location.search);
   const toUsername = params.get("username") || params.get("to");
   const [selectedConvo, setSelectedConvo] = useState(toUsername || null);
@@ -412,7 +414,7 @@ export default function Chat() {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <Input
-                placeholder="Search conversations..."
+                placeholder={t("chat.searchConversations")}
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 className="pl-9 h-9 rounded-xl text-sm"
@@ -426,8 +428,8 @@ export default function Chat() {
               <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-3">
                 <Send className="w-6 h-6 text-slate-400" />
               </div>
-              <p className="text-sm font-medium text-slate-600">No conversations yet</p>
-              <p className="text-xs text-slate-400 mt-1">Start chatting with creators or communities</p>
+              <p className="text-sm font-medium text-slate-600">{t("chat.noConversations")}</p>
+              <p className="text-xs text-slate-400 mt-1">{t("chat.startConversation")}</p>
             </div>
           ) : (
             conversations
@@ -604,7 +606,7 @@ export default function Chat() {
                   <input
                     value={newMessage}
                     onChange={e => setNewMessage(e.target.value)}
-                    placeholder="Type a message..."
+                    placeholder={t("chat.typeMessage")}
                     className="flex-1 bg-transparent text-sm text-slate-700 placeholder:text-slate-400 outline-none py-1"
                     onKeyDown={e => e.key === "Enter" && !e.shiftKey && sendText()}
                   />

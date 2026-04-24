@@ -6,12 +6,14 @@ import PostCard from "@/components/shared/PostCard";
 import ProductCard from "@/components/shared/ProductCard";
 import { PostSkeleton, ProductSkeleton } from "@/components/shared/LoadingSkeleton";
 import EmptyState from "@/components/shared/EmptyState";
+import { useTranslation } from "react-i18next";
 import { Bookmark, ShoppingBag, LayoutGrid, Trash2 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 
 export default function Bookmarks() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState("posts");
   const { user: currentUser } = useAuth();
 
@@ -68,18 +70,18 @@ export default function Bookmarks() {
           <Bookmark className="w-6 h-6 text-white" />
         </div>
         <div>
-          <h1 className="text-2xl font-black text-slate-900 leading-tight">Bookmarks</h1>
-          <p className="text-sm text-slate-500">Everything you've saved for later</p>
+          <h1 className="text-2xl font-black text-slate-900 leading-tight">{t("bookmarks.title")}</h1>
+          <p className="text-sm text-slate-500">{t("bookmarks.desc")}</p>
         </div>
       </div>
 
       <Tabs defaultValue="posts" onValueChange={setActiveTab} className="mb-6">
         <TabsList className="grid w-full grid-cols-2 p-1 bg-slate-100/50 rounded-xl">
           <TabsTrigger value="posts" className="rounded-lg py-2 font-bold text-xs uppercase tracking-wider">
-            <LayoutGrid className="w-4 h-4 mr-2" /> Posts
+            <LayoutGrid className="w-4 h-4 mr-2" /> {t("communities.posts")}
           </TabsTrigger>
           <TabsTrigger value="products" className="rounded-lg py-2 font-bold text-xs uppercase tracking-wider">
-            <ShoppingBag className="w-4 h-4 mr-2" /> Products
+            <ShoppingBag className="w-4 h-4 mr-2" /> {t("shop.products")}
           </TabsTrigger>
         </TabsList>
       </Tabs>

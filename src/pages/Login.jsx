@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/lib/AuthContext';
 import { getRedirectPath } from '@/lib/utils';
 import { Mail, Lock, Loader2, ShieldCheck, ArrowRight, Eye, EyeOff, Fingerprint } from 'lucide-react';
@@ -58,6 +59,7 @@ const Login = () => {
   const [otpToken, setOtpToken] = useState('');
 
   const { login, googleLogin, verify2FA, loginBiometrics } = useAuth();
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   // Cleanup effect to prevent selection errors during unmount
@@ -205,8 +207,8 @@ const Login = () => {
                   </div>
                   
                   <div className="hidden lg:block space-y-2">
-                    <h2 className="text-4xl font-black text-white tracking-tighter">Sign In</h2>
-                    <p className="text-slate-500 font-medium text-sm">Enter your workspace credentials</p>
+                    <h2 className="text-4xl font-black text-white tracking-tighter">{t("auth.signIn")}</h2>
+                    <p className="text-slate-500 font-medium text-sm">{t("auth.loginSubtitle")}</p>
                   </div>
 
                   {error && (
@@ -230,7 +232,7 @@ const Login = () => {
                           value={identifier}
                           onChange={(e) => setIdentifier(e.target.value)}
                           className="w-full pl-12 pr-4 py-7 rounded-2xl border-white/5 bg-white/[0.03] text-white focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500/40 focus:bg-white/[0.05] outline-none transition-all duration-300 font-bold group-hover:border-white/10 placeholder:text-slate-700 placeholder:font-medium"
-                          placeholder="Email or @username"
+                          placeholder={t("auth.emailOrUsernamePlaceholder")}
                           required
                         />
                         <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-600 group-focus-within:text-orange-500 transition-colors duration-300" />
@@ -241,7 +243,7 @@ const Login = () => {
                       <div className="flex justify-between items-center ml-1">
                         <Label htmlFor="password" className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Secret Key</Label>
                         <Link to="/forgot-password" title="Reset your password" className="text-[10px] uppercase tracking-tighter text-orange-500 hover:text-orange-400 font-black transition-colors">
-                          Recover?
+                          {t("auth.recover")}
                         </Link>
                       </div>
                       <div className="relative group">
@@ -279,7 +281,7 @@ const Login = () => {
                           htmlFor="remember" 
                           className="text-[11px] font-bold text-slate-500 cursor-pointer select-none uppercase tracking-tight"
                         >
-                          Stay Authenticated
+                          {t("auth.staySignedIn")}
                         </Label>
                       </div>
                     </div>
@@ -340,9 +342,9 @@ const Login = () => {
 
                   <div className="pt-6 text-center">
                     <p className="text-slate-600 font-bold text-xs uppercase tracking-tight">
-                      New here?{' '}
+                      {t("auth.newHere")}{' '}
                       <Link to="/register" className="text-orange-500 hover:text-orange-400 font-black transition-colors relative group/link">
-                        Join Network
+                        {t("auth.joinNetwork")}
                         <span className="absolute -bottom-1 left-0 w-full h-0.5 bg-orange-500 scale-x-0 group-hover/link:scale-x-100 transition-transform duration-300 origin-left" />
                       </Link>
                     </p>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import PostCard from "@/components/shared/PostCard";
 import ProductCard from "@/components/shared/ProductCard";
@@ -16,6 +17,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function Home() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState("for_you");
   const { user: currentUser } = useAuth();
   const loadMoreRef = useRef(null);
@@ -81,9 +83,9 @@ export default function Home() {
   const trendingProducts = trendingProductsResponse?.data || [];
 
   const tabs = [
-    { id: "for_you", label: "For You", icon: Sparkles },
-    { id: "trending", label: "Trending", icon: Flame },
-    { id: "following", label: "Following", icon: TrendingUp },
+    { id: "for_you", label: t("home.forYou"), icon: Sparkles },
+    { id: "trending", label: t("home.trending"), icon: Flame },
+    { id: "following", label: t("home.following"), icon: TrendingUp },
   ];
 
   return (
@@ -133,7 +135,7 @@ export default function Home() {
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
                   <Flame className="w-4 h-4 text-orange-500" />
-                  Trending Now
+                  {t("home.trending")}
                 </h2>
                 <Link to={createPageUrl("Marketplace")} className="text-xs text-indigo-600 font-medium flex items-center gap-0.5">
                   See all <ChevronRight className="w-3 h-3" />

@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { postsAPI, commentsAPI } from "@/api/apiClient";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/lib/AuthContext";
 import { useSocket } from "@/lib/SocketContext";
 
@@ -125,6 +126,7 @@ function CommentItem({ comment, currentUser }) {
 }
 
 export default function PostDetail() {
+  const { t } = useTranslation();
   const params = new URLSearchParams(window.location.search);
   const postId = params.get("id");
   const [commentText, setCommentText] = useState("");
@@ -222,7 +224,7 @@ export default function PostDetail() {
       {/* Comments */}
       <div className="mt-6">
         <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-          Comments 
+          {t("common.comments")}
           <span className="text-sm font-normal text-slate-400">({comments.length || post?.comments_count || 0})</span>
         </h3>
 
@@ -245,7 +247,7 @@ export default function PostDetail() {
                 <Input
                   value={commentText}
                   onChange={(e) => setCommentText(e.target.value)}
-                  placeholder="Write a comment..."
+                  placeholder={t("chat.typeMessage")}
                   className="rounded-2xl border-slate-200 bg-white h-11 focus:ring-indigo-100"
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && commentText.trim()) {

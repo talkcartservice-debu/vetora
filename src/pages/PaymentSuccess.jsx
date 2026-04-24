@@ -7,8 +7,10 @@ import { verifyPayment } from '@/lib/paystack';
 import { cartAPI } from '@/api/apiClient';
 import { createPageUrl } from '@/lib/utils';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
 export default function PaymentSuccess() {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const reference = searchParams.get('reference');
   const [status, setStatus] = useState('verifying'); // verifying, success, error
@@ -53,8 +55,8 @@ export default function PaymentSuccess() {
         {status === 'verifying' && (
           <div className="py-12">
             <Loader2 className="w-16 h-16 animate-spin text-indigo-600 mx-auto mb-6" />
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight mb-2">Verifying Payment</h1>
-            <p className="text-slate-500 font-medium">Please wait while we confirm your transaction...</p>
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight mb-2">{t("payment.verifying")}</h1>
+            <p className="text-slate-500 font-medium">{t("payment.verifyingDesc")}</p>
           </div>
         )}
 
@@ -63,19 +65,17 @@ export default function PaymentSuccess() {
             <div className="w-20 h-20 bg-green-100 rounded-3xl flex items-center justify-center mx-auto mb-6 text-green-600">
               <CheckCircle2 className="w-10 h-10" />
             </div>
-            <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-3">Payment Successful!</h1>
-            <p className="text-slate-500 font-medium mb-8">
-              Thank you for your purchase. Your order has been confirmed and is being processed.
-            </p>
+            <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-3">{t("payment.success")}</h1>
+            <p className="text-slate-500 font-medium mb-8">{t("payment.successDesc")}</p>
             <div className="grid gap-3">
               <Button asChild className="bg-indigo-600 hover:bg-indigo-700 h-12 rounded-xl font-bold w-full">
                 <Link to={createPageUrl("Orders")}>
-                  View My Orders <ArrowRight className="w-4 h-4 ml-2" />
+                  {t("payment.viewOrders")} <ArrowRight className="w-4 h-4 ml-2" />
                 </Link>
               </Button>
               <Button asChild variant="outline" className="h-12 rounded-xl font-bold w-full border-slate-200">
                 <Link to={createPageUrl("Marketplace")}>
-                  Continue Shopping <ShoppingBag className="w-4 h-4 ml-2" />
+                  {t("payment.continueShopping")} <ShoppingBag className="w-4 h-4 ml-2" />
                 </Link>
               </Button>
             </div>
@@ -87,13 +87,11 @@ export default function PaymentSuccess() {
             <div className="w-20 h-20 bg-red-100 rounded-3xl flex items-center justify-center mx-auto mb-6 text-red-600">
               <XCircle className="w-10 h-10" />
             </div>
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight mb-3">Verification Failed</h1>
-            <p className="text-slate-500 font-medium mb-8">
-              We couldn't verify your payment reference. If you were charged, please contact support.
-            </p>
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight mb-3">{t("payment.failed")}</h1>
+            <p className="text-slate-500 font-medium mb-8">{t("payment.failedDesc")}</p>
             <Button asChild variant="outline" className="h-12 rounded-xl font-bold w-full border-slate-200">
               <Link to={createPageUrl("Checkout")}>
-                Try Again
+                {t("payment.tryAgain")}
               </Link>
             </Button>
           </div>

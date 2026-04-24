@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import ProductCard from "@/components/shared/ProductCard";
 import { ProductSkeleton } from "@/components/shared/LoadingSkeleton";
@@ -23,6 +24,7 @@ const CATEGORIES = [
 ];
 
 export default function Explore() {
+  const { t } = useTranslation();
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
   const debouncedSearch = useDebounce(search, 500);
@@ -67,7 +69,7 @@ export default function Explore() {
       <div className="relative mb-6">
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
         <Input
-          placeholder="Search products, creators, communities..."
+          placeholder={t("explore.searchPlaceholder")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="pl-12 pr-4 h-12 bg-white border-slate-200 rounded-2xl text-base focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300"
@@ -175,7 +177,7 @@ export default function Explore() {
         </div>
         {!productsLoading && products.length === 0 && (
           <div className="text-center py-16">
-            <p className="text-slate-400">No products found</p>
+            <p className="text-slate-400">{t("shop.noProducts")}</p>
           </div>
         )}
       </div>

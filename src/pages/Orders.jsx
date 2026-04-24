@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl, formatCurrency } from "@/lib/utils";
@@ -29,6 +30,7 @@ const STATUS_CONFIG = {
 };
 
 export default function Orders() {
+  const { t } = useTranslation();
   const [tab, setTab] = useState("all");
   const [search, setSearch] = useState("");
   const [reviewOrder, setReviewOrder] = useState(null);
@@ -90,7 +92,7 @@ export default function Orders() {
   return (
     <div className="max-w-3xl mx-auto px-4 py-6">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-slate-900">My Orders</h1>
+        <h1 className="text-2xl font-bold text-slate-900">{t("orders.title")}</h1>
         <Button 
           variant="ghost" 
           size="sm" 
@@ -114,12 +116,12 @@ export default function Orders() {
 
       <Tabs value={tab} onValueChange={setTab} className="mb-6">
         <TabsList className="bg-white border border-slate-100 w-full justify-start overflow-x-auto hide-scrollbar h-auto p-1">
-          <TabsTrigger value="all" className="rounded-xl px-4 py-2">All</TabsTrigger>
-          <TabsTrigger value="pending" className="rounded-xl px-4 py-2">Pending</TabsTrigger>
-          <TabsTrigger value="processing" className="rounded-xl px-4 py-2">Processing</TabsTrigger>
-          <TabsTrigger value="shipped" className="rounded-xl px-4 py-2">Shipped</TabsTrigger>
-          <TabsTrigger value="delivered" className="rounded-xl px-4 py-2">Delivered</TabsTrigger>
-          <TabsTrigger value="cancelled" className="rounded-xl px-4 py-2">Cancelled</TabsTrigger>
+          <TabsTrigger value="all" className="rounded-xl px-4 py-2">{t("common.all")}</TabsTrigger>
+          <TabsTrigger value="pending" className="rounded-xl px-4 py-2">{t("orders.pending")}</TabsTrigger>
+          <TabsTrigger value="processing" className="rounded-xl px-4 py-2">{t("orders.processing")}</TabsTrigger>
+          <TabsTrigger value="shipped" className="rounded-xl px-4 py-2">{t("orders.shipped")}</TabsTrigger>
+          <TabsTrigger value="delivered" className="rounded-xl px-4 py-2">{t("orders.delivered")}</TabsTrigger>
+          <TabsTrigger value="cancelled" className="rounded-xl px-4 py-2">{t("orders.cancelled")}</TabsTrigger>
         </TabsList>
       </Tabs>
 
@@ -135,7 +137,7 @@ export default function Orders() {
       ) : filteredOrders.length === 0 ? (
         <EmptyState
           icon={ShoppingBag}
-          title={search ? "No matches found" : "No orders yet"}
+          title={search ? t("common.noResults") : t("orders.noOrders")}
           description={search ? "Try adjusting your search terms" : "Start shopping to see your orders here"}
           action={!search && <Link to={createPageUrl("Marketplace")}><Button className="bg-indigo-600 hover:bg-indigo-700">Browse Marketplace</Button></Link>}
         />
@@ -171,7 +173,7 @@ export default function Orders() {
                     </div>
                     <Badge className={`${status.color} border-0 text-[10px] px-2 py-0.5 h-6 font-semibold`}>
                       <StatusIcon className="w-3 h-3 mr-1" />
-                      {status.label}
+                      {t(`orders.${order.status}`) || status.label}
                     </Badge>
                   </div>
 
@@ -209,7 +211,7 @@ export default function Orders() {
 
                   <div className="flex items-center justify-between pt-4 border-t border-slate-50">
                     <div className="flex flex-col gap-1">
-                      <span className="text-[10px] text-slate-400 uppercase tracking-tight">Total Amount</span>
+                      <span className="text-[10px] text-slate-400 uppercase tracking-tight">{t("orders.total")}</span>
                       <span className="text-sm font-extrabold text-slate-900">{formatCurrency(order.total)}</span>
                       {order.delivery_method && (
                         <span className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full w-fit ${

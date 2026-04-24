@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { ChatSkeleton } from "@/components/shared/LoadingSkeleton";
 import ReactMarkdown from "react-markdown";
 import { productsAPI, authAPI, aiAPI, cartAPI } from "@/api/apiClient";
+import { useTranslation } from "react-i18next";
 import OrderStatusCard from "@/components/chat/OrderStatusCard";
 import SmartActionChips from "@/components/chat/SmartActionChips";
 
@@ -175,6 +176,7 @@ function TypingIndicator() {
 }
 
 export default function AIAssistant() {
+  const { t } = useTranslation();
   const [messages, setMessages] = useState([WELCOME_MESSAGE]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -348,10 +350,10 @@ export default function AIAssistant() {
             <Sparkles className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-base font-bold text-slate-900">Aicon AI</h1>
+            <h1 className="text-base font-bold text-slate-900">{t("ai.title")}</h1>
             <div className="flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
-              <p className="text-xs text-slate-500">Shopping assistant · Online</p>
+              <p className="text-xs text-slate-500">{t("ai.status")}</p>
             </div>
           </div>
         </div>
@@ -398,7 +400,7 @@ export default function AIAssistant() {
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => e.key === "Enter" && !e.shiftKey && sendMessage(input)}
-            placeholder="Ask me anything about products, shipping, returns..."
+            placeholder={t("ai.placeholder")}
             className="rounded-2xl border-slate-200 bg-slate-50 focus:bg-white text-sm"
             disabled={isLoading}
           />
@@ -425,7 +427,7 @@ export default function AIAssistant() {
             {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           </Button>
         </div>
-        <p className="text-[10px] text-slate-400 text-center mt-2">Powered by Aicon AI · Recommendations are personalized</p>
+        <p className="text-[10px] text-slate-400 text-center mt-2">{t("ai.poweredBy")}</p>
       </div>
     </div>
   );

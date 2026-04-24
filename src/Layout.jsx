@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { createPageUrl } from "@/lib/utils";
@@ -38,49 +39,50 @@ import AnnouncementBanner from "@/components/layout/AnnouncementBanner";
 import Logo from "@/components/layout/Logo";
 
 const NAV_ITEMS = [
-  { name: "Home", icon: Home, page: "Home" },
-  { name: "Explore", icon: Search, page: "Explore" },
+  { name: "Home", tKey: "nav.home", icon: Home, page: "Home" },
+  { name: "Explore", tKey: "nav.explore", icon: Search, page: "Explore" },
   { name: "Create", icon: Plus, action: "create", accent: true },
-  { name: "Cart", icon: ShoppingBag, page: "Cart" },
-  { name: "Profile", icon: User, page: "Profile" },
+  { name: "Cart", tKey: "nav.cart", icon: ShoppingBag, page: "Cart" },
+  { name: "Profile", tKey: "nav.profile", icon: User, page: "Profile" },
 ];
 
 const ADMIN_NAV_ITEMS = [
   { name: "Admin", icon: Shield, page: "AdminDashboard", href: "/admin-dashboard" },
-  { name: "Messages", icon: MessageCircle, page: "Chat" },
-  { name: "Notifications", icon: Bell, page: "Notifications" },
-  { name: "Settings", icon: SettingsIcon, page: "Settings" },
-  { name: "Profile", icon: User, page: "Profile" },
+  { name: "Messages", tKey: "nav.messages", icon: MessageCircle, page: "Chat" },
+  { name: "Notifications", tKey: "nav.notifications", icon: Bell, page: "Notifications" },
+  { name: "Settings", tKey: "nav.settings", icon: SettingsIcon, page: "Settings" },
+  { name: "Profile", tKey: "nav.profile", icon: User, page: "Profile" },
 ];
 
 const ALLOWED_ADMIN_SIDEBAR_NAMES = ["Admin", "Profile", "Messages", "Notifications", "Settings"];
 
 const SIDEBAR_ITEMS = [
-  { name: "Feed", icon: Home, page: "Home" },
-  { name: "Profile", icon: User, page: "Profile" },
-  { name: "Explore", icon: Search, page: "Explore" },
-  { name: "Marketplace", icon: ShoppingBag, page: "Marketplace" },
-  { name: "Cart", icon: ShoppingBag, page: "Cart" },
-  { name: "Live Shopping", icon: Radio, page: "Live" },
-  { name: "Communities", icon: Users, page: "Communities" },
-  { name: "Messages", icon: MessageCircle, page: "Chat" },
-  { name: "AI Assistant", icon: Sparkles, page: "AIAssistant" },
-  { name: "Wishlist", icon: Heart, page: "Wishlist" },
-  { name: "Bookmarks", icon: Bookmark, page: "Bookmarks" },
-  { name: "Orders", icon: Package, page: "Orders" },
+  { name: "Feed", tKey: "nav.home", icon: Home, page: "Home" },
+  { name: "Profile", tKey: "nav.profile", icon: User, page: "Profile" },
+  { name: "Explore", tKey: "nav.explore", icon: Search, page: "Explore" },
+  { name: "Marketplace", tKey: "nav.shop", icon: ShoppingBag, page: "Marketplace" },
+  { name: "Cart", tKey: "nav.cart", icon: ShoppingBag, page: "Cart" },
+  { name: "Live Shopping", tKey: "nav.live", icon: Radio, page: "Live" },
+  { name: "Communities", tKey: "nav.communities", icon: Users, page: "Communities" },
+  { name: "Messages", tKey: "nav.messages", icon: MessageCircle, page: "Chat" },
+  { name: "AI Assistant", tKey: "nav.aiAssistant", icon: Sparkles, page: "AIAssistant" },
+  { name: "Wishlist", tKey: "nav.wishlist", icon: Heart, page: "Wishlist" },
+  { name: "Bookmarks", tKey: "nav.bookmarks", icon: Bookmark, page: "Bookmarks" },
+  { name: "Orders", tKey: "nav.orders", icon: Package, page: "Orders" },
   { name: "Track Order", icon: MapPin, page: "OrderTracking" },
-  { name: "My Store", icon: Store, page: "MyStore" },
+  { name: "My Store", tKey: "nav.myStore", icon: Store, page: "MyStore" },
   { name: "Finance", icon: DollarSign, page: "VendorFinance" },
   { name: "Account Plans", icon: CreditCard, page: "MyStore", params: "?tab=subscription" },
-  { name: "Affiliate", icon: Link2, page: "Affiliate" },
-  { name: "Notifications", icon: Bell, page: "Notifications" },
-  { name: "Settings", icon: SettingsIcon, page: "Settings" },
+  { name: "Affiliate", tKey: "nav.affiliate", icon: Link2, page: "Affiliate" },
+  { name: "Notifications", tKey: "nav.notifications", icon: Bell, page: "Notifications" },
+  { name: "Settings", tKey: "nav.settings", icon: SettingsIcon, page: "Settings" },
   { name: "Admin", icon: Shield, page: "AdminDashboard", href: "/admin-dashboard", adminOnly: true },
 ];
 
 const HIDE_LAYOUT_PAGES = [];
 
 export default function Layout({ children, currentPageName }) {
+  const { t } = useTranslation();
   const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
@@ -194,7 +196,7 @@ export default function Layout({ children, currentPageName }) {
                 <item.icon className={`w-5 h-5 shrink-0 ${isActive ? "text-indigo-600 dark:text-indigo-400" : ""}`} />
                 {(sidebarOpen || isMobile) && (
                   <>
-                    <span className="truncate">{item.name}</span>
+                    <span className="truncate">{item.tKey ? t(item.tKey) : item.name}</span>
                     {item.name === "Notifications" && unreadCount > 0 && (
                       <span className="ml-auto bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[18px] text-center">
                         {unreadCount > 9 ? "9+" : unreadCount}
@@ -316,7 +318,7 @@ export default function Layout({ children, currentPageName }) {
                     isActive ? "text-indigo-600 dark:text-indigo-400" : "text-slate-400 dark:text-slate-500"
                   }`}
                 >
-                  {item.name}
+                  {item.tKey ? t(item.tKey) : item.name}
                 </span>
               </Link>
             );

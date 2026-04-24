@@ -44,13 +44,20 @@ function detectBrowserLang() {
 export function LanguageProvider({ children }) {
   const { user, isAuthenticated } = useAuth();
   const [lang, setLangState] = useState(() => {
-    return localStorage.getItem("iqon_lang") || detectBrowserLang();
+    const stored = localStorage.getItem("iqon_lang") || detectBrowserLang();
+    if (i18n.language !== stored) {
+      i18n.changeLanguage(stored);
+    }
+    return stored;
   });
   const hasSyncedUserLang = useRef(false);
 
   useEffect(() => {
     document.documentElement.dir = RTL_LANGS.includes(lang) ? "rtl" : "ltr";
     document.documentElement.lang = lang;
+    if (i18n.language !== lang) {
+      i18n.changeLanguage(lang);
+    }
   }, [lang]);
 
   useEffect(() => {

@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { liveSessionsAPI, liveChatMessagesAPI, productsAPI, cartAPI, authAPI, storesAPI, followsAPI, vendorSubscriptionsAPI } from "@/api/apiClient";
 import { useAuth } from "@/lib/AuthContext";
 import { createPageUrl, formatCurrency } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 import { usePlatformSettings } from "@/hooks/usePlatformSettings";
 
 const MessageCircleIcon = (props) => (
@@ -860,6 +861,7 @@ function VendorBroadcast({ onClose, currentUser, store }) {
 
 // ========== MAIN PAGE ==========
 export default function Live() {
+  const { t } = useTranslation();
   const [activeSession, setActiveSession] = useState(null);
   const [showBroadcast, setShowBroadcast] = useState(false);
   const [filter, setFilter] = useState("all");
@@ -935,9 +937,9 @@ export default function Live() {
         <div>
           <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
             <span className="w-8 h-8 rounded-xl bg-red-500 flex items-center justify-center"><Radio className="w-4 h-4 text-white" /></span>
-            Live Shopping
+            {t("live.title")}
           </h1>
-          <p className="text-slate-500 text-sm mt-0.5">Watch, chat & shop in real-time</p>
+          <p className="text-slate-500 text-sm mt-0.5">{t("live.watching")}</p>
         </div>
         {currentUser && (
           <Button 
@@ -956,7 +958,7 @@ export default function Live() {
             className="bg-red-500 hover:bg-red-600 rounded-xl gap-1.5 text-sm disabled:opacity-60"
           >
             {storeLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Video className="w-4 h-4" />}
-            Go Live
+            {t("live.goLive")}
           </Button>
         )}
       </div>
@@ -1012,7 +1014,7 @@ export default function Live() {
           <div className="w-12 h-12 bg-slate-200 rounded-full flex items-center justify-center mx-auto mb-3">
             <Radio className="w-6 h-6 text-slate-400" />
           </div>
-          <p className="text-slate-500 font-medium">No live sessions in this category</p>
+          <p className="text-slate-500 font-medium">{t("live.noLiveSessions")}</p>
           <p className="text-slate-400 text-xs mt-1">Check back later or explore other categories</p>
         </div>
       )}

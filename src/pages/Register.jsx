@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/lib/AuthContext';
 import { getRedirectPath } from '@/lib/utils';
 import { Mail, Lock, User, Loader2, ArrowRight, Eye, EyeOff } from 'lucide-react';
@@ -53,6 +54,7 @@ const Register = () => {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { register, googleLogin } = useAuth();
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   // Cleanup effect to prevent selection errors during unmount
@@ -187,8 +189,8 @@ const Register = () => {
               </div>
               
               <div className="hidden lg:block space-y-2 text-center lg:text-left">
-                <h2 className="text-4xl font-black text-white tracking-tighter">Create Identity</h2>
-                <p className="text-slate-500 font-medium text-sm">Join the next generation of social commerce</p>
+                <h2 className="text-4xl font-black text-white tracking-tighter">{t("auth.registerTitle")}</h2>
+                <p className="text-slate-500 font-medium text-sm">{t("auth.registerSubtitle")}</p>
               </div>
 
               {error && (
@@ -354,9 +356,9 @@ const Register = () => {
 
               <div className="pt-6 text-center">
                 <p className="text-slate-600 font-bold text-xs uppercase tracking-tight">
-                  Already part of the network?{' '}
+                  {t("auth.haveAccount")}{' '}
                   <Link to="/login" className="text-orange-500 hover:text-orange-400 font-black transition-colors relative group/link">
-                    Sign In
+                    {t("auth.signInLink")}
                     <span className="absolute -bottom-1 left-0 w-full h-0.5 bg-orange-500 scale-x-0 group-hover/link:scale-x-100 transition-transform duration-300 origin-left" />
                   </Link>
                 </p>
