@@ -50,16 +50,16 @@ export default function Marketplace() {
       <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 rounded-3xl p-6 lg:p-8 mb-6 text-white relative overflow-hidden">
         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=1200')] bg-cover bg-center opacity-10" />
         <div className="relative z-10">
-          <h1 className="text-2xl lg:text-3xl font-bold mb-2">Aicon X Marketplace</h1>
-          <p className="text-white/80 text-sm lg:text-base mb-4">Discover unique products from creators and vendors worldwide</p>
+          <h1 className="text-2xl lg:text-3xl font-bold mb-2">{t("shop.heroTitle")}</h1>
+          <p className="text-white/80 text-sm lg:text-base mb-4">{t("shop.heroSubtitle")}</p>
           <div className="flex gap-4 text-sm">
             <div className="flex items-center gap-1.5 bg-white/20 rounded-full px-3 py-1.5">
               <ShoppingBag className="w-4 h-4" />
-              {products.length}+ Products
+              {t("shop.productsCount", { count: products.length })}
             </div>
             <div className="flex items-center gap-1.5 bg-white/20 rounded-full px-3 py-1.5">
               <Store className="w-4 h-4" />
-              {stores.length}+ Stores
+              {t("shop.storesCount", { count: stores.length })}
             </div>
           </div>
         </div>
@@ -90,7 +90,7 @@ export default function Marketplace() {
                     <h3 className="text-sm font-semibold text-slate-900 truncate">{store.name}</h3>
                     <div className="flex items-center justify-center gap-1 mt-1">
                       {store.is_verified && <span className="text-blue-500 text-xs">✓</span>}
-                      <span className="text-xs text-slate-400">{store.product_count || 0} items</span>
+                      <span className="text-xs text-slate-400">{t("shop.storeItems", { count: store.product_count || 0 })}</span>
                     </div>
                   </Link>
                 ))
@@ -113,28 +113,28 @@ export default function Marketplace() {
         </div>
         <Select value={category} onValueChange={setCategory}>
           <SelectTrigger className="w-40 h-10 rounded-xl">
-            <SelectValue placeholder="Category" />
+            <SelectValue placeholder={t("shop.category")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Categories</SelectItem>
-            <SelectItem value="fashion">Fashion</SelectItem>
-            <SelectItem value="electronics">Electronics</SelectItem>
-            <SelectItem value="home">Home</SelectItem>
-            <SelectItem value="beauty">Beauty</SelectItem>
-            <SelectItem value="sports">Sports</SelectItem>
-            <SelectItem value="art">Art</SelectItem>
+            <SelectItem value="all">{t("shop.allCategories")}</SelectItem>
+            <SelectItem value="fashion">{t("shop.categoryFashion")}</SelectItem>
+            <SelectItem value="electronics">{t("shop.categoryElectronics")}</SelectItem>
+            <SelectItem value="home">{t("shop.categoryHome")}</SelectItem>
+            <SelectItem value="beauty">{t("shop.categoryBeauty")}</SelectItem>
+            <SelectItem value="sports">{t("shop.categorySports")}</SelectItem>
+            <SelectItem value="art">{t("shop.categoryArt")}</SelectItem>
           </SelectContent>
         </Select>
         <Select value={sort} onValueChange={setSort}>
           <SelectTrigger className="w-40 h-10 rounded-xl">
-            <SelectValue placeholder="Sort by" />
+            <SelectValue placeholder={t("shop.sortBy")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="-created_date">Newest</SelectItem>
-            <SelectItem value="-sales_count">Best Selling</SelectItem>
-            <SelectItem value="price">Price: Low to High</SelectItem>
-            <SelectItem value="-price">Price: High to Low</SelectItem>
-            <SelectItem value="-rating_avg">Top Rated</SelectItem>
+            <SelectItem value="-created_date">{t("shop.newest")}</SelectItem>
+            <SelectItem value="-sales_count">{t("shop.bestSelling")}</SelectItem>
+            <SelectItem value="price">{t("shop.priceLowHigh")}</SelectItem>
+            <SelectItem value="-price">{t("shop.priceHighLow")}</SelectItem>
+            <SelectItem value="-rating_avg">{t("shop.topRated")}</SelectItem>
           </SelectContent>
         </Select>
       </div>

@@ -197,7 +197,7 @@ function CustomDomainManager({ subscription, vendorUsername }) {
           className="rounded-xl text-sm"
         />
         <Button onClick={save} disabled={saving || !domain.trim()} className="bg-indigo-600 hover:bg-indigo-700 rounded-xl shrink-0">
-          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save"}
+          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : t("common.save")}
         </Button>
       </div>
       {domain && (
@@ -232,11 +232,11 @@ export default function SubscriptionManager({ store, vendorUsername }) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["vendorSubscription"] });
-      toast.success("Payment verified! Your subscription is now active.");
+      toast.success(t("subscription.paymentVerified"));
     },
     onError: (err) => {
       queryClient.invalidateQueries({ queryKey: ["vendorSubscription"] });
-      toast.error(err?.message || "Payment verification failed. Contact support if you were charged.");
+      toast.error(err?.message || t("subscription.paymentVerificationFailed"));
     },
   });
 
@@ -268,7 +268,7 @@ export default function SubscriptionManager({ store, vendorUsername }) {
     },
     onSuccess: async (data) => {
       if (!data.needsPayment) {
-        toast.success(`Plan updated to ${data.sub.plan}!`);
+        toast.success(t("subscription.planUpdated", { plan: data.sub.plan }));
         setShowConfirm(null);
         queryClient.invalidateQueries({ queryKey: ["vendorSubscription"] });
       } else {
@@ -297,7 +297,7 @@ export default function SubscriptionManager({ store, vendorUsername }) {
             }
           });
         } catch (err) {
-          toast.error(err.message || "Payment initialization failed. Please try again or contact support.");
+          toast.error(err.message || t("subscription.paymentInitFailed"));
         }
       }
     },
@@ -346,7 +346,7 @@ export default function SubscriptionManager({ store, vendorUsername }) {
         <div className="flex-1">
           <div className="flex items-center gap-2">
             <p className="text-sm font-bold text-slate-900">
-              You are on the <span className={subscription?.plan === "elite" ? "text-amber-600" : subscription?.plan === "pro" ? "text-indigo-600" : "text-slate-600"}>{currentPlanInfo?.name}</span> plan
+              {t("subscription.onPlan", { name: currentPlanInfo?.name })}
             </p>
             {isPending && (
               <Badge variant="outline" className="bg-amber-50 text-amber-600 border-amber-200 animate-pulse">{t("subscription.pendingPayment")}</Badge>
@@ -354,7 +354,9 @@ export default function SubscriptionManager({ store, vendorUsername }) {
           </div>
           {subscription?.expires_at && (
             <p className="text-xs text-slate-500">
-              {subscription.status === 'cancelled' ? 'Expires' : 'Renews'} {new Date(subscription.expires_at).toLocaleDateString()}
+              {subscription.status === 'cancelled'
+                ? t("subscription.expires", { date: new Date(subscription.expires_at).toLocaleDateString() })
+                : t("subscription.renews", { date: new Date(subscription.expires_at).toLocaleDateString() })}
             </p>
           )}
         </div>
@@ -362,7 +364,7 @@ export default function SubscriptionManager({ store, vendorUsername }) {
         <div className="flex flex-col items-end gap-2">
           {subscription?.plan !== "free" && (
             <Badge className={`text-xs border-0 ${subscription?.plan === "elite" ? "bg-amber-100 text-amber-700" : "bg-indigo-100 text-indigo-700"}`}>
-              {subscription?.billing_cycle === "annual" ? "Annual" : "Monthly"}
+              {subscription?.billing_cycle === "annual" ? t("subscription.annual") : t("subscription.monthly")}
             </Badge>
           )}
           {isPending && (
@@ -391,7 +393,7 @@ export default function SubscriptionManager({ store, vendorUsername }) {
                     }
                   });
                 } catch (err) {
-                  toast.error(err.message || "Payment initialization failed. Please try again or contact support.");
+                  toast.error(err.message || t("subscription.paymentInitFailed"));
                 }
               }}
             >
@@ -405,13 +407,12 @@ export default function SubscriptionManager({ store, vendorUsername }) {
         <div className="bg-amber-50/50 border border-amber-100 rounded-xl p-4 flex items-start gap-3">
           <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
           <div className="text-xs text-amber-700 leading-relaxed">
-            <strong>Payment Required:</strong> Your{" "}
-            {pendingUpgradePlan ? pendingUpgradePlan.name : currentPlanInfo?.name} plan features will be
-            unlocked once payment is confirmed.{" "}
+            <strong>{t("subscription.paymentRequired")}:</strong>{" "}
+            {t("subscription.pendingFeatureWarning", { plan: pendingUpgradePlan ? pendingUpgradePlan.name : currentPlanInfo?.name })}{" "}
             {pendingUpgradePlan && (
-              <span>You remain on the <strong>{currentPlanInfo?.name}</strong> plan until then. </span>
+              <span>{t("subscription.currentPlanMaintained", { current: currentPlanInfo?.name })} </span>
             )}
-            If you've already paid, it may take a few minutes to update.
+            {t("subscription.paymentMayTakeMins")}
           </div>
         </div>
       )}
@@ -456,7 +457,7 @@ export default function SubscriptionManager({ store, vendorUsername }) {
           <div key={f.label} className="bg-white rounded-xl border border-slate-100 p-3">
             <f.icon className={`w-5 h-5 mx-auto mb-1.5 ${f.color}`} />
             <p className="text-xs font-semibold text-slate-700">{f.label}</p>
-            <p className="text-[10px] text-slate-400">{f.plans.join(", ")} only</p>
+            <p className="text-[10px] text-slate-400">{t("subscription.onlyPlans", { plans: f.plans.join(", ") })}</p>
           </div>
         ))}
       </div>
@@ -471,7 +472,11 @@ export default function SubscriptionManager({ store, vendorUsername }) {
                 <button onClick={() => setShowConfirm(null)}><X className="w-5 h-5 text-slate-400" /></button>
               </div>
               <p className="text-slate-600 text-sm mb-2">
-                Upgrade to <strong>{showConfirm.name}</strong> for <strong>${billing === "annual" ? showConfirm.priceAnnual : showConfirm.price}/mo</strong> ({billing}).
+                {t("subscription.confirmUpgradeDesc", {
+                  name: showConfirm.name,
+                  price: billing === "annual" ? showConfirm.priceAnnual : showConfirm.price,
+                  billing: t(`subscription.${billing}`),
+                })}
               </p>
               <div className="flex gap-3">
                 <Button variant="outline" className="flex-1 rounded-xl" onClick={() => setShowConfirm(null)}>{t("common.cancel")}</Button>

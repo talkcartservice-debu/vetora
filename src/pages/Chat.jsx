@@ -41,6 +41,7 @@ function Avatar({ name, size = 10 }) {
 }
 
 function ProductSharePicker({ onShare, onClose, currentUser }) {
+  const { t } = useTranslation();
   const [search, setSearch] = useState("");
   const [tab, setTab] = useState("all"); // "all" | "mine"
 
@@ -72,23 +73,23 @@ function ProductSharePicker({ onShare, onClose, currentUser }) {
       className="absolute bottom-full mb-2 left-0 right-0 bg-white rounded-2xl border border-slate-200 shadow-xl p-3 z-20"
     >
       <div className="flex items-center justify-between mb-2">
-        <p className="text-sm font-semibold text-slate-800">Share a Product</p>
+        <p className="text-sm font-semibold text-slate-800">{t("chat.shareProductTitle")}</p>
         <button onClick={onClose}><X className="w-4 h-4 text-slate-400" /></button>
       </div>
       <div className="flex gap-1 mb-2 p-1 bg-slate-100 rounded-xl">
-        <button onClick={() => setTab("all")} className={`flex-1 text-xs py-1 rounded-lg font-medium transition-colors ${tab === "all" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"}`}>All Products</button>
-        <button onClick={() => setTab("mine")} className={`flex-1 text-xs py-1 rounded-lg font-medium transition-colors ${tab === "mine" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"}`}>My Store</button>
+        <button onClick={() => setTab("all")} className={`flex-1 text-xs py-1 rounded-lg font-medium transition-colors ${tab === "all" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"}`}>{t("chat.allProducts")}</button>
+        <button onClick={() => setTab("mine")} className={`flex-1 text-xs py-1 rounded-lg font-medium transition-colors ${tab === "mine" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"}`}>{t("chat.myStore")}</button>
       </div>
       <input
         value={search}
         onChange={e => setSearch(e.target.value)}
-        placeholder="Search..."
+        placeholder={t("chat.searchProductsPlaceholder")}
         className="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 mb-2 outline-none focus:border-indigo-300"
       />
       {isLoading ? (
         <div className="flex justify-center py-4"><Loader2 className="w-5 h-5 animate-spin text-slate-400" /></div>
       ) : products.length === 0 ? (
-        <p className="text-center py-4 text-xs text-slate-400">No products found</p>
+        <p className="text-center py-4 text-xs text-slate-400">{t("chat.noProductsFound")}</p>
       ) : (
         <div className="grid grid-cols-3 gap-2 max-h-52 overflow-y-auto">
           {products.map(p => (
@@ -107,6 +108,7 @@ function ProductSharePicker({ onShare, onClose, currentUser }) {
 }
 
 function OfferModal({ onSend, onClose }) {
+  const { t } = useTranslation();
   const [amount, setAmount] = useState("");
   return (
     <motion.div
@@ -116,13 +118,13 @@ function OfferModal({ onSend, onClose }) {
       className="absolute bottom-full mb-2 left-0 right-0 bg-white rounded-2xl border border-slate-200 shadow-xl p-4 z-20"
     >
       <div className="flex items-center justify-between mb-3">
-        <p className="text-sm font-semibold text-slate-800">💰 Make an Offer</p>
+        <p className="text-sm font-semibold text-slate-800">{t("chat.makeOfferTitle")}</p>
         <button onClick={onClose}><X className="w-4 h-4 text-slate-400" /></button>
       </div>
-      <p className="text-xs text-slate-500 mb-2">Enter your price offer</p>
+      <p className="text-xs text-slate-500 mb-2">{t("chat.enterPriceOffer")}</p>
       <div className="flex gap-2">
         <Input type="number" placeholder="RWF 0" value={amount} onChange={e => setAmount(e.target.value)} className="rounded-xl" />
-        <Button onClick={() => { onSend(parseFloat(amount)); onClose(); }} disabled={!amount} className="bg-indigo-600 hover:bg-indigo-700 rounded-xl shrink-0">Send</Button>
+        <Button onClick={() => { onSend(parseFloat(amount)); onClose(); }} disabled={!amount} className="bg-indigo-600 hover:bg-indigo-700 rounded-xl shrink-0">{t("chat.send")}</Button>
       </div>
     </motion.div>
   );
@@ -221,11 +223,11 @@ export default function Chat() {
     mutationFn: async (msgData) => {
       const recipient = msgData.recipient_username || selectedConvo;
       if (!recipient) {
-        toast.error("No recipient selected");
+        toast.error(t("chat.noRecipient"));
         throw new Error("recipient_username is required");
       }
       if (!currentUser?.username) {
-        toast.error("You must be logged in");
+        toast.error(t("chat.mustBeLoggedIn"));
         throw new Error("sender_username is required");
       }
       
@@ -280,11 +282,11 @@ export default function Chat() {
         product_id: forwardMsg.product_id,
         product_data: forwardMsg.product_data,
       });
-      toast.success("Message forwarded!");
+      toast.success(t("chat.messageForwarded"));
       setForwardMsg(null);
       setForwardToUsername("");
     } catch (error) {
-      toast.error("Failed to forward message");
+      toast.error(t("chat.failedToForward"));
     }
   };
 
@@ -326,7 +328,7 @@ export default function Chat() {
         order_id: orderId,
       });
     } catch (error) {
-      toast.error("Failed to create offer");
+      toast.error(t("chat.failedToCreateOffer"));
     }
   };
 
@@ -346,7 +348,7 @@ export default function Chat() {
         <div className="p-4 border-b border-slate-100">
           <div className="flex items-center justify-between mb-3">
             <h1 className="text-xl font-bold text-slate-900">
-              Messages
+              {t("chat.title")}
               {unreadTotal > 0 && (
                 <span className="ml-2 text-xs bg-indigo-600 text-white rounded-full px-1.5 py-0.5">{unreadTotal}</span>
               )}
@@ -354,7 +356,7 @@ export default function Chat() {
             <button
               onClick={() => { setComposing(v => !v); setUserSearch(""); }}
               className={`p-1.5 rounded-xl transition-colors ${composing ? "bg-indigo-100 text-indigo-600" : "hover:bg-slate-100 text-slate-400 hover:text-slate-600"}`}
-              title="New conversation"
+              title={t("chat.newConversation")}
             >
               <PenSquare className="w-4 h-4" />
             </button>
@@ -374,14 +376,14 @@ export default function Chat() {
                     autoFocus
                     value={userSearch}
                     onChange={e => setUserSearch(e.target.value)}
-                    placeholder="Search by name or username..."
+                    placeholder={t("chat.searchByName")}
                     className="pl-8 h-9 rounded-xl text-sm bg-indigo-50 border-indigo-100 focus:border-indigo-300"
                   />
                 </div>
                 {userSearch.trim().length >= 2 && (
                   <div className="space-y-0.5">
                     {userSearchResults.length === 0 ? (
-                      <p className="text-xs text-slate-400 text-center py-3">No users found</p>
+                      <p className="text-xs text-slate-400 text-center py-3">{t("chat.noUsersFound")}</p>
                     ) : userSearchResults.map(u => (
                       <button
                         key={u.username || u._id}
@@ -404,7 +406,7 @@ export default function Chat() {
                   </div>
                 )}
                 {userSearch.trim().length === 0 && (
-                  <p className="text-xs text-slate-400 text-center py-1">Type at least 2 characters to search</p>
+                  <p className="text-xs text-slate-400 text-center py-1">{t("chat.typeToSearch")}</p>
                 )}
               </motion.div>
             )}
@@ -452,7 +454,7 @@ export default function Chat() {
                       </span>
                     </div>
                     <p className={`text-xs truncate ${convo.unread_count > 0 ? "text-slate-700 font-medium" : "text-slate-400"}`}>
-                      {convo.last_message_type === "product_share" ? "📦 Shared a product" : convo.last_message_type === "offer" ? "💰 Price offer" : convo.last_message_content}
+                      {convo.last_message_type === "product_share" ? t("chat.sharedProduct") : convo.last_message_type === "offer" ? t("chat.priceOffer") : convo.last_message_content}
                     </p>
                   </div>
                   {convo.unread_count > 0 && (
@@ -482,14 +484,14 @@ export default function Chat() {
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-slate-900">{selectedConvoName}</p>
-                  <p className="text-xs text-green-500 font-medium">Online</p>
+                  <p className="text-xs text-green-500 font-medium">{t("chat.online")}</p>
                 </div>
               </div>
               <div className="flex items-center gap-1">
-                <button className="p-2 hover:bg-slate-100 rounded-xl transition-colors" title="Voice call">
+                <button className="p-2 hover:bg-slate-100 rounded-xl transition-colors" title={t("chat.voiceCall")}>
                   <Phone className="w-4 h-4 text-slate-500" />
                 </button>
-                <button className="p-2 hover:bg-slate-100 rounded-xl transition-colors" title="Video call">
+                <button className="p-2 hover:bg-slate-100 rounded-xl transition-colors" title={t("chat.videoCall")}>
                   <Video className="w-4 h-4 text-slate-500" />
                 </button>
                 <button className="p-2 hover:bg-slate-100 rounded-xl transition-colors" onClick={() => setShowActionMenu(v => !v)}>
@@ -505,7 +507,7 @@ export default function Chat() {
                   <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-2">
                     <Send className="w-5 h-5 text-slate-300" />
                   </div>
-                  Start a conversation with {selectedConvoName}
+                  {t("chat.startConversationWith", { name: selectedConvoName })}
                 </div>
               )}
               {selectedMessages.map((msg, idx) => {
@@ -541,7 +543,7 @@ export default function Chat() {
                   >
                     <Reply className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-[10px] text-indigo-500 font-semibold">Replying to</p>
+                      <p className="text-[10px] text-indigo-500 font-semibold">{t("chat.replyingTo")}</p>
                       <p className="text-xs text-slate-600 truncate">{replyingTo.content}</p>
                     </div>
                     <button onClick={() => setReplyingTo(null)} className="w-5 h-5 rounded-full bg-slate-200 flex items-center justify-center">
@@ -562,7 +564,7 @@ export default function Chat() {
                       className="absolute bottom-full mb-2 left-0 right-0 bg-white rounded-2xl border border-slate-200 shadow-xl p-3 z-20"
                     >
                       <div className="flex items-center justify-between mb-2">
-                        <p className="text-sm font-semibold text-slate-800">Emojis</p>
+                        <p className="text-sm font-semibold text-slate-800">{t("chat.emojis")}</p>
                         <button onClick={() => setShowEmojiPicker(false)}><X className="w-4 h-4 text-slate-400" /></button>
                       </div>
                       <div className="grid grid-cols-8 gap-2 max-h-48 overflow-y-auto p-1">
@@ -585,14 +587,14 @@ export default function Chat() {
                     <button
                       onClick={() => { setShowProductPicker(v => !v); setShowOfferModal(false); setShowEmojiPicker(false); }}
                       className={`p-1.5 rounded-xl transition-colors ${showProductPicker ? "bg-indigo-100 text-indigo-600" : "hover:bg-slate-200 text-slate-500"}`}
-                      title="Share product"
+                      title={t("chat.shareProductTooltip")}
                     >
                       <ShoppingBag className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => { setShowOfferModal(v => !v); setShowProductPicker(false); setShowEmojiPicker(false); }}
                       className={`p-1.5 rounded-xl transition-colors ${showOfferModal ? "bg-indigo-100 text-indigo-600" : "hover:bg-slate-200 text-slate-500"}`}
-                      title="Make an offer"
+                      title={t("chat.makeAnOffer")}
                     >
                       <Star className="w-4 h-4" />
                     </button>
@@ -646,9 +648,9 @@ export default function Chat() {
                     animate={{ scale: 1 }}
                     className="bg-white rounded-2xl p-5 w-full max-w-sm shadow-2xl"
                   >
-                    <h3 className="text-sm font-bold text-slate-900 mb-1">Forward Message</h3>
+                    <h3 className="text-sm font-bold text-slate-900 mb-1">{t("chat.forwardMessage")}</h3>
                     <p className="text-xs text-slate-500 mb-3 bg-slate-50 rounded-xl px-3 py-2 line-clamp-2">{forwardMsg.content}</p>
-                    <p className="text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wide">Send to</p>
+                    <p className="text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wide">{t("chat.sendTo")}</p>
                     {conversations.length > 0 ? (
                       <div className="space-y-1 max-h-52 overflow-y-auto mb-3">
                         {conversations.map(c => (
@@ -677,11 +679,11 @@ export default function Chat() {
                         ))}
                       </div>
                     ) : (
-                      <p className="text-xs text-slate-400 text-center py-4 mb-3">No conversations yet</p>
+                      <p className="text-xs text-slate-400 text-center py-4 mb-3">{t("chat.noConversations")}</p>
                     )}
                     <div className="flex gap-2">
-                      <Button onClick={() => { setForwardMsg(null); setForwardToUsername(""); }} variant="outline" className="flex-1 rounded-xl" size="sm">Cancel</Button>
-                      <Button onClick={executeForward} disabled={!forwardToUsername.trim()} className="flex-1 bg-indigo-600 hover:bg-indigo-700 rounded-xl" size="sm">Forward</Button>
+                      <Button onClick={() => { setForwardMsg(null); setForwardToUsername(""); }} variant="outline" className="flex-1 rounded-xl" size="sm">{t("chat.cancel")}</Button>
+                      <Button onClick={executeForward} disabled={!forwardToUsername.trim()} className="flex-1 bg-indigo-600 hover:bg-indigo-700 rounded-xl" size="sm">{t("chat.forward")}</Button>
                     </div>
                   </motion.div>
                 </motion.div>
@@ -694,8 +696,8 @@ export default function Chat() {
               <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center mx-auto mb-4">
                 <Send className="w-9 h-9 text-indigo-400" />
               </div>
-              <h3 className="text-lg font-bold text-slate-900 mb-1">Your Messages</h3>
-              <p className="text-sm text-slate-400">Select a conversation or start a new one</p>
+              <h3 className="text-lg font-bold text-slate-900 mb-1">{t("chat.yourMessages")}</h3>
+              <p className="text-sm text-slate-400">{t("chat.selectConversation")}</p>
             </div>
           </div>
         )}

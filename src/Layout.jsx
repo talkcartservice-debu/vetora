@@ -69,10 +69,10 @@ const SIDEBAR_ITEMS = [
   { name: "Wishlist", tKey: "nav.wishlist", icon: Heart, page: "Wishlist" },
   { name: "Bookmarks", tKey: "nav.bookmarks", icon: Bookmark, page: "Bookmarks" },
   { name: "Orders", tKey: "nav.orders", icon: Package, page: "Orders" },
-  { name: "Track Order", icon: MapPin, page: "OrderTracking" },
+  { name: "Track Order", tKey: "nav.trackOrder", icon: MapPin, page: "OrderTracking" },
   { name: "My Store", tKey: "nav.myStore", icon: Store, page: "MyStore" },
-  { name: "Finance", icon: DollarSign, page: "VendorFinance" },
-  { name: "Account Plans", icon: CreditCard, page: "MyStore", params: "?tab=subscription" },
+  { name: "Finance", tKey: "nav.finance", icon: DollarSign, page: "VendorFinance" },
+  { name: "Account Plans", tKey: "nav.accountPlans", icon: CreditCard, page: "MyStore", params: "?tab=subscription" },
   { name: "Affiliate", tKey: "nav.affiliate", icon: Link2, page: "Affiliate" },
   { name: "Notifications", tKey: "nav.notifications", icon: Bell, page: "Notifications" },
   { name: "Settings", tKey: "nav.settings", icon: SettingsIcon, page: "Settings" },
@@ -236,7 +236,7 @@ export default function Layout({ children, currentPageName }) {
               className={`flex items-center justify-center gap-2 w-full py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-medium text-sm hover:shadow-lg hover:shadow-indigo-200 dark:hover:shadow-indigo-900/40 transition-all ${!sidebarOpen && !isMobile && "aspect-square p-0"}`}
             >
               <Plus className="w-4 h-4" />
-              {(sidebarOpen || isMobile) && <span>Create</span>}
+              {(sidebarOpen || isMobile) && <span>{t("nav.create")}</span>}
             </button>
           )}
         </div>

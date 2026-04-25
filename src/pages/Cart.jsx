@@ -57,17 +57,20 @@ export default function Cart() {
     setCouponError("");
     try {
       const coupon = await couponsAPI.check(couponCode.trim().toUpperCase());
-      if (!coupon) { setCouponError("Invalid or expired coupon code"); return; }
-      if (coupon.expires_at && new Date(coupon.expires_at) < new Date()) { setCouponError("This coupon has expired"); return; }
-      if (coupon.max_uses > 0 && coupon.uses_count >= coupon.max_uses) { setCouponError("This coupon has reached its usage limit"); return; }
+      if (!coupon) { setCouponError(t("cart.invalidOrExpiredCoupon")); return; }
+      if (coupon.expires_at && new Date(coupon.expires_at) < new Date()) { setCouponError(t("cart.couponExpired")); return; }
+      if (coupon.max_uses > 0 && coupon.uses_count >= coupon.max_uses) { setCouponError(t("cart.couponUsageLimitReached")); return; }
       const sub = cartItems.reduce((s, i) => s + (i.product_price || 0) * (i.quantity || 1), 0);
       if (coupon.min_order_amount > 0 && sub < coupon.min_order_amount) {
-        setCouponError(`Minimum order of ${formatCurrency(coupon.min_order_amount)} required`); return;
+        setCouponError(t("cart.couponMinOrder", { amount: formatCurrency(coupon.min_order_amount) })); return;
       }
       setAppliedCoupon(coupon);
-      toast.success(`Coupon applied! ${coupon.discount_type === "percentage" ? `${coupon.discount_value}% off` : `${formatCurrency(coupon.discount_value)} off`}`);
+      const discountStr = coupon.discount_type === "percentage"
+        ? `${coupon.discount_value}% ${t("shop.off")}`
+        : `${formatCurrency(coupon.discount_value)} ${t("shop.off")}`;
+      toast.success(t("cart.couponAppliedToast", { discount: discountStr }));
     } catch (e) {
-      setCouponError("Invalid coupon code");
+      setCouponError(t("cart.invalidCoupon"));
     } finally {
       setCheckingCoupon(false);
     }
@@ -109,10 +112,10 @@ export default function Cart() {
         <EmptyState
           icon={ShoppingBag}
           title={t("cart.empty")}
-          description="Browse the marketplace to find products you love"
+          description={t("cart.emptyDescription")}
           action={
             <Link to={createPageUrl("Marketplace")}>
-              <Button className="bg-indigo-600 hover:bg-indigo-700 rounded-xl">Browse Products</Button>
+              <Button className="bg-indigo-600 hover:bg-indigo-700 rounded-xl">{t("cart.browseProducts")}</Button>
             </Link>
           }
         />
@@ -166,7 +169,7 @@ export default function Cart() {
                 {discount > 0 && (
                   <div className="flex justify-between text-sm">
                     <span className="text-green-600 flex items-center gap-1">
-                      <Tag className="w-3.5 h-3.5" /> Discount ({appliedCoupon.code})
+                      <Tag className="w-3.5 h-3.5" /> {t("cart.discount", { code: appliedCoupon.code })}
                     </span>
                     <span className="font-medium text-green-600">-{formatCurrency(discount)}</span>
                   </div>
@@ -186,7 +189,7 @@ export default function Cart() {
                 {appliedCoupon ? (
                   <div className="flex items-center gap-2 p-2.5 bg-green-50 border border-green-200 rounded-xl">
                     <CheckCircle2 className="w-4 h-4 text-green-600 shrink-0" />
-                    <span className="text-sm text-green-700 font-semibold flex-1">{appliedCoupon.code} applied!</span>
+                    <span className="text-sm text-green-700 font-semibold flex-1">{t("cart.couponCodeApplied", { code: appliedCoupon.code })}</span>
                     <button onClick={removeCoupon} className="text-green-600 hover:text-green-800">
                       <X className="w-4 h-4" />
                     </button>
@@ -225,7 +228,7 @@ export default function Cart() {
 
               {subtotal < 50 && (
                 <p className="text-xs text-center text-slate-400 mt-3">
-                  Add {formatCurrency(50 - subtotal)} more for free shipping
+                  {t("cart.freeShippingProgress", { amount: formatCurrency(50 - subtotal) })}
                 </p>
               )}
             </div>

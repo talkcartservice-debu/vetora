@@ -17,12 +17,12 @@ import { useTranslation } from "react-i18next";
 import OrderStatusCard from "@/components/chat/OrderStatusCard";
 import SmartActionChips from "@/components/chat/SmartActionChips";
 
-const WELCOME_MESSAGE = {
+const getWelcomeMessage = (t) => ({
   id: "welcome",
   role: "assistant",
-  content: "Hi! I'm **Aicon AI** 🛍️\n\nI can help you:\n- **Find products** based on your style & budget\n- **Discover deals** across all categories\n- **Answer questions** about shipping, returns & policies\n- **Give personalized recommendations** based on your preferences\n\nWhat are you looking for today?",
+  content: t("ai.welcomeMessage"),
   timestamp: new Date(),
-};
+});
 
 function ProductRecommendation({ product, onAddToCart, isAdding }) {
   const discount = product.compare_at_price > 0
@@ -79,6 +79,7 @@ function ProductRecommendation({ product, onAddToCart, isAdding }) {
 }
 
 function ChatMessage({ message, onAddToCart, addingProductId }) {
+  const { t } = useTranslation();
   const isUser = message.role === "user";
   
   // Parse actions from content and combine with explicit actions
@@ -139,7 +140,7 @@ function ChatMessage({ message, onAddToCart, addingProductId }) {
 
         {message.products?.length > 0 && (
           <div className="w-full space-y-2">
-            <p className="text-xs text-slate-400 font-medium px-1">Recommended for you:</p>
+            <p className="text-xs text-slate-400 font-medium px-1">{t("ai.recommendedForYou")}</p>
             {message.products.map(p => (
               <ProductRecommendation 
                 key={p.id} 
@@ -177,7 +178,7 @@ function TypingIndicator() {
 
 export default function AIAssistant() {
   const { t } = useTranslation();
-  const [messages, setMessages] = useState([WELCOME_MESSAGE]);
+  const [messages, setMessages] = useState(() => [getWelcomeMessage(t)]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
@@ -188,11 +189,11 @@ export default function AIAssistant() {
   const addToCartMutation = useMutation({
     mutationFn: (product) => cartAPI.add({ product_id: product.id, quantity: 1 }),
     onSuccess: () => {
-      toast.success("Added to cart!");
+      toast.success(t("ai.addedToCart"));
       queryClient.invalidateQueries({ queryKey: ["cart"] });
     },
     onError: (error) => {
-      toast.error(error.message || "Failed to add to cart");
+      toast.error(error.message || t("ai.failedToAddToCart"));
     }
   });
 
@@ -318,7 +319,7 @@ export default function AIAssistant() {
       const aiMsg = {
         id: Date.now() + 1,
         role: "assistant",
-        content: data.reply || "I received an empty response from the AI.",
+        content: data.reply || t("ai.emptyResponse"),
         actions: data.actions || [],
         products: data.products || [],
         timestamp: new Date(),
@@ -329,7 +330,7 @@ export default function AIAssistant() {
       const errorMsg = {
         id: Date.now() + 1,
         role: "assistant",
-        content: "I'm sorry, I'm having trouble responding right now. Please try again later.",
+        content: t("ai.errorResponse"),
         timestamp: new Date(),
       };
       setMessages(prev => [...prev, errorMsg]);
@@ -339,7 +340,7 @@ export default function AIAssistant() {
   };
 
   const handleQuickPrompt = (prompt) => sendMessage(prompt);
-  const clearChat = () => setMessages([WELCOME_MESSAGE]);
+  const clearChat = () => setMessages([getWelcomeMessage(t)]);
 
   return (
     <div className="max-w-2xl mx-auto flex flex-col h-[calc(100vh-56px)] lg:h-screen">
@@ -357,7 +358,7 @@ export default function AIAssistant() {
             </div>
           </div>
         </div>
-        <button onClick={clearChat} className="p-2 rounded-xl hover:bg-slate-100 transition-colors" title="Clear chat">
+        <button onClick={clearChat} className="p-2 rounded-xl hover:bg-slate-100 transition-colors" title={t("ai.clearChat")}>
           <RefreshCw className="w-4 h-4 text-slate-400" />
         </button>
       </div>

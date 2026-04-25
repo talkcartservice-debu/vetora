@@ -143,6 +143,7 @@ All via my link if you want to grab any: {YOUR_LINK}`,
 ];
 
 function LeaderboardItem({ rank, name, avatar_url, total_earned, total_sales, isMe }) {
+  const { t } = useTranslation();
   const medal = RANK_MEDAL[rank];
   const initials = name ? name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase() : "??";
 
@@ -160,7 +161,7 @@ function LeaderboardItem({ rank, name, avatar_url, total_earned, total_sales, is
       <div className={`w-9 h-9 rounded-full flex items-center justify-center font-black text-sm border-2 shrink-0 ${
         medal ? `${medal.bg} ${medal.text} ${medal.border}` : "bg-slate-50 text-slate-400 border-slate-200"
       }`}>
-        {rank <= 3 ? rank : rank}
+        {rank}
       </div>
       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white font-bold text-sm shrink-0 overflow-hidden border-2 border-white shadow-sm">
         {avatar_url ? (
@@ -172,19 +173,20 @@ function LeaderboardItem({ rank, name, avatar_url, total_earned, total_sales, is
       <div className="flex-1 min-w-0">
         <p className="text-sm font-bold text-slate-900 truncate flex items-center gap-1.5">
           {name}
-          {isMe && <span className="text-[9px] font-black text-indigo-600 bg-indigo-100 px-1.5 py-0.5 rounded-full">YOU</span>}
+          {isMe && <span className="text-[9px] font-black text-indigo-600 bg-indigo-100 px-1.5 py-0.5 rounded-full">{t("affiliate.youBadge")}</span>}
         </p>
-        <p className="text-xs text-slate-400">{total_sales} sale{total_sales !== 1 ? "s" : ""}</p>
+        <p className="text-xs text-slate-400">{total_sales} {t(`affiliate.saleSuffix_${total_sales === 1 ? "one" : "other"}`)}</p>
       </div>
       <div className="text-right shrink-0">
         <p className={`text-sm font-black ${isMe ? "text-indigo-700" : "text-indigo-600"}`}>{formatCurrency(total_earned)}</p>
-        <p className="text-[10px] text-slate-400">earned</p>
+        <p className="text-[10px] text-slate-400">{t("affiliate.earnedLabel")}</p>
       </div>
     </motion.div>
   );
 }
 
 function AssetCard({ asset }) {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const [copied, setCopied] = useState(false);
   const Icon = asset.icon;
@@ -192,7 +194,7 @@ function AssetCard({ asset }) {
   const handleCopy = () => {
     navigator.clipboard.writeText(asset.content);
     setCopied(true);
-    toast.success(`${asset.title} copied to clipboard!`);
+    toast.success(t("affiliate.assetCopied", { title: asset.title }));
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -233,7 +235,7 @@ function AssetCard({ asset }) {
             className="flex-1 rounded-xl h-8 text-xs gap-1 border-slate-200"
           >
             {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-            {expanded ? "Hide" : "Preview"}
+            {expanded ? t("affiliate.hide") : t("affiliate.previewBtn")}
           </Button>
           <Button
             size="sm"
@@ -241,7 +243,7 @@ function AssetCard({ asset }) {
             className={`flex-1 rounded-xl h-8 text-xs gap-1 transition-all ${copied ? "bg-green-600 hover:bg-green-600" : "bg-indigo-600 hover:bg-indigo-700"}`}
           >
             {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-            {copied ? "Copied!" : "Copy"}
+            {copied ? t("affiliate.copiedBtn") : t("affiliate.copyBtn")}
           </Button>
         </div>
       </div>
@@ -264,11 +266,12 @@ function StatCard({ icon: Icon, label, value, color, sub }) {
 }
 
 function ConversionBar({ clicks, conversions }) {
+  const { t } = useTranslation();
   const pct = clicks ? Math.min(100, (conversions / clicks) * 100) : 0;
   return (
     <div>
       <div className="flex justify-between text-xs text-slate-500 mb-1">
-        <span>Conversion Rate</span>
+        <span>{t("affiliate.conversionRate")}</span>
         <span className="font-semibold text-indigo-600">{pct.toFixed(1)}%</span>
       </div>
       <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
@@ -350,7 +353,7 @@ export default function Affiliate() {
       });
     },
     onSuccess: () => {
-      toast.success("Affiliate link created!");
+      toast.success(t("affiliate.linkCreated"));
       setCreating(false);
       setSelectedProduct(null);
       queryClient.invalidateQueries({ queryKey: ["affiliateLinks"] });
@@ -363,7 +366,7 @@ export default function Affiliate() {
   const copyLink = (refCode) => {
     const url = `${window.location.origin}/Marketplace?ref=${refCode}`;
     navigator.clipboard.writeText(url);
-    toast.success("Link copied to clipboard!");
+    toast.success(t("affiliate.linkCopiedToast"));
   };
 
   // Totals from backend stats
@@ -382,19 +385,19 @@ export default function Affiliate() {
         <div className="relative z-10">
           <div className="flex items-center gap-2 mb-2">
             <Zap className="w-5 h-5 text-yellow-300" />
-            <span className="text-sm font-semibold text-white/80">Affiliate Program</span>
+            <span className="text-sm font-semibold text-white/80">{t("affiliate.programBadge")}</span>
           </div>
-          <h1 className="text-2xl lg:text-3xl font-black mb-2">Earn from Every Sale</h1>
-          <p className="text-white/80 text-sm max-w-lg">Generate referral links for products, share them with your audience, and earn commissions automatically on every converted sale.</p>
+          <h1 className="text-2xl lg:text-3xl font-black mb-2">{t("affiliate.heroTitle")}</h1>
+          <p className="text-white/80 text-sm max-w-lg">{t("affiliate.heroDesc")}</p>
         </div>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-        <StatCard icon={Link2} label="Active Links" value={myLinks.filter(l => l.status === "active").length} color="bg-indigo-50 text-indigo-600" />
-        <StatCard icon={MousePointerClick} label="Total Clicks" value={totalClicks.toLocaleString()} color="bg-blue-50 text-blue-600" />
-        <StatCard icon={ShoppingCart} label="Conversions" value={totalConversions} sub={totalClicks ? `${((totalConversions/totalClicks)*100).toFixed(1)}% rate` : ""} color="bg-green-50 text-green-600" />
-        <StatCard icon={DollarSign} label="Pending Payout" value={formatCurrency(pendingPayout)} sub={`${formatCurrency(totalEarned)} total earned`} color="bg-amber-50 text-amber-600" />
+        <StatCard icon={Link2} label={t("affiliate.activeLinks")} value={myLinks.filter(l => l.status === "active").length} color="bg-indigo-50 text-indigo-600" />
+        <StatCard icon={MousePointerClick} label={t("affiliate.totalClicks")} value={totalClicks.toLocaleString()} color="bg-blue-50 text-blue-600" />
+        <StatCard icon={ShoppingCart} label={t("affiliate.conversions")} value={totalConversions} sub={totalClicks ? `${((totalConversions/totalClicks)*100).toFixed(1)}% ${t("affiliate.rateSuffix")}` : ""} color="bg-green-50 text-green-600" />
+        <StatCard icon={DollarSign} label={t("affiliate.pendingPayout")} value={formatCurrency(pendingPayout)} sub={t("affiliate.totalEarnedSub", { amount: formatCurrency(totalEarned) })} color="bg-amber-50 text-amber-600" />
       </div>
 
       <Tabs defaultValue="links" className="w-full">
@@ -421,7 +424,7 @@ export default function Affiliate() {
                 <div className="text-center py-16 border-2 border-dashed border-slate-200 rounded-2xl">
                   <Link2 className="w-10 h-10 text-slate-300 mx-auto mb-3" />
                   <p className="text-sm font-semibold text-slate-600">{t("affiliate.noLinks")}</p>
-                  <p className="text-xs text-slate-400 mt-1">Pick a product from the right to create your first link</p>
+                  <p className="text-xs text-slate-400 mt-1">{t("affiliate.pickProduct")}</p>
                 </div>
               ) : (
                 myLinks.map(link => {
@@ -482,14 +485,14 @@ export default function Affiliate() {
                 <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 mb-4">
                   <div className="flex items-center gap-2 mb-1.5">
                     <Zap className="w-4 h-4 text-amber-600" />
-                    <p className="text-sm font-bold text-amber-900">List Your Products</p>
+                    <p className="text-sm font-bold text-amber-900">{t("affiliate.listYourProducts")}</p>
                   </div>
                   <p className="text-xs text-amber-700 leading-relaxed mb-3">
-                    Only products from **Elite vendors** are shown in the affiliate marketplace. Upgrade your plan to let others promote your products.
+                    {t("affiliate.eliteOnlyDesc")}
                   </p>
                   <Link to={createPageUrl("MyStore") + "?tab=subscription"}>
                     <Button size="sm" className="w-full bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-[11px] h-8">
-                      Upgrade to Elite
+                      {t("affiliate.upgradeToElite")}
                     </Button>
                   </Link>
                 </div>
@@ -503,7 +506,7 @@ export default function Affiliate() {
                   <Input
                     value={search}
                     onChange={e => setSearch(e.target.value)}
-                    placeholder="Search products..."
+                    placeholder={t("affiliate.searchProducts")}
                     className="pl-8 h-8 text-xs rounded-xl"
                   />
                 </div>
@@ -511,7 +514,7 @@ export default function Affiliate() {
                   {productsLoading ? (
                     <div className="flex justify-center py-10"><Loader2 className="w-5 h-5 animate-spin text-slate-400" /></div>
                   ) : filteredProducts.length === 0 ? (
-                    <div className="text-center py-10 text-xs text-slate-400">No products found</div>
+                    <div className="text-center py-10 text-xs text-slate-400">{t("affiliate.noProductsFound")}</div>
                   ) : (
                     filteredProducts.map(product => {
                       const productId = product._id || product.id;
@@ -531,7 +534,7 @@ export default function Affiliate() {
                           <div className="flex-1 min-w-0">
                             <p className="text-xs font-semibold text-slate-800 line-clamp-2">{product.title}</p>
                             <p className="text-xs text-indigo-600 font-bold">{formatCurrency(product.price)}</p>
-                            <p className="text-[10px] text-slate-400">{product.affiliate_commission_pct || 10}% commission</p>
+                            <p className="text-[10px] text-slate-400">{t("affiliate.commissionLabel", { pct: product.affiliate_commission_pct || 10 })}</p>
                           </div>
                           {pendingProductId === productId ? (
                             <Loader2 className="w-4 h-4 text-indigo-400 animate-spin shrink-0" />
@@ -558,15 +561,15 @@ export default function Affiliate() {
                   <Trophy className="w-6 h-6 text-amber-500" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-slate-900">Affiliate Leaderboard</h2>
-                  <p className="text-sm text-slate-500">Top performers based on commissions earned</p>
+                  <h2 className="text-xl font-bold text-slate-900">{t("affiliate.leaderboardTitle")}</h2>
+                  <p className="text-sm text-slate-500">{t("affiliate.leaderboardSubtitle")}</p>
                 </div>
               </div>
               <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl self-start sm:self-auto">
                 {[
-                  { value: "week", label: "This Week" },
-                  { value: "month", label: "This Month" },
-                  { value: "all", label: "All Time" },
+                  { value: "week", label: t("affiliate.thisWeek") },
+                  { value: "month", label: t("affiliate.thisMonth") },
+                  { value: "all", label: t("affiliate.allTime") },
                 ].map(opt => (
                   <button
                     key={opt.value}
@@ -591,8 +594,8 @@ export default function Affiliate() {
               ) : !leaderboardData?.leaderboard?.length ? (
                 <div className="text-center py-16 border-2 border-dashed border-slate-200 rounded-2xl">
                   <Trophy className="w-10 h-10 text-slate-200 mx-auto mb-3" />
-                  <p className="text-sm font-semibold text-slate-600">No data yet for this period</p>
-                  <p className="text-xs text-slate-400 mt-1">Share your affiliate links to appear on the leaderboard!</p>
+                  <p className="text-sm font-semibold text-slate-600">{t("affiliate.noDataYet")}</p>
+                  <p className="text-xs text-slate-400 mt-1">{t("affiliate.noDataDesc")}</p>
                 </div>
               ) : (
                 <>
@@ -608,11 +611,11 @@ export default function Affiliate() {
                     <div className="mt-4 p-4 bg-indigo-50 rounded-2xl border border-indigo-100 flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-black text-xs shrink-0">
-                          YOU
+                          {t("affiliate.youBadge")}
                         </div>
                         <div>
-                          <p className="text-sm font-bold text-indigo-900">Your Current Rank</p>
-                          <p className="text-xs text-indigo-500">Keep sharing to climb higher!</p>
+                          <p className="text-sm font-bold text-indigo-900">{t("affiliate.yourRank")}</p>
+                          <p className="text-xs text-indigo-500">{t("affiliate.keepSharing")}</p>
                         </div>
                       </div>
                       <div className="text-right">
@@ -625,11 +628,11 @@ export default function Affiliate() {
                     <div className="mt-4 p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 font-black text-xs shrink-0">
-                          YOU
+                          {t("affiliate.youBadge")}
                         </div>
                         <div>
-                          <p className="text-sm font-bold text-slate-700">Not ranked yet</p>
-                          <p className="text-xs text-slate-400">Generate affiliate links and make sales to appear here!</p>
+                          <p className="text-sm font-bold text-slate-700">{t("affiliate.notRanked")}</p>
+                          <p className="text-xs text-slate-400">{t("affiliate.notRankedDesc")}</p>
                         </div>
                       </div>
                     </div>
@@ -644,17 +647,17 @@ export default function Affiliate() {
           <div className="space-y-6">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h2 className="text-xl font-bold text-slate-900">Marketing Assets</h2>
-                <p className="text-sm text-slate-500">Ready-to-use templates — preview, copy, and customise with your affiliate link.</p>
+                <h2 className="text-xl font-bold text-slate-900">{t("affiliate.marketingAssets")}</h2>
+                <p className="text-sm text-slate-500">{t("affiliate.assetsSubtitle")}</p>
               </div>
               <Badge className="bg-indigo-100 text-indigo-700 border-0 text-xs font-bold shrink-0 mt-1">
-                {MARKETING_ASSETS.length} templates
+                {t("affiliate.templatesCount", { count: MARKETING_ASSETS.length })}
               </Badge>
             </div>
             <div className="bg-amber-50 border border-amber-100 rounded-2xl px-4 py-3 flex items-center gap-3">
               <Zap className="w-4 h-4 text-amber-600 shrink-0" />
               <p className="text-xs text-amber-800 font-medium">
-                Replace <code className="font-mono bg-amber-100 px-1 py-0.5 rounded text-amber-900">{"{YOUR_LINK}"}</code> in each template with your personal affiliate link from the Links tab.
+                {t("affiliate.replaceLinkHint")}
               </p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

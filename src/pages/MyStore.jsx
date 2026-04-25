@@ -338,8 +338,8 @@ export default function MyStore() {
         <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center mx-auto mb-6">
           <Store className="w-9 h-9 text-indigo-500" />
         </div>
-        <h1 className="text-2xl font-bold text-slate-900 mb-2">Create Your Store</h1>
-        <p className="text-slate-500 mb-8">Start selling on Aicon X by setting up your store</p>
+        <h1 className="text-2xl font-bold text-slate-900 mb-2">{t("store.createStoreTitle")}</h1>
+        <p className="text-slate-500 mb-8">{t("store.createStoreSubtitle")}</p>
 
         <Dialog open={showCreateStore} onOpenChange={setShowCreateStore}>
           <DialogTrigger asChild>
@@ -348,7 +348,7 @@ export default function MyStore() {
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl">
-            <DialogHeader><DialogTitle>Create Your Store</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>{t("store.createStoreTitle")}</DialogTitle></DialogHeader>
             <Tabs defaultValue="general" className="w-full">
               <TabsList className="grid grid-cols-3 mb-4">
                 <TabsTrigger value="general">Basic Info</TabsTrigger>
