@@ -41,6 +41,7 @@ function ChatMsg({ msg, isNew }) {
 }
 
 function ProductPill({ product, currentUser }) {
+  const { t } = useTranslation();
   const [added, setAdded] = useState(false);
   const queryClient = useQueryClient();
   const addMutation = useMutation({
@@ -64,11 +65,11 @@ function ProductPill({ product, currentUser }) {
         <p className="text-indigo-300 text-xs font-bold">{formatCurrency(product.price)}</p>
       </div>
       <button
-        onClick={() => currentUser ? addMutation.mutate() : toast.error("Sign in to buy")}
+        onClick={() => currentUser ? addMutation.mutate() : toast.error(t("live.signInToBuy"))}
         disabled={addMutation.isPending}
         className={`shrink-0 px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all ${added ? "bg-green-500 text-white" : "bg-white text-slate-900 hover:bg-indigo-50"}`}
       >
-        {addMutation.isPending ? "..." : added ? "✓ Added" : "Buy Now"}
+        {addMutation.isPending ? "..." : added ? t("live.added") : t("live.buyNow")}
       </button>
     </motion.div>
   );
@@ -76,6 +77,7 @@ function ProductPill({ product, currentUser }) {
 
 // ========== VIEWER ==========
 function LiveStreamViewer({ session: initialSession, onBack }) {
+  const { t } = useTranslation();
   const [chatInput, setChatInput] = useState("");
   const [guestName, setGuestName] = useState("");
   const [guestNameInput, setGuestNameInput] = useState("");
@@ -126,7 +128,7 @@ function LiveStreamViewer({ session: initialSession, onBack }) {
       setLikeCount(session.likes || 0);
       
       if (session.status === 'ended' || session.status === 'completed') {
-        toast.info("This live stream has ended.");
+        toast.info(t("live.streamEnded"));
         onBack();
       }
     }
@@ -163,7 +165,7 @@ function LiveStreamViewer({ session: initialSession, onBack }) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["followStatus", session.host_username] });
-      toast.success(`Following ${session.host_name}`);
+      toast.success(t("live.followingUser", { name: session.host_name }));
     }
   });
 
@@ -177,7 +179,7 @@ function LiveStreamViewer({ session: initialSession, onBack }) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["followStatus", session.host_username] });
-      toast.info(`Unfollowed ${session.host_name}`);
+      toast.info(t("live.unfollowedUser", { name: session.host_name }));
     }
   });
 
@@ -313,8 +315,8 @@ function LiveStreamViewer({ session: initialSession, onBack }) {
               <button 
                 onClick={() => {
                   if (!currentUser) {
-                    toast.info("Sign in to follow this vendor", {
-                      action: { label: "Sign In", onClick: () => window.location.href = "/login" }
+                    toast.info(t("live.signInToFollow"), {
+                      action: { label: t("live.signIn"), onClick: () => window.location.href = "/login" }
                     });
                     return;
                   }
@@ -332,7 +334,7 @@ function LiveStreamViewer({ session: initialSession, onBack }) {
               >
                 {followMutation.isPending || unfollowMutation.isPending 
                   ? "..." 
-                  : !currentUser ? "Follow" : isFollowing ? "Following" : isFollowedBy ? "Follow Back" : "Follow"}
+                  : !currentUser ? t("live.follow") : isFollowing ? t("live.following") : isFollowedBy ? t("live.followBack") : t("live.follow")}
               </button>
             )}
           </div>
@@ -356,7 +358,7 @@ function LiveStreamViewer({ session: initialSession, onBack }) {
           <button 
             onClick={() => {
               navigator.clipboard.writeText(window.location.href);
-              toast.success("Link copied to clipboard!");
+              toast.success(t("live.linkCopied"));
             }}
             className="w-12 h-12 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center hover:bg-black/60 transition-colors"
           >
@@ -407,14 +409,14 @@ function LiveStreamViewer({ session: initialSession, onBack }) {
               className="px-3 pb-2 shrink-0"
             >
               <div className="bg-indigo-900/80 border border-indigo-500/40 rounded-2xl p-3">
-                <p className="text-white text-xs font-semibold mb-2">What should we call you?</p>
+                <p className="text-white text-xs font-semibold mb-2">{t("live.guestNamePrompt")}</p>
                 <div className="flex gap-2">
                   <Input
                     autoFocus
                     value={guestNameInput}
                     onChange={e => setGuestNameInput(e.target.value)}
                     onKeyDown={e => e.key === "Enter" && confirmGuestName()}
-                    placeholder="Enter a display name..."
+                    placeholder={t("live.enterDisplayName")}
                     maxLength={30}
                     className="bg-white/10 border-white/20 text-white placeholder:text-slate-400 text-xs rounded-xl h-8 flex-1"
                   />
@@ -422,11 +424,11 @@ function LiveStreamViewer({ session: initialSession, onBack }) {
                     onClick={confirmGuestName}
                     className="px-3 h-8 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold shrink-0 transition-colors"
                   >
-                    Join
+                    {t("live.join")}
                   </button>
                 </div>
                 <p className="text-slate-400 text-[10px] mt-1.5">
-                  Or <a href="/login" className="text-indigo-400 hover:text-indigo-300 underline">sign in</a> for your full profile
+                  {t("live.orText")} <a href="/login" className="text-indigo-400 hover:text-indigo-300 underline">{t("live.signIn")}</a> {t("live.forYourProfile")}
                 </p>
               </div>
             </motion.div>
@@ -438,7 +440,7 @@ function LiveStreamViewer({ session: initialSession, onBack }) {
             value={chatInput}
             onChange={e => setChatInput(e.target.value)}
             onKeyDown={e => e.key === "Enter" && sendMessage()}
-            placeholder={!currentUser && !guestName ? "Join chat — tap Send to set your name" : "Say something..."}
+            placeholder={!currentUser && !guestName ? t("live.joinChatHint") : t("live.typePlaceholder")}
             className="bg-white/10 border-white/20 text-white placeholder:text-slate-400 text-sm rounded-xl h-9"
           />
           <button
@@ -456,6 +458,7 @@ function LiveStreamViewer({ session: initialSession, onBack }) {
 
 // ========== VENDOR BROADCASTER ==========
 function VendorBroadcast({ onClose, currentUser, store }) {
+  const { t } = useTranslation();
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("fashion");
   const [isScheduled, setIsScheduled] = useState(false);
@@ -566,17 +569,17 @@ function VendorBroadcast({ onClose, currentUser, store }) {
     },
     onSuccess: (sess) => {
       if (isScheduled) {
-        toast.success("Stream scheduled successfully!");
+        toast.success(t("live.streamScheduled"));
         onClose();
       } else {
         setSession(sess);
         setIsLive(true);
-        toast.success("You are live! 🔴");
+        toast.success(t("live.youAreLive"));
       }
       queryClient.invalidateQueries({ queryKey: ["liveSessions"] });
     },
     onError: () => {
-      toast.error("Failed to create live session — please try again");
+      toast.error(t("live.failedToCreateSession"));
     }
   });
 
@@ -584,12 +587,12 @@ function VendorBroadcast({ onClose, currentUser, store }) {
     mutationFn: () => liveSessionsAPI.end(session.id),
     onSuccess: () => {
       setIsLive(false);
-      toast.success("Stream ended");
+      toast.success(t("live.streamEndedSuccess"));
       onClose();
       queryClient.invalidateQueries({ queryKey: ["liveSessions"] });
     },
     onError: () => {
-      toast.error("Failed to end stream — please try again");
+      toast.error(t("live.failedToEndStream"));
     }
   });
 
@@ -601,10 +604,10 @@ function VendorBroadcast({ onClose, currentUser, store }) {
     },
     onSuccess: (newPinned) => {
       setPinnedProducts(newPinned);
-      toast.success("Product pinned!");
+      toast.success(t("live.productPinned"));
     },
     onError: () => {
-      toast.error("Failed to pin product");
+      toast.error(t("live.failedToPin"));
     }
   });
 
@@ -614,7 +617,7 @@ function VendorBroadcast({ onClose, currentUser, store }) {
       if (session) await liveSessionsAPI.update(session.id, { pinned_products: newPinned });
       setPinnedProducts(newPinned);
     } catch (e) {
-      toast.error("Failed to unpin product");
+      toast.error(t("live.failedToUnpin"));
     }
   };
 
@@ -642,7 +645,7 @@ function VendorBroadcast({ onClose, currentUser, store }) {
         })
         .catch(err => {
           console.error("Error accessing camera:", err);
-          toast.error("Could not access camera for streaming");
+          toast.error(t("live.cameraError"));
         });
     }
     return () => {
@@ -712,7 +715,7 @@ function VendorBroadcast({ onClose, currentUser, store }) {
             </div>
             {isLive && (
               <Button onClick={() => endLiveMutation.mutate()} variant="destructive" size="sm" className="rounded-xl text-xs">
-                End Stream
+                {t("live.endStream")}
               </Button>
             )}
           </div>
@@ -727,7 +730,7 @@ function VendorBroadcast({ onClose, currentUser, store }) {
                     <p className="text-white text-xs font-semibold truncate">{p.title}</p>
                     <p className="text-indigo-300 text-xs font-bold">{formatCurrency(p.price)}</p>
                   </div>
-                  <span className="text-xs bg-white text-slate-900 font-bold px-2 py-1 rounded-lg">Buy Now</span>
+                  <span className="text-xs bg-white text-slate-900 font-bold px-2 py-1 rounded-lg">{t("live.buyNow")}</span>
                   <button onClick={() => unpinProduct(p.id)} className="shrink-0 w-6 h-6 bg-red-500/80 rounded-lg flex items-center justify-center">
                     <X className="w-3 h-3 text-white" />
                   </button>
@@ -742,13 +745,13 @@ function VendorBroadcast({ onClose, currentUser, store }) {
       <div className="w-full lg:w-80 bg-slate-900 border-l border-white/10 flex flex-col overflow-hidden" style={{ maxHeight: "100vh" }}>
         {!isLive ? (
           <div className="p-5 flex flex-col gap-4">
-            <h2 className="text-white font-bold text-lg">Start a Live Stream</h2>
+            <h2 className="text-white font-bold text-lg">{t("live.startLiveStream")}</h2>
             <div>
-              <label className="text-slate-400 text-xs mb-1 block">Stream Title</label>
-              <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="What are you showing today?" className="bg-white/10 border-white/20 text-white placeholder:text-slate-400 rounded-xl" />
+              <label className="text-slate-400 text-xs mb-1 block">{t("live.streamTitle")}</label>
+              <Input value={title} onChange={e => setTitle(e.target.value)} placeholder={t("live.whatAreYouShowing")} className="bg-white/10 border-white/20 text-white placeholder:text-slate-400 rounded-xl" />
             </div>
             <div>
-              <label className="text-slate-400 text-xs mb-1 block">Category</label>
+              <label className="text-slate-400 text-xs mb-1 block">{t("store.category")}</label>
               <Select value={category} onValueChange={setCategory}>
                 <SelectTrigger className="bg-white/10 border-white/20 text-white rounded-xl">
                   <SelectValue />
@@ -763,7 +766,7 @@ function VendorBroadcast({ onClose, currentUser, store }) {
 
             <div className="flex flex-col gap-2 p-3 bg-white/5 rounded-2xl border border-white/10">
               <div className="flex items-center justify-between">
-                <label className="text-white text-xs font-semibold">Schedule for later</label>
+                <label className="text-white text-xs font-semibold">{t("live.scheduleForLater")}</label>
                 <input 
                   type="checkbox" 
                   checked={isScheduled} 
@@ -773,7 +776,7 @@ function VendorBroadcast({ onClose, currentUser, store }) {
               </div>
               {isScheduled && (
                 <div className="mt-2 animate-in fade-in slide-in-from-top-2 duration-300">
-                  <label className="text-slate-400 text-[10px] mb-1 block uppercase font-bold tracking-wider">Date & Time</label>
+                  <label className="text-slate-400 text-[10px] mb-1 block uppercase font-bold tracking-wider">{t("live.dateTime")}</label>
                   <Input 
                     type="datetime-local" 
                     value={scheduledDate} 
@@ -797,14 +800,14 @@ function VendorBroadcast({ onClose, currentUser, store }) {
               ) : (
                 <Radio className="w-5 h-5 mr-2" />
               )}
-              {isScheduled ? "Schedule Stream" : "Go Live Now"}
+              {isScheduled ? t("live.scheduleStream") : t("live.goLiveNow")}
             </Button>
           </div>
         ) : (
           <>
             {/* Pin Products */}
             <div className="p-3 border-b border-white/10 shrink-0">
-              <p className="text-white text-xs font-semibold mb-2 flex items-center gap-1.5"><Pin className="w-3.5 h-3.5" /> Pin Products to Stream</p>
+              <p className="text-white text-xs font-semibold mb-2 flex items-center gap-1.5"><Pin className="w-3.5 h-3.5" /> {t("live.pinProductsToStream")}</p>
               <div className="max-h-40 overflow-y-auto space-y-1">
                 {myProducts.slice(0, 10).map(p => {
                   const isPinned = pinnedProducts.some(pp => pp.id === p.id);
@@ -830,14 +833,14 @@ function VendorBroadcast({ onClose, currentUser, store }) {
             {/* Live Chat */}
             <div className="p-2.5 border-b border-white/10 shrink-0">
               <p className="text-slate-400 text-xs font-semibold mb-1.5 flex items-center gap-1">
-                <MessageCircleIcon className="w-3.5 h-3.5" /> Live Chat
+                <MessageCircleIcon className="w-3.5 h-3.5" /> {t("live.chat")}
               </p>
             </div>
             <div className="flex-1 overflow-y-auto p-2.5 space-y-1.5 min-h-0">
               {liveChat.map((msg, i) => (
                 <ChatMsg key={msg.id || i} msg={msg} />
               ))}
-              {liveChat.length === 0 && <p className="text-slate-500 text-xs text-center py-4">Waiting for viewers...</p>}
+              {liveChat.length === 0 && <p className="text-slate-500 text-xs text-center py-4">{t("live.waitingForViewers")}</p>}
               <div ref={chatEndRef} />
             </div>
             <div className="p-2.5 border-t border-white/10 flex gap-2 shrink-0">
@@ -845,7 +848,7 @@ function VendorBroadcast({ onClose, currentUser, store }) {
                 value={chatInput}
                 onChange={e => setChatInput(e.target.value)}
                 onKeyDown={e => e.key === "Enter" && chatInput.trim() && sendHostMessage.mutate()}
-                placeholder="Reply to viewers..."
+                placeholder={t("live.replyToViewers")}
                 className="bg-white/10 border-white/20 text-white placeholder:text-slate-400 text-xs rounded-xl h-8"
               />
               <button onClick={() => chatInput.trim() && sendHostMessage.mutate()} className="w-8 h-8 rounded-xl bg-indigo-600 hover:bg-indigo-500 flex items-center justify-center shrink-0">
@@ -966,7 +969,7 @@ export default function Live() {
       <div className="flex gap-2 overflow-x-auto pb-2 mb-6 hide-scrollbar">
         {categories.map(cat => (
           <button key={cat} onClick={() => setFilter(cat)} className={`shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-all ${filter === cat ? "bg-slate-900 text-white" : "bg-white text-slate-600 border border-slate-200 hover:border-slate-300"}`}>
-            {cat.charAt(0).toUpperCase() + cat.slice(1)}
+            {t(`live.cat_${cat}`)}
           </button>
         ))}
       </div>
@@ -974,7 +977,7 @@ export default function Live() {
       {liveSessions.length > 0 ? (
         <section className="mb-8">
           <h2 className="text-lg font-bold text-slate-900 mb-3 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" /> Live Now
+            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" /> {t("live.liveNow")}
           </h2>
           <div className="space-y-4">
             {liveSessions.map(session => (
@@ -1001,7 +1004,7 @@ export default function Live() {
                     <p className="text-white font-semibold text-sm leading-tight">{session.title}</p>
                     <div className="flex items-center gap-3 mt-2">
                       <span className="flex items-center gap-1 text-white/70 text-[10px] font-medium"><Heart className="w-3 h-3" />{(session.likes || 0).toLocaleString()}</span>
-                      <span className="flex items-center gap-1 text-white/70 text-[10px] font-medium"><ShoppingBag className="w-3 h-3" />{(session.pinned_products || []).length} products</span>
+                      <span className="flex items-center gap-1 text-white/70 text-[10px] font-medium"><ShoppingBag className="w-3 h-3" />{(session.pinned_products || []).length} {t("live.products")}</span>
                     </div>
                   </div>
                 </div>
@@ -1015,13 +1018,13 @@ export default function Live() {
             <Radio className="w-6 h-6 text-slate-400" />
           </div>
           <p className="text-slate-500 font-medium">{t("live.noLiveSessions")}</p>
-          <p className="text-slate-400 text-xs mt-1">Check back later or explore other categories</p>
+          <p className="text-slate-400 text-xs mt-1">{t("live.checkBackLater")}</p>
         </div>
       )}
 
       {upcomingSessions.length > 0 && (
         <section>
-          <h2 className="text-lg font-bold text-slate-900 mb-3">Upcoming Streams</h2>
+          <h2 className="text-lg font-bold text-slate-900 mb-3">{t("live.upcomingStreams")}</h2>
           <div className="space-y-3">
             {upcomingSessions.map(session => (
               <div key={session.id} className="bg-white rounded-2xl border border-slate-100 p-4 flex gap-3 shadow-sm">
@@ -1040,13 +1043,13 @@ export default function Live() {
                   <div className="flex items-center gap-2.5 mt-2">
                     <span className="text-[10px] text-indigo-600 font-bold bg-indigo-50 px-2 py-0.5 rounded-md flex items-center gap-1">
                       <Radio className="w-2.5 h-2.5" />
-                      {session.scheduled_at ? new Date(session.scheduled_at).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Soon'}
+                      {session.scheduled_at ? new Date(session.scheduled_at).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : t("live.soon")}
                     </span>
-                    <span className="text-[10px] text-slate-400 font-medium">{(session.pinned_products || []).length} products</span>
+                    <span className="text-[10px] text-slate-400 font-medium">{(session.pinned_products || []).length} {t("live.products")}</span>
                   </div>
                 </div>
                 <button 
-                  onClick={() => toast.success(`Reminder set for ${session.title}!`)}
+                  onClick={() => toast.success(t("live.reminderSet", { title: session.title }))}
                   className="shrink-0 w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-100 flex items-center justify-center transition-colors self-center"
                 >
                   <Heart className="w-5 h-5" />
@@ -1064,9 +1067,9 @@ export default function Live() {
             <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-3">
               <Store className="w-7 h-7 text-white" />
             </div>
-            <DialogTitle className="text-white text-lg font-black mb-1">Start Your Live Journey</DialogTitle>
+            <DialogTitle className="text-white text-lg font-black mb-1">{t("live.startLiveJourney")}</DialogTitle>
             <DialogDescription className="text-white/80 text-sm">
-              Live shopping is available for store owners with a premium plan.
+              {t("live.liveShoppingForStoreOwners")}
             </DialogDescription>
           </div>
           <div className="p-6 space-y-4">
@@ -1076,8 +1079,8 @@ export default function Live() {
                   <Store className="w-4 h-4 text-indigo-600" />
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-slate-900">Step 1 — Create your store</p>
-                  <p className="text-xs text-slate-500 mt-0.5">Set up your store profile to start selling and going live.</p>
+                  <p className="text-sm font-bold text-slate-900">{t("live.step1CreateStore")}</p>
+                  <p className="text-xs text-slate-500 mt-0.5">{t("live.step1Desc")}</p>
                 </div>
               </div>
               <div className="flex items-start gap-3 p-3 bg-purple-50 rounded-2xl">
@@ -1085,18 +1088,18 @@ export default function Live() {
                   <Crown className="w-4 h-4 text-purple-600" />
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-slate-900">Step 2 — Upgrade to Elite</p>
-                  <p className="text-xs text-slate-500 mt-0.5">Unlock live shopping, affiliate programs, and more.</p>
+                  <p className="text-sm font-bold text-slate-900">{t("live.step2UpgradeElite")}</p>
+                  <p className="text-xs text-slate-500 mt-0.5">{t("live.step2Desc")}</p>
                 </div>
               </div>
             </div>
             <Link to={createPageUrl("MyStore")} onClick={() => setAccessDialog(null)}>
               <Button className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 rounded-2xl h-11 font-bold text-sm">
-                Create My Store
+                {t("live.createMyStore")}
               </Button>
             </Link>
             <button onClick={() => setAccessDialog(null)} className="w-full text-xs text-slate-400 hover:text-slate-600 transition-colors">
-              Maybe later
+              {t("live.maybeLater")}
             </button>
           </div>
         </DialogContent>
@@ -1109,33 +1112,33 @@ export default function Live() {
             <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-3">
               <Crown className="w-7 h-7 text-white" />
             </div>
-            <DialogTitle className="text-white text-lg font-black mb-1">Elite Plan Required</DialogTitle>
+            <DialogTitle className="text-white text-lg font-black mb-1">{t("live.elitePlanRequired")}</DialogTitle>
             <DialogDescription className="text-white/80 text-sm">
-              Live shopping is an exclusive feature for Elite vendors.
+              {t("live.eliteOnlyFeature")}
             </DialogDescription>
           </div>
           <div className="p-6 space-y-4">
             <div className="space-y-2.5">
               {[
-                { icon: Radio, label: "Unlimited live streams", color: "text-red-500 bg-red-50" },
-                { icon: Zap, label: "Affiliate marketplace access", color: "text-amber-500 bg-amber-50" },
-                { icon: ShoppingBag, label: "In-stream product pinning", color: "text-indigo-500 bg-indigo-50" },
-              ].map(({ icon: Icon, label, color }) => (
-                <div key={label} className="flex items-center gap-3 p-3 bg-slate-50 rounded-2xl">
+                { icon: Radio, tKey: "live.unlimitedLiveStreams", color: "text-red-500 bg-red-50" },
+                { icon: Zap, tKey: "live.affiliateMarketplaceAccess", color: "text-amber-500 bg-amber-50" },
+                { icon: ShoppingBag, tKey: "live.instreamProductPinning", color: "text-indigo-500 bg-indigo-50" },
+              ].map(({ icon: Icon, tKey, color }) => (
+                <div key={tKey} className="flex items-center gap-3 p-3 bg-slate-50 rounded-2xl">
                   <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${color}`}>
                     <Icon className="w-4 h-4" />
                   </div>
-                  <p className="text-sm font-semibold text-slate-800">{label}</p>
+                  <p className="text-sm font-semibold text-slate-800">{t(tKey)}</p>
                 </div>
               ))}
             </div>
             <Link to={createPageUrl("MyStore") + "?tab=subscription"} onClick={() => setAccessDialog(null)}>
               <Button className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 rounded-2xl h-11 font-bold text-sm">
-                <Crown className="w-4 h-4 mr-2" /> Upgrade to Elite
+                <Crown className="w-4 h-4 mr-2" /> {t("live.upgradeToElite")}
               </Button>
             </Link>
             <button onClick={() => setAccessDialog(null)} className="w-full text-xs text-slate-400 hover:text-slate-600 transition-colors">
-              Maybe later
+              {t("live.maybeLater")}
             </button>
           </div>
         </DialogContent>

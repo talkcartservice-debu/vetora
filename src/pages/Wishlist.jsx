@@ -29,7 +29,7 @@ export default function Wishlist() {
     mutationFn: (id) => wishlistAPI.remove(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["wishlist"] });
-      toast.success("Removed from wishlist");
+      toast.success(t("wishlist.removedFromWishlist"));
     },
   });
 
@@ -46,7 +46,7 @@ export default function Wishlist() {
     }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["cart"] });
-      toast.success("Added to cart!");
+      toast.success(t("wishlist.addedToCart"));
     },
   });
 
@@ -64,7 +64,7 @@ export default function Wishlist() {
       });
     }
     queryClient.invalidateQueries({ queryKey: ["cart"] });
-    toast.success(`${wishlistItems.length} items added to cart!`);
+    toast.success(t("wishlist.allAddedToCart", { count: wishlistItems.length }));
   };
 
   return (
@@ -106,7 +106,7 @@ export default function Wishlist() {
           description={t("wishlist.emptyDesc")}
           action={
             <Link to={createPageUrl("Marketplace")}>
-              <Button className="bg-indigo-600 hover:bg-indigo-700 rounded-xl">Browse Products</Button>
+              <Button className="bg-indigo-600 hover:bg-indigo-700 rounded-xl">{t("wishlist.browseProducts")}</Button>
             </Link>
           }
         />
@@ -153,7 +153,7 @@ export default function Wishlist() {
                         onClick={() => addToCartMutation.mutate(item)}
                         className="flex-1 flex items-center justify-center gap-1 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl transition-colors"
                       >
-                        <ShoppingCart className="w-3 h-3" /> Add to Cart
+                        <ShoppingCart className="w-3 h-3" /> {t("wishlist.addToCart")}
                       </button>
                       <button
                         onClick={() => removeMutation.mutate(item.product_id)}

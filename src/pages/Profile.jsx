@@ -27,6 +27,7 @@ import { toast } from "sonner";
 import { motion } from "framer-motion";
 
 function UserListModal({ open, onClose, title, users = [] }) {
+  const { t } = useTranslation();
   const [search, setSearch] = useState("");
   const filtered = users.filter(u => 
     u.display_name?.toLowerCase().includes(search.toLowerCase()) || 
@@ -48,7 +49,7 @@ function UserListModal({ open, onClose, title, users = [] }) {
             <input 
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Search users..."
+              placeholder={t("profile.searchUsers")}
               className="w-full bg-slate-50 border-none rounded-xl py-2 pl-9 pr-4 text-sm focus:ring-1 focus:ring-indigo-300 outline-none"
             />
           </div>
@@ -57,7 +58,7 @@ function UserListModal({ open, onClose, title, users = [] }) {
             {filtered.length === 0 ? (
               <div className="py-10 text-center">
                 <Users2 className="w-10 h-10 text-slate-100 mx-auto mb-2" />
-                <p className="text-xs text-slate-400">No users found</p>
+                <p className="text-xs text-slate-400">{t("profile.noUsersFound")}</p>
               </div>
             ) : filtered.map((u, i) => {
               const username = u.following_username || u.follower_username || u.username;
@@ -79,7 +80,7 @@ function UserListModal({ open, onClose, title, users = [] }) {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-slate-900 truncate">{name}</p>
                     {/* Hide email, maybe show bio snippet or followers instead */}
-                    <p className="text-[10px] text-slate-400 truncate">View profile</p>
+                    <p className="text-[10px] text-slate-400 truncate">{t("profile.viewProfile")}</p>
                   </div>
                 </Link>
               );
@@ -92,11 +93,11 @@ function UserListModal({ open, onClose, title, users = [] }) {
 }
 
 const STATUS_CONFIG = {
-  pending:   { icon: Clock,         color: "bg-amber-100 text-amber-700",  label: "Pending" },
-  confirmed: { icon: CheckCircle2,  color: "bg-blue-100 text-blue-700",    label: "Confirmed" },
-  processing:{ icon: Package,       color: "bg-indigo-100 text-indigo-700",label: "Processing" },
-  shipped:   { icon: Truck,         color: "bg-purple-100 text-purple-700",label: "Shipped" },
-  delivered: { icon: CheckCircle2,  color: "bg-green-100 text-green-700",  label: "Delivered" },
+  pending:   { icon: Clock,         color: "bg-amber-100 text-amber-700",  tKey: "orders.pending" },
+  confirmed: { icon: CheckCircle2,  color: "bg-blue-100 text-blue-700",    tKey: "orders.confirmed" },
+  processing:{ icon: Package,       color: "bg-indigo-100 text-indigo-700",tKey: "orders.processing" },
+  shipped:   { icon: Truck,         color: "bg-purple-100 text-purple-700",tKey: "orders.shipped" },
+  delivered: { icon: CheckCircle2,  color: "bg-green-100 text-green-700",  tKey: "orders.delivered" },
 };
 
 export default function Profile() {
@@ -256,7 +257,7 @@ export default function Profile() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["followStatus", currentUser?.username, targetUsername] });
       queryClient.invalidateQueries({ queryKey: ["followCounts", targetUsername] });
-      toast.success(isFollowing ? "Unfollowed" : "Following!");
+      toast.success(isFollowing ? t("profile.unfollowed") : t("profile.followingToast"));
     },
   });
 
@@ -325,7 +326,7 @@ export default function Profile() {
                       }`}
                     >
                       <CreditCard className="w-4 h-4" /> 
-                      <span>Manage Plan</span>
+                      <span>{t("profile.managePlan")}</span>
                       {subscription?.status === 'pending' && (
                         <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white animate-pulse" />
                       )}
@@ -374,7 +375,7 @@ export default function Profile() {
                       size="sm" 
                       className="rounded-xl border-slate-200 hover:bg-slate-50 h-9 px-4 font-semibold"
                     >
-                      <MessageCircle className="w-3.5 h-3.5 mr-1.5" /> Message
+                      <MessageCircle className="w-3.5 h-3.5 mr-1.5" /> {t("profile.message")}
                     </Button>
                   </Link>
                 </>
@@ -387,10 +388,10 @@ export default function Profile() {
             <div className="flex items-center gap-2 mb-0.5">
               <h1 className="text-xl font-extrabold text-slate-900 tracking-tight">{displayName}</h1>
               {isOwnProfile && (
-                <Badge variant="secondary" className="bg-indigo-50 text-indigo-600 border-0 text-[10px] font-bold py-0 px-1.5 h-4 uppercase tracking-wider">YOU</Badge>
+                <Badge variant="secondary" className="bg-indigo-50 text-indigo-600 border-0 text-[10px] font-bold py-0 px-1.5 h-4 uppercase tracking-wider">{t("profile.youBadge")}</Badge>
               )}
               {!isOwnProfile && isFollowedBy && (
-                <Badge variant="secondary" className="bg-slate-100 text-slate-500 border-0 text-[9px] font-bold py-0 px-1.5 h-4 uppercase tracking-wider">Follows you</Badge>
+                <Badge variant="secondary" className="bg-slate-100 text-slate-500 border-0 text-[9px] font-bold py-0 px-1.5 h-4 uppercase tracking-wider">{t("profile.followsYou")}</Badge>
               )}
             </div>
             <p className="text-xs text-slate-400 font-medium mb-2">@{profileUser?.username || profileUser?.display_name?.replace(/\s+/g, '_').toLowerCase() || profileUser?.email?.split('@')[0]}</p>
@@ -400,7 +401,7 @@ export default function Profile() {
               <div className="flex items-center gap-2 mb-2">
                 <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-amber-400 to-orange-500 text-white rounded-full shadow-sm hover:shadow-md transition-shadow cursor-default group">
                   <Sparkles className="w-3.5 h-3.5 group-hover:rotate-12 transition-transform" />
-                  <span className="text-xs font-bold">1,250 Aicon Points</span>
+                  <span className="text-xs font-bold">1,250 {t("profile.aiconPoints")}</span>
                 </div>
               </div>
             )}
@@ -462,20 +463,20 @@ export default function Profile() {
 
           <div className="mt-4 flex items-center gap-1.5 text-[10px] text-slate-400">
             <Calendar className="w-3 h-3" />
-            <span>Joined {profileUser?.created_at ? new Date(profileUser.created_at).toLocaleDateString(undefined, { month: 'long', year: 'numeric' }) : "Recently"}</span>
+            <span>{profileUser?.created_at ? t("profile.joinedOn", { date: new Date(profileUser.created_at).toLocaleDateString(undefined, { month: 'long', year: 'numeric' }) }) : t("profile.joinedRecently")}</span>
           </div>
 
           {/* Trust badges */}
           {isOwnProfile && (
             <div className="flex gap-2 mt-3 flex-wrap">
               {completedOrders >= 5 && (
-                <Badge className="bg-green-100 text-green-700 border-0 text-[10px] gap-1"><CheckCircle2 className="w-3 h-3" />Trusted Buyer</Badge>
+                <Badge className="bg-green-100 text-green-700 border-0 text-[10px] gap-1"><CheckCircle2 className="w-3 h-3" />{t("profile.trustedBuyer")}</Badge>
               )}
               {(store?.total_sales || 0) >= 10 && (
-                <Badge className="bg-amber-100 text-amber-700 border-0 text-[10px] gap-1"><Star className="w-3 h-3" />Top Vendor</Badge>
+                <Badge className="bg-amber-100 text-amber-700 border-0 text-[10px] gap-1"><Star className="w-3 h-3" />{t("profile.topVendor")}</Badge>
               )}
               {totalSpent >= 100 && (
-                <Badge className="bg-purple-100 text-purple-700 border-0 text-[10px] gap-1"><BadgeCheck className="w-3 h-3" />Power Shopper</Badge>
+                <Badge className="bg-purple-100 text-purple-700 border-0 text-[10px] gap-1"><BadgeCheck className="w-3 h-3" />{t("profile.powerShopper")}</Badge>
               )}
             </div>
           )}
@@ -491,10 +492,10 @@ export default function Profile() {
               <div className="flex items-center justify-between mb-3 px-1">
                 <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
                   <ShoppingBag className="w-4 h-4 text-indigo-500" />
-                  Store Highlights
+                  {t("profile.storeHighlights")}
                 </h2>
                 <Link to={createPageUrl("StoreDetail") + `?id=${store.id || store._id}`} className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider hover:underline">
-                  Visit Store
+                  {t("profile.visitStore")}
                 </Link>
               </div>
               <div className="flex gap-3 overflow-x-auto hide-scrollbar pb-2">
@@ -513,7 +514,7 @@ export default function Profile() {
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
                   <Star className="w-4 h-4 text-amber-500" />
-                  Recent Store Feedback
+                  {t("profile.recentStoreFeedback")}
                 </h2>
                 <span className="text-[10px] font-bold text-slate-400 bg-white px-2 py-0.5 rounded-full border border-slate-100 shadow-sm">
                   {vendorAvgRating.toFixed(1)} / 5.0
@@ -525,10 +526,10 @@ export default function Profile() {
                     <div className="flex items-center justify-between mb-1.5">
                       <div className="flex items-center gap-1.5">
                         <StarRating value={review.rating} readonly size={2.5} />
-                        <span className="text-[10px] font-bold text-slate-900">{review.reviewer_name || "Verified Buyer"}</span>
+                        <span className="text-[10px] font-bold text-slate-900">{review.reviewer_name || t("profile.verifiedBuyer")}</span>
                       </div>
                       <span className="text-[9px] text-slate-400 font-medium">
-                        {review.created_at ? new Date(review.created_at).toLocaleDateString() : "Recently"}
+                        {review.created_at ? new Date(review.created_at).toLocaleDateString() : t("profile.recently")}
                       </span>
                     </div>
                     <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed italic">"{review.content}"</p>
@@ -550,7 +551,7 @@ export default function Profile() {
           {isOwnProfile && (currentUser?.role === 'vendor' || profileUser?.role === 'vendor' || currentUser?.role === 'super_admin' || store) && (
             <TabsTrigger value="plan" className="flex-1 gap-1.5 text-indigo-600 font-bold border-indigo-100 data-[state=active]:bg-indigo-50/50 relative">
               <CreditCard className="w-4 h-4" />
-              <span>Plan</span>
+              <span>{t("profile.plan")}</span>
               {subscription?.status === 'pending' && (
                 <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
               )}
@@ -589,10 +590,10 @@ export default function Profile() {
           ) : (
             <div className="text-center py-16">
               <ShoppingBag className="w-10 h-10 text-slate-200 mx-auto mb-2" />
-              <p className="text-sm text-slate-400">No products listed yet</p>
+              <p className="text-sm text-slate-400">{t("profile.noProductsYet")}</p>
               {isOwnProfile && (
                 <Link to={createPageUrl("MyStore")}>
-                  <Button size="sm" className="mt-3 bg-indigo-600 hover:bg-indigo-700 rounded-xl">Open My Store</Button>
+                  <Button size="sm" className="mt-3 bg-indigo-600 hover:bg-indigo-700 rounded-xl">{t("profile.openMyStore")}</Button>
                 </Link>
               )}
             </div>
@@ -608,9 +609,9 @@ export default function Profile() {
           ) : buyerOrders.length === 0 ? (
             <div className="text-center py-16">
               <Package className="w-10 h-10 text-slate-200 mx-auto mb-2" />
-              <p className="text-sm text-slate-400">No orders yet</p>
+              <p className="text-sm text-slate-400">{t("orders.noOrders")}</p>
               <Link to={createPageUrl("Marketplace")}>
-                <Button size="sm" className="mt-3 bg-indigo-600 hover:bg-indigo-700 rounded-xl">Browse Marketplace</Button>
+                <Button size="sm" className="mt-3 bg-indigo-600 hover:bg-indigo-700 rounded-xl">{t("profile.browseMarketplace")}</Button>
               </Link>
             </div>
           ) : (
@@ -630,7 +631,7 @@ export default function Profile() {
                       <p className="text-sm font-semibold text-slate-800">{order.store_name || "Store"}</p>
                     </div>
                     <Badge className={`${cfg.color} border-0 text-[10px] gap-0.5`}>
-                      <StatusIcon className="w-3 h-3" />{cfg.label}
+                      <StatusIcon className="w-3 h-3" />{t(cfg.tKey)}
                     </Badge>
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
@@ -642,8 +643,8 @@ export default function Profile() {
                     ))}
                   </div>
                   <div className="mt-2 pt-2 border-t border-slate-50 flex justify-between">
-                    <span className="text-xs font-bold text-slate-800">Total: {formatCurrency(order.total)}</span>
-                    <Link to={createPageUrl("Orders")} className="text-xs text-indigo-500 font-semibold hover:underline">Details →</Link>
+                    <span className="text-xs font-bold text-slate-800">{t("orders.total")}: {formatCurrency(order.total)}</span>
+                    <Link to={createPageUrl("Orders")} className="text-xs text-indigo-500 font-semibold hover:underline">{t("profile.orderDetails")}</Link>
                   </div>
                 </motion.div>
               );
@@ -667,7 +668,7 @@ export default function Profile() {
           {!likedPostsLoading && likedPosts.length === 0 && (
             <div className="text-center py-16">
               <Heart className="w-10 h-10 text-slate-200 mx-auto mb-2" />
-              <p className="text-sm text-slate-400">No liked posts yet</p>
+              <p className="text-sm text-slate-400">{t("profile.noLikedPosts")}</p>
             </div>
           )}
         </div>
@@ -682,8 +683,8 @@ export default function Profile() {
         >
           <div className="mb-6 flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-bold text-slate-900">Subscription Management</h2>
-              <p className="text-sm text-slate-500">Manage your store plan and features</p>
+              <h2 className="text-lg font-bold text-slate-900">{t("profile.subscriptionMgmt")}</h2>
+              <p className="text-sm text-slate-500">{t("profile.managePlanDesc")}</p>
             </div>
           </div>
           <SubscriptionManager store={store} vendorUsername={currentUser?.username} />

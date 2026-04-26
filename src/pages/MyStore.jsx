@@ -351,19 +351,19 @@ export default function MyStore() {
             <DialogHeader><DialogTitle>{t("store.createStoreTitle")}</DialogTitle></DialogHeader>
             <Tabs defaultValue="general" className="w-full">
               <TabsList className="grid grid-cols-3 mb-4">
-                <TabsTrigger value="general">Basic Info</TabsTrigger>
-                <TabsTrigger value="payment">Payouts</TabsTrigger>
-                <TabsTrigger value="delivery">Delivery</TabsTrigger>
+                <TabsTrigger value="general">{t("store.basicInfo")}</TabsTrigger>
+                <TabsTrigger value="payment">{t("store.payouts")}</TabsTrigger>
+                <TabsTrigger value="delivery">{t("store.delivery")}</TabsTrigger>
               </TabsList>
 
               <div className="max-h-[60vh] overflow-y-auto pr-2">
                 <TabsContent value="general" className="space-y-4 pt-2">
-                  <Input placeholder="Store name *" value={storeForm.name} onChange={(e) => setStoreForm(p => ({ ...p, name: e.target.value }))} />
-                  <Textarea placeholder="Describe your store..." value={storeForm.description} onChange={(e) => setStoreForm(p => ({ ...p, description: e.target.value }))} />
+                  <Input placeholder={t("store.storeNamePlaceholder")} value={storeForm.name} onChange={(e) => setStoreForm(p => ({ ...p, name: e.target.value }))} />
+                  <Textarea placeholder={t("store.describeStorePlaceholder")} value={storeForm.description} onChange={(e) => setStoreForm(p => ({ ...p, description: e.target.value }))} />
                   
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <label className="text-xs font-medium text-slate-500 block mb-1">Store Logo</label>
+                      <label className="text-xs font-medium text-slate-500 block mb-1">{t("store.storeLogo")}</label>
                       <div className="flex items-center gap-3">
                         <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center overflow-hidden shrink-0">
                           {storeForm.logo_url ? (
@@ -382,14 +382,14 @@ export default function MyStore() {
                           />
                           <Button variant="outline" size="sm" className="w-full text-xs h-9 rounded-lg" disabled={uploadingAssets.logo}>
                             {uploadingAssets.logo ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : <Camera className="w-3.5 h-3.5 mr-1.5" />}
-                            {storeForm.logo_url ? 'Change' : 'Upload'}
+                            {storeForm.logo_url ? t("store.change") : t("store.upload")}
                           </Button>
                         </div>
                       </div>
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-xs font-medium text-slate-500 block mb-1">Store Banner</label>
+                      <label className="text-xs font-medium text-slate-500 block mb-1">{t("store.storeBanner")}</label>
                       <div className="flex items-center gap-3">
                         <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center overflow-hidden shrink-0">
                           {storeForm.banner_url ? (
@@ -408,7 +408,7 @@ export default function MyStore() {
                           />
                           <Button variant="outline" size="sm" className="w-full text-xs h-9 rounded-lg" disabled={uploadingAssets.banner}>
                             {uploadingAssets.banner ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : <Camera className="w-3.5 h-3.5 mr-1.5" />}
-                            {storeForm.banner_url ? 'Change' : 'Upload'}
+                            {storeForm.banner_url ? t("store.change") : t("store.upload")}
                           </Button>
                         </div>
                       </div>
@@ -424,37 +424,37 @@ export default function MyStore() {
                 </TabsContent>
 
                 <TabsContent value="payment" className="space-y-4 pt-2">
-                  <p className="text-xs text-slate-500 mb-2">Configure how you want to receive your earnings.</p>
+                  <p className="text-xs text-slate-500 mb-2">{t("store.configureEarnings")}</p>
                   <Select value={storeForm.payment_method} onValueChange={(v) => setStoreForm(p => ({ ...p, payment_method: v }))}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                      <SelectItem value="bank_transfer">{t("store.bankTransfer")}</SelectItem>
                       <SelectItem value="paypal">PayPal</SelectItem>
-                      <SelectItem value="mobile_money">Mobile Money (Paystack)</SelectItem>
+                      <SelectItem value="mobile_money">{t("store.mobileMoney")}</SelectItem>
                     </SelectContent>
                   </Select>
 
                   {storeForm.payment_method === 'bank_transfer' && (
                     <div className="space-y-3 border-l-2 border-indigo-100 pl-4">
-                      <Input placeholder="Bank Name" value={storeForm.bank_name} onChange={e => setStoreForm(p => ({ ...p, bank_name: e.target.value }))} />
-                      <Input placeholder="Account Holder Name" value={storeForm.bank_account_name} onChange={e => setStoreForm(p => ({ ...p, bank_account_name: e.target.value }))} />
+                      <Input placeholder={t("store.bankName")} value={storeForm.bank_name} onChange={e => setStoreForm(p => ({ ...p, bank_name: e.target.value }))} />
+                      <Input placeholder={t("store.accountHolderName")} value={storeForm.bank_account_name} onChange={e => setStoreForm(p => ({ ...p, bank_account_name: e.target.value }))} />
                       <div className="grid grid-cols-2 gap-3">
-                        <Input placeholder="Account #" value={storeForm.bank_account_number} onChange={e => setStoreForm(p => ({ ...p, bank_account_number: e.target.value }))} />
-                        <Input placeholder="Routing #" value={storeForm.routing_number} onChange={e => setStoreForm(p => ({ ...p, routing_number: e.target.value }))} />
+                        <Input placeholder={t("store.accountNumber")} value={storeForm.bank_account_number} onChange={e => setStoreForm(p => ({ ...p, bank_account_number: e.target.value }))} />
+                        <Input placeholder={t("store.routingNumber")} value={storeForm.routing_number} onChange={e => setStoreForm(p => ({ ...p, routing_number: e.target.value }))} />
                       </div>
                     </div>
                   )}
 
                   {storeForm.payment_method === 'paypal' && (
                     <div className="space-y-3 border-l-2 border-indigo-100 pl-4">
-                      <Input type="email" placeholder="PayPal Email Address" value={storeForm.paypal_email} onChange={e => setStoreForm(p => ({ ...p, paypal_email: e.target.value }))} />
+                      <Input type="email" placeholder={t("store.paypalEmail")} value={storeForm.paypal_email} onChange={e => setStoreForm(p => ({ ...p, paypal_email: e.target.value }))} />
                     </div>
                   )}
 
                   {storeForm.payment_method === 'mobile_money' && (
                     <div className="space-y-3 border-l-2 border-indigo-100 pl-4">
-                      <Input placeholder="Mobile Money Number (e.g. 07XXXXXXXX)" value={storeForm.mobile_money_number} onChange={e => setStoreForm(p => ({ ...p, mobile_money_number: e.target.value }))} />
-                      <p className="text-[10px] text-slate-400">Specify your registered mobile money number for Payouts.</p>
+                      <Input placeholder={t("store.mobileMoneyNumber")} value={storeForm.mobile_money_number} onChange={e => setStoreForm(p => ({ ...p, mobile_money_number: e.target.value }))} />
+                      <p className="text-[10px] text-slate-400">{t("store.mobileMoneyHint")}</p>
                     </div>
                   )}
                 </TabsContent>
@@ -463,8 +463,8 @@ export default function MyStore() {
                   <div className="space-y-4">
                     <div className="flex items-center justify-between p-3 rounded-xl border border-slate-100">
                       <div className="space-y-0.5">
-                        <Label>Shipping</Label>
-                        <p className="text-xs text-slate-500">Enable shipping for your products</p>
+                        <Label>{t("store.shipping")}</Label>
+                        <p className="text-xs text-slate-500">{t("store.shippingDesc")}</p>
                       </div>
                       <Switch 
                         checked={storeForm.delivery_settings.shipping_enabled} 
@@ -474,8 +474,8 @@ export default function MyStore() {
 
                     <div className="flex items-center justify-between p-3 rounded-xl border border-slate-100">
                       <div className="space-y-0.5">
-                        <Label>Local Delivery</Label>
-                        <p className="text-xs text-slate-500">Deliver products directly to local customers</p>
+                        <Label>{t("store.localDelivery")}</Label>
+                        <p className="text-xs text-slate-500">{t("store.localDeliveryDesc")}</p>
                       </div>
                       <Switch 
                         checked={storeForm.delivery_settings.delivery_enabled} 
@@ -487,7 +487,7 @@ export default function MyStore() {
                       <div className="space-y-3 border-l-2 border-indigo-100 pl-4 py-1">
                         <div className="grid grid-cols-2 gap-3">
                           <div className="space-y-1.5">
-                            <Label className="text-xs">Delivery Fee</Label>
+                            <Label className="text-xs">{t("store.deliveryFee")}</Label>
                             <Input 
                               type="number" 
                               value={storeForm.delivery_settings.delivery_fee} 
@@ -495,7 +495,7 @@ export default function MyStore() {
                             />
                           </div>
                           <div className="space-y-1.5">
-                            <Label className="text-xs">Radius (km)</Label>
+                            <Label className="text-xs">{t("store.radiusKm")}</Label>
                             <Input 
                               type="number" 
                               value={storeForm.delivery_settings.delivery_radius_km} 
@@ -505,7 +505,7 @@ export default function MyStore() {
                         </div>
                         <div className="grid grid-cols-2 gap-3">
                           <div className="space-y-1.5">
-                            <Label className="text-xs">Min Order</Label>
+                            <Label className="text-xs">{t("store.minOrder")}</Label>
                             <Input 
                               type="number" 
                               value={storeForm.delivery_settings.min_order_for_delivery} 
@@ -513,7 +513,7 @@ export default function MyStore() {
                             />
                           </div>
                           <div className="space-y-1.5">
-                            <Label className="text-xs">Free Delivery Over</Label>
+                            <Label className="text-xs">{t("store.freeDeliveryOver")}</Label>
                             <Input 
                               type="number" 
                               value={storeForm.delivery_settings.free_delivery_above} 
@@ -522,9 +522,9 @@ export default function MyStore() {
                           </div>
                         </div>
                         <div className="space-y-1.5">
-                          <Label className="text-xs">Est. Delivery Time</Label>
+                          <Label className="text-xs">{t("store.estDeliveryTime")}</Label>
                           <Input 
-                            placeholder="e.g. 30-60 mins" 
+                            placeholder={t("store.estDeliveryTimePlaceholder")} 
                             value={storeForm.delivery_settings.delivery_time_est} 
                             onChange={e => setStoreForm(p => ({ ...p, delivery_settings: { ...p.delivery_settings, delivery_time_est: e.target.value } }))} 
                           />
@@ -534,8 +534,8 @@ export default function MyStore() {
 
                     <div className="flex items-center justify-between p-3 rounded-xl border border-slate-100">
                       <div className="space-y-0.5">
-                        <Label>Store Pickup</Label>
-                        <p className="text-xs text-slate-500">Allow customers to pick up orders</p>
+                        <Label>{t("store.storePickup")}</Label>
+                        <p className="text-xs text-slate-500">{t("store.storePickupDesc")}</p>
                       </div>
                       <Switch 
                         checked={storeForm.delivery_settings.pickup_enabled} 
@@ -545,9 +545,9 @@ export default function MyStore() {
 
                     {storeForm.delivery_settings.pickup_enabled && (
                       <div className="space-y-1.5 border-l-2 border-indigo-100 pl-4 py-1">
-                        <Label className="text-xs">Pickup Instructions</Label>
+                        <Label className="text-xs">{t("store.pickupInstructions")}</Label>
                         <Textarea 
-                          placeholder="Where and when to pick up..." 
+                          placeholder={t("store.pickupInstructionsPlaceholder")} 
                           value={storeForm.delivery_settings.pickup_instructions} 
                           onChange={e => setStoreForm(p => ({ ...p, delivery_settings: { ...p.delivery_settings, pickup_instructions: e.target.value } }))} 
                         />
@@ -560,7 +560,7 @@ export default function MyStore() {
               <div className="mt-6">
                 <Button onClick={() => createStoreMutation.mutate()} disabled={!storeForm.name.trim() || createStoreMutation.isPending} className="w-full bg-indigo-600 hover:bg-indigo-700 h-11">
                   {createStoreMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                  Create My Store
+                  {t("store.createMyStore")}
                 </Button>
               </div>
             </Tabs>
@@ -626,32 +626,32 @@ export default function MyStore() {
                     }
                   })}
                 >
-                  Edit Store
+                  {t("store.editStore")}
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-2xl">
                 <DialogHeader><DialogTitle>{t("store.editStoreDetails")}</DialogTitle></DialogHeader>
                 <Tabs defaultValue="general" className="w-full">
                   <TabsList className="grid grid-cols-4 mb-4">
-                    <TabsTrigger value="general">General</TabsTrigger>
-                    <TabsTrigger value="payment">Payment</TabsTrigger>
-                    <TabsTrigger value="delivery">Delivery</TabsTrigger>
-                    <TabsTrigger value="additional">Additional</TabsTrigger>
+                    <TabsTrigger value="general">{t("store.general")}</TabsTrigger>
+                    <TabsTrigger value="payment">{t("store.payment")}</TabsTrigger>
+                    <TabsTrigger value="delivery">{t("store.delivery")}</TabsTrigger>
+                    <TabsTrigger value="additional">{t("store.additional")}</TabsTrigger>
                   </TabsList>
                   
                   <div className="max-h-[60vh] overflow-y-auto pr-2">
                     <TabsContent value="general" className="space-y-4 pt-2">
                       <div className="space-y-2">
-                        <label className="text-sm font-medium">Store Name</label>
-                        <Input placeholder="Store name" value={storeForm.name} onChange={(e) => setStoreForm(p => ({ ...p, name: e.target.value }))} />
+                        <label className="text-sm font-medium">{t("store.storeName")}</label>
+                        <Input placeholder={t("store.storeNamePlaceholder")} value={storeForm.name} onChange={(e) => setStoreForm(p => ({ ...p, name: e.target.value }))} />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-sm font-medium">Description</label>
-                        <Textarea placeholder="Describe your store..." value={storeForm.description} onChange={(e) => setStoreForm(p => ({ ...p, description: e.target.value }))} />
+                        <label className="text-sm font-medium">{t("store.description")}</label>
+                        <Textarea placeholder={t("store.describeStorePlaceholder")} value={storeForm.description} onChange={(e) => setStoreForm(p => ({ ...p, description: e.target.value }))} />
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <label className="text-sm font-medium">Store Logo</label>
+                          <label className="text-sm font-medium">{t("store.storeLogo")}</label>
                           <div className="flex items-center gap-3">
                             <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center overflow-hidden shrink-0">
                               {storeForm.logo_url ? (
@@ -670,7 +670,7 @@ export default function MyStore() {
                               />
                               <Button variant="outline" size="sm" className="w-full text-xs h-9 rounded-lg" disabled={uploadingAssets.logo}>
                                 {uploadingAssets.logo ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : <Camera className="w-3.5 h-3.5 mr-1.5" />}
-                                {storeForm.logo_url ? 'Change Logo' : 'Upload Logo'}
+                                {storeForm.logo_url ? t("store.changeLogo") : t("store.uploadLogo")}
                               </Button>
                             </div>
                           </div>
@@ -696,14 +696,14 @@ export default function MyStore() {
                               />
                               <Button variant="outline" size="sm" className="w-full text-xs h-9 rounded-lg" disabled={uploadingAssets.banner}>
                                 {uploadingAssets.banner ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : <Camera className="w-3.5 h-3.5 mr-1.5" />}
-                                {storeForm.banner_url ? 'Change Banner' : 'Upload Banner'}
+                                {storeForm.banner_url ? t("store.changeBanner") : t("store.uploadBanner")}
                               </Button>
                             </div>
                           </div>
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <label className="text-sm font-medium">Category</label>
+                        <label className="text-sm font-medium">{t("store.category")}</label>
                         <Select value={storeForm.category} onValueChange={(v) => setStoreForm(p => ({ ...p, category: v }))}>
                           <SelectTrigger><SelectValue /></SelectTrigger>
                           <SelectContent>
@@ -715,14 +715,14 @@ export default function MyStore() {
 
                     <TabsContent value="payment" className="space-y-4 pt-2">
                       <div className="space-y-2">
-                        <label className="text-sm font-medium">Default Payout Method</label>
+                        <label className="text-sm font-medium">{t("store.defaultPayoutMethod")}</label>
                         <Select value={storeForm.payment_method} onValueChange={(v) => setStoreForm(p => ({ ...p, payment_method: v }))}>
                           <SelectTrigger><SelectValue /></SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                            <SelectItem value="bank_transfer">{t("store.bankTransfer")}</SelectItem>
                             <SelectItem value="paypal">PayPal</SelectItem>
                             <SelectItem value="paystack">Paystack</SelectItem>
-                            <SelectItem value="mobile_money">Mobile Money (Paystack)</SelectItem>
+                            <SelectItem value="mobile_money">{t("store.mobileMoney")}</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -730,21 +730,21 @@ export default function MyStore() {
                       {storeForm.payment_method === 'bank_transfer' && (
                         <div className="space-y-4 border-l-2 border-indigo-100 pl-4 py-1 mt-4">
                           <div className="space-y-2">
-                            <label className="text-sm font-medium text-slate-600">Bank Name</label>
-                            <Input placeholder="e.g. Chase, Bank of America" value={storeForm.bank_name} onChange={e => setStoreForm(p => ({ ...p, bank_name: e.target.value }))} />
+                            <label className="text-sm font-medium text-slate-600">{t("store.bankName")}</label>
+                            <Input placeholder={t("store.bankNamePlaceholder")} value={storeForm.bank_name} onChange={e => setStoreForm(p => ({ ...p, bank_name: e.target.value }))} />
                           </div>
                           <div className="space-y-2">
-                            <label className="text-sm font-medium text-slate-600">Account Holder Name</label>
-                            <Input placeholder="Full name on account" value={storeForm.bank_account_name} onChange={e => setStoreForm(p => ({ ...p, bank_account_name: e.target.value }))} />
+                            <label className="text-sm font-medium text-slate-600">{t("store.accountHolderName")}</label>
+                            <Input placeholder={t("store.accountHolderNamePlaceholder")} value={storeForm.bank_account_name} onChange={e => setStoreForm(p => ({ ...p, bank_account_name: e.target.value }))} />
                           </div>
                           <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                              <label className="text-sm font-medium text-slate-600">Account Number</label>
-                              <Input placeholder="Account #" value={storeForm.bank_account_number} onChange={e => setStoreForm(p => ({ ...p, bank_account_number: e.target.value }))} />
+                              <label className="text-sm font-medium text-slate-600">{t("store.accountNumber")}</label>
+                              <Input placeholder={t("store.accountNumber")} value={storeForm.bank_account_number} onChange={e => setStoreForm(p => ({ ...p, bank_account_number: e.target.value }))} />
                             </div>
                             <div className="space-y-2">
-                              <label className="text-sm font-medium text-slate-600">Routing Number</label>
-                              <Input placeholder="Routing #" value={storeForm.routing_number} onChange={e => setStoreForm(p => ({ ...p, routing_number: e.target.value }))} />
+                              <label className="text-sm font-medium text-slate-600">{t("store.routingNumber")}</label>
+                              <Input placeholder={t("store.routingNumber")} value={storeForm.routing_number} onChange={e => setStoreForm(p => ({ ...p, routing_number: e.target.value }))} />
                             </div>
                           </div>
                         </div>
@@ -752,14 +752,14 @@ export default function MyStore() {
 
                       {storeForm.payment_method === 'paypal' && (
                         <div className="space-y-2 border-l-2 border-indigo-100 pl-4 py-1 mt-4">
-                          <label className="text-sm font-medium text-slate-600">PayPal Email Address</label>
+                          <label className="text-sm font-medium text-slate-600">{t("store.paypalEmail")}</label>
                           <Input type="email" placeholder="email@example.com" value={storeForm.paypal_email} onChange={e => setStoreForm(p => ({ ...p, paypal_email: e.target.value }))} />
                         </div>
                       )}
 
                       {storeForm.payment_method === 'mobile_money' && (
                         <div className="space-y-2 border-l-2 border-indigo-100 pl-4 py-1 mt-4">
-                          <label className="text-sm font-medium text-slate-600">Mobile Money Number</label>
+                          <label className="text-sm font-medium text-slate-600">{t("store.mobileMoneyNumber")}</label>
                           <Input placeholder="07XXXXXXXX" value={storeForm.mobile_money_number} onChange={e => setStoreForm(p => ({ ...p, mobile_money_number: e.target.value }))} />
                         </div>
                       )}
@@ -769,8 +769,8 @@ export default function MyStore() {
                       <div className="space-y-4">
                         <div className="flex items-center justify-between p-4 rounded-xl border border-slate-100 bg-slate-50/30">
                           <div className="space-y-1">
-                            <Label className="text-base">Shipping</Label>
-                            <p className="text-xs text-slate-500">Allow shipping for your products</p>
+                            <Label className="text-base">{t("store.shipping")}</Label>
+                            <p className="text-xs text-slate-500">{t("store.shippingDesc")}</p>
                           </div>
                           <Switch 
                             checked={storeForm.delivery_settings.shipping_enabled} 
@@ -780,8 +780,8 @@ export default function MyStore() {
 
                         <div className="flex items-center justify-between p-4 rounded-xl border border-slate-100 bg-slate-50/30">
                           <div className="space-y-1">
-                            <Label className="text-base">Local Delivery</Label>
-                            <p className="text-xs text-slate-500">Enable local delivery service</p>
+                            <Label className="text-base">{t("store.localDelivery")}</Label>
+                            <p className="text-xs text-slate-500">{t("store.localDeliveryDesc")}</p>
                           </div>
                           <Switch 
                             checked={storeForm.delivery_settings.delivery_enabled} 
@@ -793,7 +793,7 @@ export default function MyStore() {
                           <div className="space-y-4 border-l-2 border-indigo-100 pl-4 py-1">
                             <div className="grid grid-cols-2 gap-4">
                               <div className="space-y-2">
-                                <Label className="text-sm font-medium text-slate-600">Delivery Fee</Label>
+                                <Label className="text-sm font-medium text-slate-600">{t("store.deliveryFee")}</Label>
                                 <Input 
                                   type="number" 
                                   placeholder="0.00"
@@ -802,7 +802,7 @@ export default function MyStore() {
                                 />
                               </div>
                               <div className="space-y-2">
-                                <Label className="text-sm font-medium text-slate-600">Delivery Radius (km)</Label>
+                                <Label className="text-sm font-medium text-slate-600">{t("store.deliveryRadiusKm")}</Label>
                                 <Input 
                                   type="number" 
                                   placeholder="10"
@@ -813,7 +813,7 @@ export default function MyStore() {
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                               <div className="space-y-2">
-                                <Label className="text-sm font-medium text-slate-600">Min Order for Delivery</Label>
+                                <Label className="text-sm font-medium text-slate-600">{t("store.minOrderForDelivery")}</Label>
                                 <Input 
                                   type="number" 
                                   placeholder="0.00"
@@ -822,7 +822,7 @@ export default function MyStore() {
                                 />
                               </div>
                               <div className="space-y-2">
-                                <Label className="text-sm font-medium text-slate-600">Free Delivery Above</Label>
+                                <Label className="text-sm font-medium text-slate-600">{t("store.freeDeliveryAbove")}</Label>
                                 <Input 
                                   type="number" 
                                   placeholder="0.00"
@@ -832,9 +832,9 @@ export default function MyStore() {
                               </div>
                             </div>
                             <div className="space-y-2">
-                              <Label className="text-sm font-medium text-slate-600">Estimated Delivery Time</Label>
+                              <Label className="text-sm font-medium text-slate-600">{t("store.estDeliveryTime")}</Label>
                               <Input 
-                                placeholder="e.g. 24-48 hours or 30-60 mins" 
+                                placeholder={t("store.estDeliveryTimePlaceholder2")} 
                                 value={storeForm.delivery_settings.delivery_time_est} 
                                 onChange={e => setStoreForm(p => ({ ...p, delivery_settings: { ...p.delivery_settings, delivery_time_est: e.target.value } }))} 
                               />
@@ -844,8 +844,8 @@ export default function MyStore() {
 
                         <div className="flex items-center justify-between p-4 rounded-xl border border-slate-100 bg-slate-50/30">
                           <div className="space-y-1">
-                            <Label className="text-base">Store Pickup</Label>
-                            <p className="text-xs text-slate-500">Allow customers to pick up from your location</p>
+                            <Label className="text-base">{t("store.storePickup")}</Label>
+                            <p className="text-xs text-slate-500">{t("store.storePickupDesc2")}</p>
                           </div>
                           <Switch 
                             checked={storeForm.delivery_settings.pickup_enabled} 
@@ -855,9 +855,9 @@ export default function MyStore() {
 
                         {storeForm.delivery_settings.pickup_enabled && (
                           <div className="space-y-2 border-l-2 border-indigo-100 pl-4 py-1">
-                            <Label className="text-sm font-medium text-slate-600">Pickup Instructions</Label>
+                            <Label className="text-sm font-medium text-slate-600">{t("store.pickupInstructions")}</Label>
                             <Textarea 
-                              placeholder="Provide details on where and when customers can pick up their orders..." 
+                              placeholder={t("store.pickupInstructionsPlaceholder2")} 
                               className="min-h-[100px]"
                               value={storeForm.delivery_settings.pickup_instructions} 
                               onChange={e => setStoreForm(p => ({ ...p, delivery_settings: { ...p.delivery_settings, pickup_instructions: e.target.value } }))} 
@@ -870,20 +870,20 @@ export default function MyStore() {
                     <TabsContent value="additional" className="space-y-4 pt-2">
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <label className="text-sm font-medium">Phone Number</label>
+                          <label className="text-sm font-medium">{t("store.phoneNumber")}</label>
                           <Input placeholder="+1 234 567 890" value={storeForm.phone_number} onChange={(e) => setStoreForm(p => ({ ...p, phone_number: e.target.value }))} />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-sm font-medium">Website URL</label>
+                          <label className="text-sm font-medium">{t("store.websiteUrl")}</label>
                           <Input placeholder="https://example.com" value={storeForm.website_url} onChange={(e) => setStoreForm(p => ({ ...p, website_url: e.target.value }))} />
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <label className="text-sm font-medium">Store Address</label>
-                        <Input placeholder="Street, City, Country" value={storeForm.address} onChange={(e) => setStoreForm(p => ({ ...p, address: e.target.value }))} />
+                        <label className="text-sm font-medium">{t("store.storeAddress")}</label>
+                        <Input placeholder={t("store.storeAddressPlaceholder")} value={storeForm.address} onChange={(e) => setStoreForm(p => ({ ...p, address: e.target.value }))} />
                       </div>
                       <div className="space-y-3 pt-2">
-                        <label className="text-sm font-bold text-slate-800">Social Media Handles</label>
+                        <label className="text-sm font-bold text-slate-800">{t("store.socialMediaHandles")}</label>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div className="space-y-1">
                             <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Instagram</label>
@@ -941,7 +941,7 @@ export default function MyStore() {
                   <div className="mt-6">
                     <Button onClick={() => updateStoreMutation.mutate(storeForm)} disabled={!storeForm.name.trim() || updateStoreMutation.isPending} className="w-full bg-indigo-600 hover:bg-indigo-700 h-11">
                       {updateStoreMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                      Save All Changes
+                      {t("store.saveAllChanges")}
                     </Button>
                   </div>
                 </Tabs>
@@ -949,7 +949,7 @@ export default function MyStore() {
             </Dialog>
             <Link to={createPageUrl("StoreDetail") + `?id=${store.id || store._id}`}>
               <Button variant="outline" size="sm" className="rounded-xl">
-                <Eye className="w-4 h-4 mr-1.5" /> View Store
+                <Eye className="w-4 h-4 mr-1.5" /> {t("store.viewStore")}
               </Button>
             </Link>
           </div>
@@ -960,7 +960,7 @@ export default function MyStore() {
           <div className="mb-6 p-4 bg-indigo-50/50 rounded-2xl border border-indigo-100/50">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-bold text-indigo-900 flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4" /> Store Setup Progress
+                <CheckCircle2 className="w-4 h-4" /> {t("store.setupProgress")}
               </h3>
               <span className="text-[10px] font-bold text-indigo-600 bg-indigo-100 px-2 py-0.5 rounded-full uppercase tracking-wider">
                 {Math.round(
@@ -973,10 +973,10 @@ export default function MyStore() {
             </div>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               {[
-                { label: "Add logo", done: !!store.logo_url },
-                { label: "Describe store", done: !!store.description },
-                { label: "Add a product", done: products.length > 0 },
-                { label: "Payout method", done: !!store.payment_method },
+                { label: t("store.setupAddLogo"), done: !!store.logo_url },
+                { label: t("store.setupDescribeStore"), done: !!store.description },
+                { label: t("store.setupAddProduct"), done: products.length > 0 },
+                { label: t("store.setupPayoutMethod"), done: !!store.payment_method },
               ].map((step, i) => (
                 <div key={i} className={`flex items-center gap-2 p-2 rounded-xl border ${step.done ? 'bg-white/50 border-indigo-100 text-indigo-600' : 'bg-slate-50/50 border-slate-100 text-slate-400'}`}>
                   {step.done ? <CheckCircle2 className="w-3.5 h-3.5" /> : <div className="w-3.5 h-3.5 rounded-full border-2 border-slate-200" />}
@@ -1012,16 +1012,16 @@ export default function MyStore() {
           <TabsList className="bg-white border border-slate-100">
             <TabsTrigger value="products">{t("store.products")}</TabsTrigger>
             <TabsTrigger value="orders">{t("store.orders")}</TabsTrigger>
-            <TabsTrigger value="coupons">Coupons</TabsTrigger>
+            <TabsTrigger value="coupons">{t("store.coupons")}</TabsTrigger>
             <TabsTrigger value="analytics" className="gap-1.5">
               {t("store.analytics")} 
               {currentPlan === 'free' ? <Badge className="px-1 py-0 text-[8px] bg-indigo-100 text-indigo-600 border-0">Standard</Badge> : <Badge className="px-1 py-0 text-[8px] bg-amber-100 text-amber-600 border-0">Pro+</Badge>}
             </TabsTrigger>
             <TabsTrigger value="shipping" className="gap-1.5">
-              Shipping
+              {t("store.shipping")}
               {currentPlan === 'free' && <Badge className="px-1 py-0 text-[8px] bg-slate-100 text-slate-400 border-0">Pro+</Badge>}
             </TabsTrigger>
-            <TabsTrigger value="subscription">Plan</TabsTrigger>
+            <TabsTrigger value="subscription">{t("store.plan")}</TabsTrigger>
             <TabsTrigger value="finance">{t("store.finance")}</TabsTrigger>
           </TabsList>
         </Tabs>
@@ -1032,16 +1032,16 @@ export default function MyStore() {
               <Button 
                 onClick={() => {
                   setActiveTab("subscription");
-                  toast.error(`Subscription limit reached! Your ${currentPlan} plan allows up to ${limits.products === Infinity ? 'unlimited' : limits.products} products.`);
+                  toast.error(t("store.subscriptionLimitReached", { plan: currentPlan, limit: limits.products === Infinity ? t("store.unlimited") : limits.products }));
                 }}
                 className="bg-indigo-600 hover:bg-indigo-700 rounded-xl"
               >
-                <Plus className="w-4 h-4 mr-1.5" /> Add Product
+                <Plus className="w-4 h-4 mr-1.5" /> {t("store.addProduct")}
               </Button>
             ) : (
               <DialogTrigger asChild>
                 <Button className="bg-indigo-600 hover:bg-indigo-700 rounded-xl">
-                  <Plus className="w-4 h-4 mr-1.5" /> Add Product
+                  <Plus className="w-4 h-4 mr-1.5" /> {t("store.addProduct")}
                 </Button>
               </DialogTrigger>
             )}
@@ -1121,7 +1121,7 @@ export default function MyStore() {
                   className="w-full bg-indigo-600 hover:bg-indigo-700 h-11 rounded-xl font-bold"
                 >
                   {addProductMutation.isPending || uploading ? (
-                    <><Loader2 className="w-4 h-4 animate-spin mr-2" /> {uploading ? "Uploading media..." : "Adding product..."}</>
+                    <><Loader2 className="w-4 h-4 animate-spin mr-2" /> {uploading ? t("store.uploadingMedia") : t("store.addingProduct")}</>
                   ) : t("store.addProduct")}
                 </Button>
               </div>
@@ -1148,7 +1148,7 @@ export default function MyStore() {
                     <div className="flex items-center gap-2 mt-0.5">
                       <span className="text-sm font-bold text-indigo-600">{formatCurrency(product.price)}</span>
                       <Badge variant="secondary" className="text-[10px]">{product.status}</Badge>
-                      <span className="text-xs text-slate-400">Stock: {product.inventory_count || 0}</span>
+                      <span className="text-xs text-slate-400">{t("store.stock")}: {product.inventory_count || 0}</span>
                     </div>
                   </div>
                   <button onClick={() => deleteProductMutation.mutate(productId)} className="p-2 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-500 transition-colors">
@@ -1168,9 +1168,9 @@ export default function MyStore() {
              <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mx-auto mb-4">
                <Package className="w-8 h-8 text-slate-300" />
              </div>
-             <h3 className="text-lg font-bold text-slate-900 mb-2">Shipping Zones Restricted</h3>
-             <p className="text-slate-500 max-w-sm mx-auto mb-6">Upgrade your plan to manage custom shipping zones, set flat rates for different regions, and offer more flexible shipping options to your customers.</p>
-             <Button onClick={() => setActiveTab("subscription")} className="bg-indigo-600 hover:bg-indigo-700 rounded-xl">Upgrade Plan</Button>
+             <h3 className="text-lg font-bold text-slate-900 mb-2">{t("store.shippingZonesRestricted")}</h3>
+             <p className="text-slate-500 max-w-sm mx-auto mb-6">{t("store.shippingZonesRestrictedDesc")}</p>
+             <Button onClick={() => setActiveTab("subscription")} className="bg-indigo-600 hover:bg-indigo-700 rounded-xl">{t("store.upgradePlan")}</Button>
           </div>
         ) : (
           <ShippingZoneManager store={store} vendorUsername={currentUser?.username} plan={currentPlan} onUpgrade={() => setActiveTab("subscription")} />
@@ -1194,9 +1194,9 @@ export default function MyStore() {
              <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mx-auto mb-4">
                <Tag className="w-8 h-8 text-slate-300" />
              </div>
-             <h3 className="text-lg font-bold text-slate-900 mb-2">Coupons Restricted</h3>
-             <p className="text-slate-500 max-w-sm mx-auto mb-6">Upgrade your plan to create discount coupons, run promotional campaigns, and boost your sales with custom codes.</p>
-             <Button onClick={() => setActiveTab("subscription")} className="bg-indigo-600 hover:bg-indigo-700 rounded-xl">Upgrade Plan</Button>
+             <h3 className="text-lg font-bold text-slate-900 mb-2">{t("store.couponsRestricted")}</h3>
+             <p className="text-slate-500 max-w-sm mx-auto mb-6">{t("store.couponsRestrictedDesc")}</p>
+             <Button onClick={() => setActiveTab("subscription")} className="bg-indigo-600 hover:bg-indigo-700 rounded-xl">{t("store.upgradePlan")}</Button>
           </div>
         ) : (
           <CouponManager store={store} vendorUsername={currentUser?.username} />
@@ -1219,7 +1219,7 @@ export default function MyStore() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <Input 
-                placeholder="Search orders by buyer name or ID..."
+                placeholder={t("store.searchOrders")}
                 value={orderSearch}
                 onChange={(e) => setOrderSearch(e.target.value)}
                 className="pl-10 bg-white border-slate-100 rounded-2xl"
@@ -1229,11 +1229,11 @@ export default function MyStore() {
 
           <Tabs value={orderTab} onValueChange={setOrderTab} className="w-full">
             <TabsList className="bg-white border border-slate-100 w-full justify-start overflow-x-auto hide-scrollbar h-auto p-1">
-              <TabsTrigger value="all" className="rounded-xl px-4 py-2">All</TabsTrigger>
-              <TabsTrigger value="pending" className="rounded-xl px-4 py-2">Pending</TabsTrigger>
-              <TabsTrigger value="processing" className="rounded-xl px-4 py-2">Processing</TabsTrigger>
-              <TabsTrigger value="shipped" className="rounded-xl px-4 py-2">Shipped</TabsTrigger>
-              <TabsTrigger value="delivered" className="rounded-xl px-4 py-2">Delivered</TabsTrigger>
+              <TabsTrigger value="all" className="rounded-xl px-4 py-2">{t("store.all")}</TabsTrigger>
+              <TabsTrigger value="pending" className="rounded-xl px-4 py-2">{t("orders.pending")}</TabsTrigger>
+              <TabsTrigger value="processing" className="rounded-xl px-4 py-2">{t("orders.processing")}</TabsTrigger>
+              <TabsTrigger value="shipped" className="rounded-xl px-4 py-2">{t("orders.shipped")}</TabsTrigger>
+              <TabsTrigger value="delivered" className="rounded-xl px-4 py-2">{t("orders.delivered")}</TabsTrigger>
             </TabsList>
           </Tabs>
 
@@ -1250,7 +1250,7 @@ export default function MyStore() {
             });
 
             if (filtered.length === 0) {
-              return <div className="text-center py-16 text-slate-400">No orders found</div>;
+              return <div className="text-center py-16 text-slate-400">{t("store.noOrdersFound")}</div>;
             }
 
             return (
@@ -1291,8 +1291,8 @@ export default function MyStore() {
                                 {order.delivery_method === "pickup" ? <Package className="w-2.5 h-2.5" /> :
                                  order.delivery_method === "delivery" ? <Navigation className="w-2.5 h-2.5" /> :
                                  <Truck className="w-2.5 h-2.5" />}
-                                {order.delivery_method === "pickup" ? "Pickup" :
-                                 order.delivery_method === "delivery" ? "Delivery" : "Shipping"}
+                                {order.delivery_method === "pickup" ? t("store.pickup") :
+                                 order.delivery_method === "delivery" ? t("store.delivery") : t("store.shippingLabel")}
                               </Badge>
                             )}
                             <Badge className={`${
@@ -1329,7 +1329,7 @@ export default function MyStore() {
                             onClick={(e) => { e.stopPropagation(); setSelectedOrder(order); }}
                           >
                             <Info className="w-3 h-3" />
-                            Details
+                            {t("store.details")}
                           </Button>
                           <Button 
                             size="sm" 
@@ -1341,7 +1341,7 @@ export default function MyStore() {
                             }}
                           >
                             <MessageCircle className="w-3 h-3" />
-                            Chat
+                            {t("store.chat")}
                           </Button>
                         </div>
                       </div>

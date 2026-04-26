@@ -138,7 +138,7 @@ export default function Home() {
                   {t("home.trending")}
                 </h2>
                 <Link to={createPageUrl("Marketplace")} className="text-xs text-indigo-600 font-medium flex items-center gap-0.5">
-                  See all <ChevronRight className="w-3 h-3" />
+                  {t("home.seeAll")} <ChevronRight className="w-3 h-3" />
                 </Link>
               </div>
               <div className="overflow-x-auto -mx-4 px-4 hide-scrollbar">
@@ -165,25 +165,25 @@ export default function Home() {
               <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <EmptyState
                   icon={TrendingUp}
-                  title={activeTab === "following" ? "No followers yet" : "Welcome to Aicon X"}
+                  title={activeTab === "following" ? t("home.noFollowingTitle") : t("home.feedEmptyTitle")}
                   description={
                     activeTab === "following" 
-                      ? "Follow people and stores to see their latest posts here in your feed!" 
-                      : "Your feed is empty. Start by creating a post or exploring the community!"
+                      ? t("home.noFollowingDesc")
+                      : t("home.feedEmptyDesc")
                   }
                   action={
                     <div className="flex gap-3">
                       {activeTab === "following" ? (
                         <Link to={createPageUrl("Explore")}>
-                          <Button className="bg-indigo-600 hover:bg-indigo-700">Find people to follow</Button>
+                          <Button className="bg-indigo-600 hover:bg-indigo-700">{t("home.findPeopleToFollow")}</Button>
                         </Link>
                       ) : (
                         <>
                           <Link to={createPageUrl("CreatePost")}>
-                            <Button className="bg-indigo-600 hover:bg-indigo-700">Create Post</Button>
+                            <Button className="bg-indigo-600 hover:bg-indigo-700">{t("home.createPost")}</Button>
                           </Link>
                           <Link to={createPageUrl("Explore")}>
-                            <Button variant="outline">Explore</Button>
+                            <Button variant="outline">{t("home.explore")}</Button>
                           </Link>
                         </>
                       )}
@@ -215,12 +215,12 @@ export default function Home() {
                   {isFetchingNextPage ? (
                     <div className="flex flex-col items-center gap-2">
                       <Loader2 className="w-6 h-6 text-indigo-500 animate-spin" />
-                      <p className="text-xs text-slate-400 font-medium">Loading more posts...</p>
+                      <p className="text-xs text-slate-400 font-medium">{t("home.loadingMore")}</p>
                     </div>
                   ) : hasNextPage ? (
-                    <p className="text-xs text-slate-300">Scroll for more</p>
+                    <p className="text-xs text-slate-300">{t("home.scrollForMore")}</p>
                   ) : (
-                    <p className="text-xs text-slate-300 italic">You've reached the end of the feed</p>
+                    <p className="text-xs text-slate-300 italic">{t("home.endOfFeed")}</p>
                   )}
                 </div>
               </>

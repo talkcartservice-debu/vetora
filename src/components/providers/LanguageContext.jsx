@@ -72,7 +72,7 @@ export function LanguageProvider({ children }) {
       if (user.preferences.language !== lang) {
         setLangState(user.preferences.language);
         localStorage.setItem("iqon_lang", user.preferences.language);
-        i18n.changeLanguage(user.preferences.language);
+        // i18n.changeLanguage is handled by the [lang] effect above
       }
       hasSyncedUserLang.current = true;
     }
