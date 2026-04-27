@@ -56,11 +56,11 @@ export default function Orders() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["cart", currentUser?.username] });
-      toast.success("Items added to cart");
+      toast.success(t("orders.itemsAddedToCart"));
       navigate(createPageUrl("Cart"));
     },
     onError: (error) => {
-      toast.error(error.message || "Failed to add items to cart");
+      toast.error(error.message || t("orders.failedToAddToCart"));
     },
   });
 
@@ -68,10 +68,10 @@ export default function Orders() {
     mutationFn: (orderId) => ordersAPI.cancelOrder(orderId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["myOrders", currentUser?.username] });
-      toast.success("Your order has been cancelled successfully.");
+      toast.success(t("orders.cancelSuccess"));
     },
     onError: (error) => {
-      toast.error(error.message || "Failed to cancel order");
+      toast.error(error.message || t("orders.cancelFailed"));
     },
   });
 
@@ -100,14 +100,14 @@ export default function Orders() {
           className="text-slate-500 gap-1.5"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-          Refresh
+          {t("orders.refresh")}
         </Button>
       </div>
 
       <div className="relative mb-6">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
         <Input 
-          placeholder="Search by Order ID, store or product..."
+          placeholder={t("orders.searchPlaceholder")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="pl-10 bg-white border-slate-100 rounded-2xl h-12 focus:ring-indigo-500 focus:border-indigo-500"
@@ -138,8 +138,8 @@ export default function Orders() {
         <EmptyState
           icon={ShoppingBag}
           title={search ? t("common.noResults") : t("orders.noOrders")}
-          description={search ? "Try adjusting your search terms" : "Start shopping to see your orders here"}
-          action={!search && <Link to={createPageUrl("Marketplace")}><Button className="bg-indigo-600 hover:bg-indigo-700">Browse Marketplace</Button></Link>}
+          description={search ? t("orders.adjustSearch") : t("orders.noOrdersDesc")}
+          action={!search && <Link to={createPageUrl("Marketplace")}><Button className="bg-indigo-600 hover:bg-indigo-700">{t("orders.browseMarketplace")}</Button></Link>}
         />
       ) : (
         <div className="space-y-4">
@@ -161,7 +161,7 @@ export default function Orders() {
                   <div className="flex items-start justify-between mb-4">
                     <div className="cursor-pointer" onClick={() => setDetailOrder(order)}>
                       <p className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">
-                        Order #{orderId?.slice(-8)}
+                        {t("orders.orderNumber", { id: orderId?.slice(-8) })}
                       </p>
                       <h3 className="text-sm font-bold text-slate-900 mt-0.5 flex items-center gap-1.5">
                         {order.store_name || "Store"}
@@ -191,12 +191,12 @@ export default function Orders() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-slate-800 truncate">{item.product_title}</p>
-                          <p className="text-xs text-slate-400 mt-0.5">Qty: {item.quantity} · {formatCurrency(item.price)}</p>
+                          <p className="text-xs text-slate-400 mt-0.5">{t("orders.qty")}: {item.quantity} · {formatCurrency(item.price)}</p>
                         </div>
                       </div>
                     ))}
                     {order.items?.length > 2 && (
-                      <p className="text-xs text-indigo-600 font-medium pl-1">+{order.items.length - 2} more items</p>
+                      <p className="text-xs text-indigo-600 font-medium pl-1">{t("orders.moreItems", { count: order.items.length - 2 })}</p>
                     )}
                   </div>
 
@@ -204,7 +204,7 @@ export default function Orders() {
                     <div className="bg-amber-50 rounded-xl p-2.5 mb-4 border border-amber-100/50">
                       <p className="text-[10px] text-amber-700 leading-tight flex items-start gap-1.5 font-medium">
                         <AlertCircle className="w-3 h-3 shrink-0" />
-                        Note: {order.order_note}
+                        {t("orders.note")}: {order.order_note}
                       </p>
                     </div>
                   )}
@@ -219,7 +219,7 @@ export default function Orders() {
                           order.delivery_method === "delivery" ? "bg-blue-100 text-blue-700" :
                           "bg-slate-100 text-slate-500"
                         }`}>
-                          {order.delivery_method === "pickup" ? "Store Pickup" : order.delivery_method === "delivery" ? "Local Delivery" : "Shipping"}
+                          {order.delivery_method === "pickup" ? t("orders.storePickup") : order.delivery_method === "delivery" ? t("orders.localDelivery") : t("orders.shippingMethod")}
                         </span>
                       )}
                     </div>
@@ -233,7 +233,7 @@ export default function Orders() {
                         title="Contact Seller"
                       >
                         <MessageCircle className="w-3.5 h-3.5" />
-                        Chat
+                        {t("orders.chat")}
                       </Button>
 
                       {order.status === "delivered" ? (
@@ -245,7 +245,7 @@ export default function Orders() {
                             className="rounded-xl text-[10px] h-8 gap-1 border-amber-200 text-amber-700 hover:bg-amber-50"
                           >
                             <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                            Review
+                            {t("orders.review")}
                           </Button>
                           <Button
                             size="sm"
@@ -253,7 +253,7 @@ export default function Orders() {
                             disabled={buyAgainMutation.isPending}
                             className="rounded-xl text-[10px] h-8 bg-slate-900 hover:bg-slate-800"
                           >
-                            Buy Again
+                            {t("orders.buyAgain")}
                           </Button>
                         </>
                       ) : order.status === "pending" ? (
@@ -264,7 +264,7 @@ export default function Orders() {
                           disabled={cancelOrderMutation.isPending}
                           className="rounded-xl text-[10px] h-8 text-red-600 hover:bg-red-50 hover:text-red-700"
                         >
-                          Cancel
+                          {t("common.cancel")}
                         </Button>
                       ) : null}
                       
@@ -275,7 +275,7 @@ export default function Orders() {
                         className="rounded-xl text-[10px] h-8 text-slate-500 hover:bg-slate-50"
                       >
                         <Info className="w-3.5 h-3.5" />
-                        Details
+                        {t("orders.details")}
                       </Button>
                     </div>
                   </div>

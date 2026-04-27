@@ -153,7 +153,7 @@ export default function MyStore() {
     const file = e.target.files[0];
     if (!file) return;
     if (!file.type.startsWith("image/")) {
-      toast.error("Please upload an image file");
+      toast.error(t("store.imageFileOnly"));
       return;
     }
 
@@ -162,10 +162,10 @@ export default function MyStore() {
       const res = await filesAPI.upload(file);
       if (res.url) {
         setStoreForm(prev => ({ ...prev, [`${type}_url`]: res.url }));
-        toast.success(`${type.charAt(0).toUpperCase() + type.slice(1)} uploaded!`);
+        toast.success(t("store.assetUploaded", { type: t(`store.${type}`) }));
       }
     } catch (err) {
-      toast.error(`Failed to upload ${type}`);
+      toast.error(t("store.assetUploadFailed", { type: t(`store.${type}`) }));
     } finally {
       setUploadingAssets(prev => ({ ...prev, [type]: false }));
     }
@@ -233,7 +233,7 @@ export default function MyStore() {
       status: "active",
     }),
     onSuccess: () => {
-      toast.success("Store created!");
+      toast.success(t("store.storeCreated"));
       setShowCreateStore(false);
       queryClient.invalidateQueries({ queryKey: ["myStore"] });
     },
@@ -242,7 +242,7 @@ export default function MyStore() {
   const updateStoreMutation = useMutation({
     mutationFn: (data) => storesAPI.update(store.id || store._id, data),
     onSuccess: () => {
-      toast.success("Store updated!");
+      toast.success(t("store.storeUpdated"));
       setShowEditStore(false);
       queryClient.invalidateQueries({ queryKey: ["myStore"] });
     },
@@ -265,7 +265,7 @@ export default function MyStore() {
           }
         }
       } catch (err) {
-        toast.error("Failed to upload assets");
+        toast.error(t("store.failedToUploadAssets"));
         throw err;
       } finally {
         setUploading(false);
@@ -301,7 +301,7 @@ export default function MyStore() {
         setActiveTab("subscription");
         toast.error(`Subscription limit reached! Your ${currentPlan} plan allows up to ${limits.products === Infinity ? 'unlimited' : limits.products} products.`);
       } else {
-        toast.error(err.message || "Failed to add product");
+        toast.error(err.message || t("store.failedToAddProduct"));
       }
     }
   });
@@ -581,7 +581,7 @@ export default function MyStore() {
             </div>
             <div>
               <h1 className="text-xl font-bold text-slate-900">{store.name}</h1>
-              <p className="text-sm text-slate-500">{store.description || "No description"}</p>
+              <p className="text-sm text-slate-500">{store.description || t("store.noDescription")}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -677,7 +677,7 @@ export default function MyStore() {
                         </div>
 
                         <div className="space-y-2">
-                          <label className="text-sm font-medium">Store Banner</label>
+                          <label className="text-sm font-medium">{t("store.storeBanner")}</label>
                           <div className="flex items-center gap-3">
                             <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center overflow-hidden shrink-0">
                               {storeForm.banner_url ? (
@@ -968,7 +968,7 @@ export default function MyStore() {
                   (store.description ? 1 : 0) + 
                   (products.length > 0 ? 1 : 0) + 
                   (store.payment_method ? 1 : 0)) / 4 * 100
-                )}% Complete
+                )}% {t("store.complete")}
               </span>
             </div>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -1060,13 +1060,13 @@ export default function MyStore() {
                     description: ai.description || p.description,
                   }))} 
                 />
-                <Input placeholder="Product title" value={productForm.title} onChange={(e) => setProductForm(p => ({ ...p, title: e.target.value }))} />
-                <Textarea placeholder="Description" value={productForm.description} onChange={(e) => setProductForm(p => ({ ...p, description: e.target.value }))} />
+                <Input placeholder={t("store.productTitle")} value={productForm.title} onChange={(e) => setProductForm(p => ({ ...p, title: e.target.value }))} />
+                <Textarea placeholder={t("store.productDescription")} value={productForm.description} onChange={(e) => setProductForm(p => ({ ...p, description: e.target.value }))} />
                 
                 {/* Image Upload */}
                 <div className="space-y-2">
                   <label className="text-xs font-medium text-slate-500 flex items-center gap-1.5">
-                    <Camera className="w-3.5 h-3.5" /> Product Media (up to {limits.images === Infinity ? 'Unlimited' : limits.images})
+                    <Camera className="w-3.5 h-3.5" /> {t("store.productMedia", { limit: limits.images === Infinity ? t("store.unlimited") : limits.images })}
                   </label>
                   <div className="flex flex-wrap gap-2">
                     {imagePreviews.map((url, i) => {
@@ -1095,7 +1095,7 @@ export default function MyStore() {
                     {(limits.images === Infinity || productImages.length < limits.images) && (
                       <label className="w-20 h-20 rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/30 transition-all text-slate-400">
                         <Upload className="w-5 h-5" />
-                        <span className="text-[10px] mt-1 font-medium">Upload</span>
+                        <span className="text-[10px] mt-1 font-medium">{t("store.upload")}</span>
                         <input type="file" accept={limits.videos === 0 ? "image/*" : "image/*,video/*"} multiple className="hidden" onChange={handleFileChange} />
                       </label>
                     )}
@@ -1103,8 +1103,8 @@ export default function MyStore() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
-                  <Input type="number" placeholder="Price" value={productForm.price} onChange={(e) => setProductForm(p => ({ ...p, price: e.target.value }))} />
-                  <Input type="number" placeholder="Compare at price" value={productForm.compare_at_price} onChange={(e) => setProductForm(p => ({ ...p, compare_at_price: e.target.value }))} />
+                  <Input type="number" placeholder={t("store.productPrice")} value={productForm.price} onChange={(e) => setProductForm(p => ({ ...p, price: e.target.value }))} />
+                  <Input type="number" placeholder={t("store.compareAtPrice")} value={productForm.compare_at_price} onChange={(e) => setProductForm(p => ({ ...p, compare_at_price: e.target.value }))} />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <Select value={productForm.category} onValueChange={(v) => setProductForm(p => ({ ...p, category: v }))}>
@@ -1113,7 +1113,7 @@ export default function MyStore() {
                       {CATEGORIES.map(c => <SelectItem key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</SelectItem>)}
                     </SelectContent>
                   </Select>
-                  <Input type="number" placeholder="Inventory count" value={productForm.inventory_count} onChange={(e) => setProductForm(p => ({ ...p, inventory_count: e.target.value }))} />
+                  <Input type="number" placeholder={t("store.inventoryCount")} value={productForm.inventory_count} onChange={(e) => setProductForm(p => ({ ...p, inventory_count: e.target.value }))} />
                 </div>
                 <Button 
                   onClick={() => addProductMutation.mutate()} 
@@ -1271,13 +1271,13 @@ export default function MyStore() {
                       <div className="flex items-start justify-between mb-4">
                         <div>
                           <p className="text-[10px] font-mono text-slate-400 uppercase tracking-wider mb-1">
-                            Order #{orderId?.slice(-8)}
+                            {t("store.orderRef", { id: orderId?.slice(-8) })}
                           </p>
                           <h4 className="text-sm font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
                             {order.buyer_name || `@${order.buyer_username}`}
                           </h4>
                           <p className="text-xs text-slate-500 mt-0.5">
-                            {new Date(order.created_at || order.created_date).toLocaleDateString()} · {order.items?.length || 0} items
+                            {new Date(order.created_at || order.created_date).toLocaleDateString()} · {t("store.itemsCount", { count: order.items?.length || 0 })}
                           </p>
                         </div>
                         <div className="flex flex-col items-end gap-2">
@@ -1301,7 +1301,7 @@ export default function MyStore() {
                               status === 'pending' ? 'bg-amber-100 text-amber-700' :
                               'bg-indigo-100 text-indigo-700'
                             } border-0 text-[10px] px-2 py-0.5 h-6 font-semibold capitalize`}>
-                              {status}
+                              {t(`orders.${status}`)}
                             </Badge>
                           </div>
                           <p className="text-sm font-black text-slate-900">{formatCurrency(order.total)}</p>

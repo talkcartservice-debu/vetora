@@ -71,10 +71,10 @@ export default function StoreDetail() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["followStatus", currentUser?.username, storeId] });
       queryClient.invalidateQueries({ queryKey: ["storeDetail", storeId] });
-      toast.success(isFollowing ? "Unfollowed" : "Following Store!");
+      toast.success(isFollowing ? t("storeDetail.unfollowedStore") : t("storeDetail.followingStore"));
     },
     onError: (error) => {
-      toast.error(error.message || "Something went wrong");
+      toast.error(error.message || t("errors.somethingWrong"));
     }
   });
 
@@ -111,10 +111,10 @@ export default function StoreDetail() {
     return (
       <div className="max-w-5xl mx-auto px-4 py-16 flex flex-col items-center justify-center text-center">
         <ArrowLeft className="w-12 h-12 text-slate-200 mb-4" />
-        <h2 className="text-xl font-bold text-slate-900 mb-2">Invalid Store</h2>
-        <p className="text-slate-500 mb-6">We couldn't find the store you're looking for.</p>
+        <h2 className="text-xl font-bold text-slate-900 mb-2">{t("storeDetail.invalidStore")}</h2>
+        <p className="text-slate-500 mb-6">{t("storeDetail.invalidStoreDesc")}</p>
         <Link to={createPageUrl("Marketplace")}>
-          <Button className="bg-indigo-600 hover:bg-indigo-700 rounded-xl">Back to Marketplace</Button>
+          <Button className="bg-indigo-600 hover:bg-indigo-700 rounded-xl">{t("storeDetail.backToMarketplace")}</Button>
         </Link>
       </div>
     );
@@ -124,16 +124,16 @@ export default function StoreDetail() {
   if (storeError) {
     return (
       <div className="max-w-5xl mx-auto px-4 py-16 flex flex-col items-center justify-center text-center">
-        <h2 className="text-xl font-bold text-slate-900 mb-2">Store Not Found</h2>
-        <p className="text-slate-500 mb-6">{storeError.status === 404 ? "This store may have been moved or deleted." : "There was an error loading this store."}</p>
+        <h2 className="text-xl font-bold text-slate-900 mb-2">{t("storeDetail.storeNotFound")}</h2>
+        <p className="text-slate-500 mb-6">{storeError.status === 404 ? t("storeDetail.storeMovedOrDeleted") : t("storeDetail.storeLoadError")}</p>
         <Link to={createPageUrl("Marketplace")}>
-          <Button className="bg-indigo-600 hover:bg-indigo-700 rounded-xl">Back to Marketplace</Button>
+          <Button className="bg-indigo-600 hover:bg-indigo-700 rounded-xl">{t("storeDetail.backToMarketplace")}</Button>
         </Link>
       </div>
     );
   }
 
-  if (storeLoading && !store) return <div className="flex items-center justify-center h-64 text-slate-400">Loading...</div>;
+  if (storeLoading && !store) return <div className="flex items-center justify-center h-64 text-slate-400">{t("common.loading")}</div>;
 
   const avgRating = storeReviews.length > 0
     ? storeReviews.reduce((sum, r) => sum + (r.rating || 0), 0) / storeReviews.length
@@ -142,7 +142,7 @@ export default function StoreDetail() {
   if (!store && !storeLoading) {
     return (
       <div className="max-w-5xl mx-auto px-4 py-16 text-center">
-        <p className="text-slate-500">Store not found</p>
+        <p className="text-slate-500">{t("storeDetail.storeNotFound")}</p>
       </div>
     );
   }
@@ -150,7 +150,7 @@ export default function StoreDetail() {
   return (
     <div className="max-w-5xl mx-auto px-4 py-4 lg:py-6">
       <Link to={createPageUrl("Marketplace")} className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 mb-4">
-        <ArrowLeft className="w-4 h-4" /> Marketplace
+        <ArrowLeft className="w-4 h-4" /> {t("storeDetail.marketplace")}
       </Link>
 
       {/* Store Banner */}
@@ -172,18 +172,18 @@ export default function StoreDetail() {
             <div className="flex items-center gap-2 mb-1">
               <h1 className="text-2xl font-bold text-slate-900">{store.name}</h1>
               {store.is_verified && (
-                <Badge className="bg-blue-100 text-blue-600 border-0"><CheckCircle className="w-3 h-3 mr-1" />Verified</Badge>
+                <Badge className="bg-blue-100 text-blue-600 border-0"><CheckCircle className="w-3 h-3 mr-1" />{t("common.verified")}</Badge>
               )}
             </div>
             <p className="text-sm text-slate-500 mb-3">{store.description}</p>
             <div className="flex items-center flex-wrap gap-4 text-sm text-slate-500">
-              <span className="flex items-center gap-1"><Package className="w-4 h-4" /> {products.length} products</span>
-              <span className="flex items-center gap-1"><Users className="w-4 h-4" /> {store.follower_count || 0} followers</span>
+              <span className="flex items-center gap-1"><Package className="w-4 h-4" /> {t("storeDetail.productsCount", { count: products.length })}</span>
+              <span className="flex items-center gap-1"><Users className="w-4 h-4" /> {t("storeDetail.followersCount", { count: store.follower_count || 0 })}</span>
               {avgRating > 0 && (
                 <span className="flex items-center gap-1.5">
                   <StarRating value={Math.round(avgRating)} readonly size={4} />
                   <span className="text-amber-600 font-semibold">{avgRating.toFixed(1)}</span>
-                  <span className="text-slate-400">({storeReviews.length} reviews)</span>
+                  <span className="text-slate-400">{t("storeDetail.reviewsCount", { count: storeReviews.length })}</span>
                 </span>
               )}
             </div>
@@ -201,17 +201,17 @@ export default function StoreDetail() {
                   variant={isFollowing ? "secondary" : "default"}
                 >
                   {isFollowing ? (
-                    <><UserCheck className="w-4 h-4" /> Following</>
+                    <><UserCheck className="w-4 h-4" /> {t("profile.following")}</>
                   ) : isFollowedBy ? (
-                    <><UserPlus className="w-4 h-4" /> Follow Back</>
+                    <><UserPlus className="w-4 h-4" /> {t("profile.followBack")}</>
                   ) : (
-                    <><UserPlus className="w-4 h-4" /> Follow Store</>
+                    <><UserPlus className="w-4 h-4" /> {t("storeDetail.followStore")}</>
                   )}
                 </Button>
 
                 <Link to={createPageUrl("Chat") + `?to=${store.owner_username}`}>
                   <Button variant="outline" className="rounded-xl gap-2 border-slate-200" size="sm">
-                    <MessageCircle className="w-4 h-4" /> Chat with Vendor
+                    <MessageCircle className="w-4 h-4" /> {t("storeDetail.chatWithVendor")}
                   </Button>
                 </Link>
               </div>
@@ -221,14 +221,14 @@ export default function StoreDetail() {
       </div>
 
       {/* Products */}
-      <h2 className="text-lg font-bold text-slate-900 mb-4">All Products</h2>
+      <h2 className="text-lg font-bold text-slate-900 mb-4">{t("storeDetail.allProducts")}</h2>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 lg:gap-4">
         {isLoading
           ? Array(8).fill(0).map((_, i) => <ProductSkeleton key={`p-skeleton-${i}`} />)
           : products.map((p, idx) => <ProductCard key={p.id || p._id || `p-${idx}`} product={p} />)}
       </div>
       {!isLoading && products.length === 0 && (
-        <div className="text-center py-16 text-slate-400">No products in this store yet</div>
+        <div className="text-center py-16 text-slate-400">{t("storeDetail.noProductsYet")}</div>
       )}
 
       <StoreReviewSection store={store} currentUser={currentUser} />

@@ -54,10 +54,10 @@ export default function Bookmarks() {
       } else {
         await wishlistAPI.remove(id);
       }
-      toast.success(`Removed from ${activeTab === "posts" ? "bookmarks" : "wishlist"}`);
+      toast.success(activeTab === "posts" ? t("bookmarks.removedFromBookmarks") : t("bookmarks.removedFromWishlist"));
       refetch();
     } catch (e) {
-      toast.error("Failed to remove");
+      toast.error(t("bookmarks.failedToRemove"));
     }
   };
 
@@ -94,8 +94,8 @@ export default function Bookmarks() {
         ) : items.length === 0 ? (
           <EmptyState
             icon={Bookmark}
-            title={`No ${activeTab} saved yet`}
-            description={`Save ${activeTab} you find interesting to view them here later.`}
+            title={activeTab === "posts" ? t("bookmarks.noPostsSaved") : t("bookmarks.noProductsSaved")}
+            description={activeTab === "posts" ? t("bookmarks.savePostsHint") : t("bookmarks.saveProductsHint")}
           />
         ) : (
           <AnimatePresence>
@@ -118,7 +118,7 @@ export default function Bookmarks() {
                   <button
                     onClick={() => handleRemove(item.id || item._id)}
                     className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm border border-slate-100 flex items-center justify-center text-red-500 shadow-sm opacity-0 group-hover:opacity-100 transition-all hover:bg-red-50 z-10"
-                    title={`Remove from ${activeTab === "posts" ? "Bookmarks" : "Wishlist"}`}
+                    title={activeTab === "posts" ? t("bookmarks.removeFromBookmarks") : t("bookmarks.removeFromWishlist")}
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>

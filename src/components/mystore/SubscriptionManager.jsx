@@ -26,11 +26,11 @@ const PLANS = [
     icon: Star,
     iconColor: "text-slate-500",
     features: [
-      "Up to 10 products",
-      "5 images per product",
-      "Basic analytics",
-      "Standard search listing",
-      "Community support",
+      "subscription.freeFeat0",
+      "subscription.freeFeat1",
+      "subscription.freeFeat2",
+      "subscription.freeFeat3",
+      "subscription.freeFeat4",
     ],
     limits: { products: 10, images: 5, priority_search: false, custom_domain: false, unlimited_media: false },
   },
@@ -41,17 +41,17 @@ const PLANS = [
     priceAnnual: 23,
     color: "border-indigo-400",
     headerBg: "bg-gradient-to-br from-indigo-50 to-purple-50",
-    badge: "Most Popular",
+    badge: "subscription.badgeMostPopular",
     icon: Zap,
     iconColor: "text-indigo-600",
     features: [
-      "Up to 200 products",
-      "20 images + videos per product",
-      "Advanced analytics & CTR data",
-      "Priority search listing",
-      "Custom domain mapping",
-      "Shipping zone manager",
-      "Email support",
+      "subscription.proFeat0",
+      "subscription.proFeat1",
+      "subscription.proFeat2",
+      "subscription.proFeat3",
+      "subscription.proFeat4",
+      "subscription.proFeat5",
+      "subscription.proFeat6",
     ],
     limits: { products: 200, images: 20, priority_search: true, custom_domain: true, unlimited_media: false },
   },
@@ -62,18 +62,18 @@ const PLANS = [
     priceAnnual: 63,
     color: "border-amber-400",
     headerBg: "bg-gradient-to-br from-amber-50 to-orange-50",
-    badge: "Best Value",
+    badge: "subscription.badgeBestValue",
     icon: Crown,
     iconColor: "text-amber-600",
     features: [
-      "Unlimited products",
-      "Unlimited images & videos",
-      "Full analytics suite",
-      "Top-tier search placement",
-      "Custom domain + SSL",
-      "Shipping zones + live rates",
-      "Dedicated account manager",
-      "Affiliate program access",
+      "subscription.eliteFeat0",
+      "subscription.eliteFeat1",
+      "subscription.eliteFeat2",
+      "subscription.eliteFeat3",
+      "subscription.eliteFeat4",
+      "subscription.eliteFeat5",
+      "subscription.eliteFeat6",
+      "subscription.eliteFeat7",
     ],
     limits: { products: Infinity, images: Infinity, priority_search: true, custom_domain: true, unlimited_media: true },
   },
@@ -93,7 +93,7 @@ function PlanCard({ plan, currentPlan, onSelect, billing }) {
     >
       {plan.badge && (
         <div className={`absolute top-3 right-3 text-[10px] font-bold px-2 py-0.5 rounded-full ${plan.id === "pro" ? "bg-indigo-600 text-white" : "bg-amber-500 text-white"}`}>
-          {plan.badge}
+          {t(plan.badge)}
         </div>
       )}
       <div className={`p-5 ${plan.headerBg}`}>
@@ -103,10 +103,10 @@ function PlanCard({ plan, currentPlan, onSelect, billing }) {
         <h3 className="text-lg font-bold text-slate-900">{plan.name}</h3>
         <div className="flex items-end gap-1 mt-1">
           <span className="text-3xl font-black text-slate-900">{formatCurrency(price)}</span>
-          <span className="text-slate-500 text-sm mb-0.5">/mo</span>
+          <span className="text-slate-500 text-sm mb-0.5">{t("subscription.perMonth")}</span>
         </div>
         {billing === "annual" && plan.price > 0 && (
-          <p className="text-xs text-green-600 font-medium mt-0.5">Save {formatCurrency((plan.price - plan.priceAnnual) * 12)}/yr</p>
+          <p className="text-xs text-green-600 font-medium mt-0.5">{t("subscription.savePerYear", { amount: formatCurrency((plan.price - plan.priceAnnual) * 12) })}</p>
         )}
       </div>
 
@@ -115,7 +115,7 @@ function PlanCard({ plan, currentPlan, onSelect, billing }) {
           {plan.features.map((f, i) => (
             <li key={i} className="flex items-start gap-2 text-sm text-slate-600">
               <Check className="w-4 h-4 text-green-500 shrink-0 mt-0.5" />
-              {f}
+              {t(f)}
             </li>
           ))}
         </ul>

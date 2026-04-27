@@ -11,16 +11,16 @@ import { productsAPI, communitiesAPI, usersAPI } from "@/api/apiClient";
 import { useDebounce } from "@/hooks/useDebounce";
 
 const CATEGORIES = [
-  { id: "all", label: "All", emoji: "✨" },
-  { id: "fashion", label: "Fashion", emoji: "👗" },
-  { id: "electronics", label: "Electronics", emoji: "📱" },
-  { id: "home", label: "Home", emoji: "🏠" },
-  { id: "beauty", label: "Beauty", emoji: "💄" },
-  { id: "sports", label: "Sports", emoji: "⚽" },
-  { id: "food", label: "Food", emoji: "🍕" },
-  { id: "art", label: "Art", emoji: "🎨" },
-  { id: "books", label: "Books", emoji: "📚" },
-  { id: "handmade", label: "Handmade", emoji: "🧶" },
+  { id: "all", tKey: "explore.cat.all", emoji: "✨" },
+  { id: "fashion", tKey: "explore.cat.fashion", emoji: "👗" },
+  { id: "electronics", tKey: "explore.cat.electronics", emoji: "📱" },
+  { id: "home", tKey: "explore.cat.home", emoji: "🏠" },
+  { id: "beauty", tKey: "explore.cat.beauty", emoji: "💄" },
+  { id: "sports", tKey: "explore.cat.sports", emoji: "⚽" },
+  { id: "food", tKey: "explore.cat.food", emoji: "🍕" },
+  { id: "art", tKey: "explore.cat.art", emoji: "🎨" },
+  { id: "books", tKey: "explore.cat.books", emoji: "📚" },
+  { id: "handmade", tKey: "explore.cat.handmade", emoji: "🧶" },
 ];
 
 export default function Explore() {
@@ -96,7 +96,7 @@ export default function Explore() {
                 }`}
               >
                 <span>{cat.emoji}</span>
-                {cat.label}
+                {t(cat.tKey)}
               </button>
             ))}
           </div>
@@ -108,7 +108,7 @@ export default function Explore() {
         <div className="mb-8">
           <h2 className="text-lg font-bold text-slate-900 mb-3 flex items-center gap-2">
             <User className="w-5 h-5 text-purple-500" />
-            People
+            {t("explore.people")}
           </h2>
           <div className="flex gap-3 overflow-x-auto pb-2 hide-scrollbar">
             {users.map((u) => (
@@ -137,7 +137,7 @@ export default function Explore() {
         <div className="mb-8">
           <h2 className="text-lg font-bold text-slate-900 mb-3 flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-indigo-500" />
-            {debouncedSearch ? "Related Communities" : "Popular Communities"}
+            {debouncedSearch ? t("explore.relatedCommunities") : t("explore.popularCommunities")}
           </h2>
           <div className="overflow-x-auto -mx-4 px-4 hide-scrollbar">
             <div className="flex gap-3" style={{ width: "max-content" }}>
@@ -155,7 +155,7 @@ export default function Explore() {
                       {c.icon_url || "👥"}
                     </div>
                     <h3 className="text-sm font-semibold text-slate-900 truncate">{c.name}</h3>
-                    <p className="text-xs text-slate-400">{c.member_count || 0} members</p>
+                    <p className="text-xs text-slate-400">{t("explore.members", { count: c.member_count || 0 })}</p>
                   </div>
                 </Link>
               ))}
@@ -168,7 +168,7 @@ export default function Explore() {
       <div>
         <h2 className="text-lg font-bold text-slate-900 mb-3 flex items-center gap-2">
           <TrendingUp className="w-5 h-5 text-green-500" />
-          {debouncedSearch ? `Product results for "${debouncedSearch}"` : "Discover Products"}
+          {debouncedSearch ? t("explore.productResultsFor", { search: debouncedSearch }) : t("explore.discoverProducts")}
         </h2>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 lg:gap-4">
           {productsLoading

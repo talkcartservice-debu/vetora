@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 function StarRating({ value, onChange, size = 5, readonly = false }) {
   const [hovered, setHovered] = useState(0);
@@ -37,6 +38,7 @@ function StarRating({ value, onChange, size = 5, readonly = false }) {
 }
 
 function RatingBreakdown({ reviews }) {
+  const { t } = useTranslation();
   const counts = [5, 4, 3, 2, 1].map(r => ({
     star: r,
     count: reviews.filter(rv => rv.rating === r).length,
@@ -49,7 +51,7 @@ function RatingBreakdown({ reviews }) {
       <div className="text-center shrink-0">
         <p className="text-4xl font-black text-slate-900">{avg.toFixed(1)}</p>
         <StarRating value={Math.round(avg)} readonly size={4} />
-        <p className="text-xs text-slate-400 mt-1">{total} review{total !== 1 ? "s" : ""}</p>
+        <p className="text-xs text-slate-400 mt-1">{t("storeDetail.reviewsTotal", { count: total })}</p>
       </div>
       <div className="flex-1 space-y-1.5">
         {counts.map(({ star, count }) => (
@@ -71,6 +73,7 @@ function RatingBreakdown({ reviews }) {
 }
 
 function ReviewCard({ review, isVendor, vendorUsername, storeId }) {
+  const { t, i18n } = useTranslation();
   const [showReply, setShowReply] = useState(false);
   const [replyText, setReplyText] = useState(review.vendor_reply || "");
   const [expanded, setExpanded] = useState(false);
@@ -84,7 +87,7 @@ function ReviewCard({ review, isVendor, vendorUsername, storeId }) {
       vendor_replied_at: new Date().toISOString(),
     }),
     onSuccess: () => {
-      toast.success("Reply posted!");
+      toast.success(t("storeDetail.replyPosted"));
       setShowReply(false);
       queryClient.invalidateQueries({ queryKey: ["storeReviews", storeId] });
     },
@@ -105,17 +108,17 @@ function ReviewCard({ review, isVendor, vendorUsername, storeId }) {
             {review.reviewer_name?.[0]?.toUpperCase() || "U"}
           </div>
           <div>
-            <p className="text-sm font-semibold text-slate-900">{review.reviewer_name || "Anonymous"}</p>
+            <p className="text-sm font-semibold text-slate-900">{review.reviewer_name || t("storeDetail.anonymous")}</p>
             <div className="flex items-center gap-2">
               <StarRating value={review.rating} readonly size={3} />
               {review.is_verified_purchase && (
-                <Badge className="text-[9px] bg-green-50 text-green-700 border-0 px-1.5 py-0">✓ Verified</Badge>
+                <Badge className="text-[9px] bg-green-50 text-green-700 border-0 px-1.5 py-0">✓ {t("common.verified")}</Badge>
               )}
             </div>
           </div>
         </div>
         <span className="text-[10px] text-slate-400 shrink-0">
-          {new Date(review.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+          {new Date(review.created_at).toLocaleDateString(i18n.language, { month: "short", day: "numeric", year: "numeric" })}
         </span>
       </div>
 
@@ -126,7 +129,7 @@ function ReviewCard({ review, isVendor, vendorUsername, storeId }) {
       {review.vendor_reply && (
         <div className="mt-3 bg-indigo-50 border border-indigo-100 rounded-xl p-3">
           <p className="text-xs font-semibold text-indigo-700 mb-1 flex items-center gap-1">
-            <MessageSquare className="w-3 h-3" /> Vendor Response
+            <MessageSquare className="w-3 h-3" /> {t("storeDetail.vendorResponse")}
           </p>
           <p className="text-xs text-slate-600">{review.vendor_reply}</p>
         </div>
@@ -138,7 +141,7 @@ function ReviewCard({ review, isVendor, vendorUsername, storeId }) {
           className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-600 transition-colors"
         >
           <ThumbsUp className="w-3.5 h-3.5" />
-          Helpful ({review.helpful_count || 0})
+          {t("storeDetail.helpful", { count: review.helpful_count || 0 })}
         </button>
 
         {isVendor && !review.vendor_reply && (
@@ -147,7 +150,7 @@ function ReviewCard({ review, isVendor, vendorUsername, storeId }) {
             className="flex items-center gap-1 text-xs text-indigo-600 font-medium hover:text-indigo-800"
           >
             <Edit3 className="w-3.5 h-3.5" />
-            Reply
+            {t("storeDetail.reply")}
           </button>
         )}
         {isVendor && review.vendor_reply && (
@@ -155,7 +158,7 @@ function ReviewCard({ review, isVendor, vendorUsername, storeId }) {
             onClick={() => setShowReply(v => !v)}
             className="flex items-center gap-1 text-xs text-slate-400 hover:text-slate-600"
           >
-            <Edit3 className="w-3.5 h-3.5" /> Edit reply
+            <Edit3 className="w-3.5 h-3.5" /> {t("storeDetail.editReply")}
           </button>
         )}
       </div>
@@ -166,15 +169,15 @@ function ReviewCard({ review, isVendor, vendorUsername, storeId }) {
             <Textarea
               value={replyText}
               onChange={e => setReplyText(e.target.value)}
-              placeholder="Write a public reply to this review..."
+              placeholder={t("storeDetail.replyPlaceholder")}
               className="text-sm rounded-xl mb-2 min-h-[80px]"
             />
             <div className="flex gap-2">
               <Button onClick={() => replyMutation.mutate()} disabled={!replyText.trim() || replyMutation.isPending} size="sm" className="bg-indigo-600 hover:bg-indigo-700 rounded-xl">
                 {replyMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <Send className="w-3.5 h-3.5 mr-1" />}
-                Post Reply
+                {t("storeDetail.postReply")}
               </Button>
-              <Button variant="outline" size="sm" className="rounded-xl" onClick={() => setShowReply(false)}>Cancel</Button>
+              <Button variant="outline" size="sm" className="rounded-xl" onClick={() => setShowReply(false)}>{t("common.cancel")}</Button>
             </div>
           </motion.div>
         )}
@@ -184,6 +187,7 @@ function ReviewCard({ review, isVendor, vendorUsername, storeId }) {
 }
 
 export default function StoreReviewSection({ store, currentUser }) {
+  const { t } = useTranslation();
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ rating: 0, title: "", content: "" });
   const queryClient = useQueryClient();
@@ -214,7 +218,7 @@ export default function StoreReviewSection({ store, currentUser }) {
       helpful_count: 0,
     }),
     onSuccess: async () => {
-      toast.success("Review submitted!");
+      toast.success(t("storeDetail.reviewSubmittedToast"));
       setShowForm(false);
       setForm({ rating: 0, title: "", content: "" });
       // Update store rating_avg
@@ -230,13 +234,13 @@ export default function StoreReviewSection({ store, currentUser }) {
   return (
     <div className="mt-10">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold text-slate-900">Store Reviews</h2>
+        <h2 className="text-xl font-bold text-slate-900">{t("storeDetail.storeReviews")}</h2>
         {canReview && !alreadyReviewed && (
           <Button onClick={() => setShowForm(v => !v)} size="sm" className="bg-indigo-600 hover:bg-indigo-700 rounded-xl gap-1.5">
-            <Star className="w-4 h-4" /> Write a Review
+            <Star className="w-4 h-4" /> {t("storeDetail.writeReview")}
           </Button>
         )}
-        {alreadyReviewed && <Badge variant="secondary" className="text-xs">You reviewed this store</Badge>}
+        {alreadyReviewed && <Badge variant="secondary" className="text-xs">{t("storeDetail.youReviewedStore")}</Badge>}
       </div>
       
       {reviews.length > 0 && <RatingBreakdown reviews={reviews} />}
@@ -244,21 +248,21 @@ export default function StoreReviewSection({ store, currentUser }) {
       <AnimatePresence>
         {showForm && (
           <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className="bg-white rounded-2xl border border-indigo-100 p-5 mb-5">
-            <h3 className="text-sm font-bold text-slate-900 mb-4">Your Review</h3>
+            <h3 className="text-sm font-bold text-slate-900 mb-4">{t("storeDetail.yourReview")}</h3>
             <div className="mb-3">
-              <p className="text-xs text-slate-500 mb-1.5">Rating</p>
+              <p className="text-xs text-slate-500 mb-1.5">{t("storeDetail.rating")}</p>
               <StarRating value={form.rating} onChange={r => setForm(f => ({ ...f, rating: r }))} size={6} />
             </div>
             <Input
               value={form.title}
               onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
-              placeholder="Review title (optional)"
+              placeholder={t("storeDetail.reviewTitlePlaceholder")}
               className="rounded-xl mb-2 text-sm"
             />
             <Textarea
               value={form.content}
               onChange={e => setForm(f => ({ ...f, content: e.target.value }))}
-              placeholder="Share your experience with this store..."
+              placeholder={t("storeDetail.reviewContentPlaceholder")}
               className="rounded-xl text-sm min-h-[100px] mb-3"
             />
             <div className="flex gap-2">
@@ -268,9 +272,9 @@ export default function StoreReviewSection({ store, currentUser }) {
                 className="bg-indigo-600 hover:bg-indigo-700 rounded-xl"
               >
                 {submitMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Send className="w-4 h-4 mr-1" />}
-                Submit Review
+                {t("storeDetail.submitReview")}
               </Button>
-              <Button variant="outline" className="rounded-xl" onClick={() => setShowForm(false)}>Cancel</Button>
+              <Button variant="outline" className="rounded-xl" onClick={() => setShowForm(false)}>{t("common.cancel")}</Button>
             </div>
           </motion.div>
         )}
@@ -281,8 +285,8 @@ export default function StoreReviewSection({ store, currentUser }) {
       ) : reviews.length === 0 ? (
         <div className="text-center py-10 border-2 border-dashed border-slate-200 rounded-2xl">
           <Star className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-          <p className="text-sm text-slate-500">No reviews yet</p>
-          <p className="text-xs text-slate-400">Be the first to review this store</p>
+          <p className="text-sm text-slate-500">{t("storeDetail.noReviewsYet")}</p>
+          <p className="text-xs text-slate-400">{t("storeDetail.beFirstToReview")}</p>
         </div>
       ) : (
         <div className="space-y-3">

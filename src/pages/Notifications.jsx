@@ -25,7 +25,7 @@ const TYPE_ICONS = {
 };
 
 export default function Notifications() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { user: currentUser } = useAuth();
@@ -82,7 +82,7 @@ export default function Notifications() {
         <div>
           <h1 className="text-2xl font-bold text-slate-900">{t("notifications.title")}</h1>
           {unreadCount > 0 && (
-            <p className="text-sm text-slate-500">{unreadCount} unread</p>
+            <p className="text-sm text-slate-500">{t("notifications.unread", { count: unreadCount })}</p>
           )}
         </div>
         {unreadCount > 0 && (
@@ -114,7 +114,7 @@ export default function Notifications() {
         <EmptyState
           icon={Bell}
           title={t("notifications.noNotifications")}
-          description="You're all caught up!"
+          description={t("notifications.allCaughtUp")}
         />
       ) : (
         <div className="space-y-1">
@@ -139,7 +139,7 @@ export default function Notifications() {
                   <p className="text-sm text-slate-900 font-medium">{notif.title}</p>
                   {notif.body && <p className="text-xs text-slate-500 mt-0.5">{notif.body}</p>}
                   <p className="text-xs text-slate-400 mt-1">
-                    {new Date(notif.created_at || notif.created_date).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                    {new Date(notif.created_at || notif.created_date).toLocaleDateString(i18n.language, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
                   </p>
                 </div>
                 {!notif.is_read && <div className="w-2 h-2 rounded-full bg-indigo-500 mt-2 shrink-0" />}
