@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 const defaultForm = {
   code: "", discount_type: "percentage", discount_value: "",
@@ -16,6 +17,7 @@ const defaultForm = {
 };
 
 export default function CouponManager({ store, vendorUsername }) {
+  const { t } = useTranslation();
   const [showCreate, setShowCreate] = useState(false);
   const [form, setForm] = useState(defaultForm);
   const queryClient = useQueryClient();
@@ -46,7 +48,7 @@ export default function CouponManager({ store, vendorUsername }) {
     }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["coupons"] });
-      toast.success("Coupon created!");
+      toast.success(t("store.couponCreated"));
       setShowCreate(false);
       setForm(defaultForm);
     },
@@ -61,7 +63,7 @@ export default function CouponManager({ store, vendorUsername }) {
     mutationFn: (id) => couponsAPI.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["coupons"] });
-      toast.success("Coupon deleted");
+      toast.success(t("store.couponDeleted"));
     },
   });
 
@@ -72,27 +74,27 @@ export default function CouponManager({ store, vendorUsername }) {
 
   const copyCode = (code) => {
     navigator.clipboard.writeText(code);
-    toast.success(`Copied: ${code}`);
+    toast.success(t("store.copiedCode", { code }));
   };
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-sm font-semibold text-slate-900">Discount Coupons</h3>
-          <p className="text-xs text-slate-400">{coupons.length} coupon{coupons.length !== 1 ? "s" : ""} created</p>
+          <h3 className="text-sm font-semibold text-slate-900">{t("store.discountCoupons")}</h3>
+          <p className="text-xs text-slate-400">{t("store.couponsCreated", { count: coupons.length })}</p>
         </div>
         <Dialog open={showCreate} onOpenChange={setShowCreate}>
           <DialogTrigger asChild>
             <Button className="bg-indigo-600 hover:bg-indigo-700 rounded-xl gap-1.5 h-9">
-              <Plus className="w-4 h-4" /> New Coupon
+              <Plus className="w-4 h-4" /> {t("store.newCoupon")}
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-md">
-            <DialogHeader><DialogTitle>Create Coupon Code</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>{t("store.createCouponCode")}</DialogTitle></DialogHeader>
             <div className="space-y-3 mt-2">
               <div>
-                <label className="text-xs font-medium text-slate-600 mb-1 block">Coupon Code *</label>
+                <label className="text-xs font-medium text-slate-600 mb-1 block">{t("store.couponCodeLabel")}</label>
                 <Input
                   placeholder="e.g. SAVE20"
                   value={form.code}
@@ -102,18 +104,18 @@ export default function CouponManager({ store, vendorUsername }) {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-medium text-slate-600 mb-1 block">Discount Type</label>
+                  <label className="text-xs font-medium text-slate-600 mb-1 block">{t("store.discountType")}</label>
                   <Select value={form.discount_type} onValueChange={v => setForm(p => ({ ...p, discount_type: v }))}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="percentage">Percentage (%)</SelectItem>
-                      <SelectItem value="flat">Flat Amount ($)</SelectItem>
+                      <SelectItem value="percentage">{t("store.percentageType")}</SelectItem>
+                      <SelectItem value="flat">{t("store.flatAmountType")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
                   <label className="text-xs font-medium text-slate-600 mb-1 block">
-                    {form.discount_type === "percentage" ? "Discount %" : "Discount $"} *
+                    {form.discount_type === "percentage" ? t("store.discountPct") : t("store.discountFlat")} *
                   </label>
                   <Input
                     type="number"
@@ -125,15 +127,15 @@ export default function CouponManager({ store, vendorUsername }) {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-medium text-slate-600 mb-1 block">Min. Order ($)</label>
+                  <label className="text-xs font-medium text-slate-600 mb-1 block">{t("store.minOrderLabel")}</label>
                   <Input
-                    type="number" placeholder="0 (no minimum)"
+                    type="number" placeholder="0"
                     value={form.min_order_amount}
                     onChange={e => setForm(p => ({ ...p, min_order_amount: e.target.value }))}
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-medium text-slate-600 mb-1 block">Max Uses (0 = unlimited)</label>
+                  <label className="text-xs font-medium text-slate-600 mb-1 block">{t("store.maxUsesLabel")}</label>
                   <Input
                     type="number" placeholder="0"
                     value={form.max_uses}
@@ -142,7 +144,7 @@ export default function CouponManager({ store, vendorUsername }) {
                 </div>
               </div>
               <div>
-                <label className="text-xs font-medium text-slate-600 mb-1 block">Expiry Date (optional)</label>
+                <label className="text-xs font-medium text-slate-600 mb-1 block">{t("store.expiryDate")}</label>
                 <Input
                   type="date"
                   value={form.expires_at}
@@ -151,14 +153,15 @@ export default function CouponManager({ store, vendorUsername }) {
                 />
               </div>
 
-              {/* Preview */}
               {form.code && form.discount_value && (
                 <div className="p-3 bg-indigo-50 rounded-xl border border-dashed border-indigo-200">
-                  <p className="text-xs text-slate-500 mb-1">Preview</p>
+                  <p className="text-xs text-slate-500 mb-1">{t("store.couponPreview")}</p>
                   <p className="text-sm font-bold text-indigo-700 font-mono">{form.code}</p>
                   <p className="text-xs text-slate-600 mt-0.5">
-                    {form.discount_type === "percentage" ? `${form.discount_value}% off` : `$${form.discount_value} off`}
-                    {form.min_order_amount > 0 ? ` on orders over $${form.min_order_amount}` : ""}
+                    {form.discount_type === "percentage"
+                      ? t("store.percentOff", { value: form.discount_value })
+                      : t("store.flatOff", { value: form.discount_value })}
+                    {form.min_order_amount > 0 ? ` · ${t("store.minOrderMin", { amount: form.min_order_amount })}` : ""}
                   </p>
                 </div>
               )}
@@ -169,7 +172,7 @@ export default function CouponManager({ store, vendorUsername }) {
                 className="w-full bg-indigo-600 hover:bg-indigo-700"
               >
                 {createMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Tag className="w-4 h-4 mr-2" />}
-                Create Coupon
+                {t("store.createCoupon")}
               </Button>
             </div>
           </DialogContent>
@@ -185,8 +188,8 @@ export default function CouponManager({ store, vendorUsername }) {
       ) : coupons.length === 0 ? (
         <div className="text-center py-10 text-slate-400 bg-white rounded-2xl border border-dashed border-slate-200">
           <Tag className="w-8 h-8 mx-auto mb-2 text-slate-300" />
-          <p className="text-sm font-medium">No coupons yet</p>
-          <p className="text-xs mt-0.5">Create your first discount code to attract customers</p>
+          <p className="text-sm font-medium">{t("store.noCouponsYet")}</p>
+          <p className="text-xs mt-0.5">{t("store.createFirstCoupon")}</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -228,18 +231,18 @@ export default function CouponManager({ store, vendorUsername }) {
                           : "bg-green-100 text-green-700"
                       }`}>
                         {coupon.discount_type === "percentage"
-                          ? `${coupon.discount_value}% off`
-                          : `$${coupon.discount_value} off`}
+                          ? t("store.percentOff", { value: coupon.discount_value })
+                          : t("store.flatOff", { value: coupon.discount_value })}
                       </span>
-                      {expired && <Badge className="bg-red-100 text-red-600 border-0 text-[10px]">Expired</Badge>}
-                      {maxed && <Badge className="bg-gray-100 text-gray-600 border-0 text-[10px]">Max uses reached</Badge>}
-                      {!isInactive && <Badge className="bg-green-100 text-green-700 border-0 text-[10px]">Active</Badge>}
+                      {expired && <Badge className="bg-red-100 text-red-600 border-0 text-[10px]">{t("store.couponExpired")}</Badge>}
+                      {maxed && <Badge className="bg-gray-100 text-gray-600 border-0 text-[10px]">{t("store.maxUsesReached")}</Badge>}
+                      {!isInactive && <Badge className="bg-green-100 text-green-700 border-0 text-[10px]">{t("store.couponActive")}</Badge>}
                     </div>
                     <p className="text-xs text-slate-400 mt-0.5">
-                      {coupon.min_order_amount > 0 ? `Min $${coupon.min_order_amount} · ` : ""}
-                      {coupon.uses_count || 0} uses
+                      {coupon.min_order_amount > 0 ? `${t("store.minOrderMin", { amount: coupon.min_order_amount })} · ` : ""}
+                      {t("store.couponUses", { count: coupon.uses_count || 0 })}
                       {coupon.max_uses > 0 ? ` / ${coupon.max_uses}` : ""}
-                      {coupon.expires_at ? ` · Expires ${new Date(coupon.expires_at).toLocaleDateString()}` : ""}
+                      {coupon.expires_at ? ` · ${t("store.couponExpires", { date: new Date(coupon.expires_at).toLocaleDateString() })}` : ""}
                     </p>
                   </div>
 
@@ -247,7 +250,7 @@ export default function CouponManager({ store, vendorUsername }) {
                     <button
                       onClick={() => toggleMutation.mutate({ id: coupon.id, is_active: coupon.is_active })}
                       className="p-1.5 rounded-lg hover:bg-slate-50 transition-colors"
-                      title={coupon.is_active ? "Deactivate" : "Activate"}
+                      title={coupon.is_active ? t("store.deactivate") : t("store.activate")}
                     >
                       {coupon.is_active
                         ? <ToggleRight className="w-5 h-5 text-indigo-600" />

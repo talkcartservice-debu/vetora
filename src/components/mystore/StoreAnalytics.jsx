@@ -6,6 +6,7 @@ import {
 import { motion } from "framer-motion";
 import { DollarSign, ShoppingCart, Users, Package, Star, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "react-i18next";
 
 const COLORS = ["#6366f1", "#8b5cf6", "#ec4899", "#f59e0b", "#10b981", "#3b82f6"];
 
@@ -41,6 +42,7 @@ const CustomTooltip = ({ active, payload, label, prefix = "" }) => {
 };
 
 export default function StoreAnalytics({ orders, products, plan = 'free', onUpgrade }) {
+  const { t } = useTranslation();
   const isFree = plan === 'free';
 
   const totalRevenue = useMemo(() => orders.reduce((s, o) => s + (o.total || 0), 0), [orders]);
@@ -117,28 +119,26 @@ export default function StoreAnalytics({ orders, products, plan = 'free', onUpgr
               <Star className="w-5 h-5 text-indigo-600" />
             </div>
             <div>
-              <p className="text-sm font-bold text-slate-900">Unlock Advanced Insights</p>
-              <p className="text-xs text-slate-500">Upgrade to Pro or Elite to access CTR, product performance tables, location data and monthly trends.</p>
+              <p className="text-sm font-bold text-slate-900">{t("store.unlockAdvancedInsights")}</p>
+              <p className="text-xs text-slate-500">{t("store.upgradeForInsights")}</p>
             </div>
           </div>
-          <Button onClick={onUpgrade} size="sm" className="bg-indigo-600 hover:bg-indigo-700 rounded-xl whitespace-nowrap">Upgrade Plan</Button>
+          <Button onClick={onUpgrade} size="sm" className="bg-indigo-600 hover:bg-indigo-700 rounded-xl whitespace-nowrap">{t("store.upgradePlan")}</Button>
         </motion.div>
       )}
 
-      {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <StatCard label="Total Revenue" value={`$${totalRevenue.toFixed(2)}`} icon={DollarSign} color="bg-indigo-50 text-indigo-600" />
-        <StatCard label="Total Orders" value={orders.length} sub={`${paidOrders} paid`} icon={ShoppingCart} color="bg-purple-50 text-purple-600" />
-        <StatCard label="Avg. Order Value" value={`$${avgOrderValue.toFixed(2)}`} icon={Package} color="bg-pink-50 text-pink-600" />
-        <StatCard label="Unique Customers" value={uniqueBuyers || orders.length} icon={Users} color="bg-amber-50 text-amber-600" />
+        <StatCard label={t("store.totalRevenue")} value={`$${totalRevenue.toFixed(2)}`} icon={DollarSign} color="bg-indigo-50 text-indigo-600" />
+        <StatCard label={t("store.totalOrders")} value={orders.length} sub={t("store.paidCount", { count: paidOrders })} icon={ShoppingCart} color="bg-purple-50 text-purple-600" />
+        <StatCard label={t("store.avgOrderValue")} value={`$${avgOrderValue.toFixed(2)}`} icon={Package} color="bg-pink-50 text-pink-600" />
+        <StatCard label={t("store.uniqueCustomers")} value={uniqueBuyers || orders.length} icon={Users} color="bg-amber-50 text-amber-600" />
       </div>
 
-      {/* Daily Revenue Chart */}
       <div className="bg-white rounded-2xl border border-slate-100 p-5">
-        <h3 className="text-sm font-semibold text-slate-900 mb-1">Daily Revenue (Last 7 Days)</h3>
-        <p className="text-xs text-slate-400 mb-4">Revenue from completed orders per day</p>
+        <h3 className="text-sm font-semibold text-slate-900 mb-1">{t("store.dailyRevenue7Days")}</h3>
+        <p className="text-xs text-slate-400 mb-4">{t("store.dailyRevenueDesc")}</p>
         {dailyRevenue.every(d => d.revenue === 0) ? (
-          <div className="h-[200px] flex items-center justify-center text-sm text-slate-400">No order data for the past 7 days</div>
+          <div className="h-[200px] flex items-center justify-center text-sm text-slate-400">{t("store.noOrderLast7Days")}</div>
         ) : (
           <ResponsiveContainer width="100%" height={200}>
             <AreaChart data={dailyRevenue}>
@@ -158,12 +158,11 @@ export default function StoreAnalytics({ orders, products, plan = 'free', onUpgr
         )}
       </div>
 
-      {/* Top Products */}
       <div className="bg-white rounded-2xl border border-slate-100 p-5">
-        <h3 className="text-sm font-semibold text-slate-900 mb-1">Top Performing Products</h3>
-        <p className="text-xs text-slate-400 mb-4">Units sold across all orders</p>
+        <h3 className="text-sm font-semibold text-slate-900 mb-1">{t("store.topPerformingProducts")}</h3>
+        <p className="text-xs text-slate-400 mb-4">{t("store.unitsSoldAllOrders")}</p>
         {topProducts.length === 0 || topProducts.every(p => p.sales === 0) ? (
-          <div className="h-[180px] flex items-center justify-center text-sm text-slate-400">No sales data yet</div>
+          <div className="h-[180px] flex items-center justify-center text-sm text-slate-400">{t("store.noSalesDataYet")}</div>
         ) : (
           <ResponsiveContainer width="100%" height={180}>
             <BarChart data={topProducts} layout="vertical">
@@ -177,14 +176,12 @@ export default function StoreAnalytics({ orders, products, plan = 'free', onUpgr
         )}
       </div>
 
-      {/* Order Status & Low Stock */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Order Status Breakdown */}
         <div className="bg-white rounded-2xl border border-slate-100 p-5">
-          <h3 className="text-sm font-semibold text-slate-900 mb-1">Order Status Breakdown</h3>
-          <p className="text-xs text-slate-400 mb-4">Distribution of your orders by status</p>
+          <h3 className="text-sm font-semibold text-slate-900 mb-1">{t("store.orderStatusBreakdown")}</h3>
+          <p className="text-xs text-slate-400 mb-4">{t("store.orderStatusDesc")}</p>
           {orderStatusData.length === 0 ? (
-            <div className="h-[140px] flex items-center justify-center text-sm text-slate-400">No orders yet</div>
+            <div className="h-[140px] flex items-center justify-center text-sm text-slate-400">{t("store.noOrdersYetAnalytics")}</div>
           ) : (
             <div className="flex items-center gap-4">
               <ResponsiveContainer width="50%" height={140}>
@@ -208,21 +205,20 @@ export default function StoreAnalytics({ orders, products, plan = 'free', onUpgr
           )}
         </div>
 
-        {/* Low Stock Alert */}
         <div className="bg-white rounded-2xl border border-slate-100 p-5">
           <h3 className="text-sm font-semibold text-slate-900 mb-1 flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-amber-500" /> Low Stock Alert
+            <AlertTriangle className="w-4 h-4 text-amber-500" /> {t("store.lowStockAlert")}
           </h3>
-          <p className="text-xs text-slate-400 mb-4">Products with 5 or fewer units remaining</p>
+          <p className="text-xs text-slate-400 mb-4">{t("store.lowStockDesc")}</p>
           {lowStockProducts.length === 0 ? (
-            <div className="h-[100px] flex items-center justify-center text-sm text-slate-400">All products are well stocked</div>
+            <div className="h-[100px] flex items-center justify-center text-sm text-slate-400">{t("store.wellStocked")}</div>
           ) : (
             <div className="space-y-2">
               {lowStockProducts.map(p => (
                 <div key={p._id || p.id} className="flex items-center justify-between py-2 border-b border-slate-50 last:border-0">
                   <span className="text-xs font-medium text-slate-700 truncate max-w-[60%]">{p.title}</span>
                   <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${p.inventory_count === 0 ? "bg-red-100 text-red-600" : "bg-amber-100 text-amber-700"}`}>
-                    {p.inventory_count === 0 ? "Out of stock" : `${p.inventory_count} left`}
+                    {p.inventory_count === 0 ? t("store.outOfStockLabel") : t("store.itemsLeft", { count: p.inventory_count })}
                   </span>
                 </div>
               ))}

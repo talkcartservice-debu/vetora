@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 const COUNTRY_PRESETS = [
   { label: "🇺🇸 United States", code: "US" },
@@ -35,6 +36,7 @@ const BLANK_ZONE = {
 };
 
 function ZoneForm({ initial = BLANK_ZONE, onSave, onCancel, saving }) {
+  const { t } = useTranslation();
   const [form, setForm] = useState(initial);
 
   const toggleCountry = (code) => {
@@ -54,16 +56,16 @@ function ZoneForm({ initial = BLANK_ZONE, onSave, onCancel, saving }) {
     <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="bg-slate-50 rounded-2xl border border-slate-200 p-4 space-y-4">
       <div className="grid grid-cols-2 gap-3">
         <div className="col-span-2">
-          <label className="text-xs text-slate-500 font-medium block mb-1">Zone Name</label>
+          <label className="text-xs text-slate-500 font-medium block mb-1">{t("store.zoneName")}</label>
           <Input
             value={form.zone_name}
             onChange={e => setForm(f => ({ ...f, zone_name: e.target.value }))}
-            placeholder="e.g. North America, Europe…"
+            placeholder={t("store.zoneNamePlaceholder")}
             className="rounded-xl text-sm"
           />
         </div>
         <div>
-          <label className="text-xs text-slate-500 font-medium block mb-1">Flat Rate (USD)</label>
+          <label className="text-xs text-slate-500 font-medium block mb-1">{t("store.flatRateUSD")}</label>
           <Input
             type="number"
             value={form.flat_rate ?? ""}
@@ -73,7 +75,7 @@ function ZoneForm({ initial = BLANK_ZONE, onSave, onCancel, saving }) {
           />
         </div>
         <div>
-          <label className="text-xs text-slate-500 font-medium block mb-1">Free Above ($) — 0 = never</label>
+          <label className="text-xs text-slate-500 font-medium block mb-1">{t("store.freeAboveLabel")}</label>
           <Input
             type="number"
             value={form.free_above ?? ""}
@@ -83,7 +85,7 @@ function ZoneForm({ initial = BLANK_ZONE, onSave, onCancel, saving }) {
           />
         </div>
         <div>
-          <label className="text-xs text-slate-500 font-medium block mb-1">Min Days</label>
+          <label className="text-xs text-slate-500 font-medium block mb-1">{t("store.minDays")}</label>
           <Input
             type="number"
             value={form.estimated_days_min}
@@ -92,7 +94,7 @@ function ZoneForm({ initial = BLANK_ZONE, onSave, onCancel, saving }) {
           />
         </div>
         <div>
-          <label className="text-xs text-slate-500 font-medium block mb-1">Max Days</label>
+          <label className="text-xs text-slate-500 font-medium block mb-1">{t("store.maxDays")}</label>
           <Input
             type="number"
             value={form.estimated_days_max}
@@ -103,7 +105,7 @@ function ZoneForm({ initial = BLANK_ZONE, onSave, onCancel, saving }) {
       </div>
 
       <div>
-        <label className="text-xs text-slate-500 font-medium block mb-2">Countries / Regions</label>
+        <label className="text-xs text-slate-500 font-medium block mb-2">{t("store.countriesRegions")}</label>
         <div className="flex flex-wrap gap-2">
           {COUNTRY_PRESETS.map(c => (
             <button
@@ -131,15 +133,16 @@ function ZoneForm({ initial = BLANK_ZONE, onSave, onCancel, saving }) {
           className="bg-indigo-600 hover:bg-indigo-700 rounded-xl flex-1"
         >
           {saving ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Check className="w-4 h-4 mr-1" />}
-          Save Zone
+          {t("store.saveZone")}
         </Button>
-        <Button variant="outline" className="rounded-xl" onClick={onCancel}>Cancel</Button>
+        <Button variant="outline" className="rounded-xl" onClick={onCancel}>{t("common.cancel")}</Button>
       </div>
     </motion.div>
   );
 }
 
 export default function ShippingZoneManager({ store, vendorUsername, plan = 'free', onUpgrade }) {
+  const { t } = useTranslation();
   const [showAdd, setShowAdd] = useState(false);
   const [editId, setEditId] = useState(null);
   const queryClient = useQueryClient();
@@ -159,17 +162,17 @@ export default function ShippingZoneManager({ store, vendorUsername, plan = 'fre
 
   const createMutation = useMutation({
     mutationFn: (data) => shippingZonesAPI.create({ ...data, vendor_username: vendorUsername, store_id: store?.id }),
-    onSuccess: () => { toast.success("Shipping zone added!"); setShowAdd(false); queryClient.invalidateQueries({ queryKey: ["shippingZones"] }); },
+    onSuccess: () => { toast.success(t("store.zoneAdded")); setShowAdd(false); queryClient.invalidateQueries({ queryKey: ["shippingZones"] }); },
   });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => shippingZonesAPI.update(id, data),
-    onSuccess: () => { toast.success("Zone updated!"); setEditId(null); queryClient.invalidateQueries({ queryKey: ["shippingZones"] }); },
+    onSuccess: () => { toast.success(t("store.zoneUpdated")); setEditId(null); queryClient.invalidateQueries({ queryKey: ["shippingZones"] }); },
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id) => shippingZonesAPI.delete(id),
-    onSuccess: () => { toast.success("Zone deleted"); queryClient.invalidateQueries({ queryKey: ["shippingZones"] }); },
+    onSuccess: () => { toast.success(t("store.zoneDeleted")); queryClient.invalidateQueries({ queryKey: ["shippingZones"] }); },
   });
 
   const toggleActive = (zone) => {
@@ -181,16 +184,16 @@ export default function ShippingZoneManager({ store, vendorUsername, plan = 'fre
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-            <Truck className="w-5 h-5 text-indigo-500" /> Shipping Zones
+            <Truck className="w-5 h-5 text-indigo-500" /> {t("store.shippingZones")}
           </h3>
-          <p className="text-xs text-slate-500 mt-0.5">Define where you ship and how much it costs</p>
+          <p className="text-xs text-slate-500 mt-0.5">{t("store.shippingZonesDesc")}</p>
         </div>
         <Button 
           onClick={() => {
             if (plan === 'pro' && zones.length >= 3) {
-              toast.error("Pro plan limit reached! Upgrade to Elite for unlimited shipping zones.", {
+              toast.error(t("store.proLimitReached"), {
                 action: {
-                  label: "Upgrade Plan",
+                  label: t("store.upgradePlan"),
                   onClick: () => onUpgrade()
                 }
               });
@@ -201,7 +204,7 @@ export default function ShippingZoneManager({ store, vendorUsername, plan = 'fre
           size="sm" 
           className="bg-indigo-600 hover:bg-indigo-700 rounded-xl gap-1.5"
         >
-          <Plus className="w-4 h-4" /> Add Zone
+          <Plus className="w-4 h-4" /> {t("store.addZone")}
         </Button>
       </div>
 
@@ -220,8 +223,8 @@ export default function ShippingZoneManager({ store, vendorUsername, plan = 'fre
       ) : zones.length === 0 && !showAdd ? (
         <div className="text-center py-12 border-2 border-dashed border-slate-200 rounded-2xl">
           <Globe className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-          <p className="text-sm text-slate-500 font-medium">No shipping zones yet</p>
-          <p className="text-xs text-slate-400">Add zones to define your delivery regions</p>
+          <p className="text-sm text-slate-500 font-medium">{t("store.noShippingZones")}</p>
+          <p className="text-xs text-slate-400">{t("store.addZonesDesc")}</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -246,9 +249,9 @@ export default function ShippingZoneManager({ store, vendorUsername, plan = 'fre
                       <div>
                         <p className={`text-sm font-semibold ${zone.is_active ? "text-slate-900" : "text-slate-400 line-through"}`}>{zone.zone_name}</p>
                         <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                          <span className="text-xs font-bold text-green-600">${(Number(zone.flat_rate) || 0).toFixed(2)} flat</span>
-                          {(Number(zone.free_above) || 0) > 0 && <span className="text-xs text-slate-400">· Free over ${zone.free_above}</span>}
-                          <span className="text-xs text-slate-400">· {zone.estimated_days_min}–{zone.estimated_days_max} days</span>
+                          <span className="text-xs font-bold text-green-600">${(Number(zone.flat_rate) || 0).toFixed(2)} {t("store.flatRate")}</span>
+                          {(Number(zone.free_above) || 0) > 0 && <span className="text-xs text-slate-400">· {t("store.freeOver", { amount: zone.free_above })}</span>}
+                          <span className="text-xs text-slate-400">· {t("store.estimatedDays", { min: zone.estimated_days_min, max: zone.estimated_days_max })}</span>
                         </div>
                       </div>
                     </div>
@@ -283,16 +286,15 @@ export default function ShippingZoneManager({ store, vendorUsername, plan = 'fre
         </div>
       )}
 
-      {/* Live Rates - Elite only */}
       <div className={`mt-8 p-5 rounded-2xl border-2 border-dashed transition-all ${isElite ? "bg-amber-50/30 border-amber-100" : "bg-slate-50 border-slate-200"}`}>
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
-              <h4 className={`text-sm font-bold ${isElite ? "text-amber-900" : "text-slate-900"}`}>Calculated Live Rates</h4>
+              <h4 className={`text-sm font-bold ${isElite ? "text-amber-900" : "text-slate-900"}`}>{t("store.calculatedLiveRates")}</h4>
               <Badge className={isElite ? "bg-amber-500 text-white border-0" : "bg-slate-200 text-slate-500 border-0"}>Elite</Badge>
             </div>
             <p className="text-xs text-slate-500 leading-relaxed max-w-md">
-              Automatically calculate shipping costs at checkout based on carrier rates (UPS, FedEx, DHL, etc.) and package weight.
+              {t("store.liveRatesDesc")}
             </p>
           </div>
           <Truck className={`w-8 h-8 ${isElite ? "text-amber-500" : "text-slate-300"} shrink-0`} />
@@ -300,15 +302,15 @@ export default function ShippingZoneManager({ store, vendorUsername, plan = 'fre
         
         {!isElite ? (
           <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between">
-            <span className="text-[11px] text-slate-400 font-medium">Upgrade to Elite to unlock live carrier rates</span>
+            <span className="text-[11px] text-slate-400 font-medium">{t("store.upgradeForLiveRates")}</span>
             <Button onClick={onUpgrade} size="sm" variant="outline" className="h-8 text-[10px] rounded-lg border-amber-200 text-amber-700 hover:bg-amber-50">
-              Upgrade to Elite
+              {t("store.upgradeToElite")}
             </Button>
           </div>
         ) : (
           <div className="mt-4 p-3 bg-white rounded-xl border border-amber-100 text-center">
-            <p className="text-xs font-semibold text-amber-700">Live rates integration is being prepared for your store.</p>
-            <p className="text-[10px] text-amber-500 mt-0.5">Contact your dedicated account manager to enable early access.</p>
+            <p className="text-xs font-semibold text-amber-700">{t("store.liveRatesPreparing")}</p>
+            <p className="text-[10px] text-amber-500 mt-0.5">{t("store.liveRatesContact")}</p>
           </div>
         )}
       </div>

@@ -9,6 +9,7 @@ import {
   MapPin, Star, DollarSign, Package, Users, AlertTriangle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "react-i18next";
 
 const COLORS = ["#6366f1", "#8b5cf6", "#ec4899", "#f59e0b", "#10b981", "#3b82f6", "#ef4444"];
 
@@ -51,6 +52,7 @@ function KpiCard({ icon: Icon, label, value, change, color, sub }) {
 }
 
 export default function AdvancedAnalytics({ orders, products, plan = 'free', onUpgrade }) {
+  const { t } = useTranslation();
   const isElite = plan === 'elite';
 
   const totalRevenue = useMemo(() => orders.reduce((s, o) => s + (o.total || 0), 0), [orders]);
@@ -160,20 +162,18 @@ export default function AdvancedAnalytics({ orders, products, plan = 'free', onU
 
   return (
     <div className="space-y-5">
-      {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <KpiCard icon={DollarSign} label="Total Revenue" value={`$${totalRevenue.toFixed(2)}`} color="bg-indigo-50 text-indigo-600" />
-        <KpiCard icon={ShoppingCart} label="Total Orders" value={orders.length} sub={`${paidOrders} paid`} color="bg-purple-50 text-purple-600" />
-        <KpiCard icon={Users} label="Unique Customers" value={uniqueBuyers || orders.length} color="bg-pink-50 text-pink-600" />
-        <KpiCard icon={Package} label="Avg. Order Value" value={`$${avgOrderValue.toFixed(2)}`} sub={`${completionRate}% completion`} color="bg-green-50 text-green-600" />
+        <KpiCard icon={DollarSign} label={t("store.totalRevenue")} value={`$${totalRevenue.toFixed(2)}`} color="bg-indigo-50 text-indigo-600" />
+        <KpiCard icon={ShoppingCart} label={t("store.totalOrders")} value={orders.length} sub={t("store.paidCount", { count: paidOrders })} color="bg-purple-50 text-purple-600" />
+        <KpiCard icon={Users} label={t("store.uniqueCustomers")} value={uniqueBuyers || orders.length} color="bg-pink-50 text-pink-600" />
+        <KpiCard icon={Package} label={t("store.avgOrderValue")} value={`$${avgOrderValue.toFixed(2)}`} sub={t("store.completionRateSub", { rate: completionRate })} color="bg-green-50 text-green-600" />
       </div>
 
-      {/* Monthly Revenue & Orders Trend */}
       <div className="bg-white rounded-2xl border border-slate-100 p-5">
-        <h3 className="text-sm font-semibold text-slate-900 mb-0.5">Revenue & Orders Trend</h3>
-        <p className="text-xs text-slate-400 mb-4">Monthly revenue and order volume (this year)</p>
+        <h3 className="text-sm font-semibold text-slate-900 mb-0.5">{t("store.revenueTrend")}</h3>
+        <p className="text-xs text-slate-400 mb-4">{t("store.revenueTrendDesc")}</p>
         {revenueOrderData.every(d => d.revenue === 0) ? (
-          <div className="h-[200px] flex items-center justify-center text-sm text-slate-400">No order history yet</div>
+          <div className="h-[200px] flex items-center justify-center text-sm text-slate-400">{t("store.noOrderHistory")}</div>
         ) : (
           <ResponsiveContainer width="100%" height={200}>
             <AreaChart data={revenueOrderData}>
@@ -199,18 +199,17 @@ export default function AdvancedAnalytics({ orders, products, plan = 'free', onU
         )}
       </div>
 
-      {/* Product Performance Table */}
       <div className="bg-white rounded-2xl border border-slate-100 p-5">
-        <h3 className="text-sm font-semibold text-slate-900 mb-1">Product Performance</h3>
-        <p className="text-xs text-slate-400 mb-3">Units sold and revenue per product (from orders)</p>
+        <h3 className="text-sm font-semibold text-slate-900 mb-1">{t("store.productPerformance")}</h3>
+        <p className="text-xs text-slate-400 mb-3">{t("store.productPerfDesc")}</p>
         {productPerf.length === 0 ? (
-          <div className="py-8 text-center text-sm text-slate-400">No sales data yet</div>
+          <div className="py-8 text-center text-sm text-slate-400">{t("store.noSalesDataYet")}</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
               <thead>
                 <tr className="border-b border-slate-100">
-                  {["Product", "Units Sold", "Revenue"].map(h => (
+                  {[t("store.productTableProduct"), t("store.productTableUnits"), t("store.productTableRevenue")].map(h => (
                     <th key={h} className="text-left pb-2 text-slate-500 font-medium pr-3 whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
@@ -235,13 +234,12 @@ export default function AdvancedAnalytics({ orders, products, plan = 'free', onU
         )}
       </div>
 
-      {/* Category Revenue + Delivery Methods */}
       <div className="grid lg:grid-cols-2 gap-4">
         <div className="bg-white rounded-2xl border border-slate-100 p-5">
-          <h3 className="text-sm font-semibold text-slate-900 mb-1">Revenue by Category</h3>
-          <p className="text-xs text-slate-400 mb-4">Which product categories earn the most</p>
+          <h3 className="text-sm font-semibold text-slate-900 mb-1">{t("store.revenueByCategory")}</h3>
+          <p className="text-xs text-slate-400 mb-4">{t("store.revenueByCategoryDesc")}</p>
           {categoryRevenue.length === 0 ? (
-            <div className="h-[160px] flex items-center justify-center text-sm text-slate-400">No category data yet</div>
+            <div className="h-[160px] flex items-center justify-center text-sm text-slate-400">{t("store.noCategoryData")}</div>
           ) : (
             <ResponsiveContainer width="100%" height={160}>
               <BarChart data={categoryRevenue} layout="vertical">
@@ -258,10 +256,10 @@ export default function AdvancedAnalytics({ orders, products, plan = 'free', onU
         </div>
 
         <div className="bg-white rounded-2xl border border-slate-100 p-5">
-          <h3 className="text-sm font-semibold text-slate-900 mb-1">Delivery Methods</h3>
-          <p className="text-xs text-slate-400 mb-4">How customers choose to receive orders</p>
+          <h3 className="text-sm font-semibold text-slate-900 mb-1">{t("store.deliveryMethods")}</h3>
+          <p className="text-xs text-slate-400 mb-4">{t("store.deliveryMethodsDesc")}</p>
           {deliveryMethodData.length === 0 ? (
-            <div className="h-[160px] flex items-center justify-center text-sm text-slate-400">No order data yet</div>
+            <div className="h-[160px] flex items-center justify-center text-sm text-slate-400">{t("store.noOrderDataYet")}</div>
           ) : (
             <div className="flex items-center gap-4 h-[160px]">
               <ResponsiveContainer width="50%" height={140}>
@@ -286,13 +284,12 @@ export default function AdvancedAnalytics({ orders, products, plan = 'free', onU
         </div>
       </div>
 
-      {/* Order Status + Top Locations */}
       <div className="grid lg:grid-cols-2 gap-4">
         <div className="bg-white rounded-2xl border border-slate-100 p-5">
-          <h3 className="text-sm font-semibold text-slate-900 mb-1">Order Status Pipeline</h3>
-          <p className="text-xs text-slate-400 mb-4">Current state of all your orders</p>
+          <h3 className="text-sm font-semibold text-slate-900 mb-1">{t("store.orderStatusPipeline")}</h3>
+          <p className="text-xs text-slate-400 mb-4">{t("store.orderStatusPipelineDesc")}</p>
           {orderStatusData.length === 0 ? (
-            <div className="py-8 text-center text-sm text-slate-400">No orders yet</div>
+            <div className="py-8 text-center text-sm text-slate-400">{t("store.noOrdersYetAnalytics")}</div>
           ) : (
             <div className="space-y-2">
               {orderStatusData.map((s, i) => {
@@ -315,7 +312,7 @@ export default function AdvancedAnalytics({ orders, products, plan = 'free', onU
                   </div>
                 );
               })}
-              <p className="text-xs text-slate-400 mt-3">Order completion rate: <span className="text-indigo-600 font-semibold">{completionRate}%</span></p>
+              <p className="text-xs text-slate-400 mt-3">{t("store.orderCompletionRate")} <span className="text-indigo-600 font-semibold">{completionRate}%</span></p>
             </div>
           )}
         </div>
@@ -326,17 +323,17 @@ export default function AdvancedAnalytics({ orders, products, plan = 'free', onU
               <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center mb-3">
                 <Star className="w-5 h-5 text-amber-600" />
               </div>
-              <h4 className="text-sm font-bold text-slate-900 mb-1">Elite Analytics Feature</h4>
-              <p className="text-[11px] text-slate-500 mb-4 max-w-[180px]">Upgrade to see where your customers are shipping from.</p>
-              <Button onClick={onUpgrade} size="sm" variant="outline" className="h-8 text-[10px] rounded-lg border-amber-200 text-amber-700 hover:bg-amber-50">Upgrade Plan</Button>
+              <h4 className="text-sm font-bold text-slate-900 mb-1">{t("store.eliteAnalyticsFeature")}</h4>
+              <p className="text-[11px] text-slate-500 mb-4 max-w-[180px]">{t("store.upgradeForLocation")}</p>
+              <Button onClick={onUpgrade} size="sm" variant="outline" className="h-8 text-[10px] rounded-lg border-amber-200 text-amber-700 hover:bg-amber-50">{t("store.upgradePlan")}</Button>
             </div>
           )}
           <h3 className="text-sm font-semibold text-slate-900 mb-1 flex items-center gap-1.5">
-            <MapPin className="w-4 h-4 text-red-500" /> Top Shipping Countries
+            <MapPin className="w-4 h-4 text-red-500" /> {t("store.topShippingCountries")}
           </h3>
-          <p className="text-xs text-slate-400 mb-3">Where your customers are located</p>
+          <p className="text-xs text-slate-400 mb-3">{t("store.topShippingCountriesDesc")}</p>
           {topCountries.length === 0 ? (
-            <div className="py-8 text-center text-sm text-slate-400">No shipping data yet</div>
+            <div className="py-8 text-center text-sm text-slate-400">{t("store.noShippingData")}</div>
           ) : (
             <div className="space-y-2">
               {topCountries.map((loc, i) => (
@@ -354,21 +351,20 @@ export default function AdvancedAnalytics({ orders, products, plan = 'free', onU
         </div>
       </div>
 
-      {/* Low Stock */}
       <div className="bg-white rounded-2xl border border-slate-100 p-5">
         <h3 className="text-sm font-semibold text-slate-900 mb-1 flex items-center gap-2">
-          <AlertTriangle className="w-4 h-4 text-amber-500" /> Low Stock Alert
+          <AlertTriangle className="w-4 h-4 text-amber-500" /> {t("store.lowStockAlert")}
         </h3>
-        <p className="text-xs text-slate-400 mb-4">Products with 5 or fewer units remaining</p>
+        <p className="text-xs text-slate-400 mb-4">{t("store.lowStockDesc")}</p>
         {lowStockProducts.length === 0 ? (
-          <p className="text-sm text-slate-400">All products are well stocked.</p>
+          <p className="text-sm text-slate-400">{t("store.wellStocked")}</p>
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {lowStockProducts.map(p => (
               <div key={p._id || p.id} className="flex items-center justify-between p-3 rounded-xl bg-amber-50 border border-amber-100">
                 <span className="text-xs font-medium text-slate-700 truncate max-w-[60%]">{p.title}</span>
                 <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${p.inventory_count === 0 ? "bg-red-100 text-red-600" : "bg-amber-200 text-amber-800"}`}>
-                  {p.inventory_count === 0 ? "Out of stock" : `${p.inventory_count} left`}
+                  {p.inventory_count === 0 ? t("store.outOfStockLabel") : t("store.itemsLeft", { count: p.inventory_count })}
                 </span>
               </div>
             ))}
