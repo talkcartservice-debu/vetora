@@ -8,10 +8,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { useTranslation } from "@/components/providers/LanguageContext";
 
 const CATEGORIES = ["fashion", "electronics", "home", "beauty", "sports", "food", "art", "books", "handmade", "other"];
 
 export default function AIProductGenerator({ onApply, plan = 'free', onUpgrade }) {
+  const { t } = useTranslation();
   const isFree = plan === 'free';
   const [open, setOpen] = useState(false);
   const [category, setCategory] = useState("fashion");
@@ -20,7 +22,7 @@ export default function AIProductGenerator({ onApply, plan = 'free', onUpgrade }
 
   const generateMutation = useMutation({
     mutationFn: async () => {
-      if (!keyFeatures.trim()) throw new Error("Enter key features first");
+      if (!keyFeatures.trim()) throw new Error(t("aiProduct.enterFeaturesFirst"));
       const res = await aiAPI.generateProductContent({
         category,
         keyFeatures,
@@ -32,27 +34,27 @@ export default function AIProductGenerator({ onApply, plan = 'free', onUpgrade }
     },
     onError: (error) => {
       if (error.status === 403 || error.message?.toLowerCase().includes("limit") || error.message?.toLowerCase().includes("upgrade")) {
-        toast.error("AI Generation is a premium feature. Please upgrade your plan to continue.", {
+        toast.error(t("aiProduct.premiumFeatureError"), {
           action: {
-            label: "Upgrade Plan",
+            label: t("aiProduct.upgradePlan"),
             onClick: () => onUpgrade()
           }
         });
       } else {
-        toast.error(error.message || "Failed to generate content");
+        toast.error(error.message || t("aiProduct.failedToGenerate"));
       }
     }
   });
 
   const generate = () => {
-    if (!keyFeatures.trim()) { toast.error("Enter key features first"); return; }
+    if (!keyFeatures.trim()) { toast.error(t("aiProduct.enterFeaturesFirst")); return; }
     generateMutation.mutate();
   };
 
   const apply = () => {
     if (!result) return;
     onApply(result);
-    toast.success("AI content applied!");
+    toast.success(t("aiProduct.contentApplied"));
     setOpen(false);
   };
 
@@ -69,10 +71,10 @@ export default function AIProductGenerator({ onApply, plan = 'free', onUpgrade }
         </div>
         <div className="flex-1">
           <div className="flex items-center gap-2">
-            <p className="text-sm font-bold text-purple-900">AI Product Assistant</p>
+            <p className="text-sm font-bold text-purple-900">{t("aiProduct.title")}</p>
             {isFree && <Lock className="w-3 h-3 text-purple-400" />}
           </div>
-          <p className="text-xs text-purple-600">Auto-generate SEO title, description & tags</p>
+          <p className="text-xs text-purple-600">{t("aiProduct.subtitle")}</p>
         </div>
         {open ? <ChevronUp className="w-4 h-4 text-purple-500" /> : <ChevronDown className="w-4 h-4 text-purple-500" />}
       </button>
@@ -91,9 +93,9 @@ export default function AIProductGenerator({ onApply, plan = 'free', onUpgrade }
                   <div className="w-12 h-12 rounded-2xl bg-purple-100 flex items-center justify-center mx-auto mb-3">
                     <Star className="w-6 h-6 text-purple-600" />
                   </div>
-                  <h4 className="text-sm font-bold text-slate-900 mb-1">AI Features Restricted</h4>
+                  <h4 className="text-sm font-bold text-slate-900 mb-1">{t("aiProduct.featuresRestricted")}</h4>
                   <p className="text-xs text-slate-500 mb-4 max-w-[240px] mx-auto">
-                    Upgrade to Pro or Elite to use our AI assistant for generating product titles, descriptions, and SEO tags.
+                    {t("aiProduct.featuresRestrictedDesc")}
                   </p>
                   <Button 
                     onClick={(e) => {
@@ -103,20 +105,20 @@ export default function AIProductGenerator({ onApply, plan = 'free', onUpgrade }
                     size="sm" 
                     className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 rounded-xl"
                   >
-                    Upgrade Plan
+                    {t("aiProduct.upgradePlan")}
                   </Button>
                 </div>
               ) : (
                 <>
                   <div className="pt-3">
-                    <label className="text-xs font-medium text-slate-600 block mb-1">Product Category</label>
+                    <label className="text-xs font-medium text-slate-600 block mb-1">{t("aiProduct.productCategory")}</label>
                     <Select value={category} onValueChange={setCategory}>
                       <SelectTrigger className="rounded-xl text-sm bg-white">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         {CATEGORIES.map(c => (
-                          <SelectItem key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</SelectItem>
+                          <SelectItem key={c} value={c}>{t(`explore.cat.${c}`)}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -124,12 +126,12 @@ export default function AIProductGenerator({ onApply, plan = 'free', onUpgrade }
 
                   <div>
                     <label className="text-xs font-medium text-slate-600 block mb-1">
-                      Key Features & Details <span className="text-slate-400">(the more detail, the better)</span>
+                      {t("aiProduct.keyFeatures")} <span className="text-slate-400">{t("aiProduct.keyFeaturesHint")}</span>
                     </label>
                     <Textarea
                       value={keyFeatures}
                       onChange={e => setKeyFeatures(e.target.value)}
-                      placeholder="e.g. oversized cotton hoodie, vintage wash, unisex, available in 5 colors, eco-friendly fabric, streetwear style..."
+                      placeholder={t("aiProduct.keyFeaturesPlaceholder")}
                       className="rounded-xl text-sm bg-white min-h-[80px]"
                     />
                   </div>
@@ -140,33 +142,33 @@ export default function AIProductGenerator({ onApply, plan = 'free', onUpgrade }
                     className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 rounded-xl gap-2"
                   >
                     {generating ? (
-                      <><Loader2 className="w-4 h-4 animate-spin" /> Generating...</>
+                      <><Loader2 className="w-4 h-4 animate-spin" /> {t("aiProduct.generating")}</>
                     ) : (
-                      <><Sparkles className="w-4 h-4" /> Generate with AI</>
+                      <><Sparkles className="w-4 h-4" /> {t("aiProduct.generateWithAI")}</>
                     )}
                   </Button>
 
                   {result && (
                     <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="space-y-3 bg-white rounded-xl border border-purple-100 p-4">
                       <div className="flex items-center justify-between">
-                        <p className="text-xs font-bold text-purple-800 uppercase tracking-wide">AI Generated Content</p>
+                        <p className="text-xs font-bold text-purple-800 uppercase tracking-wide">{t("aiProduct.aiGeneratedContent")}</p>
                         <button onClick={generate} className="flex items-center gap-1 text-xs text-purple-600 hover:text-purple-800">
-                          <RefreshCw className="w-3 h-3" /> Regenerate
+                          <RefreshCw className="w-3 h-3" /> {t("aiProduct.regenerate")}
                         </button>
                       </div>
 
                       <div>
-                        <p className="text-[10px] font-semibold text-slate-400 uppercase mb-1">Title</p>
+                        <p className="text-[10px] font-semibold text-slate-400 uppercase mb-1">{t("aiProduct.resultTitle")}</p>
                         <p className="text-sm font-semibold text-slate-800">{result.title}</p>
                       </div>
 
                       <div>
-                        <p className="text-[10px] font-semibold text-slate-400 uppercase mb-1">Description</p>
+                        <p className="text-[10px] font-semibold text-slate-400 uppercase mb-1">{t("aiProduct.resultDescription")}</p>
                         <p className="text-xs text-slate-600 leading-relaxed line-clamp-4">{result.description}</p>
                       </div>
 
                       <div>
-                        <p className="text-[10px] font-semibold text-slate-400 uppercase mb-1.5">SEO Tags</p>
+                        <p className="text-[10px] font-semibold text-slate-400 uppercase mb-1.5">{t("aiProduct.seoTags")}</p>
                         <div className="flex flex-wrap gap-1.5">
                           {result.tags?.map((tag, i) => (
                             <Badge key={i} variant="secondary" className="text-[10px] px-2 py-0.5">{tag}</Badge>
@@ -176,13 +178,13 @@ export default function AIProductGenerator({ onApply, plan = 'free', onUpgrade }
 
                       {result.seo_title && (
                         <div className="bg-slate-50 rounded-lg p-2.5">
-                          <p className="text-[10px] font-semibold text-slate-400 uppercase mb-0.5">SEO Meta Title</p>
+                          <p className="text-[10px] font-semibold text-slate-400 uppercase mb-0.5">{t("aiProduct.seoMetaTitle")}</p>
                           <p className="text-xs text-slate-700">{result.seo_title}</p>
                         </div>
                       )}
 
                       <Button onClick={apply} className="w-full bg-indigo-600 hover:bg-indigo-700 rounded-xl gap-2">
-                        <Check className="w-4 h-4" /> Apply to Product Form
+                        <Check className="w-4 h-4" /> {t("aiProduct.applyToForm")}
                       </Button>
                     </motion.div>
                   )}

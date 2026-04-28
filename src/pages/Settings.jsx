@@ -154,9 +154,9 @@ export default function Settings() {
     setLangSaving(true);
     try {
       await setLang(selectedLang);
-      toast.success("Language updated successfully!");
+      toast.success(t("settings.languageUpdated"));
     } catch {
-      toast.error("Failed to update language");
+      toast.error(t("settings.languageUpdateFailed"));
     } finally {
       setLangSaving(false);
     }
@@ -178,29 +178,29 @@ export default function Settings() {
       setShow2FAModal(true);
       setOtpToken("");
     },
-    onError: (err) => toast.error(err.message || "Failed to initiate 2FA setup"),
+    onError: (err) => toast.error(err.message || t("settings.twoFASetupFailed")),
   });
 
   const enable2FAMutation = useMutation({
     mutationFn: () => authAPI.enable2FA(otpToken),
     onSuccess: () => {
-      toast.success("Two-factor authentication enabled!");
+      toast.success(t("settings.twoFAEnabled"));
       setShow2FAModal(false);
       checkUserAuth();
       setOtpToken("");
     },
-    onError: (err) => toast.error(err.message || "Invalid verification code"),
+    onError: (err) => toast.error(err.message || t("settings.invalidCode")),
   });
 
   const disable2FAMutation = useMutation({
     mutationFn: () => authAPI.disable2FA(otpToken),
     onSuccess: () => {
-      toast.success("Two-factor authentication disabled.");
+      toast.success(t("settings.twoFADisabled"));
       setShowDisable2FAModal(false);
       checkUserAuth();
       setOtpToken("");
     },
-    onError: (err) => toast.error(err.message || "Invalid verification code"),
+    onError: (err) => toast.error(err.message || t("settings.invalidCode")),
   });
 
   const updateMutation = useMutation({
@@ -208,67 +208,67 @@ export default function Settings() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["currentUser"] });
       checkUserAuth();
-      toast.success("Settings updated successfully!");
+      toast.success(t("settings.updated"));
     },
     onError: (err) => {
-      toast.error(err.message || "Failed to update settings");
+      toast.error(err.message || t("settings.updateFailed"));
     }
   });
 
   const passMutation = useMutation({
     mutationFn: () => authAPI.updatePassword(passForm.current, passForm.new),
     onSuccess: () => {
-      toast.success("Password updated successfully!");
+      toast.success(t("settings.passwordUpdated"));
       setShowPasswordModal(false);
       setPassForm({ current: "", new: "", confirm: "" });
     },
-    onError: (err) => toast.error(err.message || "Failed to update password"),
+    onError: (err) => toast.error(err.message || t("settings.passwordUpdateFailed")),
   });
 
   const emailMutation = useMutation({
     mutationFn: () => authAPI.updateEmail(emailForm.newEmail, emailForm.password),
     onSuccess: () => {
-      setOtpToken(""); // Clear OTP token for email verification
-      toast.success("Verification code sent to your new email!");
+      setOtpToken("");
+      toast.success(t("settings.emailCodeSent"));
       setShowEmailModal(false);
       setShowEmailVerifyModal(true);
     },
-    onError: (err) => toast.error(err.message || "Failed to update email"),
+    onError: (err) => toast.error(err.message || t("settings.emailUpdateFailed")),
   });
 
   const verifyEmailMutation = useMutation({
     mutationFn: (token) => authAPI.verifyEmail(emailForm.newEmail, token),
     onSuccess: () => {
-      toast.success("Email updated and verified successfully!");
+      toast.success(t("settings.emailVerified"));
       setShowEmailVerifyModal(false);
       setEmailForm({ newEmail: "", password: "" });
       setOtpToken("");
       checkUserAuth();
     },
-    onError: (err) => toast.error(err.message || "Invalid verification code"),
+    onError: (err) => toast.error(err.message || t("settings.invalidCode")),
   });
 
   const phoneMutation = useMutation({
     mutationFn: () => authAPI.updatePhone(phoneForm.newPhone),
     onSuccess: () => {
       setOtpToken("");
-      toast.success("Verification code sent to your phone via WhatsApp/SMS!");
+      toast.success(t("settings.phoneCodeSent"));
       setShowPhoneModal(false);
       setShowPhoneVerifyModal(true);
     },
-    onError: (err) => toast.error(err.message || "Failed to update phone number"),
+    onError: (err) => toast.error(err.message || t("settings.phoneUpdateFailed")),
   });
 
   const verifyPhoneMutation = useMutation({
     mutationFn: (token) => authAPI.verifyPhone(phoneForm.newPhone, token),
     onSuccess: () => {
-      toast.success("Phone number updated and verified successfully!");
+      toast.success(t("settings.phoneVerified"));
       setShowPhoneVerifyModal(false);
       setPhoneForm({ newPhone: "" });
       setOtpToken("");
       checkUserAuth();
     },
-    onError: (err) => toast.error(err.message || "Invalid verification code"),
+    onError: (err) => toast.error(err.message || t("settings.invalidCode")),
   });
 
   const [isRegisteringBiometrics, setIsRegisteringBiometrics] = useState(false);
@@ -278,11 +278,11 @@ export default function Settings() {
     try {
       const result = await registerBiometrics();
       if (result.verified) {
-        toast.success("Biometric authentication registered successfully!");
+        toast.success(t("settings.biometricsRegisteredSuccess"));
       }
     } catch (err) {
       console.error(err);
-      toast.error(err.message || "Failed to register biometrics. Your browser may not support it or it was cancelled.");
+      toast.error(err.message || t("settings.biometricsRegisteredSuccess"));
     } finally {
       setIsRegisteringBiometrics(false);
     }
@@ -300,7 +300,7 @@ export default function Settings() {
         updateMutation.mutate({ [`${type}_url`]: res.url });
       }
     } catch (err) {
-      toast.error(`Failed to upload ${type}`);
+      toast.error(t("settings.uploadFailed", { type }));
     } finally {
       setUploading(prev => ({ ...prev, [type]: false }));
     }
@@ -345,7 +345,7 @@ export default function Settings() {
                 <input type="file" className="hidden" accept="image/*" onChange={(e) => handleFileUpload(e, 'banner')} disabled={uploading.banner} />
               </label>
               <div className="absolute top-2 left-2 px-2 py-0.5 bg-black/40 backdrop-blur-md rounded-md border border-white/10">
-                <p className="text-[9px] text-white font-bold uppercase tracking-wider">Profile Banner</p>
+                <p className="text-[9px] text-white font-bold uppercase tracking-wider">{t("settings.profileBanner")}</p>
               </div>
             </div>
 
@@ -371,13 +371,13 @@ export default function Settings() {
                   <input type="file" className="hidden" accept="image/*" onChange={(e) => handleFileUpload(e, 'avatar')} disabled={uploading.avatar} />
                 </label>
               </div>
-              <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium mt-2">Recommended: 400x400px JPG or PNG</p>
+              <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium mt-2">{t("settings.avatarRecommendation")}</p>
             </div>
           </div>
 
           <div className="space-y-4">
             <div>
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1.5 ml-1">Username</label>
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1.5 ml-1">{t("settings.username")}</label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm">@</span>
                 <Input 
@@ -387,10 +387,10 @@ export default function Settings() {
                   className="rounded-xl border-slate-200 dark:border-slate-800 dark:bg-slate-900 dark:text-white focus:border-indigo-500 pl-8"
                 />
               </div>
-              <p className="text-[10px] text-slate-400 mt-1 ml-1">Your unique identifier on Aicon X. Only lowercase letters, numbers, and underscores.</p>
+              <p className="text-[10px] text-slate-400 mt-1 ml-1">{t("settings.usernameHint")}</p>
             </div>
             <div>
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1.5 ml-1">Display Name</label>
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1.5 ml-1">{t("settings.displayName")}</label>
               <Input 
                 value={profileData.display_name} 
                 onChange={e => setProfileData({...profileData, display_name: e.target.value})}
@@ -399,11 +399,11 @@ export default function Settings() {
               />
             </div>
             <div>
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1.5 ml-1">Bio</label>
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1.5 ml-1">{t("settings.bio")}</label>
               <textarea 
                 value={profileData.bio}
                 onChange={e => setProfileData({...profileData, bio: e.target.value})}
-                placeholder="Tell the community about yourself..."
+                placeholder={t("settings.bioPlaceholder")}
                 rows={3}
                 className="w-full rounded-xl border border-slate-200 dark:border-slate-800 focus:border-indigo-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white px-3 py-2 text-sm outline-none transition-all resize-none"
               />
@@ -433,8 +433,8 @@ export default function Settings() {
           <div className="p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 flex items-center justify-between">
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Email Address</p>
-                <span className="text-[9px] font-black bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500 px-1.5 py-0.5 rounded-md border border-slate-200 dark:border-slate-600">PRIVATE</span>
+                <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{t("settings.emailAddress")}</p>
+                <span className="text-[9px] font-black bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500 px-1.5 py-0.5 rounded-md border border-slate-200 dark:border-slate-600">{t("settings.private")}</span>
               </div>
               <p className="text-sm font-semibold text-slate-900 dark:text-white">{currentUser?.email}</p>
             </div>
@@ -444,16 +444,16 @@ export default function Settings() {
               className="text-indigo-600 dark:text-indigo-400 font-bold text-xs h-8 px-3 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/20"
               onClick={() => setShowEmailModal(true)}
             >
-              Change
+              {t("settings.change")}
             </Button>
           </div>
           <div className="p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 flex items-center justify-between">
             <div>
-              <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Phone Number</p>
+              <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{t("settings.phoneNumber")}</p>
               <p className="text-sm font-semibold text-slate-900 dark:text-white">
-                {currentUser?.phone_number || "Not set"}
+                {currentUser?.phone_number || t("settings.notSet")}
                 {currentUser?.is_phone_verified && (
-                  <span className="ml-2 text-[10px] bg-green-50 text-green-600 px-1.5 py-0.5 rounded-full border border-green-100">Verified</span>
+                  <span className="ml-2 text-[10px] bg-green-50 text-green-600 px-1.5 py-0.5 rounded-full border border-green-100">{t("common.verified")}</span>
                 )}
               </p>
             </div>
@@ -463,12 +463,12 @@ export default function Settings() {
               className="text-indigo-600 dark:text-indigo-400 font-bold text-xs h-8 px-3 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/20"
               onClick={() => setShowPhoneModal(true)}
             >
-              {currentUser?.phone_number ? "Change" : "Add"}
+              {currentUser?.phone_number ? t("settings.change") : t("settings.add")}
             </Button>
           </div>
           <div className="p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 flex items-center justify-between">
             <div>
-              <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Password</p>
+              <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{t("settings.password")}</p>
               <p className="text-sm font-semibold text-slate-900 dark:text-white">••••••••••••</p>
             </div>
             <Button 
@@ -477,7 +477,7 @@ export default function Settings() {
               className="text-indigo-600 dark:text-indigo-400 font-bold text-xs h-8 px-3 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/20"
               onClick={() => setShowPasswordModal(true)}
             >
-              Update
+              {t("settings.update")}
             </Button>
           </div>
           <div className="p-4 bg-indigo-50 dark:bg-indigo-900/10 rounded-2xl border border-indigo-100 dark:border-indigo-900/30 flex items-start gap-3">
@@ -485,15 +485,15 @@ export default function Settings() {
               <Shield className="w-5 h-5" />
             </div>
             <div>
-              <h4 className="text-sm font-bold text-indigo-900 dark:text-indigo-100">Two-Factor Authentication</h4>
-              <p className="text-xs text-indigo-600/70 dark:text-indigo-400/70 mb-2 leading-relaxed">Add an extra layer of security to your account by requiring a code from your phone to login.</p>
+              <h4 className="text-sm font-bold text-indigo-900 dark:text-indigo-100">{t("settings.twoFactor")}</h4>
+              <p className="text-xs text-indigo-600/70 dark:text-indigo-400/70 mb-2 leading-relaxed">{t("settings.twoFactorDesc")}</p>
               <Button 
                 size="sm" 
                 onClick={handle2FAToggle}
                 disabled={updateMutation.isPending}
                 className={`${currentUser?.is_2fa_enabled ? "bg-red-500 hover:bg-red-600" : "bg-indigo-600 hover:bg-indigo-700"} text-white rounded-lg h-8 text-[10px] font-bold px-3`}
               >
-                {currentUser?.is_2fa_enabled ? "Disable 2FA" : "Enable 2FA"}
+                {currentUser?.is_2fa_enabled ? t("settings.disable2FA") : t("settings.enable2FA")}
               </Button>
             </div>
           </div>
@@ -503,8 +503,8 @@ export default function Settings() {
               <Smartphone className="w-5 h-5" />
             </div>
             <div>
-              <h4 className="text-sm font-bold text-violet-900 dark:text-violet-100">Biometric Authentication</h4>
-              <p className="text-xs text-violet-600/70 dark:text-violet-400/70 mb-2 leading-relaxed">Login faster and more securely using FaceID, TouchID, or Windows Hello.</p>
+              <h4 className="text-sm font-bold text-violet-900 dark:text-violet-100">{t("settings.biometricAuth")}</h4>
+              <p className="text-xs text-violet-600/70 dark:text-violet-400/70 mb-2 leading-relaxed">{t("settings.biometricAuthDesc")}</p>
               <div className="flex flex-col gap-2">
                 <Button 
                   size="sm" 
@@ -515,11 +515,11 @@ export default function Settings() {
                   {isRegisteringBiometrics ? (
                     <Loader2 className="w-3 h-3 animate-spin mr-2" />
                   ) : null}
-                  Register Biometrics
+                  {t("settings.registerBiometrics")}
                 </Button>
                 {currentUser?.authenticators?.length > 0 && (
                   <p className="text-[10px] text-emerald-600 font-bold flex items-center gap-1">
-                    <Shield className="w-3 h-3" /> {currentUser.authenticators.length} biometric method(s) registered
+                    <Shield className="w-3 h-3" /> {t("settings.biometricsRegisteredCount", { count: currentUser.authenticators.length })}
                   </p>
                 )}
               </div>
@@ -530,23 +530,23 @@ export default function Settings() {
         {/* Change Password Dialog */}
         <Dialog open={showPasswordModal} onOpenChange={setShowPasswordModal}>
           <DialogContent className="max-w-sm rounded-2xl">
-            <DialogHeader><DialogTitle>Update Password</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>{t("settings.updatePassword")}</DialogTitle></DialogHeader>
             <div className="space-y-4">
               <Input 
                 type="password" 
-                placeholder="Current Password" 
+                placeholder={t("settings.currentPassword")}
                 value={passForm.current}
                 onChange={e => setPassForm({...passForm, current: e.target.value})}
               />
               <Input 
                 type="password" 
-                placeholder="New Password" 
+                placeholder={t("settings.newPassword")}
                 value={passForm.new}
                 onChange={e => setPassForm({...passForm, new: e.target.value})}
               />
               <Input 
                 type="password" 
-                placeholder="Confirm New Password" 
+                placeholder={t("settings.confirmNewPassword")}
                 value={passForm.confirm}
                 onChange={e => setPassForm({...passForm, confirm: e.target.value})}
               />
@@ -555,7 +555,7 @@ export default function Settings() {
                 disabled={!passForm.current || !passForm.new || passForm.new !== passForm.confirm || passMutation.isPending}
                 onClick={() => passMutation.mutate()}
               >
-                {passMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : "Update Password"}
+                {passMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : t("settings.updatePassword")}
               </Button>
             </div>
           </DialogContent>
@@ -564,17 +564,17 @@ export default function Settings() {
         {/* Change Email Dialog */}
         <Dialog open={showEmailModal} onOpenChange={setShowEmailModal}>
           <DialogContent className="max-w-sm rounded-2xl">
-            <DialogHeader><DialogTitle>Change Email Address</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>{t("settings.changeEmailAddress")}</DialogTitle></DialogHeader>
             <div className="space-y-4">
               <Input 
                 type="email" 
-                placeholder="New Email Address" 
+                placeholder={t("settings.newEmailAddress")}
                 value={emailForm.newEmail}
                 onChange={e => setEmailForm({...emailForm, newEmail: e.target.value})}
               />
               <Input 
                 type="password" 
-                placeholder="Current Password" 
+                placeholder={t("settings.currentPassword")}
                 value={emailForm.password}
                 onChange={e => setEmailForm({...emailForm, password: e.target.value})}
               />
@@ -583,7 +583,7 @@ export default function Settings() {
                 disabled={!emailForm.newEmail || !emailForm.password || emailMutation.isPending}
                 onClick={() => emailMutation.mutate()}
               >
-                {emailMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : "Change Email"}
+                {emailMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : t("settings.changeEmailAddress")}
               </Button>
             </div>
           </DialogContent>
@@ -600,10 +600,10 @@ export default function Settings() {
       >
         <div className="space-y-2">
           {[
-            { id: "notif_sales", label: "Sales & Orders", icon: CreditCard },
-            { id: "notif_msg", label: "Direct Messages", icon: Mail },
-            { id: "notif_follow", label: "New Followers", icon: User },
-            { id: "notif_live", label: "Live Streams", icon: Smartphone },
+            { id: "notif_sales", label: t("settings.salesOrders"), icon: CreditCard },
+            { id: "notif_msg", label: t("settings.directMessages"), icon: Mail },
+            { id: "notif_follow", label: t("settings.newFollowers"), icon: User },
+            { id: "notif_live", label: t("settings.liveStreams"), icon: Smartphone },
           ].map((item) => (
             <div key={item.id} className="flex items-center justify-between p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700">
               <div className="flex items-center gap-3">
@@ -696,8 +696,8 @@ export default function Settings() {
           <LogOut className="w-4 h-4 mr-2" /> {t("common.logout")}
         </Button>
         <p className="text-[10px] text-slate-400 dark:text-slate-500 text-center mt-6">
-          Aicon X Platform v2.4.0 • Build 2026.03.20<br/>
-          &copy; 2026 Aicon X Inc. All rights reserved.
+          {t("settings.versionInfo")}<br/>
+          {t("settings.copyright")}
         </p>
       </div>
 
@@ -705,9 +705,9 @@ export default function Settings() {
       <Dialog open={show2FAModal} onOpenChange={setShow2FAModal}>
         <DialogContent className="sm:max-w-md rounded-2xl">
           <DialogHeader>
-            <DialogTitle>Setup Two-Factor Authentication</DialogTitle>
+            <DialogTitle>{t("settings.setup2FA")}</DialogTitle>
             <DialogDescription>
-              Scan the QR code below with your authenticator app (like Google Authenticator or Authy).
+              {t("settings.setup2FADesc")}
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col items-center space-y-6 py-4">
@@ -717,7 +717,7 @@ export default function Settings() {
               </div>
             )}
             <div className="space-y-2 text-center">
-              <p className="text-xs font-bold text-slate-500 uppercase">Verification Code</p>
+              <p className="text-xs font-bold text-slate-500 uppercase">{t("settings.verificationCode")}</p>
               <div className="flex justify-center">
                 <InputOTP maxLength={6} value={otpToken} onChange={setOtpToken}>
                   <InputOTPGroup>
@@ -740,7 +740,7 @@ export default function Settings() {
               disabled={otpToken.length !== 6 || enable2FAMutation.isPending}
               onClick={() => enable2FAMutation.mutate()}
             >
-              {enable2FAMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : "Verify and Enable"}
+              {enable2FAMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : t("settings.verifyAndEnable")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -750,9 +750,9 @@ export default function Settings() {
       <Dialog open={showDisable2FAModal} onOpenChange={setShowDisable2FAModal}>
         <DialogContent className="sm:max-w-sm rounded-2xl">
           <DialogHeader>
-            <DialogTitle>Disable 2FA</DialogTitle>
+            <DialogTitle>{t("settings.disable2FATitle")}</DialogTitle>
             <DialogDescription>
-              Enter the 6-digit code from your authenticator app to disable 2FA.
+              {t("settings.disable2FADesc")}
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col items-center space-y-4 py-4">
@@ -776,7 +776,7 @@ export default function Settings() {
               disabled={otpToken.length !== 6 || disable2FAMutation.isPending}
               onClick={() => disable2FAMutation.mutate()}
             >
-              {disable2FAMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : "Confirm Disable"}
+              {disable2FAMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : t("settings.confirmDisable")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -786,9 +786,9 @@ export default function Settings() {
       <Dialog open={showEmailVerifyModal} onOpenChange={setShowEmailVerifyModal}>
         <DialogContent className="sm:max-w-sm rounded-2xl">
           <DialogHeader>
-            <DialogTitle>Verify Your New Email</DialogTitle>
+            <DialogTitle>{t("settings.verifyNewEmail")}</DialogTitle>
             <DialogDescription>
-              We've sent a 6-digit verification code to <strong>{emailForm.newEmail}</strong>.
+              {t("settings.verifyEmailDesc", { email: emailForm.newEmail })}
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col items-center space-y-4 py-4">
@@ -811,7 +811,7 @@ export default function Settings() {
               disabled={otpToken.length !== 6 || verifyEmailMutation.isPending}
               onClick={() => verifyEmailMutation.mutate(otpToken)}
             >
-              {verifyEmailMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : "Verify Email"}
+              {verifyEmailMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : t("settings.verifyEmail")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -820,10 +820,10 @@ export default function Settings() {
       {/* Change Phone Modal */}
       <Dialog open={showPhoneModal} onOpenChange={setShowPhoneModal}>
         <DialogContent className="max-w-sm rounded-2xl">
-          <DialogHeader><DialogTitle>Update Phone Number</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t("settings.updatePhone")}</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-500 uppercase ml-1">New Phone Number (WhatsApp)</label>
+              <label className="text-xs font-bold text-slate-500 uppercase ml-1">{t("settings.newPhoneWhatsapp")}</label>
               <Input 
                 type="tel" 
                 placeholder="+1234567890" 
@@ -831,14 +831,14 @@ export default function Settings() {
                 onChange={e => setPhoneForm({...phoneForm, newPhone: e.target.value})}
                 className="rounded-xl border-slate-200 dark:border-slate-800 dark:bg-slate-900"
               />
-              <p className="text-[10px] text-slate-400 ml-1">Include country code (e.g., +1 for US, +234 for NG)</p>
+              <p className="text-[10px] text-slate-400 ml-1">{t("settings.phoneHint")}</p>
             </div>
             <Button 
               className="w-full bg-slate-900 hover:bg-slate-800 dark:bg-indigo-600 dark:hover:bg-indigo-700 rounded-xl h-11 font-bold"
               disabled={!phoneForm.newPhone || phoneForm.newPhone.length < 10 || phoneMutation.isPending}
               onClick={() => phoneMutation.mutate()}
             >
-              {phoneMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : "Send Verification Code"}
+              {phoneMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : t("settings.sendVerificationCode")}
             </Button>
           </div>
         </DialogContent>
@@ -848,9 +848,9 @@ export default function Settings() {
       <Dialog open={showPhoneVerifyModal} onOpenChange={setShowPhoneVerifyModal}>
         <DialogContent className="sm:max-w-sm rounded-2xl">
           <DialogHeader>
-            <DialogTitle>Verify Your Phone</DialogTitle>
+            <DialogTitle>{t("settings.verifyPhone")}</DialogTitle>
             <DialogDescription>
-              Enter the 6-digit code sent to <strong>{phoneForm.newPhone}</strong> via WhatsApp/SMS.
+              {t("settings.verifyPhoneDesc", { phone: phoneForm.newPhone })}
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col items-center space-y-4 py-4">
@@ -873,7 +873,7 @@ export default function Settings() {
               disabled={otpToken.length !== 6 || verifyPhoneMutation.isPending}
               onClick={() => verifyPhoneMutation.mutate(otpToken)}
             >
-              {verifyPhoneMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : "Verify and Update"}
+              {verifyPhoneMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : t("settings.verifyAndUpdate")}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -418,7 +418,7 @@ export default function MyStore() {
                   <Select value={storeForm.category} onValueChange={(v) => setStoreForm(p => ({ ...p, category: v }))}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      {CATEGORIES.map(c => <SelectItem key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</SelectItem>)}
+                      {CATEGORIES.map(c => <SelectItem key={c} value={c}>{t(`explore.cat.${c}`)}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </TabsContent>
@@ -707,7 +707,7 @@ export default function MyStore() {
                         <Select value={storeForm.category} onValueChange={(v) => setStoreForm(p => ({ ...p, category: v }))}>
                           <SelectTrigger><SelectValue /></SelectTrigger>
                           <SelectContent>
-                            {CATEGORIES.map(c => <SelectItem key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</SelectItem>)}
+                            {CATEGORIES.map(c => <SelectItem key={c} value={c}>{t(`explore.cat.${c}`)}</SelectItem>)}
                           </SelectContent>
                         </Select>
                       </div>
@@ -1110,7 +1110,7 @@ export default function MyStore() {
                   <Select value={productForm.category} onValueChange={(v) => setProductForm(p => ({ ...p, category: v }))}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      {CATEGORIES.map(c => <SelectItem key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</SelectItem>)}
+                      {CATEGORIES.map(c => <SelectItem key={c} value={c}>{t(`explore.cat.${c}`)}</SelectItem>)}
                     </SelectContent>
                   </Select>
                   <Input type="number" placeholder={t("store.inventoryCount")} value={productForm.inventory_count} onChange={(e) => setProductForm(p => ({ ...p, inventory_count: e.target.value }))} />
