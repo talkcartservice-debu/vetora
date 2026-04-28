@@ -78,7 +78,7 @@ export default function ProductDetail() {
     },
     onSuccess: () => {
       setAddedToCart(true);
-      toast.success("Added to cart!");
+      toast.success(t("product.addedToCart"));
       queryClient.invalidateQueries({ queryKey: ["cart"] });
       setTimeout(() => setAddedToCart(false), 2000);
     },
@@ -98,7 +98,7 @@ export default function ProductDetail() {
   const wishlistMutation = useMutation({
     mutationFn: async () => {
       if (!currentUser) {
-        toast.error("Sign in to save items");
+        toast.error(t("product.signInToSave"));
         return;
       }
       
@@ -119,7 +119,7 @@ export default function ProductDetail() {
           store_name: product.store_name,
           vendor_username: vendorUsername,
         });
-        toast.success("Saved to wishlist!");
+        toast.success(t("product.savedToWishlist"));
       }
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["wishlist"] }),
@@ -129,7 +129,7 @@ export default function ProductDetail() {
   if (!productId) {
     return (
       <div className="flex items-center justify-center h-64 text-slate-400">
-        No product ID provided
+        {t("product.noProductId")}
       </div>
     );
   }
@@ -138,7 +138,7 @@ export default function ProductDetail() {
   if (productError) {
     return (
       <div className="flex items-center justify-center h-64 text-slate-400">
-        {productError.status === 404 ? "Product not found" : "Error loading product"}
+        {productError.status === 404 ? t("product.productNotFound") : t("product.errorLoadingProduct")}
       </div>
     );
   }
@@ -147,9 +147,9 @@ export default function ProductDetail() {
     try {
       const url = window.location.href;
       await navigator.clipboard.writeText(url);
-      toast.success("Link copied to clipboard!");
+      toast.success(t("product.linkCopied"));
     } catch (e) {
-      toast.error("Failed to copy link");
+      toast.error(t("product.failedToCopyLink"));
     }
   };
 
@@ -168,7 +168,7 @@ export default function ProductDetail() {
     );
   }
 
-  if (!product) return <div className="text-center py-20 text-slate-400">Product not found</div>;
+  if (!product) return <div className="text-center py-20 text-slate-400">{t("product.productNotFound")}</div>;
 
   const images = product.images?.length > 0 ? product.images : ["https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600"];
   const discount = product.compare_at_price ? Math.round((1 - product.price / product.compare_at_price) * 100) : 0;
@@ -192,7 +192,7 @@ export default function ProductDetail() {
         currentUser={currentUser} 
       />
       <Link to={createPageUrl("Marketplace")} className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 mb-4">
-        <ArrowLeft className="w-4 h-4" /> Back to Marketplace
+        <ArrowLeft className="w-4 h-4" /> {t("product.backToMarketplace")}
       </Link>
 
       <div className="grid lg:grid-cols-2 gap-6 lg:gap-10">
@@ -267,7 +267,7 @@ export default function ProductDetail() {
             <div className="flex items-center gap-2 mb-4">
               <StarRow rating={Math.round(avgRating)} />
               <span className="text-sm font-medium text-slate-600">{avgRating.toFixed(1)}</span>
-              <span className="text-sm text-slate-400">({reviews.length} reviews)</span>
+              <span className="text-sm text-slate-400">({t("product.reviewsCount", { count: reviews.length })})</span>
             </div>
           )}
 
@@ -330,15 +330,15 @@ export default function ProductDetail() {
             <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-xl">
               <Truck className="w-5 h-5 text-indigo-500" />
               <div>
-                <p className="text-xs font-medium text-slate-700">Fast Shipping</p>
-                <p className="text-xs text-slate-400">2-5 business days</p>
+                <p className="text-xs font-medium text-slate-700">{t("product.fastShipping")}</p>
+                <p className="text-xs text-slate-400">{t("product.businessDays")}</p>
               </div>
             </div>
             <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-xl">
               <Shield className="w-5 h-5 text-green-500" />
               <div>
-                <p className="text-xs font-medium text-slate-700">Buyer Protection</p>
-                <p className="text-xs text-slate-400">Money back guarantee</p>
+                <p className="text-xs font-medium text-slate-700">{t("product.buyerProtection")}</p>
+                <p className="text-xs text-slate-400">{t("product.moneyBackGuarantee")}</p>
               </div>
             </div>
           </div>
@@ -382,7 +382,7 @@ export default function ProductDetail() {
               <div className="text-center shrink-0">
                 <p className="text-6xl font-bold text-slate-900">{avgRating.toFixed(1)}</p>
                 <StarRow rating={Math.round(avgRating)} />
-                <p className="text-sm text-slate-400 mt-1">{reviews.length} reviews</p>
+                <p className="text-sm text-slate-400 mt-1">{t("product.reviewsCount", { count: reviews.length })}</p>
               </div>
               <div className="flex-1 w-full space-y-1.5">
                 {ratingCounts.map(({ star, count, pct }) => (
@@ -421,7 +421,7 @@ export default function ProductDetail() {
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-semibold text-slate-900">{review.reviewer_name}</span>
                           {review.is_verified_purchase && (
-                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Verified</Badge>
+                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{t("product.verified")}</Badge>
                           )}
                         </div>
                         <StarRow rating={review.rating} />
@@ -457,11 +457,11 @@ export default function ProductDetail() {
         {reviews.length === 0 && !showReviewForm && (
           <div className="text-center py-14 bg-white rounded-2xl border border-dashed border-slate-200">
             <Images className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-            <p className="font-medium text-slate-500">No reviews yet</p>
-            <p className="text-sm text-slate-400 mt-1 mb-4">Be the first to review this product</p>
+            <p className="font-medium text-slate-500">{t("product.noReviewsYet")}</p>
+            <p className="text-sm text-slate-400 mt-1 mb-4">{t("product.beFirstToReview")}</p>
             {currentUser && (
               <Button onClick={() => setShowReviewForm(true)} className="bg-indigo-600 hover:bg-indigo-700 rounded-xl">
-                <PenLine className="w-4 h-4 mr-2" /> Write a Review
+                <PenLine className="w-4 h-4 mr-2" /> {t("product.writeReview")}
               </Button>
             )}
           </div>

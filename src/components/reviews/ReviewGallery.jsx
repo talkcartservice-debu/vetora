@@ -1,12 +1,14 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ChevronLeft, ChevronRight, Images, Play } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 function isVideo(url) {
   return url && (url.includes(".mp4") || url.includes(".mov") || url.includes(".webm") || url.includes("video"));
 }
 
 export default function ReviewGallery({ reviews }) {
+  const { t } = useTranslation();
   const [lightboxIndex, setLightboxIndex] = useState(null);
   const allMedia = reviews.flatMap(r =>
     (r.media_urls || []).map(url => ({ url, reviewer: r.reviewer_name, rating: r.rating, content: r.content }))
@@ -21,8 +23,8 @@ export default function ReviewGallery({ reviews }) {
     <div className="mt-6">
       <div className="flex items-center gap-2 mb-3">
         <Images className="w-5 h-5 text-indigo-500" />
-        <h3 className="text-base font-bold text-slate-900">Review Gallery</h3>
-        <span className="text-xs text-slate-400 font-medium">{allMedia.length} photo{allMedia.length !== 1 ? "s" : ""} & videos</span>
+        <h3 className="text-base font-bold text-slate-900">{t("product.reviewGallery")}</h3>
+        <span className="text-xs text-slate-400 font-medium">{t("product.photosAndVideos", { count: allMedia.length })}</span>
       </div>
       <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
         {allMedia.slice(0, 10).map((media, i) => (

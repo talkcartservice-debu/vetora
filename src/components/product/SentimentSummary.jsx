@@ -3,16 +3,18 @@ import { sentimentAPI, aiAPI } from "@/api/apiClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { Sparkles, ThumbsUp, ThumbsDown, RefreshCw, Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const SENTIMENT_CONFIG = {
-  very_positive: { label: "Overwhelmingly Positive", color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-200", bar: "bg-emerald-500" },
-  positive: { label: "Generally Positive", color: "text-green-600", bg: "bg-green-50", border: "border-green-200", bar: "bg-green-500" },
-  neutral: { label: "Mixed Reviews", color: "text-amber-600", bg: "bg-amber-50", border: "border-amber-200", bar: "bg-amber-500" },
-  negative: { label: "Generally Negative", color: "text-orange-600", bg: "bg-orange-50", border: "border-orange-200", bar: "bg-orange-500" },
-  very_negative: { label: "Mostly Negative", color: "text-red-600", bg: "bg-red-50", border: "border-red-200", bar: "bg-red-500" },
+  very_positive: { labelKey: "sentiment.overwhelminglyPositive", color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-200", bar: "bg-emerald-500" },
+  positive: { labelKey: "sentiment.generallyPositive", color: "text-green-600", bg: "bg-green-50", border: "border-green-200", bar: "bg-green-500" },
+  neutral: { labelKey: "sentiment.mixedReviews", color: "text-amber-600", bg: "bg-amber-50", border: "border-amber-200", bar: "bg-amber-500" },
+  negative: { labelKey: "sentiment.generallyNegative", color: "text-orange-600", bg: "bg-orange-50", border: "border-orange-200", bar: "bg-orange-500" },
+  very_negative: { labelKey: "sentiment.mostlyNegative", color: "text-red-600", bg: "bg-red-50", border: "border-red-200", bar: "bg-red-500" },
 };
 
 export default function SentimentSummary({ productId, reviews }) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
 
   const { data: existing } = useQuery({
@@ -66,8 +68,8 @@ export default function SentimentSummary({ productId, reviews }) {
       <div className="bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 rounded-2xl p-4 mb-6 flex items-center gap-3">
         <Loader2 className="w-5 h-5 text-indigo-500 animate-spin shrink-0" />
         <div>
-          <p className="text-sm font-semibold text-indigo-700">Analyzing {reviews.length} reviews with AI...</p>
-          <p className="text-xs text-indigo-500">Generating customer sentiment summary</p>
+          <p className="text-sm font-semibold text-indigo-700">{t("sentiment.analyzing", { count: reviews.length })}</p>
+          <p className="text-xs text-indigo-500">{t("sentiment.generating")}</p>
         </div>
       </div>
     );
@@ -90,8 +92,8 @@ export default function SentimentSummary({ productId, reviews }) {
             <Sparkles className="w-3.5 h-3.5 text-white" />
           </div>
           <div>
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">AI Sentiment Analysis</p>
-            <p className={`text-sm font-bold ${cfg.color}`}>{cfg.label}</p>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">{t("sentiment.title")}</p>
+            <p className={`text-sm font-bold ${cfg.color}`}>{t(cfg.labelKey)}</p>
           </div>
         </div>
         <div className="text-right">
@@ -119,7 +121,7 @@ export default function SentimentSummary({ productId, reviews }) {
         {existing.pros?.length > 0 && (
           <div>
             <p className="flex items-center gap-1.5 text-xs font-semibold text-green-700 mb-2">
-              <ThumbsUp className="w-3.5 h-3.5" /> Most Loved
+              <ThumbsUp className="w-3.5 h-3.5" /> {t("sentiment.mostLoved")}
             </p>
             <ul className="space-y-1">
               {existing.pros.map((pro, i) => (
@@ -136,7 +138,7 @@ export default function SentimentSummary({ productId, reviews }) {
         {existing.cons?.length > 0 && (
           <div>
             <p className="flex items-center gap-1.5 text-xs font-semibold text-orange-700 mb-2">
-              <ThumbsDown className="w-3.5 h-3.5" /> Common Concerns
+              <ThumbsDown className="w-3.5 h-3.5" /> {t("sentiment.commonConcerns")}
             </p>
             <ul className="space-y-1">
               {existing.cons.map((con, i) => (
@@ -151,14 +153,14 @@ export default function SentimentSummary({ productId, reviews }) {
       </div>
 
       <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/40">
-        <p className="text-[10px] text-slate-400">Based on {existing.review_count_analyzed} reviews</p>
+        <p className="text-[10px] text-slate-400">{t("sentiment.basedOn", { count: existing.review_count_analyzed })}</p>
         <button
           onClick={() => generateMutation.mutate()}
           disabled={isLoading}
           className="flex items-center gap-1 text-[10px] text-indigo-500 hover:text-indigo-700 disabled:opacity-50"
         >
           <RefreshCw className={`w-3 h-3 ${isLoading ? "animate-spin" : ""}`} />
-          Refresh
+          {t("sentiment.refresh")}
         </button>
       </div>
     </motion.div>
