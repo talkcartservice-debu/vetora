@@ -13,8 +13,10 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { usersAPI, storesAPI, messagesAPI, postsAPI } from "@/api/apiClient";
 import { toast } from "sonner";
 import { createPageUrl, formatCurrency } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
 export default function ShareModal({ isOpen, onOpenChange, post, product, currentUser }) {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRecipient, setSelectedRecipient] = useState(null);
   const [copied, setCopied] = useState(false);
@@ -22,17 +24,14 @@ export default function ShareModal({ isOpen, onOpenChange, post, product, curren
   const isProduct = !!product;
   const item = product || post;
   const itemId = item?.id || item?._id;
-  const itemType = isProduct ? "Product" : "Post";
   const itemUrl = window.location.origin + createPageUrl(isProduct ? "ProductDetail" : "PostDetail") + `?id=${itemId}`;
 
-  // Search users
   const { data: usersData, isLoading: usersLoading } = useQuery({
     queryKey: ["searchUsers", searchQuery],
     queryFn: () => usersAPI.search(searchQuery),
     enabled: searchQuery.length > 2,
   });
 
-  // Search stores (vendors)
   const { data: storesData, isLoading: storesLoading } = useQuery({
     queryKey: ["searchStores", searchQuery],
     queryFn: () => storesAPI.list({ search: searchQuery }),
@@ -44,15 +43,13 @@ export default function ShareModal({ isOpen, onOpenChange, post, product, curren
       const recipientUsername = recipient.username || recipient.owner_username || recipient.display_name?.replace(/\s+/g, '_').toLowerCase();
       if (!recipientUsername) throw new Error("Recipient username not found");
 
-      // Increment share count if it's a post
       if (!isProduct) {
         await postsAPI.share(itemId).catch(console.error);
       }
 
-      // Then send message
       return messagesAPI.send({
         recipient_username: recipientUsername,
-        content: `Check out this ${itemType.toLowerCase()}: ${itemUrl}`,
+        content: `Check out this ${isProduct ? "product" : "post"}: ${itemUrl}`,
         message_type: isProduct ? "product_share" : "text",
         product_id: isProduct ? itemId : undefined,
         product_data: isProduct ? {
@@ -63,13 +60,13 @@ export default function ShareModal({ isOpen, onOpenChange, post, product, curren
       });
     },
     onSuccess: () => {
-      toast.success(`${itemType} shared successfully!`);
+      toast.success(isProduct ? t("share.productSharedSuccess") : t("share.postSharedSuccess"));
       onOpenChange(false);
       setSelectedRecipient(null);
       setSearchQuery("");
     },
     onError: (error) => {
-      toast.error(error.message || `Failed to share ${itemType.toLowerCase()}`);
+      toast.error(error.message || t("share.failedToShare"));
     },
   });
 
@@ -77,15 +74,14 @@ export default function ShareModal({ isOpen, onOpenChange, post, product, curren
     try {
       await navigator.clipboard.writeText(itemUrl);
       setCopied(true);
-      toast.success("Link copied to clipboard!");
+      toast.success(t("product.linkCopied"));
       setTimeout(() => setCopied(false), 2000);
       
-      // Increment share count if it's a post
       if (!isProduct) {
         postsAPI.share(itemId).catch(console.error);
       }
     } catch (err) {
-      toast.error("Failed to copy link");
+      toast.error(t("product.failedToCopyLink"));
     }
   };
 
@@ -98,11 +94,12 @@ export default function ShareModal({ isOpen, onOpenChange, post, product, curren
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md rounded-3xl">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold">Share {itemType}</DialogTitle>
+          <DialogTitle className="text-xl font-bold">
+            {isProduct ? t("product.shareProduct") : t("share.sharePost")}
+          </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6 py-4">
-          {/* Item Preview */}
           {item && (
             <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-2xl border border-slate-100">
               <div className="w-12 h-12 rounded-xl bg-white border border-slate-200 overflow-hidden shrink-0">
@@ -119,7 +116,6 @@ export default function ShareModal({ isOpen, onOpenChange, post, product, curren
             </div>
           )}
 
-          {/* Copy Link Section */}
           <div className="flex items-center gap-2 p-1.5 bg-slate-50 rounded-2xl border border-slate-100">
             <div className="flex-1 px-3 text-sm text-slate-500 truncate">
               {itemUrl}
@@ -130,7 +126,7 @@ export default function ShareModal({ isOpen, onOpenChange, post, product, curren
               className="rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-indigo-600 h-9 px-4 shadow-sm transition-all"
             >
               {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
-              <span className="ml-2">{copied ? "Copied" : "Copy"}</span>
+              <span className="ml-2">{copied ? t("common.copied") : t("common.copy")}</span>
             </Button>
           </div>
 
@@ -138,7 +134,7 @@ export default function ShareModal({ isOpen, onOpenChange, post, product, curren
             <div className="relative">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <Input
-                placeholder="Search users or vendors..."
+                placeholder={t("share.searchUsersOrVendors")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10 h-12 rounded-2xl border-slate-200 bg-slate-50/50 focus:bg-white transition-all"
@@ -148,13 +144,13 @@ export default function ShareModal({ isOpen, onOpenChange, post, product, curren
             <ScrollArea className="h-64 pr-4">
               {searchQuery.length > 0 && searchQuery.length <= 2 && (
                 <div className="text-center py-8 text-slate-400 text-sm">
-                  Type at least 3 characters to search...
+                  {t("share.typeToSearch")}
                 </div>
               )}
               
               {searchQuery.length > 2 && recipients.length === 0 && !usersLoading && (
                 <div className="text-center py-8 text-slate-400 text-sm">
-                  No users or vendors found.
+                  {t("share.noResults")}
                 </div>
               )}
 
@@ -184,10 +180,10 @@ export default function ShareModal({ isOpen, onOpenChange, post, product, curren
                     </div>
                     <div className="flex-1 text-left min-w-0">
                       <p className="text-sm font-semibold text-slate-900 truncate">
-                        {recipient.display_name || recipient.name || recipient.full_name || "User"}
+                        {recipient.display_name || recipient.name || recipient.full_name || t("share.unknownUser")}
                       </p>
                       <p className="text-xs text-slate-400 truncate">
-                        {recipient.type === 'vendor' ? (recipient.category || 'Vendor') : `@${recipient.username || recipient.display_name?.replace(/\s+/g, '_').toLowerCase()}`}
+                        {recipient.type === 'vendor' ? (recipient.category || t("share.vendor")) : `@${recipient.username || recipient.display_name?.replace(/\s+/g, '_').toLowerCase()}`}
                       </p>
                     </div>
                     {selectedRecipient?.id === recipient.id && (
@@ -211,7 +207,7 @@ export default function ShareModal({ isOpen, onOpenChange, post, product, curren
             ) : (
               <>
                 <Send className="w-4 h-4 mr-2" />
-                Share as Message
+                {t("share.shareAsMessage")}
               </>
             )}
           </Button>
