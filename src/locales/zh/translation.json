@@ -1279,5 +1279,34 @@
       "submitSuccess": "报告提交成功！我们将尽快审查。",
       "submitError": "报告提交失败"
     }
+  },
+  "create": {
+    "title": "创建",
+    "createPost": "发布动态",
+    "createPostDesc": "与您的动态流分享照片或更新",
+    "addStory": "添加故事",
+    "addStoryDesc": "发布临时照片或文字",
+    "goLive": "开始直播",
+    "goLiveDesc": "开始一场直播购物活动",
+    "addProduct": "添加商品",
+    "addProductDesc": "在您的店铺中列出新商品",
+    "postPlaceholder": "你在想什么？分享商品发现、评价或动态...",
+    "taggedProducts": "标记商品",
+    "uploadingMedia": "正在上传媒体...",
+    "searchProductsToTag": "搜索要标记的商品...",
+    "noProductsFound": "未找到商品",
+    "photo": "照片",
+    "video": "视频",
+    "tag": "标记",
+    "visibilityPublic": "公开",
+    "visibilityFollowers": "关注者",
+    "visibilityCommunity": "社区",
+    "posting": "发布中...",
+    "post": "发布",
+    "postCreated": "动态已发布！",
+    "failedToCreatePost": "发布动态失败",
+    "taggedLabel": "已标记",
+    "someFilesRejected": "部分文件因格式或大小被拒绝",
+    "you": "你"
   }
 }

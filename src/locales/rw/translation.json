@@ -1342,5 +1342,34 @@
       "submitSuccess": "Raporo yoherejwe neza! Tuzayisesengura vuba.",
       "submitError": "Kohereza raporo byanze"
     }
+  },
+  "create": {
+    "title": "Kora",
+    "createPost": "Kohereza ikiganiro",
+    "createPostDesc": "Sangira amafoto cyangwa amakuru mu ifasi yawe",
+    "addStory": "Ongeraho Inkuru",
+    "addStoryDesc": "Ohereza ifoto cyangwa inyandiko y'akanya",
+    "goLive": "Tangira Guhanahana",
+    "goLiveDesc": "Tangira ikiganiro cy'ubucuruzi buzima",
+    "addProduct": "Ongeraho Igicuruzwa",
+    "addProductDesc": "Tondeka igicuruzwa gishya mu iduka ryawe",
+    "postPlaceholder": "Utekereza iki? Sangira igicuruzwa, igiciro cyangwa amakuru...",
+    "taggedProducts": "Ibicuruzwa Byashyizweho Akamenyetso",
+    "uploadingMedia": "Kohereza amakuru...",
+    "searchProductsToTag": "Shakisha ibicuruzwa byo gushyiraho akamenyetso...",
+    "noProductsFound": "Nta bicuruzwa byabonetse",
+    "photo": "Ifoto",
+    "video": "Videwo",
+    "tag": "Shyiraho",
+    "visibilityPublic": "Rusange",
+    "visibilityFollowers": "Abakurikira",
+    "visibilityCommunity": "Umuryango",
+    "posting": "Kohereza...",
+    "post": "Ohereza",
+    "postCreated": "Ikiganiro cyoherejwe!",
+    "failedToCreatePost": "Kohereza ikiganiro byanze",
+    "taggedLabel": "Yashyizweho akamenyetso",
+    "someFilesRejected": "Amadosiye make yananiwe kubera imbangikane cyangwa ingano",
+    "you": "Wowe"
   }
 }

@@ -1280,5 +1280,34 @@
       "submitSuccess": "報告が正常に送信されました！まもなく確認いたします。",
       "submitError": "報告の送信に失敗しました"
     }
+  },
+  "create": {
+    "title": "作成",
+    "createPost": "投稿を作成",
+    "createPostDesc": "フィードに写真や近況をシェアしましょう",
+    "addStory": "ストーリーを追加",
+    "addStoryDesc": "一時的な写真やテキストを投稿する",
+    "goLive": "ライブ配信",
+    "goLiveDesc": "ライブショッピングセッションを開始する",
+    "addProduct": "商品を追加",
+    "addProductDesc": "ストアに新しいアイテムを出品する",
+    "postPlaceholder": "何を考えていますか？商品の紹介、レビュー、近況をシェアしましょう...",
+    "taggedProducts": "タグ付き商品",
+    "uploadingMedia": "メディアをアップロード中...",
+    "searchProductsToTag": "タグ付けする商品を検索...",
+    "noProductsFound": "商品が見つかりません",
+    "photo": "写真",
+    "video": "動画",
+    "tag": "タグ",
+    "visibilityPublic": "公開",
+    "visibilityFollowers": "フォロワー",
+    "visibilityCommunity": "コミュニティ",
+    "posting": "投稿中...",
+    "post": "投稿",
+    "postCreated": "投稿が作成されました！",
+    "failedToCreatePost": "投稿の作成に失敗しました",
+    "taggedLabel": "タグ付き",
+    "someFilesRejected": "一部のファイルはフォーマットまたはサイズが原因で拒否されました",
+    "you": "あなた"
   }
 }

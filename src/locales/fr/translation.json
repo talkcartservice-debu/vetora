@@ -1341,5 +1341,34 @@
       "submitSuccess": "Rapport soumis avec succès ! Nous l'examinerons sous peu.",
       "submitError": "Échec de l'envoi du rapport"
     }
+  },
+  "create": {
+    "title": "Créer",
+    "createPost": "Créer une publication",
+    "createPostDesc": "Partagez des photos ou des mises à jour avec votre fil",
+    "addStory": "Ajouter une story",
+    "addStoryDesc": "Publiez une photo ou un texte temporaire",
+    "goLive": "Démarrer un live",
+    "goLiveDesc": "Lancez une session de shopping en direct",
+    "addProduct": "Ajouter un produit",
+    "addProductDesc": "Listez un nouvel article dans votre boutique",
+    "postPlaceholder": "Quoi de neuf ? Partagez une trouvaille, un avis ou une mise à jour...",
+    "taggedProducts": "Produits identifiés",
+    "uploadingMedia": "Envoi des médias...",
+    "searchProductsToTag": "Rechercher des produits à identifier...",
+    "noProductsFound": "Aucun produit trouvé",
+    "photo": "Photo",
+    "video": "Vidéo",
+    "tag": "Tag",
+    "visibilityPublic": "Public",
+    "visibilityFollowers": "Abonnés",
+    "visibilityCommunity": "Communauté",
+    "posting": "Publication...",
+    "post": "Publier",
+    "postCreated": "Publication créée !",
+    "failedToCreatePost": "Échec de la création de la publication",
+    "taggedLabel": "Identifié",
+    "someFilesRejected": "Certains fichiers ont été rejetés en raison du format ou de la taille",
+    "you": "Vous"
   }
 }

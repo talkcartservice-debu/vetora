@@ -1341,5 +1341,34 @@
       "submitSuccess": "Bericht erfolgreich eingereicht! Wir werden ihn in Kürze prüfen.",
       "submitError": "Bericht konnte nicht eingereicht werden"
     }
+  },
+  "create": {
+    "title": "Erstellen",
+    "createPost": "Beitrag erstellen",
+    "createPostDesc": "Teile Fotos oder Updates mit deinem Feed",
+    "addStory": "Story hinzufügen",
+    "addStoryDesc": "Veröffentliche ein temporäres Foto oder einen Text",
+    "goLive": "Live gehen",
+    "goLiveDesc": "Starte eine Live-Shopping-Sitzung",
+    "addProduct": "Produkt hinzufügen",
+    "addProductDesc": "Liste einen neuen Artikel in deinem Shop auf",
+    "postPlaceholder": "Was denkst du? Teile einen Produktfund, eine Bewertung oder ein Update...",
+    "taggedProducts": "Markierte Produkte",
+    "uploadingMedia": "Medien werden hochgeladen...",
+    "searchProductsToTag": "Produkte zum Markieren suchen...",
+    "noProductsFound": "Keine Produkte gefunden",
+    "photo": "Foto",
+    "video": "Video",
+    "tag": "Tag",
+    "visibilityPublic": "Öffentlich",
+    "visibilityFollowers": "Abonnenten",
+    "visibilityCommunity": "Community",
+    "posting": "Wird gepostet...",
+    "post": "Posten",
+    "postCreated": "Beitrag erstellt!",
+    "failedToCreatePost": "Beitrag konnte nicht erstellt werden",
+    "taggedLabel": "Markiert",
+    "someFilesRejected": "Einige Dateien wurden aufgrund von Format oder Größe abgelehnt",
+    "you": "Du"
   }
 }

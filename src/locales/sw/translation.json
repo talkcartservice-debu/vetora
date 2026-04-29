@@ -1341,5 +1341,34 @@
       "submitSuccess": "Ripoti imewasilishwa kwa mafanikio! Tutaipitia hivi karibuni.",
       "submitError": "Imeshindwa kuwasilisha ripoti"
     }
+  },
+  "create": {
+    "title": "Unda",
+    "createPost": "Unda Chapisho",
+    "createPostDesc": "Shiriki picha au masasisho na mkoba wako wa habari",
+    "addStory": "Ongeza Hadithi",
+    "addStoryDesc": "Chapisha picha au maandishi ya muda",
+    "goLive": "Enda Mubashara",
+    "goLiveDesc": "Anzisha kipindi cha ununuzi wa mubashara",
+    "addProduct": "Ongeza Bidhaa",
+    "addProductDesc": "Orodhesha bidhaa mpya katika duka lako",
+    "postPlaceholder": "Unafikiria nini? Shiriki bidhaa, ukaguzi au sasisha...",
+    "taggedProducts": "Bidhaa Zilizowekwa Alama",
+    "uploadingMedia": "Inapakia media...",
+    "searchProductsToTag": "Tafuta bidhaa za kuweka alama...",
+    "noProductsFound": "Hakuna bidhaa zilizopatikana",
+    "photo": "Picha",
+    "video": "Video",
+    "tag": "Alama",
+    "visibilityPublic": "Umma",
+    "visibilityFollowers": "Wafuatao",
+    "visibilityCommunity": "Jamii",
+    "posting": "Inachapisha...",
+    "post": "Chapisha",
+    "postCreated": "Chapisho limeundwa!",
+    "failedToCreatePost": "Imeshindwa kuunda chapisho",
+    "taggedLabel": "Imewekwa Alama",
+    "someFilesRejected": "Baadhi ya faili zilikataliwa kwa sababu ya muundo au ukubwa",
+    "you": "Wewe"
   }
 }

@@ -12,18 +12,20 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { authAPI, productsAPI, filesAPI, postsAPI } from "@/api/apiClient";
-
-const VISIBILITY_OPTIONS = [
-  { value: "public", icon: Globe, label: "Public" },
-  { value: "followers", icon: Users, label: "Followers" },
-  { value: "community", icon: Lock, label: "Community" },
-];
+import { useTranslation } from "react-i18next";
 
 const QUICK_EMOJIS = ["😍", "🔥", "💯", "🎉", "❤️", "✨", "🛍️", "👏"];
 
 export default function CreatePost() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+
+  const VISIBILITY_OPTIONS = [
+    { value: "public", icon: Globe, label: t("create.visibilityPublic") },
+    { value: "followers", icon: Users, label: t("create.visibilityFollowers") },
+    { value: "community", icon: Lock, label: t("create.visibilityCommunity") },
+  ];
   const [content, setContent] = useState("");
   const [mediaFiles, setMediaFiles] = useState([]);
   const [mediaPreviewUrls, setMediaPreviewUrls] = useState([]);
@@ -114,7 +116,7 @@ export default function CreatePost() {
       }
     },
     onSuccess: (data) => {
-      toast.success("Post created!");
+      toast.success(t("create.postCreated"));
       queryClient.invalidateQueries({ queryKey: ["posts"] });
       // Clear local state
       setContent("");
@@ -126,7 +128,7 @@ export default function CreatePost() {
     },
     onError: (error) => {
       console.error('Post creation failed:', error);
-      toast.error(error.message || "Failed to create post");
+      toast.error(error.message || t("create.failedToCreatePost"));
     },
     onSettled: () => { setUploading(false); setUploadProgress(0); },
   });
@@ -149,7 +151,7 @@ export default function CreatePost() {
     });
     
     if (valid.length < files.length) {
-      toast.error("Some files were rejected due to format or size");
+      toast.error(t("create.someFilesRejected"));
     }
 
     setMediaFiles(prev => [...prev, ...valid]);
@@ -183,7 +185,7 @@ export default function CreatePost() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6">
-      <h1 className="text-2xl font-bold text-slate-900 mb-6">Create Post</h1>
+      <h1 className="text-2xl font-bold text-slate-900 mb-6">{t("create.createPost")}</h1>
 
       <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
         {/* Author row */}
@@ -192,7 +194,7 @@ export default function CreatePost() {
             {currentUser?.full_name?.[0]?.toUpperCase() || "U"}
           </div>
           <div>
-            <p className="text-sm font-semibold text-slate-900">{currentUser?.full_name || "You"}</p>
+            <p className="text-sm font-semibold text-slate-900">{currentUser?.full_name || t("create.you")}</p>
             <Select value={visibility} onValueChange={setVisibility}>
               <SelectTrigger className="h-6 text-xs w-auto border-none shadow-none p-0 px-1 text-slate-500 gap-1">
                 <SelectValue />
@@ -214,14 +216,14 @@ export default function CreatePost() {
         <Textarea
           value={content}
           onChange={e => setContent(e.target.value)}
-          placeholder="What's on your mind? Share a product find, review, or update..."
+          placeholder={t("create.postPlaceholder")}
           className="border-none shadow-none resize-none text-base placeholder:text-slate-300 focus-visible:ring-0 min-h-[120px] p-0 text-slate-800"
         />
 
         {/* Tagged products */}
         {taggedProducts.length > 0 && (
           <div className="flex flex-wrap gap-2 mt-3 p-3 bg-indigo-50 rounded-xl border border-indigo-100">
-            <p className="text-xs font-semibold text-indigo-700 w-full mb-1">Tagged Products</p>
+            <p className="text-xs font-semibold text-indigo-700 w-full mb-1">{t("create.taggedProducts")}</p>
             {taggedProducts.map(p => (
               <div key={p.id} className="flex items-center gap-1.5 bg-white rounded-lg px-2.5 py-1 border border-indigo-100 text-xs">
                 <span className="text-slate-700 font-medium">{p.title}</span>
@@ -262,7 +264,7 @@ export default function CreatePost() {
         {uploading && uploadProgress > 0 && (
           <div className="mt-3">
             <div className="flex justify-between text-xs text-slate-500 mb-1">
-              <span>Uploading media...</span>
+              <span>{t("create.uploadingMedia")}</span>
               <span>{uploadProgress}%</span>
             </div>
             <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
@@ -284,14 +286,14 @@ export default function CreatePost() {
                   autoFocus
                   value={productQuery}
                   onChange={e => setProductQuery(e.target.value)}
-                  placeholder="Search products to tag..."
+                  placeholder={t("create.searchProductsToTag")}
                   className="flex-1 text-sm outline-none text-slate-700 placeholder:text-slate-400 px-1"
                 />
                 <button onClick={() => { setShowProductSearch(false); setProductQuery(""); }}><X className="w-4 h-4 text-slate-400" /></button>
               </div>
               <div className="max-h-48 overflow-y-auto">
                 {filteredProducts.length === 0 ? (
-                  <p className="text-xs text-slate-400 text-center py-4">No products found</p>
+                  <p className="text-xs text-slate-400 text-center py-4">{t("create.noProductsFound")}</p>
                 ) : filteredProducts.map(p => (
                   <button
                     key={p.id}
@@ -306,7 +308,7 @@ export default function CreatePost() {
                       <p className="text-xs text-indigo-600 font-bold">{formatCurrency(p.price)}</p>
                     </div>
                     {taggedProducts.find(tp => tp.id === p.id) && (
-                      <Badge className="bg-indigo-100 text-indigo-700 text-[10px] border-0">Tagged</Badge>
+                      <Badge className="bg-indigo-100 text-indigo-700 text-[10px] border-0">{t("create.taggedLabel")}</Badge>
                     )}
                   </button>
                 ))}
@@ -332,12 +334,12 @@ export default function CreatePost() {
           <div className="flex items-center gap-1 flex-wrap">
             <label className="flex items-center gap-1.5 px-2.5 py-2 rounded-xl hover:bg-slate-50 cursor-pointer text-slate-500 text-sm transition-colors">
               <Image className="w-5 h-5 text-green-500" />
-              <span className="hidden sm:inline text-xs">Photo</span>
+              <span className="hidden sm:inline text-xs">{t("create.photo")}</span>
               <input type="file" accept="image/*,image/gif" multiple className="hidden" onChange={handleMediaSelect} />
             </label>
             <label className="flex items-center gap-1.5 px-2.5 py-2 rounded-xl hover:bg-slate-50 cursor-pointer text-slate-500 text-sm transition-colors">
               <Video className="w-5 h-5 text-blue-500" />
-              <span className="hidden sm:inline text-xs">Video</span>
+              <span className="hidden sm:inline text-xs">{t("create.video")}</span>
               <input type="file" accept="video/*" multiple className="hidden" onChange={handleMediaSelect} />
             </label>
             <button
@@ -345,7 +347,7 @@ export default function CreatePost() {
               className={`flex items-center gap-1.5 px-2.5 py-2 rounded-xl text-slate-500 text-sm transition-colors ${showProductSearch ? "bg-indigo-50 text-indigo-600" : "hover:bg-slate-50"}`}
             >
               <ShoppingBag className="w-5 h-5 text-purple-500" />
-              <span className="hidden sm:inline text-xs">Tag</span>
+              <span className="hidden sm:inline text-xs">{t("create.tag")}</span>
             </button>
             <button
               onClick={() => { setShowEmoji(v => !v); setShowProductSearch(false); }}
@@ -361,9 +363,9 @@ export default function CreatePost() {
             className="bg-indigo-600 hover:bg-indigo-700 rounded-xl px-5 gap-2"
           >
             {uploading ? (
-              <><Loader2 className="w-4 h-4 animate-spin" /> Posting...</>
+              <><Loader2 className="w-4 h-4 animate-spin" /> {t("create.posting")}</>
             ) : (
-              <><Send className="w-4 h-4" /> Post</>
+              <><Send className="w-4 h-4" /> {t("create.post")}</>
             )}
           </Button>
         </div>

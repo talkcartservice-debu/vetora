@@ -4,39 +4,41 @@ import { X, PenSquare, Image, Radio, ShoppingBag } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/lib/utils";
 import CreateStoryModal from "@/components/stories/CreateStoryModal";
+import { useTranslation } from "react-i18next";
 
 export default function CreateActionModal({ open, onClose, currentUser }) {
+  const { t } = useTranslation();
   const [showStoryCreate, setShowStoryCreate] = useState(false);
 
   const actions = [
     {
       id: "post",
-      label: "Create Post",
-      description: "Share photos or updates with your feed",
+      label: t("create.createPost"),
+      description: t("create.createPostDesc"),
       icon: PenSquare,
       color: "bg-indigo-50 text-indigo-600",
       to: createPageUrl("CreatePost"),
     },
     {
       id: "story",
-      label: "Add Story",
-      description: "Post a temporary photo or text",
+      label: t("create.addStory"),
+      description: t("create.addStoryDesc"),
       icon: Image,
       color: "bg-pink-50 text-pink-600",
       onClick: () => setShowStoryCreate(true),
     },
     {
       id: "live",
-      label: "Go Live",
-      description: "Start a live shopping session",
+      label: t("create.goLive"),
+      description: t("create.goLiveDesc"),
       icon: Radio,
       color: "bg-rose-50 text-rose-600",
       to: createPageUrl("Live"),
     },
     {
       id: "product",
-      label: "Add Product",
-      description: "List a new item in your store",
+      label: t("create.addProduct"),
+      description: t("create.addProductDesc"),
       icon: ShoppingBag,
       color: "bg-emerald-50 text-green-600",
       to: createPageUrl("MyStore"),
@@ -64,7 +66,7 @@ export default function CreateActionModal({ open, onClose, currentUser }) {
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-black text-slate-900 tracking-tight">Create</h2>
+                <h2 className="text-xl font-black text-slate-900 tracking-tight">{t("create.title")}</h2>
                 <button onClick={onClose} className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center">
                   <X className="w-5 h-5 text-slate-400" />
                 </button>

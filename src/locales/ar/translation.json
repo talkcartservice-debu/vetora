@@ -1280,5 +1280,34 @@
       "submitSuccess": "تم إرسال التقرير بنجاح! سنراجعه قريباً.",
       "submitError": "فشل إرسال التقرير"
     }
+  },
+  "create": {
+    "title": "إنشاء",
+    "createPost": "إنشاء منشور",
+    "createPostDesc": "شارك صوراً أو تحديثات مع خلاصتك",
+    "addStory": "إضافة قصة",
+    "addStoryDesc": "انشر صورة أو نصاً مؤقتاً",
+    "goLive": "البث المباشر",
+    "goLiveDesc": "ابدأ جلسة تسوق مباشرة",
+    "addProduct": "إضافة منتج",
+    "addProductDesc": "أضف عنصراً جديداً إلى متجرك",
+    "postPlaceholder": "ما الذي يدور في ذهنك؟ شارك اكتشافاً، مراجعة أو تحديثاً...",
+    "taggedProducts": "المنتجات المُوسَمة",
+    "uploadingMedia": "جارٍ رفع الوسائط...",
+    "searchProductsToTag": "ابحث عن منتجات لوسمها...",
+    "noProductsFound": "لا توجد منتجات",
+    "photo": "صورة",
+    "video": "فيديو",
+    "tag": "وسم",
+    "visibilityPublic": "عام",
+    "visibilityFollowers": "المتابعون",
+    "visibilityCommunity": "المجتمع",
+    "posting": "جارٍ النشر...",
+    "post": "نشر",
+    "postCreated": "تم نشر المنشور!",
+    "failedToCreatePost": "فشل إنشاء المنشور",
+    "taggedLabel": "مُوسَم",
+    "someFilesRejected": "تم رفض بعض الملفات بسبب التنسيق أو الحجم",
+    "you": "أنت"
   }
 }

@@ -1370,5 +1370,34 @@
       "submitSuccess": "Report submitted successfully! We will review it shortly.",
       "submitError": "Failed to submit report"
     }
+  },
+  "create": {
+    "title": "Create",
+    "createPost": "Create Post",
+    "createPostDesc": "Share photos or updates with your feed",
+    "addStory": "Add Story",
+    "addStoryDesc": "Post a temporary photo or text",
+    "goLive": "Go Live",
+    "goLiveDesc": "Start a live shopping session",
+    "addProduct": "Add Product",
+    "addProductDesc": "List a new item in your store",
+    "postPlaceholder": "What's on your mind? Share a product find, review, or update...",
+    "taggedProducts": "Tagged Products",
+    "uploadingMedia": "Uploading media...",
+    "searchProductsToTag": "Search products to tag...",
+    "noProductsFound": "No products found",
+    "photo": "Photo",
+    "video": "Video",
+    "tag": "Tag",
+    "visibilityPublic": "Public",
+    "visibilityFollowers": "Followers",
+    "visibilityCommunity": "Community",
+    "posting": "Posting...",
+    "post": "Post",
+    "postCreated": "Post created!",
+    "failedToCreatePost": "Failed to create post",
+    "taggedLabel": "Tagged",
+    "someFilesRejected": "Some files were rejected due to format or size",
+    "you": "You"
   }
 }
