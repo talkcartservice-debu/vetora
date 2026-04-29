@@ -71,7 +71,13 @@ export default function Support() {
       icon: Mail,
       action: t('support.channels.emailSupport.action'),
       color: "bg-indigo-600",
-      onClick: () => window.location.href = 'mailto:support@iqon.ai',
+      onClick: () => {
+        const a = document.createElement('a');
+        a.href = 'mailto:support@iqon.ai';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      },
     }
   ];
 
