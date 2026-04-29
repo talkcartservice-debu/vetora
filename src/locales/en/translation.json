@@ -466,7 +466,18 @@
     "itemsAddedToCart": "Items added to cart",
     "failedToAddToCart": "Failed to add items to cart",
     "cancelSuccess": "Order cancelled successfully",
-    "cancelFailed": "Failed to cancel order"
+    "cancelFailed": "Failed to cancel order",
+    "rateYourOrder": "Rate Your Order",
+    "yourRating": "Your Rating",
+    "tapToRate": "Tap to rate",
+    "ratingGreat": "Great!",
+    "titleOptional": "Title (optional)",
+    "titlePlaceholder": "Summarize your experience...",
+    "reviewOptional": "Review (optional)",
+    "reviewPlaceholder": "Tell others about your experience...",
+    "photosUpTo3": "Photos (up to 3)",
+    "uploading": "Uploading...",
+    "reviewsSubmitted": "Reviews submitted! Thank you."
   },
   "communities": {
     "title": "Communities",

@@ -395,7 +395,18 @@
     "itemsAddedToCart": "Itens adicionados ao carrinho",
     "failedToAddToCart": "Falha ao adicionar ao carrinho",
     "cancelSuccess": "Pedido cancelado com sucesso",
-    "cancelFailed": "Falha ao cancelar o pedido"
+    "cancelFailed": "Falha ao cancelar o pedido",
+    "rateYourOrder": "Avaliar seu pedido",
+    "yourRating": "Sua avaliação",
+    "tapToRate": "Toque para avaliar",
+    "ratingGreat": "Ótimo!",
+    "titleOptional": "Título (opcional)",
+    "titlePlaceholder": "Resuma sua experiência...",
+    "reviewOptional": "Avaliação (opcional)",
+    "reviewPlaceholder": "Conte aos outros sobre sua experiência...",
+    "photosUpTo3": "Fotos (até 3)",
+    "uploading": "Enviando...",
+    "reviewsSubmitted": "Avaliações enviadas! Obrigado."
   },
   "communities": {
     "title": "Comunidades",

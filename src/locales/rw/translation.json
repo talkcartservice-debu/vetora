@@ -457,7 +457,18 @@
     "itemsAddedToCart": "Ibicuruzwa byongewe mu ngobyi",
     "failedToAddToCart": "Kubyongera mu ngobyi byanze",
     "cancelSuccess": "Itumiza ryahagaritswe neza",
-    "cancelFailed": "Guhagarika itumiza byanze"
+    "cancelFailed": "Guhagarika itumiza byanze",
+    "rateYourOrder": "Tyora itumiza ryawe",
+    "yourRating": "Ipimisho ryawe",
+    "tapToRate": "Kanda upime",
+    "ratingGreat": "Byiza cyane!",
+    "titleOptional": "Umutwe (binahitamo)",
+    "titlePlaceholder": "Sobanura uburambe bwawe...",
+    "reviewOptional": "Igitekerezo (binahitamo)",
+    "reviewPlaceholder": "Bwira abandi uburambe bwawe...",
+    "photosUpTo3": "Amafoto (kugeza 3)",
+    "uploading": "Kohereza...",
+    "reviewsSubmitted": "Ibitekerezo byoherejwe! Murakoze."
   },
   "communities": {
     "title": "Imiryango",

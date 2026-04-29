@@ -394,7 +394,18 @@
     "itemsAddedToCart": "商品已加入购物车",
     "failedToAddToCart": "加入购物车失败",
     "cancelSuccess": "订单已成功取消",
-    "cancelFailed": "取消订单失败"
+    "cancelFailed": "取消订单失败",
+    "rateYourOrder": "评价您的订单",
+    "yourRating": "您的评分",
+    "tapToRate": "点击评分",
+    "ratingGreat": "很好！",
+    "titleOptional": "标题（可选）",
+    "titlePlaceholder": "总结您的体验...",
+    "reviewOptional": "评价（可选）",
+    "reviewPlaceholder": "告诉其他人您的体验...",
+    "photosUpTo3": "照片（最多3张）",
+    "uploading": "上传中...",
+    "reviewsSubmitted": "评价已提交！谢谢。"
   },
   "communities": {
     "title": "社区",

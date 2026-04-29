@@ -395,7 +395,18 @@
     "itemsAddedToCart": "カートに追加しました",
     "failedToAddToCart": "カートへの追加に失敗しました",
     "cancelSuccess": "注文をキャンセルしました",
-    "cancelFailed": "注文のキャンセルに失敗しました"
+    "cancelFailed": "注文のキャンセルに失敗しました",
+    "rateYourOrder": "注文を評価する",
+    "yourRating": "あなたの評価",
+    "tapToRate": "タップして評価",
+    "ratingGreat": "とても良い！",
+    "titleOptional": "タイトル（任意）",
+    "titlePlaceholder": "ご経験をまとめてください...",
+    "reviewOptional": "レビュー（任意）",
+    "reviewPlaceholder": "他の人にあなたの体験を教えてください...",
+    "photosUpTo3": "写真（最大3枚）",
+    "uploading": "アップロード中...",
+    "reviewsSubmitted": "レビューが送信されました！ありがとうございます。"
   },
   "communities": {
     "title": "コミュニティ",

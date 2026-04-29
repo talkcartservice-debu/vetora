@@ -456,7 +456,18 @@
     "itemsAddedToCart": "Articles ajoutés au panier",
     "failedToAddToCart": "Impossible d'ajouter au panier",
     "cancelSuccess": "Commande annulée avec succès",
-    "cancelFailed": "Impossible d'annuler la commande"
+    "cancelFailed": "Impossible d'annuler la commande",
+    "rateYourOrder": "Évaluer votre commande",
+    "yourRating": "Votre note",
+    "tapToRate": "Appuyez pour noter",
+    "ratingGreat": "Super !",
+    "titleOptional": "Titre (facultatif)",
+    "titlePlaceholder": "Résumez votre expérience...",
+    "reviewOptional": "Avis (facultatif)",
+    "reviewPlaceholder": "Partagez votre expérience avec les autres...",
+    "photosUpTo3": "Photos (jusqu'à 3)",
+    "uploading": "Téléchargement en cours...",
+    "reviewsSubmitted": "Avis soumis ! Merci."
   },
   "communities": {
     "title": "Communautés",

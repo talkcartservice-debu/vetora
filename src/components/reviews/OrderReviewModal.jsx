@@ -5,9 +5,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Loader2, Star, Camera, X, Upload } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import StarRating from "./StarRating";
 
 export default function OrderReviewModal({ open, onClose, order, currentUser }) {
+  const { t } = useTranslation();
   const [rating, setRating] = useState(0);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -16,7 +18,6 @@ export default function OrderReviewModal({ open, onClose, order, currentUser }) 
   const [uploading, setUploading] = useState(false);
   const queryClient = useQueryClient();
 
-  // Cleanup previews on unmount or when modal closes
   useEffect(() => {
     return () => {
       previews.forEach(url => URL.revokeObjectURL(url));
@@ -40,6 +41,15 @@ export default function OrderReviewModal({ open, onClose, order, currentUser }) 
     setPreviews(previews.filter((_, i) => i !== index));
   };
 
+  const getRatingLabel = (r) => {
+    if (r === 0) return t("orders.tapToRate");
+    if (r === 5) return t("product.ratingExcellent");
+    if (r === 4) return t("orders.ratingGreat");
+    if (r === 3) return t("product.ratingGood");
+    if (r === 2) return t("product.ratingFair");
+    return t("product.ratingPoor");
+  };
+
   const submitMutation = useMutation({
     mutationFn: async () => {
       setUploading(true);
@@ -50,13 +60,12 @@ export default function OrderReviewModal({ open, onClose, order, currentUser }) 
           if (res.url) uploadedUrls.push(res.url);
         }
       } catch (err) {
-        toast.error("Media upload failed");
+        toast.error(t("product.failedToUploadMedia"));
         throw err;
       } finally {
         setUploading(false);
       }
 
-      // Submit reviews for all items in the order
       const itemPromises = (order.items || []).map(item => {
         if (!item.product_id) return Promise.resolve();
         return reviewsAPI.create({
@@ -73,7 +82,6 @@ export default function OrderReviewModal({ open, onClose, order, currentUser }) 
         });
       });
 
-      // Also submit a store review
       const storeId = order.store_id || order.merchant_id;
       const storePromise = storeId ? storeReviewsAPI.create({
         store_id: storeId,
@@ -94,7 +102,7 @@ export default function OrderReviewModal({ open, onClose, order, currentUser }) 
       queryClient.invalidateQueries({ queryKey: ["myOrders"] });
       queryClient.invalidateQueries({ queryKey: ["storeReviews"] });
       queryClient.invalidateQueries({ queryKey: ["productReviews"] });
-      toast.success("Reviews submitted! Thank you. 🎉");
+      toast.success(t("orders.reviewsSubmitted"));
       onClose();
     },
   });
@@ -105,14 +113,13 @@ export default function OrderReviewModal({ open, onClose, order, currentUser }) 
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
-            Rate Your Order
+            {t("orders.rateYourOrder")}
           </DialogTitle>
         </DialogHeader>
 
-        {/* Order summary */}
         <div className="bg-slate-50 rounded-xl p-3 mb-2">
-          <p className="text-xs font-semibold text-slate-700">{order.store_name || "Store"}</p>
-          <p className="text-[11px] text-slate-400">Order #{order.id?.slice(-8)}</p>
+          <p className="text-xs font-semibold text-slate-700">{order.store_name || t("profile.store")}</p>
+          <p className="text-[11px] text-slate-400">{t("orders.orderNumber", { id: order.id?.slice(-8) })}</p>
           {order.items?.slice(0, 2).map((item, i) => (
             <div key={i} className="flex items-center gap-2 mt-2">
               {item.product_image && <img src={item.product_image} className="w-8 h-8 rounded-lg object-cover" alt="" />}
@@ -121,40 +128,36 @@ export default function OrderReviewModal({ open, onClose, order, currentUser }) 
           ))}
         </div>
 
-        {/* Rating stars */}
         <div>
-          <label className="text-xs font-semibold text-slate-600 block mb-2">Your Rating</label>
+          <label className="text-xs font-semibold text-slate-600 block mb-2">{t("orders.yourRating")}</label>
           <StarRating value={rating} onChange={setRating} size={7} />
-          <p className="text-[11px] text-slate-400 mt-1">
-            {rating === 0 ? "Tap to rate" : rating === 5 ? "Excellent!" : rating === 4 ? "Great!" : rating === 3 ? "Good" : rating === 2 ? "Fair" : "Poor"}
-          </p>
+          <p className="text-[11px] text-slate-400 mt-1">{getRatingLabel(rating)}</p>
         </div>
 
         <div>
-          <label className="text-xs font-semibold text-slate-600 block mb-1">Title (optional)</label>
+          <label className="text-xs font-semibold text-slate-600 block mb-1">{t("orders.titleOptional")}</label>
           <input
             value={title}
             onChange={e => setTitle(e.target.value)}
-            placeholder="Summarize your experience..."
+            placeholder={t("orders.titlePlaceholder")}
             className="w-full text-sm border border-slate-200 rounded-xl px-3 py-2 outline-none focus:border-indigo-300 focus:ring-1 focus:ring-indigo-200"
           />
         </div>
 
         <div>
-          <label className="text-xs font-semibold text-slate-600 block mb-1">Review (optional)</label>
+          <label className="text-xs font-semibold text-slate-600 block mb-1">{t("orders.reviewOptional")}</label>
           <textarea
             value={content}
             onChange={e => setContent(e.target.value)}
             rows={3}
-            placeholder="Tell others about your experience..."
+            placeholder={t("orders.reviewPlaceholder")}
             className="w-full text-sm border border-slate-200 rounded-xl px-3 py-2 outline-none focus:border-indigo-300 resize-none"
           />
         </div>
 
-        {/* Media Upload */}
         <div>
           <label className="text-xs font-semibold text-slate-600 block mb-2 flex items-center gap-1.5">
-            <Camera className="w-3.5 h-3.5" /> Photos (up to 3)
+            <Camera className="w-3.5 h-3.5" /> {t("orders.photosUpTo3")}
           </label>
           <div className="flex gap-2">
             {previews.map((url, i) => (
@@ -171,7 +174,7 @@ export default function OrderReviewModal({ open, onClose, order, currentUser }) 
             {mediaFiles.length < 3 && (
               <label className="w-16 h-16 rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/30 transition-all text-slate-400">
                 <Upload className="w-4 h-4" />
-                <span className="text-[9px] mt-0.5 font-medium">Add</span>
+                <span className="text-[9px] mt-0.5 font-medium">{t("common.upload")}</span>
                 <input type="file" accept="image/*" multiple className="hidden" onChange={handleFileChange} />
               </label>
             )}
@@ -179,7 +182,7 @@ export default function OrderReviewModal({ open, onClose, order, currentUser }) 
         </div>
 
         <div className="flex gap-2">
-          <Button variant="outline" onClick={onClose} className="flex-1 rounded-xl" size="sm">Cancel</Button>
+          <Button variant="outline" onClick={onClose} className="flex-1 rounded-xl" size="sm">{t("common.cancel")}</Button>
           <Button
             onClick={() => submitMutation.mutate()}
             disabled={rating === 0 || submitMutation.isPending || uploading}
@@ -187,8 +190,8 @@ export default function OrderReviewModal({ open, onClose, order, currentUser }) 
             size="sm"
           >
             {submitMutation.isPending || uploading ? (
-              <><Loader2 className="w-4 h-4 animate-spin mr-2" /> {uploading ? "Uploading..." : "Submitting..."}</>
-            ) : "Submit Review"}
+              <><Loader2 className="w-4 h-4 animate-spin mr-2" /> {uploading ? t("orders.uploading") : t("product.submitting")}</>
+            ) : t("product.submitReview")}
           </Button>
         </div>
       </DialogContent>

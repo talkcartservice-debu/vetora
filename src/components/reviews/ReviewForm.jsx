@@ -143,7 +143,7 @@ export default function ReviewForm({ productId, storeId, currentUser, onClose })
           {mediaFiles.length < 5 && (
             <label className="w-16 h-16 rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center cursor-pointer hover:border-indigo-400 transition-colors">
               <Upload className="w-5 h-5 text-slate-400" />
-              <span className="text-[9px] text-slate-400 mt-0.5">Add</span>
+              <span className="text-[9px] text-slate-400 mt-0.5">{t("common.upload")}</span>
               <input type="file" accept="image/*,video/*" multiple className="hidden" onChange={handleFileChange} />
             </label>
           )}

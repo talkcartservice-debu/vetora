@@ -456,7 +456,18 @@
     "itemsAddedToCart": "Vitu vimeongezwa kwenye kikapu",
     "failedToAddToCart": "Imeshindwa kuongeza kwenye kikapu",
     "cancelSuccess": "Agizo limefutwa kwa mafanikio",
-    "cancelFailed": "Imeshindwa kufuta agizo"
+    "cancelFailed": "Imeshindwa kufuta agizo",
+    "rateYourOrder": "Kadiria agizo lako",
+    "yourRating": "Ukadiriaji wako",
+    "tapToRate": "Gusa kukadiri",
+    "ratingGreat": "Vizuri sana!",
+    "titleOptional": "Kichwa (hiari)",
+    "titlePlaceholder": "Fupisha uzoefu wako...",
+    "reviewOptional": "Tathmini (hiari)",
+    "reviewPlaceholder": "Waambie wengine kuhusu uzoefu wako...",
+    "photosUpTo3": "Picha (hadi 3)",
+    "uploading": "Inapakia...",
+    "reviewsSubmitted": "Maoni yamewasilishwa! Asante."
   },
   "communities": {
     "title": "Jamii",

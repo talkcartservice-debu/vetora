@@ -456,7 +456,18 @@
     "itemsAddedToCart": "Artikel in den Warenkorb gelegt",
     "failedToAddToCart": "Fehler beim Hinzufügen zum Warenkorb",
     "cancelSuccess": "Bestellung erfolgreich storniert",
-    "cancelFailed": "Fehler beim Stornieren der Bestellung"
+    "cancelFailed": "Fehler beim Stornieren der Bestellung",
+    "rateYourOrder": "Bestellung bewerten",
+    "yourRating": "Ihre Bewertung",
+    "tapToRate": "Zum Bewerten tippen",
+    "ratingGreat": "Toll!",
+    "titleOptional": "Titel (optional)",
+    "titlePlaceholder": "Fassen Sie Ihre Erfahrung zusammen...",
+    "reviewOptional": "Bewertung (optional)",
+    "reviewPlaceholder": "Erzählen Sie anderen von Ihrer Erfahrung...",
+    "photosUpTo3": "Fotos (bis zu 3)",
+    "uploading": "Wird hochgeladen...",
+    "reviewsSubmitted": "Bewertungen eingereicht! Vielen Dank."
   },
   "communities": {
     "title": "Communitys",
