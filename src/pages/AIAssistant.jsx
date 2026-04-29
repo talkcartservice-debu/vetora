@@ -14,6 +14,7 @@ import { ChatSkeleton } from "@/components/shared/LoadingSkeleton";
 import ReactMarkdown from "react-markdown";
 import { productsAPI, authAPI, aiAPI, cartAPI } from "@/api/apiClient";
 import { useTranslation } from "react-i18next";
+import i18n from "@/lib/i18n";
 import OrderStatusCard from "@/components/chat/OrderStatusCard";
 import SmartActionChips from "@/components/chat/SmartActionChips";
 
@@ -274,7 +275,7 @@ export default function AIAssistant() {
       const initAssistant = async () => {
         setIsLoading(true);
         try {
-          const res = await aiAPI.assistant("", [], true);
+          const res = await aiAPI.assistant("", [], true, i18n.language);
           const data = res.data || res;
           if (data.reply) {
             const aiMsg = {
@@ -314,7 +315,7 @@ export default function AIAssistant() {
       .map(m => ({ role: m.role, content: m.content }));
 
     try {
-      const res = await aiAPI.assistant(userMessage, history, false);
+      const res = await aiAPI.assistant(userMessage, history, false, i18n.language);
       const data = res.data || res;
       const aiMsg = {
         id: Date.now() + 1,
