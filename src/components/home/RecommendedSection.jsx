@@ -6,8 +6,10 @@ import { ProductSkeleton } from "@/components/shared/LoadingSkeleton";
 import { Sparkles, ChevronRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
 export default function RecommendedSection({ currentUser }) {
+  const { t } = useTranslation();
   const { data: recommendedResponse, isLoading } = useQuery({
     queryKey: ["recommendedProducts", currentUser?.username],
     queryFn: () => productsAPI.getRecommendations(8),
@@ -24,10 +26,10 @@ export default function RecommendedSection({ currentUser }) {
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-purple-500" />
-          Recommended for You
+          {t("home.recommendedForYou")}
         </h2>
         <Link to={createPageUrl("Marketplace")} className="text-xs text-indigo-600 font-medium flex items-center gap-0.5">
-          See all <ChevronRight className="w-3 h-3" />
+          {t("home.seeAll")} <ChevronRight className="w-3 h-3" />
         </Link>
       </div>
       <div className="overflow-x-auto -mx-4 px-4 hide-scrollbar">
