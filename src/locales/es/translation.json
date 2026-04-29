@@ -1275,5 +1275,71 @@
     "productSharedSuccess": "¡Producto compartido con éxito!",
     "postSharedSuccess": "¡Publicación compartida con éxito!",
     "failedToShare": "Error al compartir"
+  },
+  "support": {
+    "backToHome": "Volver al inicio",
+    "title": "¿Cómo podemos ayudarte?",
+    "subtitle": "Nuestro equipo de soporte dedicado está aquí para garantizar la mejor experiencia en Aicon X.",
+    "channels": {
+      "aiAssistant": {
+        "title": "Asistente IA",
+        "description": "Obtén respuestas instantáneas con el AI de Aicon.",
+        "action": "Preguntar a la IA"
+      },
+      "liveChat": {
+        "title": "Chat en vivo",
+        "description": "Chatea con nuestro equipo de soporte en tiempo real.",
+        "action": "Iniciar chat"
+      },
+      "reportIssue": {
+        "title": "Reportar problema",
+        "description": "¿Encontraste un error o tienes una preocupación de seguridad? Cuéntanos.",
+        "action": "Reportar ahora"
+      },
+      "emailSupport": {
+        "title": "Soporte por email",
+        "description": "Email directo para consultas comerciales o de asociación.",
+        "action": "Enviar email"
+      }
+    },
+    "buyerProtection": {
+      "badge": "Protección al comprador",
+      "title": "Tu seguridad es nuestra prioridad",
+      "description": "Cada transacción en Aicon X está protegida. Si no recibes tu artículo o no es como se describe, te cubrimos.",
+      "monitoring": "Monitoreo 24/7",
+      "prioritySupport": "Soporte prioritario"
+    },
+    "faq": {
+      "title": "Preguntas frecuentes",
+      "q1": "¿Cómo rastro mi pedido?",
+      "a1": "Puedes rastrear tu pedido visitando la página 'Pedidos' en tu perfil y haciendo clic en el pedido específico. Verás actualizaciones en tiempo real y un número de seguimiento si aplica.",
+      "q2": "¿Cuál es la política de devoluciones?",
+      "a2": "Ofrecemos una política de devolución de 14 días para la mayoría de los artículos. Si no estás satisfecho, puedes iniciar una devolución desde la página 'Detalle del pedido'. Los artículos deben estar en su condición original.",
+      "q3": "¿Cómo me convierto en vendedor?",
+      "a3": "Simplemente ve a 'Mi tienda' en el menú de navegación y sigue las instrucciones de configuración. Deberás proporcionar información básica y verificar tu identidad.",
+      "q4": "¿Mis pagos son seguros?",
+      "a4": "Sí, todos los pagos se procesan a través de pasarelas seguras y cifradas como Paystack. Nunca almacenamos los detalles completos de tu tarjeta en nuestros servidores."
+    },
+    "report": {
+      "title": "Reportar un problema",
+      "description": "Cuéntanos qué está mal. Investigaremos y tomaremos las medidas adecuadas.",
+      "reasonLabel": "¿De qué trata el problema?",
+      "reasonPlaceholder": "Selecciona una razón",
+      "reasons": {
+        "bugReport": "Reporte de error",
+        "safetyConcern": "Preocupación de seguridad",
+        "technicalIssue": "Problema técnico",
+        "vendorIssue": "Problema con vendedor",
+        "feedback": "Comentarios generales",
+        "other": "Otro"
+      },
+      "detailsLabel": "Detalles",
+      "detailsPlaceholder": "Proporciona más detalles para que podamos ayudarte más rápido...",
+      "submit": "Enviar reporte",
+      "submitting": "Enviando...",
+      "selectReasonError": "Por favor selecciona una razón para tu reporte",
+      "submitSuccess": "¡Reporte enviado con éxito! Lo revisaremos en breve.",
+      "submitError": "Error al enviar el reporte"
+    }
   }
 }

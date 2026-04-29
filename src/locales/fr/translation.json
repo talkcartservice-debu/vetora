@@ -1275,5 +1275,71 @@
     "productSharedSuccess": "Produit partagé avec succès !",
     "postSharedSuccess": "Publication partagée avec succès !",
     "failedToShare": "Échec du partage"
+  },
+  "support": {
+    "backToHome": "Retour à l'accueil",
+    "title": "Comment pouvons-nous vous aider ?",
+    "subtitle": "Notre équipe d'assistance dédiée est là pour vous garantir la meilleure expérience sur Aicon X.",
+    "channels": {
+      "aiAssistant": {
+        "title": "Assistant IA",
+        "description": "Obtenez des réponses instantanées avec l'IA Aicon.",
+        "action": "Demander à l'IA"
+      },
+      "liveChat": {
+        "title": "Chat en direct",
+        "description": "Discutez avec notre équipe d'assistance en temps réel.",
+        "action": "Démarrer le chat"
+      },
+      "reportIssue": {
+        "title": "Signaler un problème",
+        "description": "Vous avez trouvé un bug ou avez une préoccupation de sécurité ? Dites-le nous.",
+        "action": "Signaler maintenant"
+      },
+      "emailSupport": {
+        "title": "Support par e-mail",
+        "description": "E-mail direct pour les demandes commerciales ou de partenariat.",
+        "action": "Envoyer un e-mail"
+      }
+    },
+    "buyerProtection": {
+      "badge": "Protection de l'acheteur",
+      "title": "Votre sécurité est notre priorité",
+      "description": "Chaque transaction sur Aicon X est protégée. Si vous ne recevez pas votre article ou s'il n'est pas conforme à la description, nous vous couvrons.",
+      "monitoring": "Surveillance 24h/24",
+      "prioritySupport": "Support prioritaire"
+    },
+    "faq": {
+      "title": "Questions fréquentes",
+      "q1": "Comment suivre ma commande ?",
+      "a1": "Vous pouvez suivre votre commande en visitant la page 'Commandes' dans votre profil et en cliquant sur la commande spécifique. Vous verrez des mises à jour en temps réel et un numéro de suivi si applicable.",
+      "q2": "Quelle est la politique de retour ?",
+      "a2": "Nous offrons une politique de retour de 14 jours pour la plupart des articles. Si vous n'êtes pas satisfait, vous pouvez initier un retour depuis la page 'Détail de la commande'. Les articles doivent être dans leur état d'origine.",
+      "q3": "Comment devenir vendeur ?",
+      "a3": "Accédez simplement à 'Ma boutique' dans le menu de navigation et suivez les instructions de configuration. Vous devrez fournir des informations de base et vérifier votre identité.",
+      "q4": "Mes paiements sont-ils sécurisés ?",
+      "a4": "Oui, tous les paiements sont traités via des passerelles sécurisées et chiffrées comme Paystack. Nous ne stockons jamais vos coordonnées bancaires complètes sur nos serveurs."
+    },
+    "report": {
+      "title": "Signaler un problème",
+      "description": "Dites-nous ce qui ne va pas. Nous enquêterons et prendrons les mesures appropriées.",
+      "reasonLabel": "Quel est le problème ?",
+      "reasonPlaceholder": "Sélectionner une raison",
+      "reasons": {
+        "bugReport": "Rapport de bug",
+        "safetyConcern": "Préoccupation de sécurité",
+        "technicalIssue": "Problème technique",
+        "vendorIssue": "Problème de vendeur",
+        "feedback": "Commentaires généraux",
+        "other": "Autre"
+      },
+      "detailsLabel": "Détails",
+      "detailsPlaceholder": "Fournissez plus de détails pour que nous puissions vous aider plus rapidement...",
+      "submit": "Envoyer le rapport",
+      "submitting": "Envoi en cours...",
+      "selectReasonError": "Veuillez sélectionner une raison pour votre rapport",
+      "submitSuccess": "Rapport soumis avec succès ! Nous l'examinerons sous peu.",
+      "submitError": "Échec de l'envoi du rapport"
+    }
   }
 }

@@ -1213,5 +1213,71 @@
     "productSharedSuccess": "商品分享成功！",
     "postSharedSuccess": "帖子分享成功！",
     "failedToShare": "分享失败"
+  },
+  "support": {
+    "backToHome": "返回首页",
+    "title": "我们能为您做什么？",
+    "subtitle": "我们专属的支持团队随时为您提供最佳的 Aicon X 使用体验。",
+    "channels": {
+      "aiAssistant": {
+        "title": "AI 助手",
+        "description": "使用 Aicon AI 获取即时答案和帮助。",
+        "action": "询问 AI"
+      },
+      "liveChat": {
+        "title": "在线客服",
+        "description": "实时与我们的支持团队聊天。",
+        "action": "开始聊天"
+      },
+      "reportIssue": {
+        "title": "反馈问题",
+        "description": "发现错误或有安全顾虑？告知我们。",
+        "action": "立即反馈"
+      },
+      "emailSupport": {
+        "title": "邮件支持",
+        "description": "商务或合作相关咨询请发送邮件。",
+        "action": "发送邮件"
+      }
+    },
+    "buyerProtection": {
+      "badge": "买家保障",
+      "title": "您的安全是我们的首要任务",
+      "description": "Aicon X 上的每笔交易都受到保障。如果您未收到商品或商品与描述不符，我们会为您提供保障。",
+      "monitoring": "全天候监控",
+      "prioritySupport": "优先支持"
+    },
+    "faq": {
+      "title": "常见问题",
+      "q1": "如何追踪我的订单？",
+      "a1": "您可以在个人主页的"订单"页面查看订单，点击具体订单可看到实时更新和快递单号（如适用）。",
+      "q2": "退货政策是什么？",
+      "a2": "大多数商品支持14天退货政策。如不满意，可从"订单详情"页面发起退货申请。商品须保持原始状态。",
+      "q3": "如何成为卖家？",
+      "a3": "进入导航菜单中的"我的店铺"，按照设置说明操作即可。您需要提供基本信息并完成身份验证。",
+      "q4": "我的付款安全吗？",
+      "a4": "是的，所有付款均通过 Paystack 等安全加密网关处理。我们从不将您的完整卡片信息存储在服务器上。"
+    },
+    "report": {
+      "title": "反馈问题",
+      "description": "告知我们问题所在，我们将进行调查并采取适当措施。",
+      "reasonLabel": "问题涉及哪方面？",
+      "reasonPlaceholder": "选择原因",
+      "reasons": {
+        "bugReport": "错误报告",
+        "safetyConcern": "安全顾虑",
+        "technicalIssue": "技术问题",
+        "vendorIssue": "卖家问题",
+        "feedback": "一般反馈",
+        "other": "其他"
+      },
+      "detailsLabel": "详细信息",
+      "detailsPlaceholder": "请提供更多详情，以便我们更快帮助您...",
+      "submit": "提交报告",
+      "submitting": "提交中...",
+      "selectReasonError": "请选择反馈原因",
+      "submitSuccess": "报告提交成功！我们将尽快审查。",
+      "submitError": "报告提交失败"
+    }
   }
 }

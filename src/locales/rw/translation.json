@@ -1276,5 +1276,71 @@
     "productSharedSuccess": "Igicuruzwa gasangirwe neza!",
     "postSharedSuccess": "Ubutumwa busangirwe neza!",
     "failedToShare": "Gusangira byanze"
+  },
+  "support": {
+    "backToHome": "Garuka ahabanza",
+    "title": "Tukwifashije iki?",
+    "subtitle": "Itsinda ryacu ry'inkunga riragufasha kugira utuye neza kuri Aicon X.",
+    "channels": {
+      "aiAssistant": {
+        "title": "Umufasha wa AI",
+        "description": "Bona ibisubizo byihuse n'inkunga hamwe na Aicon AI.",
+        "action": "Baza AI"
+      },
+      "liveChat": {
+        "title": "Ikiganiro Cyuzuye",
+        "description": "Ganira n'itsinda ryacu ry'inkunga mu gihe nyacyo.",
+        "action": "Tangira Ikiganiro"
+      },
+      "reportIssue": {
+        "title": "Raporo Ikibazo",
+        "description": "Wabonanye ikosa cyangwa ufite ikibazo cy'umutekano? Tubwire.",
+        "action": "Raporo Nonaha"
+      },
+      "emailSupport": {
+        "title": "Inkunga ya Imeri",
+        "description": "Imeri itaziguye y'ubucuruzi cyangwa ubufatanye.",
+        "action": "Ohereza Imeri"
+      }
+    },
+    "buyerProtection": {
+      "badge": "Kurinda Umuguzi",
+      "title": "Umutekano wawe ni inshingano yacu",
+      "description": "Buri gusubiranya kuri Aicon X birindwa. Niba utarabona ibicuruzwa byawe cyangwa bitandukanye n'ibisobanuro, tukuririmba.",
+      "monitoring": "Kugenzura iminsi yose",
+      "prioritySupport": "Inkunga y'Ikibanza"
+    },
+    "faq": {
+      "title": "Ibibazo Bikunze Kubazwa",
+      "q1": "Nkurikirana dute itumwa ryanjye?",
+      "a1": "Ushobora gukurikirana itumwa ryawe usura paji ya 'Ibitumwa' mu profili yawe hanyuma ukanda ku itumwa ryihariye. Uzabona ivugurura mu gihe nyacyo na nimero yo gukurikirana niba ihari.",
+      "q2": "Ingingo y'gusubiza ni iyihe?",
+      "a2": "Dutanga ingingo y'gusubiza iminsi 14 ku bisubizo byinshi. Niba utishimye, ushobora gutangira gusubiza uva ku paji ya 'Amakuru y'Itumwa'. Ibintu bigomba kuba mu miterere yabyo ya mbere.",
+      "q3": "Naba umutunga nte?",
+      "a3": "Genda ku 'Iduka ryanjye' mu menyu yo kuyobora hanyuma ukurikire amabwiriza yo guteranya. Uzakenera gutanga amakuru fatizo no kugaragaza ubunyange bwawe.",
+      "q4": "Kwishyura kwanjye ni bihamye?",
+      "a4": "Yego, buri kwishyura bikorwa binyuze mu nzira zifunguye nka Paystack. Ntibigera bigumiza amakuru yose y'ikarita yawe ku seriveri zacu."
+    },
+    "report": {
+      "title": "Raporo Ikibazo",
+      "description": "Tubwire icyo kibazo. Tuzasesengura hanyuma tufate ingamba zifite.",
+      "reasonLabel": "Ikibazo ni ikihe?",
+      "reasonPlaceholder": "Hitamo impamvu",
+      "reasons": {
+        "bugReport": "Raporo y'ikosa",
+        "safetyConcern": "Ikibazo cy'umutekano",
+        "technicalIssue": "Ikibazo cya tekiniki",
+        "vendorIssue": "Ikibazo cy'umutunga",
+        "feedback": "Ibitekerezo rusange",
+        "other": "Ibindi"
+      },
+      "detailsLabel": "Amakuru Arambuye",
+      "detailsPlaceholder": "Tanga amakuru arambuye kugira tukufashe byihuse...",
+      "submit": "Ohereza Raporo",
+      "submitting": "Kohereza...",
+      "selectReasonError": "Hitamo impamvu ya raporo yawe",
+      "submitSuccess": "Raporo yoherejwe neza! Tuzayisesengura vuba.",
+      "submitError": "Kohereza raporo byanze"
+    }
   }
 }

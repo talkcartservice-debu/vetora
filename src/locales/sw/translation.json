@@ -1275,5 +1275,71 @@
     "productSharedSuccess": "Bidhaa imeshirikiwa kwa mafanikio!",
     "postSharedSuccess": "Chapisho limeshirikiwa kwa mafanikio!",
     "failedToShare": "Imeshindwa kushiriki"
+  },
+  "support": {
+    "backToHome": "Rudi Nyumbani",
+    "title": "Tunaweza kukusaidia vipi?",
+    "subtitle": "Timu yetu ya msaada iliyojitolea iko hapa kuhakikisha unapata uzoefu bora zaidi kwenye Aicon X.",
+    "channels": {
+      "aiAssistant": {
+        "title": "Msaidizi wa AI",
+        "description": "Pata majibu ya papo hapo na msaada kutoka kwa Aicon AI.",
+        "action": "Uliza AI"
+      },
+      "liveChat": {
+        "title": "Mazungumzo ya Moja kwa Moja",
+        "description": "Zungumza na timu yetu ya msaada wakati wa kweli.",
+        "action": "Anza Mazungumzo"
+      },
+      "reportIssue": {
+        "title": "Ripoti Tatizo",
+        "description": "Umegundua hitilafu au una wasiwasi wa usalama? Tuambie.",
+        "action": "Ripoti Sasa"
+      },
+      "emailSupport": {
+        "title": "Msaada wa Barua Pepe",
+        "description": "Barua pepe ya moja kwa moja kwa maswali ya biashara au ushirikiano.",
+        "action": "Tuma Barua Pepe"
+      }
+    },
+    "buyerProtection": {
+      "badge": "Ulinzi wa Mnunuzi",
+      "title": "Usalama wako ndio kipaumbele chetu",
+      "description": "Kila muamala kwenye Aicon X unalindwa. Ikiwa hupokei bidhaa yako au si kama ilivyoelezwa, tunakusaidia.",
+      "monitoring": "Ufuatiliaji wa Saa 24/7",
+      "prioritySupport": "Msaada wa Kipaumbele"
+    },
+    "faq": {
+      "title": "Maswali Yanayoulizwa Mara Kwa Mara",
+      "q1": "Ninafuatiliaje agizo langu?",
+      "a1": "Unaweza kufuatilia agizo lako kwa kutembelea ukurasa wa 'Maagizo' kwenye wasifu wako na kubonyeza agizo mahususi. Utaona masasisho ya wakati wa kweli na nambari ya ufuatiliaji ikiwa inapatikana.",
+      "q2": "Je, sera ya kurudisha bidhaa ni ipi?",
+      "a2": "Tunatoa sera ya kurudisha bidhaa ya siku 14 kwa vitu vingi. Ikiwa hujaridhika, unaweza kuanzisha kurudisha kutoka ukurasa wa 'Maelezo ya Agizo'. Vitu lazima viwe katika hali yake ya asili.",
+      "q3": "Ninakuwa muuzaji vipi?",
+      "a3": "Nenda tu kwenye 'Duka Langu' katika menyu ya urambazaji na ufuate maagizo ya usanidi. Utahitaji kutoa maelezo ya msingi na kuthibitisha utambulisho wako.",
+      "q4": "Je, malipo yangu yako salama?",
+      "a4": "Ndiyo, malipo yote yanashughulikiwa kupitia lango salama na zilizosimbwa kama Paystack. Hatuhifadhi kamwe maelezo yako kamili ya kadi kwenye seva zetu."
+    },
+    "report": {
+      "title": "Ripoti Tatizo",
+      "description": "Tuambie ni nini kibaya. Tutachunguza na kuchukua hatua zinazofaa.",
+      "reasonLabel": "Tatizo linahusu nini?",
+      "reasonPlaceholder": "Chagua sababu",
+      "reasons": {
+        "bugReport": "Ripoti ya Hitilafu",
+        "safetyConcern": "Wasiwasi wa Usalama",
+        "technicalIssue": "Tatizo la Kiufundi",
+        "vendorIssue": "Tatizo la Muuzaji",
+        "feedback": "Maoni ya Jumla",
+        "other": "Nyingine"
+      },
+      "detailsLabel": "Maelezo",
+      "detailsPlaceholder": "Toa maelezo zaidi ili tuweze kukusaidia haraka zaidi...",
+      "submit": "Wasilisha Ripoti",
+      "submitting": "Inawasilishwa...",
+      "selectReasonError": "Tafadhali chagua sababu ya ripoti yako",
+      "submitSuccess": "Ripoti imewasilishwa kwa mafanikio! Tutaipitia hivi karibuni.",
+      "submitError": "Imeshindwa kuwasilisha ripoti"
+    }
   }
 }

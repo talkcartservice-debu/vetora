@@ -1275,5 +1275,71 @@
     "productSharedSuccess": "Produkt erfolgreich geteilt!",
     "postSharedSuccess": "Beitrag erfolgreich geteilt!",
     "failedToShare": "Teilen fehlgeschlagen"
+  },
+  "support": {
+    "backToHome": "Zurück zur Startseite",
+    "title": "Wie können wir helfen?",
+    "subtitle": "Unser engagiertes Support-Team sorgt dafür, dass Sie die beste Erfahrung auf Aicon X haben.",
+    "channels": {
+      "aiAssistant": {
+        "title": "KI-Assistent",
+        "description": "Erhalten Sie sofortige Antworten mit Aicon AI.",
+        "action": "KI fragen"
+      },
+      "liveChat": {
+        "title": "Live-Chat",
+        "description": "Chatten Sie in Echtzeit mit unserem Support-Team.",
+        "action": "Chat starten"
+      },
+      "reportIssue": {
+        "title": "Problem melden",
+        "description": "Haben Sie einen Fehler gefunden oder ein Sicherheitsanliegen? Teilen Sie es uns mit.",
+        "action": "Jetzt melden"
+      },
+      "emailSupport": {
+        "title": "E-Mail-Support",
+        "description": "Direkte E-Mail für Geschäfts- oder Partnerschaftsanfragen.",
+        "action": "E-Mail senden"
+      }
+    },
+    "buyerProtection": {
+      "badge": "Käuferschutz",
+      "title": "Ihre Sicherheit hat höchste Priorität",
+      "description": "Jede Transaktion auf Aicon X ist geschützt. Wenn Sie Ihren Artikel nicht erhalten oder er nicht der Beschreibung entspricht, sind Sie abgesichert.",
+      "monitoring": "24/7-Überwachung",
+      "prioritySupport": "Prioritätssupport"
+    },
+    "faq": {
+      "title": "Häufig gestellte Fragen",
+      "q1": "Wie verfolge ich meine Bestellung?",
+      "a1": "Sie können Ihre Bestellung verfolgen, indem Sie die Seite 'Bestellungen' in Ihrem Profil besuchen und auf die entsprechende Bestellung klicken. Sie sehen Echtzeit-Updates und eine Tracking-Nummer, falls zutreffend.",
+      "q2": "Wie lautet die Rückgaberichtlinie?",
+      "a2": "Wir bieten für die meisten Artikel eine 14-tägige Rückgaberichtlinie an. Wenn Sie nicht zufrieden sind, können Sie eine Rückgabe von der Seite 'Bestelldetails' einleiten. Artikel müssen in ihrem Originalzustand sein.",
+      "q3": "Wie werde ich Verkäufer?",
+      "a3": "Gehen Sie einfach zu 'Mein Shop' im Navigationsmenü und folgen Sie den Einrichtungsanweisungen. Sie müssen einige grundlegende Informationen angeben und Ihre Identität verifizieren.",
+      "q4": "Sind meine Zahlungen sicher?",
+      "a4": "Ja, alle Zahlungen werden über sichere, verschlüsselte Zahlungsgateways wie Paystack abgewickelt. Wir speichern niemals Ihre vollständigen Kartendetails auf unseren Servern."
+    },
+    "report": {
+      "title": "Problem melden",
+      "description": "Teilen Sie uns mit, was nicht stimmt. Wir werden untersuchen und angemessene Maßnahmen ergreifen.",
+      "reasonLabel": "Worum geht es bei dem Problem?",
+      "reasonPlaceholder": "Grund auswählen",
+      "reasons": {
+        "bugReport": "Fehlerbericht",
+        "safetyConcern": "Sicherheitsbedenken",
+        "technicalIssue": "Technisches Problem",
+        "vendorIssue": "Händlerproblem",
+        "feedback": "Allgemeines Feedback",
+        "other": "Sonstiges"
+      },
+      "detailsLabel": "Details",
+      "detailsPlaceholder": "Geben Sie weitere Details an, damit wir Ihnen schneller helfen können...",
+      "submit": "Bericht einreichen",
+      "submitting": "Wird eingereicht...",
+      "selectReasonError": "Bitte wählen Sie einen Grund für Ihren Bericht aus",
+      "submitSuccess": "Bericht erfolgreich eingereicht! Wir werden ihn in Kürze prüfen.",
+      "submitError": "Bericht konnte nicht eingereicht werden"
+    }
   }
 }

@@ -1304,5 +1304,71 @@
     "productSharedSuccess": "Product shared successfully!",
     "postSharedSuccess": "Post shared successfully!",
     "failedToShare": "Failed to share"
+  },
+  "support": {
+    "backToHome": "Back to Home",
+    "title": "How can we help?",
+    "subtitle": "Our dedicated support team is here to ensure you have the best experience on Aicon X.",
+    "channels": {
+      "aiAssistant": {
+        "title": "AI Assistant",
+        "description": "Get instant answers and help with Aicon AI.",
+        "action": "Ask AI"
+      },
+      "liveChat": {
+        "title": "Live Chat",
+        "description": "Chat with our support team in real-time.",
+        "action": "Start Chat"
+      },
+      "reportIssue": {
+        "title": "Report Issue",
+        "description": "Found a bug or have a safety concern? Let us know.",
+        "action": "Report Now"
+      },
+      "emailSupport": {
+        "title": "Email Support",
+        "description": "Direct email for business or partnership inquiries.",
+        "action": "Send Email"
+      }
+    },
+    "buyerProtection": {
+      "badge": "Buyer Protection",
+      "title": "Your security is our top priority",
+      "description": "Every transaction on Aicon X is protected. If you don't receive your item or it's not as described, we've got you covered.",
+      "monitoring": "24/7 Monitoring",
+      "prioritySupport": "Priority Support"
+    },
+    "faq": {
+      "title": "Frequently Asked Questions",
+      "q1": "How do I track my order?",
+      "a1": "You can track your order by visiting the 'Orders' page in your profile and clicking on the specific order. You'll see real-time updates and a tracking number if applicable.",
+      "q2": "What is the return policy?",
+      "a2": "We offer a 14-day return policy for most items. If you're not satisfied, you can initiate a return from the 'Order Detail' page. Items must be in their original condition.",
+      "q3": "How do I become a vendor?",
+      "a3": "Simply go to 'My Store' in the navigation menu and follow the setup instructions. You'll need to provide some basic information and verify your identity.",
+      "q4": "Are my payments secure?",
+      "a4": "Yes, all payments are processed through secure, encrypted gateways like Paystack. We never store your full card details on our servers."
+    },
+    "report": {
+      "title": "Report an Issue",
+      "description": "Tell us what's wrong. We'll investigate and take appropriate action.",
+      "reasonLabel": "What is the issue about?",
+      "reasonPlaceholder": "Select a reason",
+      "reasons": {
+        "bugReport": "Bug Report",
+        "safetyConcern": "Safety Concern",
+        "technicalIssue": "Technical Issue",
+        "vendorIssue": "Vendor Issue",
+        "feedback": "General Feedback",
+        "other": "Other"
+      },
+      "detailsLabel": "Details",
+      "detailsPlaceholder": "Provide more details so we can help faster...",
+      "submit": "Submit Report",
+      "submitting": "Submitting...",
+      "selectReasonError": "Please select a reason for your report",
+      "submitSuccess": "Report submitted successfully! We will review it shortly.",
+      "submitError": "Failed to submit report"
+    }
   }
 }
