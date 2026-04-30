@@ -16,6 +16,29 @@ import { sendVerificationCode, sendWhatsAppVerification } from '../services/mail
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
+const AUTH_RATE_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+const AUTH_RATE_MAX = 20; // max attempts per window per IP
+const authRateBuckets = new Map<string, { count: number; resetAt: number }>();
+
+function checkAuthRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const bucket = authRateBuckets.get(ip);
+  if (!bucket || now > bucket.resetAt) {
+    authRateBuckets.set(ip, { count: 1, resetAt: now + AUTH_RATE_WINDOW_MS });
+    return true;
+  }
+  if (bucket.count >= AUTH_RATE_MAX) return false;
+  bucket.count++;
+  return true;
+}
+
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, bucket] of authRateBuckets.entries()) {
+    if (now > bucket.resetAt) authRateBuckets.delete(ip);
+  }
+}, AUTH_RATE_WINDOW_MS);
+
 // Helper to get RP ID and Origin dynamically based on request or config
 const getWebAuthnConfig = (request: any): { rpID: string, origin: string } => {
   const host = (request.headers.host || 'localhost') as string;
@@ -179,6 +202,9 @@ export async function authRoutes(fastify: FastifyInstance) {
 
   // Login
   fastify.post('/login', async (request, reply) => {
+    if (!checkAuthRateLimit(request.ip)) {
+      return reply.code(429).send({ error: 'Too many login attempts. Please try again later.' });
+    }
     try {
       const { email: identifier, password, rememberMe } = loginSchema.parse(request.body);
 
@@ -585,6 +611,9 @@ export async function authRoutes(fastify: FastifyInstance) {
 
   // Register
   fastify.post('/register', async (request, reply) => {
+    if (!checkAuthRateLimit(request.ip)) {
+      return reply.code(429).send({ error: 'Too many registration attempts. Please try again later.' });
+    }
     try {
       const body = request.body;
       

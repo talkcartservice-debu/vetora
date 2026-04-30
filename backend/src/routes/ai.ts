@@ -6,7 +6,8 @@ import { getUserContext, getDiscoveryContext, searchProducts, searchStores, getP
 
 // OpenRouter configuration
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
-const DEFAULT_MODEL = 'anthropic/claude-3-haiku';
+const DEFAULT_MODEL = process.env.AI_MODEL || 'anthropic/claude-3-haiku';
+const IS_DEV = process.env.NODE_ENV === 'development';
 
 // Helper to check if we should use mock mode
 const shouldShowMock = () => {
@@ -76,7 +77,7 @@ async function handleAiRequest(params: {
 
   if (shouldShowMock()) {
     return {
-      response: getMockResponse(prompt) + "\n\n(AI DEBUG: Mock Mode Active)",
+      response: getMockResponse(prompt) + (IS_DEV ? "\n\n(AI DEBUG: Mock Mode Active)" : ""),
       usage: { total_tokens: 0 }
     };
   }
@@ -138,7 +139,7 @@ export async function aiRoutes(fastify: FastifyInstance) {
       }
       fastify.log.error(error);
       return {
-        response: getMockResponse((request.body as any)?.prompt || '') + `\n\n(AI ERROR: Service unavailable)`,
+        response: getMockResponse((request.body as any)?.prompt || '') + (IS_DEV ? `\n\n(AI ERROR: Service unavailable)` : ""),
         usage: { total_tokens: 0 }
       };
     }

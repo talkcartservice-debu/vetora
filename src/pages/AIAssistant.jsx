@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { createPageUrl } from "@/lib/utils";
 import { Link } from "react-router-dom";
@@ -10,20 +10,41 @@ import {
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ChatSkeleton } from "@/components/shared/LoadingSkeleton";
 import ReactMarkdown from "react-markdown";
-import { productsAPI, authAPI, aiAPI, cartAPI } from "@/api/apiClient";
+import { authAPI, aiAPI, cartAPI } from "@/api/apiClient";
 import { useTranslation } from "react-i18next";
-import i18n from "@/lib/i18n";
 import OrderStatusCard from "@/components/chat/OrderStatusCard";
 import SmartActionChips from "@/components/chat/SmartActionChips";
+
+const CHAT_STORAGE_KEY = "aicon_chat_history";
 
 const getWelcomeMessage = (t) => ({
   id: "welcome",
   role: "assistant",
   content: t("ai.welcomeMessage"),
-  timestamp: new Date(),
+  timestamp: new Date().toISOString(),
 });
+
+const loadChatHistory = (t) => {
+  try {
+    const stored = localStorage.getItem(CHAT_STORAGE_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch (_) {}
+  return [getWelcomeMessage(t)];
+};
+
+const saveChatHistory = (messages) => {
+  try {
+    const serializable = messages.map(m => ({
+      ...m,
+      timestamp: m.timestamp instanceof Date ? m.timestamp.toISOString() : m.timestamp,
+    }));
+    localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(serializable));
+  } catch (_) {}
+};
 
 function ProductRecommendation({ product, onAddToCart, isAdding }) {
   const discount = product.compare_at_price > 0
@@ -37,7 +58,7 @@ function ProductRecommendation({ product, onAddToCart, isAdding }) {
           className="flex gap-3 bg-white rounded-2xl border border-slate-100 p-3 hover:shadow-md transition-all"
         >
           <div className="relative w-16 h-16 rounded-xl overflow-hidden shrink-0">
-            <img src={product.images?.[0] || "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=200"} alt={product.title} className="w-full h-full object-cover" />
+            <img src={product.images?.[0] || "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=200"} alt={product.title} loading="lazy" decoding="async" className="w-full h-full object-cover" />
             {discount > 0 && (
               <div className="absolute top-1 left-1 bg-red-500 text-white text-[8px] font-bold px-1 rounded">-{discount}%</div>
             )}
@@ -82,23 +103,8 @@ function ProductRecommendation({ product, onAddToCart, isAdding }) {
 function ChatMessage({ message, onAddToCart, addingProductId }) {
   const { t } = useTranslation();
   const isUser = message.role === "user";
-  
-  // Parse actions from content and combine with explicit actions
-  const actions = [...(message.actions || [])];
-  let displayContent = message.content;
-  
-  if (!isUser) {
-    const ACTION_REGEX = /\[ACTION:\s*(\w+),\s*id:\s*([\w-]+)\]/g;
-    let match;
-    while ((match = ACTION_REGEX.exec(message.content)) !== null) {
-      // Avoid duplicates if both are present
-      if (!actions.some(a => a.type === match[1] && a.id === match[2])) {
-        actions.push({ type: match[1], id: match[2] });
-      }
-    }
-    // Clean up content from action tags for cleaner display
-    displayContent = message.content.replace(ACTION_REGEX, '').trim();
-  }
+  const actions = message.actions || [];
+  const displayContent = message.content;
 
   return (
     <motion.div
@@ -178,14 +184,18 @@ function TypingIndicator() {
 }
 
 export default function AIAssistant() {
-  const { t } = useTranslation();
-  const [messages, setMessages] = useState(() => [getWelcomeMessage(t)]);
+  const { t, i18n } = useTranslation();
+  const [messages, setMessages] = useState(() => loadChatHistory(t));
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const messagesEndRef = useRef(null);
   const recognitionRef = useRef(null);
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    saveChatHistory(messages);
+  }, [messages]);
 
   const addToCartMutation = useMutation({
     mutationFn: (product) => cartAPI.add({ product_id: product.id, quantity: 1 }),
@@ -208,7 +218,7 @@ export default function AIAssistant() {
       const recognition = new SpeechRecognition();
       recognition.continuous = false;
       recognition.interimResults = false;
-      recognition.lang = "en-US";
+      recognition.lang = i18n.language || "en-US";
 
       recognition.onresult = (event) => {
         const transcript = event.results[0][0].transcript;
@@ -238,7 +248,7 @@ export default function AIAssistant() {
         }
       };
     }
-  }, []);
+  }, [i18n.language]);
 
   const toggleListening = () => {
     if (!recognitionRef.current) return;
@@ -250,24 +260,11 @@ export default function AIAssistant() {
     }
   };
 
-  const { data: products = [], isLoading: productsLoading } = useQuery({
-    queryKey: ["allProducts"],
-    queryFn: async () => {
-      const res = await productsAPI.list({ status: "active", sort: "-sales_count", limit: 50 });
-      return res.data || [];
-    },
-  });
+  const [currentUser, setCurrentUser] = useState(null);
 
-  const { data: currentUser, isLoading: userLoading } = useQuery({
-    queryKey: ["currentUser"],
-    queryFn: async () => {
-      const res = await authAPI.me();
-      return res.data || res;
-    },
-    retry: false,
-  });
-
-  const isInitialLoading = productsLoading || userLoading;
+  useEffect(() => {
+    authAPI.me().then(res => setCurrentUser(res.data || res)).catch(() => {});
+  }, []);
 
   // Proactive Initialization
   useEffect(() => {
@@ -284,7 +281,7 @@ export default function AIAssistant() {
               content: data.reply,
               actions: data.actions || [],
               products: data.products || [],
-              timestamp: new Date(),
+              timestamp: new Date().toISOString(),
             };
             setMessages(prev => [...prev, aiMsg]);
           }
@@ -305,7 +302,7 @@ export default function AIAssistant() {
   const sendMessage = async (userMessage) => {
     if (!userMessage.trim() || isLoading) return;
 
-    const userMsg = { id: Date.now(), role: "user", content: userMessage, timestamp: new Date() };
+    const userMsg = { id: Date.now(), role: "user", content: userMessage, timestamp: new Date().toISOString() };
     setMessages(prev => [...prev, userMsg]);
     setInput("");
     setIsLoading(true);
@@ -323,7 +320,7 @@ export default function AIAssistant() {
         content: data.reply || t("ai.emptyResponse"),
         actions: data.actions || [],
         products: data.products || [],
-        timestamp: new Date(),
+        timestamp: new Date().toISOString(),
       };
       setMessages(prev => [...prev, aiMsg]);
     } catch (e) {
@@ -332,7 +329,7 @@ export default function AIAssistant() {
         id: Date.now() + 1,
         role: "assistant",
         content: t("ai.errorResponse"),
-        timestamp: new Date(),
+        timestamp: new Date().toISOString(),
       };
       setMessages(prev => [...prev, errorMsg]);
     } finally {
@@ -341,7 +338,11 @@ export default function AIAssistant() {
   };
 
   const handleQuickPrompt = (prompt) => sendMessage(prompt);
-  const clearChat = () => setMessages([getWelcomeMessage(t)]);
+  const clearChat = () => {
+    const fresh = [getWelcomeMessage(t)];
+    setMessages(fresh);
+    localStorage.removeItem(CHAT_STORAGE_KEY);
+  };
 
   return (
     <div className="max-w-2xl mx-auto flex flex-col h-[calc(100vh-56px)] lg:h-screen">
@@ -366,24 +367,16 @@ export default function AIAssistant() {
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-        {isInitialLoading ? (
-          <div className="space-y-4">
-            <ChatSkeleton />
-            <ChatSkeleton />
-            <ChatSkeleton />
-          </div>
-        ) : (
-          <AnimatePresence initial={false}>
-            {messages.map(msg => (
-              <ChatMessage 
-                key={msg.id} 
-                message={msg} 
-                onAddToCart={handleAddToCart}
-                addingProductId={addToCartMutation.isPending ? addToCartMutation.variables?.id : null}
-              />
-            ))}
-          </AnimatePresence>
-        )}
+        <AnimatePresence initial={false}>
+          {messages.map(msg => (
+            <ChatMessage 
+              key={msg.id} 
+              message={msg} 
+              onAddToCart={handleAddToCart}
+              addingProductId={addToCartMutation.isPending ? addToCartMutation.variables?.id : null}
+            />
+          ))}
+        </AnimatePresence>
         {isLoading && <TypingIndicator />}
         <div ref={messagesEndRef} />
       </div>

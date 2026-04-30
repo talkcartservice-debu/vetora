@@ -9,6 +9,7 @@ import { SocketProvider } from '@/lib/SocketContext';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import AffiliateTracker from './components/shared/AffiliateTracker';
+import ErrorBoundary from '@/components/shared/ErrorBoundary';
 import { LanguageProvider } from '@/components/providers/LanguageContext';
 import { ThemeProvider } from "next-themes";
 
@@ -23,8 +24,10 @@ const mainPageKey = mainPage ?? Object.keys(Pages)[0];
 const MainPage = mainPageKey ? Pages[mainPageKey] : <></>;
 
 const LayoutWrapper = ({ children, currentPageName }) => Layout ?
-  <Layout currentPageName={currentPageName}>{children}</Layout>
-  : <>{children}</>;
+  <Layout currentPageName={currentPageName}>
+    <ErrorBoundary>{children}</ErrorBoundary>
+  </Layout>
+  : <ErrorBoundary>{children}</ErrorBoundary>;
 
 const AppRoutes = () => {
   const { isLoadingAuth, isAuthenticated, authError, user } = useAuth();

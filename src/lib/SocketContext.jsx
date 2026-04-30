@@ -20,36 +20,53 @@ export const SocketProvider = ({ children }) => {
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
-    if (user) {
-      const token = localStorage.getItem('iqon_token');
-      const newSocket = io(SOCKET_URL, {
-        auth: { token },
-        transports: ['websocket'],
-      });
-
-      newSocket.on('connect', () => {
-        setIsConnected(true);
-        console.log('Connected to WebSocket');
-      });
-
-      newSocket.on('disconnect', () => {
-        setIsConnected(false);
-        console.log('Disconnected from WebSocket');
-      });
-
-      newSocket.on('error', (error) => {
-        console.error('Socket error:', error);
-      });
-
-      setSocket(newSocket);
-
-      return () => {
-        newSocket.disconnect();
-      };
-    } else {
+    if (!user) {
       setSocket(null);
       setIsConnected(false);
+      return;
     }
+
+    const token = localStorage.getItem('iqon_token');
+    const newSocket = io(SOCKET_URL, {
+      auth: { token },
+      transports: ['websocket'],
+      reconnection: true,
+      reconnectionAttempts: 10,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 30000,
+      randomizationFactor: 0.5,
+    });
+
+    newSocket.on('connect', () => {
+      setIsConnected(true);
+    });
+
+    newSocket.on('disconnect', () => {
+      setIsConnected(false);
+    });
+
+    newSocket.on('reconnect', (attempt) => {
+      setIsConnected(true);
+      console.info(`WebSocket reconnected after ${attempt} attempt(s)`);
+    });
+
+    newSocket.on('reconnect_error', (error) => {
+      console.error('WebSocket reconnect error:', error);
+    });
+
+    newSocket.on('reconnect_failed', () => {
+      console.error('WebSocket reconnect failed after maximum attempts');
+    });
+
+    newSocket.on('error', (error) => {
+      console.error('Socket error:', error);
+    });
+
+    setSocket(newSocket);
+
+    return () => {
+      newSocket.disconnect();
+    };
   }, [user]);
 
   const emit = (event, data) => {

@@ -2,6 +2,7 @@ import 'dotenv/config';
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import jwt from '@fastify/jwt';
+import mongoose from 'mongoose';
 import { connectDB } from './config/database';
 import { authRoutes } from './routes/auth';
 import { userRoutes } from './routes/users';
@@ -73,8 +74,14 @@ fastify.register(cors, {
       ...extraOrigins,
     ].filter(Boolean);
 
-    // Allow: no origin (server-to-server / mobile), explicit whitelist, any *.vercel.app
-    if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
+    const allowedVercelPreviews = (process.env.VERCEL_PREVIEW_ORIGINS || '')
+      .split(',').map(o => o.trim()).filter(Boolean);
+
+    const isAllowedVercel = origin
+      ? allowedVercelPreviews.some(p => origin === p || origin.endsWith(`.${p}`))
+      : false;
+
+    if (!origin || allowedOrigins.includes(origin) || isAllowedVercel) {
       cb(null, true);
       return;
     }
@@ -111,6 +118,11 @@ setupWebSocket(fastify);
 
 // Set the io instance on fastify
 fastify.io = io;
+
+// Attach request ID to every response for tracing
+fastify.addHook('onSend', async (request, reply) => {
+  reply.header('X-Request-ID', request.id);
+});
 
 // Add global hooks
 fastify.addHook('preHandler', extractLanguage);
@@ -167,22 +179,32 @@ fastify.register(reportRoutes, { prefix: '/api' });
 fastify.register(checkoutRoutes, { prefix: '/api/checkout' });
 fastify.register(adminRoutes, { prefix: '/api/admin' });
 
-// Error handling for uncaught exceptions
+// Error handling for uncaught exceptions — always exit; let process manager restart
 process.on('uncaughtException', (error) => {
   console.error('💥 Uncaught Exception:', error);
-  // Optional: Graceful shutdown
+  process.exit(1);
 });
 
 process.on('unhandledRejection', (reason, promise) => {
   console.error('💥 Unhandled Rejection at:', promise, 'reason:', reason);
+  process.exit(1);
 });
 
-// Health check
-fastify.get('/api/health', async () => {
-  return { 
-    status: 'ok', 
-    timestamp: new Date().toISOString()
-  };
+// Health check — probes MongoDB connectivity
+fastify.get('/api/health', async (_request, reply) => {
+  let dbStatus = 'disconnected';
+  try {
+    await mongoose.connection.db?.admin().ping();
+    dbStatus = 'connected';
+  } catch (_) {
+    dbStatus = 'error';
+  }
+  const isOk = dbStatus === 'connected';
+  return reply.code(isOk ? 200 : 503).send({
+    status: isOk ? 'ok' : 'degraded',
+    db: dbStatus,
+    timestamp: new Date().toISOString(),
+  });
 });
 
 // Start server
