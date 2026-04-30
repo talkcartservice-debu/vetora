@@ -501,7 +501,20 @@
     "namePlaceholder": "Community name",
     "descriptionPlaceholder": "What is this community about?",
     "category": "Category",
-    "membersTab": "Members"
+    "membersTab": "Members",
+    "communityCreated": "Community created!",
+    "joinedCommunity": "Joined community!",
+    "leftCommunity": "Left community",
+    "shareWithCommunity": "Share something with the community...",
+    "noPosts": "No posts in this community yet",
+    "beFirstToPost": "Be the first to post",
+    "noMembers": "No members yet",
+    "joinedOn": "Joined {{date}}",
+    "aboutThisCommunity": "About this community",
+    "noDescription": "No description",
+    "communityRules": "Community Rules",
+    "created": "Created {{date}}",
+    "admin": "Admin"
   },
   "chat": {
     "title": "Messages",

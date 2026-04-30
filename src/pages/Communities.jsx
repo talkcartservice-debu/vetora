@@ -64,7 +64,7 @@ import React, { useState } from "react";
        }); 
      }, 
      onSuccess: () => { 
-       toast.success("Community created!"); 
+       toast.success(t("communities.communityCreated")); 
        setCreateOpen(false); 
        setNewCommunity({ name: "", description: "", category: "tech" }); 
        queryClient.invalidateQueries({ queryKey: ["communities"] }); 

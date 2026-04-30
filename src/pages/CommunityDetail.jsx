@@ -89,11 +89,11 @@ const COMMUNITY_CATEGORIES = [
        queryClient.invalidateQueries({ queryKey: ["myCommunityMemberships"] }); 
        queryClient.invalidateQueries({ queryKey: ["community", communityId] }); 
        queryClient.invalidateQueries({ queryKey: ["communityMembers", communityId] });
-       toast.success(isMember ? "Left community" : "Joined community!"); 
+       toast.success(isMember ? t("communities.leftCommunity") : t("communities.joinedCommunity")); 
      }, 
    }); 
 
-   if (!community) return <div className="text-center py-20 text-slate-400">Loading...</div>; 
+   if (!community) return <div className="text-center py-20 text-slate-400">{t("common.loading")}</div>; 
 
    const catEmoji = COMMUNITY_CATEGORIES.find(c => c.id === community.category)?.emoji || "👥"; 
 
@@ -113,7 +113,7 @@ const COMMUNITY_CATEGORIES = [
            {community.cover_image && <img src={community.cover_image} alt="" className="w-full h-full object-cover" />} 
            {isAdmin && ( 
              <div className="absolute top-3 right-3 px-2 py-1 bg-indigo-700/80 backdrop-blur-sm rounded-lg flex items-center gap-1 text-white text-xs font-medium"> 
-               <Shield className="w-3 h-3" /> Admin 
+               <Shield className="w-3 h-3" /> {t("communities.admin")} 
              </div> 
            )} 
          </div> 
@@ -153,7 +153,7 @@ const COMMUNITY_CATEGORIES = [
              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white font-semibold text-sm shrink-0"> 
                {currentUser?.display_name?.[0]?.toUpperCase() || "U"} 
              </div> 
-             <span className="text-sm text-slate-400 flex-1">Share something with the community...</span> 
+             <span className="text-sm text-slate-400 flex-1">{t("communities.shareWithCommunity")}</span> 
              <PenSquare className="w-4 h-4 text-indigo-400" /> 
            </div> 
          </Link> 
@@ -181,10 +181,10 @@ const COMMUNITY_CATEGORIES = [
                ? ( 
                  <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-slate-200"> 
                    <MessageSquare className="w-8 h-8 text-slate-300 mx-auto mb-2" /> 
-                   <p className="text-sm text-slate-400">No posts in this community yet</p> 
+                   <p className="text-sm text-slate-400">{t("communities.noPosts")}</p> 
                    {isMember && ( 
                      <Link to={`/CreatePost?community_id=${communityId}`}> 
-                       <Button className="mt-4 bg-indigo-600 hover:bg-indigo-700 rounded-xl" size="sm">Be the first to post</Button> 
+                       <Button className="mt-4 bg-indigo-600 hover:bg-indigo-700 rounded-xl" size="sm">{t("communities.beFirstToPost")}</Button> 
                      </Link> 
                    )} 
                  </div> 
@@ -197,7 +197,7 @@ const COMMUNITY_CATEGORIES = [
        {activeTab === "members" && ( 
          <div className="bg-white rounded-2xl border border-slate-100 divide-y divide-slate-50 overflow-hidden shadow-sm"> 
            {members.length === 0 ? ( 
-             <div className="text-center py-12 text-slate-400">No members yet</div> 
+             <div className="text-center py-12 text-slate-400">{t("communities.noMembers")}</div> 
            ) : ( 
              members.map(m => ( 
                <div key={m._id} className="flex items-center gap-3 p-4 hover:bg-slate-50 transition-colors"> 
@@ -206,7 +206,7 @@ const COMMUNITY_CATEGORIES = [
                  </div> 
                  <div className="flex-1 min-w-0"> 
                    <p className="text-sm font-medium text-slate-800 truncate">@{m.member_email?.split('@')[0]}</p> 
-                   <p className="text-xs text-slate-400">Joined {new Date(m.created_at).toLocaleDateString()}</p> 
+                   <p className="text-xs text-slate-400">{t("communities.joinedOn", { date: new Date(m.created_at).toLocaleDateString() })}</p> 
                  </div> 
                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full capitalize ${m.role === "admin" ? "bg-indigo-100 text-indigo-700" : m.role === "moderator" ? "bg-purple-100 text-purple-700" : "bg-slate-100 text-slate-600"}`}> 
                    {m.role} 
@@ -220,19 +220,19 @@ const COMMUNITY_CATEGORIES = [
        {activeTab === "about" && ( 
          <div className="bg-white rounded-2xl border border-slate-100 p-6 space-y-4 shadow-sm"> 
            <div> 
-             <h3 className="font-bold text-slate-900 mb-1">About this community</h3> 
-             <p className="text-sm text-slate-600 leading-relaxed">{community.description || "No description"}</p> 
+             <h3 className="font-bold text-slate-900 mb-1">{t("communities.aboutThisCommunity")}</h3> 
+             <p className="text-sm text-slate-600 leading-relaxed">{community.description || t("communities.noDescription")}</p> 
            </div> 
            {community.rules && ( 
              <div> 
-               <h3 className="font-bold text-slate-900 mb-1">Community Rules</h3> 
+               <h3 className="font-bold text-slate-900 mb-1">{t("communities.communityRules")}</h3> 
                <p className="text-sm text-slate-600 whitespace-pre-wrap leading-relaxed">{community.rules}</p> 
              </div> 
            )} 
            <div className="pt-4 border-t border-slate-100 flex flex-wrap gap-x-6 gap-y-2 text-sm text-slate-500"> 
-             <span><strong className="text-slate-900">{community.member_count || 0}</strong> members</span> 
-             <span><strong className="text-slate-900">{posts.length}</strong> posts</span> 
-             <span>Created {new Date(community.created_at).toLocaleDateString()}</span> 
+             <span><strong className="text-slate-900">{community.member_count || 0}</strong> {t("communities.membersTab")}</span> 
+             <span><strong className="text-slate-900">{posts.length}</strong> {t("communities.posts")}</span> 
+             <span>{t("communities.created", { date: new Date(community.created_at).toLocaleDateString() })}</span> 
            </div> 
          </div> 
        )} 
