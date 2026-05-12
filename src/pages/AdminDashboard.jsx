@@ -3,6 +3,7 @@ import { useAuth } from '@/lib/AuthContext';
 import { formatCurrency } from '@/lib/utils';
 import { adminAPI, vendorSubscriptionsAPI } from '@/api/apiClient';
 import { useToast } from '@/components/ui/use-toast';
+import { useTranslation } from '@/components/providers/LanguageContext';
 import { 
   Card, 
   CardContent, 
@@ -93,6 +94,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 const StoreDetailsModal = ({ store, isOpen, onOpenChange, onUpdateStatus, onUpdateVerification, onDelete }) => {
+  const { t } = useTranslation();
   if (!store) return null;
 
   return (
@@ -111,11 +113,11 @@ const StoreDetailsModal = ({ store, isOpen, onOpenChange, onUpdateStatus, onUpda
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
           <div className="space-y-4">
             <div>
-              <Label className="text-muted-foreground">Owner Information</Label>
+              <Label className="text-muted-foreground">{t('admin.storeModal.ownerInfo')}</Label>
               <div className="mt-1 font-medium">@{store.owner_username}</div>
             </div>
             <div>
-              <Label className="text-muted-foreground">Status</Label>
+              <Label className="text-muted-foreground">{t('admin.storeModal.status')}</Label>
               <div className="mt-1">
                 <Badge variant={store.status === 'active' ? 'success' : store.status === 'pending' ? 'warning' : 'destructive'}>
                   {store.status}
@@ -123,33 +125,33 @@ const StoreDetailsModal = ({ store, isOpen, onOpenChange, onUpdateStatus, onUpda
               </div>
             </div>
             <div>
-              <Label className="text-muted-foreground">Joined At</Label>
+              <Label className="text-muted-foreground">{t('admin.storeModal.joinedAt')}</Label>
               <div className="mt-1">{new Date(store.created_at).toLocaleDateString()}</div>
             </div>
             <div>
-              <Label className="text-muted-foreground">Description</Label>
-              <div className="mt-1 text-sm">{store.description || 'No description provided.'}</div>
+              <Label className="text-muted-foreground">{t('admin.storeModal.description')}</Label>
+              <div className="mt-1 text-sm">{store.description || t('admin.storeModal.noDescription')}</div>
             </div>
           </div>
 
           <div className="space-y-4">
             <div className="bg-muted p-4 rounded-lg">
-              <h4 className="font-semibold mb-2">Store Metrics</h4>
+              <h4 className="font-semibold mb-2">{t('admin.storeModal.metrics')}</h4>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <div className="text-xs text-muted-foreground uppercase">Orders</div>
+                  <div className="text-xs text-muted-foreground uppercase">{t('admin.storeModal.orders')}</div>
                   <div className="text-xl font-bold">{store.orders_count || 0}</div>
                 </div>
                 <div>
-                  <div className="text-xs text-muted-foreground uppercase">Products</div>
+                  <div className="text-xs text-muted-foreground uppercase">{t('admin.storeModal.products')}</div>
                   <div className="text-xl font-bold">{store.products_count || 0}</div>
                 </div>
                 <div>
-                  <div className="text-xs text-muted-foreground uppercase">Revenue</div>
+                  <div className="text-xs text-muted-foreground uppercase">{t('admin.storeModal.revenue')}</div>
                   <div className="text-xl font-bold text-success">{formatCurrency(store.total_revenue || 0)}</div>
                 </div>
                 <div>
-                  <div className="text-xs text-muted-foreground uppercase">Rating</div>
+                  <div className="text-xs text-muted-foreground uppercase">{t('admin.storeModal.rating')}</div>
                   <div className="text-xl font-bold">{store.rating || 'N/A'}</div>
                 </div>
               </div>
@@ -157,7 +159,7 @@ const StoreDetailsModal = ({ store, isOpen, onOpenChange, onUpdateStatus, onUpda
 
             {store.logo && (
               <div>
-                <Label className="text-muted-foreground">Store Logo</Label>
+                <Label className="text-muted-foreground">{t('admin.storeModal.logo')}</Label>
                 <img 
                   src={store.logo} 
                   alt={store.name} 
@@ -175,7 +177,7 @@ const StoreDetailsModal = ({ store, isOpen, onOpenChange, onUpdateStatus, onUpda
                 onClick={() => onUpdateStatus(store._id, 'active')}
                 className="bg-success hover:bg-success/90"
               >
-                Approve Store
+                {t('admin.storeModal.approveStore')}
               </Button>
             )}
             {store.status !== 'suspended' && (
@@ -183,7 +185,7 @@ const StoreDetailsModal = ({ store, isOpen, onOpenChange, onUpdateStatus, onUpda
                 variant="destructive"
                 onClick={() => onUpdateStatus(store._id, 'suspended')}
               >
-                Suspend Store
+                {t('admin.storeModal.suspendStore')}
               </Button>
             )}
           </div>
@@ -191,15 +193,15 @@ const StoreDetailsModal = ({ store, isOpen, onOpenChange, onUpdateStatus, onUpda
             variant="outline"
             onClick={() => onUpdateVerification(store._id, !store.is_verified)}
           >
-            {store.is_verified ? 'Remove Verification' : 'Verify Store'}
+            {store.is_verified ? t('admin.storeModal.removeVerification') : t('admin.storeModal.verifyStore')}
           </Button>
           <Button
             variant="destructive"
             onClick={() => onDelete(store._id)}
           >
-            <Trash2 className="w-4 h-4 mr-2" /> Delete Store
+            <Trash2 className="w-4 h-4 mr-2" /> {t('admin.storeModal.deleteStore')}
           </Button>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>Close</Button>
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>{t('common.close')}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -209,6 +211,7 @@ const StoreDetailsModal = ({ store, isOpen, onOpenChange, onUpdateStatus, onUpda
 const AdminDashboard = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
@@ -324,8 +327,8 @@ const AdminDashboard = () => {
       }
     } catch (error) {
       toast({
-        title: 'Error',
-        description: 'Failed to fetch admin statistics',
+        title: t('common.error'),
+        description: t('admin.failedFetchStats'),
         variant: 'destructive',
       });
     } finally {
@@ -341,8 +344,8 @@ const AdminDashboard = () => {
       setUserPagination(data.pagination);
     } catch (error) {
       toast({
-        title: 'Error',
-        description: 'Failed to fetch users',
+        title: t('common.error'),
+        description: t('admin.users.failedFetch'),
         variant: 'destructive',
       });
     } finally {
@@ -363,8 +366,8 @@ const AdminDashboard = () => {
       setStorePagination(data.pagination);
     } catch (error) {
       toast({
-        title: 'Error',
-        description: 'Failed to fetch stores',
+        title: t('common.error'),
+        description: t('admin.stores.failedFetch'),
         variant: 'destructive',
       });
     } finally {
@@ -385,8 +388,8 @@ const AdminDashboard = () => {
       setProductPagination(data.pagination);
     } catch (error) {
       toast({
-        title: 'Error',
-        description: 'Failed to fetch products',
+        title: t('common.error'),
+        description: t('admin.products.failedFetch'),
         variant: 'destructive',
       });
     } finally {
@@ -407,8 +410,8 @@ const AdminDashboard = () => {
       setOrderPagination(data.pagination);
     } catch (error) {
       toast({
-        title: 'Error',
-        description: 'Failed to fetch orders',
+        title: t('common.error'),
+        description: t('admin.orders.failedFetch'),
         variant: 'destructive',
       });
     } finally {
@@ -425,8 +428,8 @@ const AdminDashboard = () => {
       setWithdrawals(data.withdrawals || []);
     } catch (error) {
       toast({
-        title: 'Error',
-        description: 'Failed to fetch withdrawals',
+        title: t('common.error'),
+        description: t('admin.withdrawals.failedFetch'),
         variant: 'destructive',
       });
     } finally {
@@ -443,8 +446,8 @@ const AdminDashboard = () => {
       setReports(data.reports || []);
     } catch (error) {
       toast({
-        title: 'Error',
-        description: 'Failed to fetch reports',
+        title: t('common.error'),
+        description: t('admin.moderation.failedFetch'),
         variant: 'destructive',
       });
     } finally {
@@ -459,8 +462,8 @@ const AdminDashboard = () => {
       setActivityLogs(data.logs);
     } catch (error) {
       toast({
-        title: 'Error',
-        description: 'Failed to fetch activity logs',
+        title: t('common.error'),
+        description: t('admin.logs.failedFetch'),
         variant: 'destructive',
       });
     } finally {
@@ -475,8 +478,8 @@ const AdminDashboard = () => {
       setAnnouncements(data.announcements || []);
     } catch (error) {
       toast({
-        title: 'Error',
-        description: 'Failed to fetch announcements',
+        title: t('common.error'),
+        description: t('admin.announcements.failedFetch'),
         variant: 'destructive',
       });
     } finally {
@@ -506,8 +509,8 @@ const AdminDashboard = () => {
       setSubscriptions(data.subscriptions || []);
     } catch (error) {
       toast({
-        title: 'Error',
-        description: 'Failed to fetch subscriptions',
+        title: t('common.error'),
+        description: t('admin.subscriptions.failedFetch'),
         variant: 'destructive',
       });
     } finally {
@@ -527,7 +530,7 @@ const AdminDashboard = () => {
       setPosts(data.posts || []);
       setPostPagination(data.pagination);
     } catch (error) {
-      toast({ title: 'Error', description: 'Failed to fetch posts', variant: 'destructive' });
+      toast({ title: t('common.error'), description: t('admin.posts.failedFetch'), variant: 'destructive' });
     } finally {
       setPostLoading(false);
     }
@@ -551,14 +554,14 @@ const AdminDashboard = () => {
     try {
       await adminAPI.updateUserBlockStatus(userId, !isBlocked);
       toast({
-        title: 'Success',
-        description: `User ${isBlocked ? 'unblocked' : 'blocked'} successfully`,
+        title: t('common.success'),
+        description: isBlocked ? t('admin.users.userUnblockedSuccess') : t('admin.users.userBlockedSuccess'),
       });
       fetchUsers();
     } catch (error) {
       toast({
-        title: 'Error',
-        description: 'Failed to update user status',
+        title: t('common.error'),
+        description: t('admin.users.failedUpdateStatus'),
         variant: 'destructive',
       });
     }
@@ -569,15 +572,17 @@ const AdminDashboard = () => {
     try {
       await adminAPI.bulkUpdateUserBlockStatus(selectedUserIds, isBlocked);
       toast({
-        title: 'Success',
-        description: `${selectedUserIds.length} users ${isBlocked ? 'blocked' : 'unblocked'} successfully`,
+        title: t('common.success'),
+        description: isBlocked
+          ? t('admin.users.bulkBlockedSuccess', { count: selectedUserIds.length })
+          : t('admin.users.bulkUnblockedSuccess', { count: selectedUserIds.length }),
       });
       setSelectedUserIds([]);
       fetchUsers();
     } catch (error) {
       toast({
-        title: 'Error',
-        description: 'Failed to update users status',
+        title: t('common.error'),
+        description: t('admin.users.failedUpdateBulk'),
         variant: 'destructive',
       });
     }
@@ -587,8 +592,8 @@ const AdminDashboard = () => {
     try {
       await adminAPI.updateStoreStatus(storeId, status);
       toast({
-        title: 'Success',
-        description: `Store status updated to ${status}`,
+        title: t('common.success'),
+        description: t('admin.stores.storeStatusUpdated', { status }),
       });
       fetchStores();
       if (selectedStore?._id === storeId) {
@@ -596,8 +601,8 @@ const AdminDashboard = () => {
       }
     } catch (error) {
       toast({
-        title: 'Error',
-        description: 'Failed to update store status',
+        title: t('common.error'),
+        description: t('admin.stores.failedUpdateStatus'),
         variant: 'destructive',
       });
     }
@@ -608,15 +613,15 @@ const AdminDashboard = () => {
     try {
       await adminAPI.bulkUpdateStoreStatus(selectedStoreIds, status);
       toast({
-        title: 'Success',
-        description: `${selectedStoreIds.length} stores status updated to ${status}`,
+        title: t('common.success'),
+        description: t('admin.stores.bulkStatusUpdated', { count: selectedStoreIds.length, status }),
       });
       setSelectedStoreIds([]);
       fetchStores();
     } catch (error) {
       toast({
-        title: 'Error',
-        description: 'Failed to update stores status',
+        title: t('common.error'),
+        description: t('admin.stores.failedBulkUpdate'),
         variant: 'destructive',
       });
     }
@@ -626,8 +631,8 @@ const AdminDashboard = () => {
     try {
       await adminAPI.updateStoreVerification(storeId, isVerified);
       toast({
-        title: 'Success',
-        description: `Store verification ${isVerified ? 'enabled' : 'disabled'}`,
+        title: t('common.success'),
+        description: isVerified ? t('admin.stores.verificationEnabled') : t('admin.stores.verificationDisabled'),
       });
       fetchStores();
       if (selectedStore?._id === storeId) {
@@ -635,8 +640,8 @@ const AdminDashboard = () => {
       }
     } catch (error) {
       toast({
-        title: 'Error',
-        description: 'Failed to update store verification',
+        title: t('common.error'),
+        description: t('admin.stores.failedVerification'),
         variant: 'destructive',
       });
     }
@@ -646,55 +651,55 @@ const AdminDashboard = () => {
     try {
       await adminAPI.updateProductStatus(productId, status);
       toast({
-        title: 'Success',
-        description: `Product status updated to ${status}`,
+        title: t('common.success'),
+        description: t('admin.products.statusUpdated', { status }),
       });
       fetchProducts();
     } catch (error) {
       toast({
-        title: 'Error',
-        description: 'Failed to update product status',
+        title: t('common.error'),
+        description: t('admin.products.failedUpdateStatus'),
         variant: 'destructive',
       });
     }
   };
 
   const handleDeleteProduct = async (productId) => {
-    if (!window.confirm('Are you sure you want to delete this product?')) return;
+    if (!window.confirm(t('admin.products.confirmDelete'))) return;
     try {
       await adminAPI.deleteProduct(productId);
       toast({
-        title: 'Success',
-        description: 'Product deleted successfully',
+        title: t('common.success'),
+        description: t('admin.products.deletedSuccess'),
       });
       fetchProducts();
     } catch (error) {
       toast({
-        title: 'Error',
-        description: 'Failed to delete product',
+        title: t('common.error'),
+        description: t('admin.products.failedDelete'),
         variant: 'destructive',
       });
     }
   };
 
   const handleDeletePost = async (postId) => {
-    if (!window.confirm('Are you sure you want to delete this post?')) return;
+    if (!window.confirm(t('admin.posts.confirmDelete'))) return;
     try {
       await adminAPI.deletePost(postId);
-      toast({ title: 'Success', description: 'Post deleted successfully' });
+      toast({ title: t('common.success'), description: t('admin.posts.deletedSuccess') });
       fetchPosts();
     } catch (error) {
-      toast({ title: 'Error', description: 'Failed to delete post', variant: 'destructive' });
+      toast({ title: t('common.error'), description: t('admin.posts.failedDelete'), variant: 'destructive' });
     }
   };
 
   const handleUpdatePostVisibility = async (postId, visibility) => {
     try {
       await adminAPI.updatePostVisibility(postId, visibility);
-      toast({ title: 'Success', description: `Post visibility updated to ${visibility}` });
+      toast({ title: t('common.success'), description: t('admin.posts.visibilityUpdated', { visibility }) });
       fetchPosts();
     } catch (error) {
-      toast({ title: 'Error', description: 'Failed to update post visibility', variant: 'destructive' });
+      toast({ title: t('common.error'), description: t('admin.posts.failedUpdateVisibility'), variant: 'destructive' });
     }
   };
 
@@ -702,16 +707,16 @@ const AdminDashboard = () => {
     try {
       await adminAPI.updateWithdrawalStatus(id, status, notes);
       toast({
-        title: 'Success',
-        description: `Withdrawal ${status}`,
+        title: t('common.success'),
+        description: t('admin.withdrawals.statusUpdated', { status }),
       });
       fetchWithdrawals();
       setIsWithdrawalModalOpen(false);
       setWithdrawalNotes('');
     } catch (error) {
       toast({
-        title: 'Error',
-        description: 'Failed to update withdrawal status',
+        title: t('common.error'),
+        description: t('admin.withdrawals.failedUpdate'),
         variant: 'destructive',
       });
     }
@@ -721,16 +726,16 @@ const AdminDashboard = () => {
     try {
       await adminAPI.resolveReport(id, status, notes);
       toast({
-        title: 'Success',
-        description: `Report ${status}`,
+        title: t('common.success'),
+        description: t('admin.moderation.reportStatusUpdated', { status }),
       });
       fetchReports();
       setIsReportModalOpen(false);
       setReportNotes('');
     } catch (error) {
       toast({
-        title: 'Error',
-        description: 'Failed to resolve report',
+        title: t('common.error'),
+        description: t('admin.moderation.failedResolve'),
         variant: 'destructive',
       });
     }
@@ -741,32 +746,32 @@ const AdminDashboard = () => {
     try {
       if (selectedAnnouncement) {
         await adminAPI.updateAnnouncement(selectedAnnouncement._id, announcementForm);
-        toast({ title: 'Success', description: 'Announcement updated' });
+        toast({ title: t('common.success'), description: t('admin.announcements.updatedSuccess') });
       } else {
         await adminAPI.createAnnouncement(announcementForm);
-        toast({ title: 'Success', description: 'Announcement created' });
+        toast({ title: t('common.success'), description: t('admin.announcements.createdSuccess') });
       }
       setIsAnnouncementModalOpen(false);
       fetchAnnouncements();
     } catch (error) {
       toast({
-        title: 'Error',
-        description: 'Failed to save announcement',
+        title: t('common.error'),
+        description: t('admin.announcements.failedSave'),
         variant: 'destructive',
       });
     }
   };
 
   const handleDeleteAnnouncement = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this announcement?')) return;
+    if (!window.confirm(t('admin.announcements.confirmDelete'))) return;
     try {
       await adminAPI.deleteAnnouncement(id);
-      toast({ title: 'Success', description: 'Announcement deleted' });
+      toast({ title: t('common.success'), description: t('admin.announcements.deletedSuccess') });
       fetchAnnouncements();
     } catch (error) {
       toast({
-        title: 'Error',
-        description: 'Failed to delete announcement',
+        title: t('common.error'),
+        description: t('admin.announcements.failedDelete'),
         variant: 'destructive',
       });
     }
@@ -778,13 +783,13 @@ const AdminDashboard = () => {
       const updated = await adminAPI.updateSettings(data);
       setSettings(updated);
       toast({
-        title: 'Success',
-        description: 'System settings updated',
+        title: t('common.success'),
+        description: t('admin.settings.updatedSuccess'),
       });
     } catch (error) {
       toast({
-        title: 'Error',
-        description: 'Failed to update settings',
+        title: t('common.error'),
+        description: t('admin.settings.failedUpdate'),
         variant: 'destructive',
       });
     } finally {
@@ -796,45 +801,45 @@ const AdminDashboard = () => {
     try {
       await adminAPI.updateUserVerification(userId, !isVerified);
       toast({
-        title: 'Success',
-        description: `User ${!isVerified ? 'verified' : 'unverified'} successfully`,
+        title: t('common.success'),
+        description: !isVerified ? t('admin.users.verifiedSuccess') : t('admin.users.unverifiedSuccess'),
       });
       fetchUsers();
     } catch (error) {
-      toast({ title: 'Error', description: 'Failed to update user verification', variant: 'destructive' });
+      toast({ title: t('common.error'), description: t('admin.users.failedVerify'), variant: 'destructive' });
     }
   };
 
   const handleDeleteUser = async (userId) => {
-    if (!window.confirm('Are you sure you want to permanently delete this user? This cannot be undone.')) return;
+    if (!window.confirm(t('admin.users.confirmDelete'))) return;
     try {
       await adminAPI.deleteUser(userId);
-      toast({ title: 'Success', description: 'User deleted successfully' });
+      toast({ title: t('common.success'), description: t('admin.users.deletedSuccess') });
       fetchUsers();
     } catch (error) {
-      toast({ title: 'Error', description: 'Failed to delete user', variant: 'destructive' });
+      toast({ title: t('common.error'), description: t('admin.users.failedDelete'), variant: 'destructive' });
     }
   };
 
   const handleDeleteStore = async (storeId) => {
-    if (!window.confirm('Are you sure you want to permanently delete this store? This cannot be undone.')) return;
+    if (!window.confirm(t('admin.stores.confirmDelete'))) return;
     try {
       await adminAPI.deleteStore(storeId);
-      toast({ title: 'Success', description: 'Store deleted successfully' });
+      toast({ title: t('common.success'), description: t('admin.stores.deletedSuccess') });
       if (selectedStore?._id === storeId) setIsStoreModalOpen(false);
       fetchStores();
     } catch (error) {
-      toast({ title: 'Error', description: 'Failed to delete store', variant: 'destructive' });
+      toast({ title: t('common.error'), description: t('admin.stores.failedDelete'), variant: 'destructive' });
     }
   };
 
   const handleUpdateOrderStatus = async (orderId, status) => {
     try {
       await adminAPI.updateOrderStatus(orderId, status);
-      toast({ title: 'Success', description: `Order status updated to ${status}` });
+      toast({ title: t('common.success'), description: t('admin.orders.statusUpdated', { status }) });
       fetchOrders();
     } catch (error) {
-      toast({ title: 'Error', description: 'Failed to update order status', variant: 'destructive' });
+      toast({ title: t('common.error'), description: t('admin.orders.failedUpdateStatus'), variant: 'destructive' });
     }
   };
 
@@ -843,7 +848,11 @@ const AdminDashboard = () => {
     return (
       <div className="flex items-center justify-between pt-4">
         <p className="text-sm text-muted-foreground">
-          Showing {((page - 1) * pagination.limit) + 1}–{Math.min(page * pagination.limit, pagination.total)} of {pagination.total}
+          {t('admin.pagination.showing', {
+            from: ((page - 1) * pagination.limit) + 1,
+            to: Math.min(page * pagination.limit, pagination.total),
+            total: pagination.total,
+          })}
         </p>
         <div className="flex items-center gap-2">
           <Button
@@ -852,7 +861,7 @@ const AdminDashboard = () => {
             disabled={page <= 1}
             onClick={() => { const p = page - 1; setPage(p); onFetch(p); }}
           >
-            Previous
+            {t('admin.pagination.previous')}
           </Button>
           <span className="text-sm font-medium">{page} / {pagination.pages}</span>
           <Button
@@ -861,7 +870,7 @@ const AdminDashboard = () => {
             disabled={page >= pagination.pages}
             onClick={() => { const p = page + 1; setPage(p); onFetch(p); }}
           >
-            Next
+            {t('admin.pagination.next')}
           </Button>
         </div>
       </div>
@@ -872,9 +881,9 @@ const AdminDashboard = () => {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
         <AlertCircle className="w-16 h-16 text-destructive mb-4" />
-        <h1 className="text-2xl font-bold mb-2">Access Denied</h1>
-        <p className="text-muted-foreground">You do not have permission to view this page.</p>
-        <Button className="mt-6" onClick={() => window.location.href = '/'}>Go Home</Button>
+        <h1 className="text-2xl font-bold mb-2">{t('admin.accessDenied')}</h1>
+        <p className="text-muted-foreground">{t('admin.noPermission')}</p>
+        <Button className="mt-6" onClick={() => window.location.href = '/'}>{t('admin.goHome')}</Button>
       </div>
     );
   }
@@ -883,100 +892,100 @@ const AdminDashboard = () => {
     <div className="container mx-auto p-4 md:p-8 space-y-8">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Super Admin Dashboard</h1>
-          <p className="text-muted-foreground">Manage users, stores, and system-wide settings.</p>
+          <h1 className="text-3xl font-bold tracking-tight">{t('admin.title')}</h1>
+          <p className="text-muted-foreground">{t('admin.subtitle')}</p>
         </div>
         <Button onClick={fetchStats} disabled={loading} variant="outline" className="flex items-center gap-2">
           <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          Refresh Stats
+          {t('admin.refreshStats')}
         </Button>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('admin.totalUsers')}</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats?.counts?.users || 0}</div>
-            <p className="text-xs text-muted-foreground">Platform-wide users</p>
+            <p className="text-xs text-muted-foreground">{t('admin.platformUsers')}</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Stores</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('admin.activeStores')}</CardTitle>
             <Store className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats?.counts?.stores?.active || 0}</div>
-            <p className="text-xs text-muted-foreground">{stats?.counts?.stores?.pending || 0} pending approval</p>
+            <p className="text-xs text-muted-foreground">{t('admin.pendingApproval', { count: stats?.counts?.stores?.pending || 0 })}</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Products</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('admin.totalProducts')}</CardTitle>
             <CreditCard className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats?.counts?.products || 0}</div>
-            <p className="text-xs text-muted-foreground">Live products</p>
+            <p className="text-xs text-muted-foreground">{t('admin.liveProducts')}</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Withdrawals</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('admin.pendingWithdrawals')}</CardTitle>
             <CreditCard className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats?.counts?.withdrawals?.pending || 0}</div>
-            <p className="text-xs text-muted-foreground">Awaiting processing</p>
+            <p className="text-xs text-muted-foreground">{t('admin.awaitingProcessing')}</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Reports</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('admin.pendingReports')}</CardTitle>
             <Flag className="h-4 w-4 text-orange-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats?.counts?.reports?.pending || 0}</div>
-            <p className="text-xs text-muted-foreground">Reports to review</p>
+            <p className="text-xs text-muted-foreground">{t('admin.reportsToReview')}</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Sales</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('admin.totalSales')}</CardTitle>
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(stats?.counts?.total_sales || 0)}</div>
-            <p className="text-xs text-muted-foreground">Total platform volume</p>
+            <div className="text-2xl font-bold">{formatCurrency(stats?.counts?.total_sales ?? 0)}</div>
+            <p className="text-xs text-muted-foreground">{t('admin.totalPlatformVolume')}</p>
           </CardContent>
         </Card>
       </div>
 
       <Tabs defaultValue="overview" className="space-y-4" onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-12 lg:w-[1470px]">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="users">Users</TabsTrigger>
-          <TabsTrigger value="stores">Stores</TabsTrigger>
-          <TabsTrigger value="products">Products</TabsTrigger>
-          <TabsTrigger value="posts">Posts</TabsTrigger>
-          <TabsTrigger value="announcements">Announcements</TabsTrigger>
-          <TabsTrigger value="subscriptions">Subscriptions</TabsTrigger>
-          <TabsTrigger value="moderation">Moderation</TabsTrigger>
-          <TabsTrigger value="orders">Orders</TabsTrigger>
-          <TabsTrigger value="withdrawals">Withdrawals</TabsTrigger>
-          <TabsTrigger value="logs">Activity Logs</TabsTrigger>
-          <TabsTrigger value="settings">Settings</TabsTrigger>
+          <TabsTrigger value="overview">{t('admin.tabs.overview')}</TabsTrigger>
+          <TabsTrigger value="users">{t('admin.tabs.users')}</TabsTrigger>
+          <TabsTrigger value="stores">{t('admin.tabs.stores')}</TabsTrigger>
+          <TabsTrigger value="products">{t('admin.tabs.products')}</TabsTrigger>
+          <TabsTrigger value="posts">{t('admin.tabs.posts')}</TabsTrigger>
+          <TabsTrigger value="announcements">{t('admin.tabs.announcements')}</TabsTrigger>
+          <TabsTrigger value="subscriptions">{t('admin.tabs.subscriptions')}</TabsTrigger>
+          <TabsTrigger value="moderation">{t('admin.tabs.moderation')}</TabsTrigger>
+          <TabsTrigger value="orders">{t('admin.tabs.orders')}</TabsTrigger>
+          <TabsTrigger value="withdrawals">{t('admin.tabs.withdrawals')}</TabsTrigger>
+          <TabsTrigger value="logs">{t('admin.tabs.logs')}</TabsTrigger>
+          <TabsTrigger value="settings">{t('admin.tabs.settings')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
             <Card className="col-span-4">
               <CardHeader>
-                <CardTitle>Sales Overview (Last 7 Days)</CardTitle>
-                <CardDescription>Revenue trends across the platform.</CardDescription>
+                <CardTitle>{t('admin.overview.salesTitle')}</CardTitle>
+                <CardDescription>{t('admin.overview.salesDesc')}</CardDescription>
               </CardHeader>
               <CardContent className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
@@ -1000,7 +1009,7 @@ const AdminDashboard = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <History className="w-4 h-4" />
-                  Recent Admin Activity
+                  {t('admin.overview.recentActivity')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -1015,12 +1024,12 @@ const AdminDashboard = () => {
                       </div>
                       <span className="text-xs text-muted-foreground capitalize">
                         {log.action.replace(/_/g, ' ')} 
-                        {log.target_type && ` on ${log.target_type}`}
+                        {log.target_type && ` ${t('admin.overview.on', { type: log.target_type })}`}
                       </span>
                     </div>
                   ))}
                   {(!stats?.recent?.activity || stats?.recent?.activity.length === 0) && (
-                    <p className="text-sm text-muted-foreground text-center py-4">No recent activity</p>
+                    <p className="text-sm text-muted-foreground text-center py-4">{t('admin.overview.noActivity')}</p>
                   )}
                 </div>
               </CardContent>
@@ -1029,14 +1038,14 @@ const AdminDashboard = () => {
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
             <Card className="col-span-4">
               <CardHeader>
-                <CardTitle>Recent Users</CardTitle>
+                <CardTitle>{t('admin.overview.recentUsers')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-8">
                   {stats?.recent?.users?.map((u) => (
                     <div key={u._id} className="flex items-center">
                       <div className="ml-4 space-y-1">
-                        <p className="text-sm font-medium leading-none">{u.display_name || 'Anonymous'}</p>
+                        <p className="text-sm font-medium leading-none">{u.display_name || t('admin.overview.anonymous')}</p>
                         <p className="text-sm text-muted-foreground">@{u.username}</p>
                       </div>
                       <div className="ml-auto font-medium">
@@ -1051,7 +1060,7 @@ const AdminDashboard = () => {
             </Card>
             <Card className="col-span-3">
               <CardHeader>
-                <CardTitle>Recent Stores</CardTitle>
+                <CardTitle>{t('admin.overview.recentStores')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-8">
@@ -1079,28 +1088,28 @@ const AdminDashboard = () => {
             <CardHeader>
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                  <CardTitle>Users Management</CardTitle>
-                  <CardDescription>View and manage platform users.</CardDescription>
+                  <CardTitle>{t('admin.users.title')}</CardTitle>
+                  <CardDescription>{t('admin.users.desc')}</CardDescription>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   {selectedUserIds.length > 0 && (
                     <div className="flex items-center gap-2 mr-4 bg-muted p-1 px-2 rounded-md">
-                      <span className="text-xs font-medium">{selectedUserIds.length} selected</span>
+                      <span className="text-xs font-medium">{t('admin.users.selected', { count: selectedUserIds.length })}</span>
                       <Button size="xs" variant="destructive" className="h-7 px-2" onClick={() => handleBulkBlockUsers(true)}>
-                        <Ban className="w-3 h-3 mr-1" /> Block
+                        <Ban className="w-3 h-3 mr-1" /> {t('admin.users.block')}
                       </Button>
                       <Button size="xs" variant="outline" className="h-7 px-2" onClick={() => handleBulkBlockUsers(false)}>
-                        <UserCheck className="w-3 h-3 mr-1" /> Unblock
+                        <UserCheck className="w-3 h-3 mr-1" /> {t('admin.users.unblock')}
                       </Button>
                       <Button size="xs" variant="ghost" className="h-7 px-2" onClick={() => setSelectedUserIds([])}>
-                        Clear
+                        {t('admin.users.clear')}
                       </Button>
                     </div>
                   )}
                   <div className="relative">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
-                      placeholder="Search username or name..."
+                      placeholder={t('admin.users.searchPlaceholder')}
                       className="pl-8 w-[250px] h-9"
                       value={userSearch}
                       onChange={(e) => setUserSearch(e.target.value)}
@@ -1108,7 +1117,7 @@ const AdminDashboard = () => {
                     />
                   </div>
                   <Button onClick={() => { setUserPage(1); fetchUsers(1); }} disabled={userLoading} size="sm" className="h-9">
-                    Search
+                    {t('common.search')}
                   </Button>
                 </div>
               </div>
@@ -1126,20 +1135,20 @@ const AdminDashboard = () => {
                         }}
                       />
                     </TableHead>
-                    <TableHead>User</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Verified</TableHead>
-                    <TableHead>Joined</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead>{t('admin.users.colUser')}</TableHead>
+                    <TableHead>{t('admin.users.colEmail')}</TableHead>
+                    <TableHead>{t('admin.users.colRole')}</TableHead>
+                    <TableHead>{t('admin.users.colStatus')}</TableHead>
+                    <TableHead>{t('admin.users.colVerified')}</TableHead>
+                    <TableHead>{t('admin.users.colJoined')}</TableHead>
+                    <TableHead className="text-right">{t('admin.users.colActions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {users.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                        {userLoading ? 'Loading users...' : 'No users found.'}
+                        {userLoading ? t('admin.users.loading') : t('admin.users.empty')}
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -1166,16 +1175,16 @@ const AdminDashboard = () => {
                         </TableCell>
                         <TableCell>
                           {u.is_blocked ? (
-                            <Badge variant="destructive">Blocked</Badge>
+                            <Badge variant="destructive">{t('admin.users.blocked')}</Badge>
                           ) : (
-                            <Badge variant="success">Active</Badge>
+                            <Badge variant="success">{t('admin.users.active')}</Badge>
                           )}
                         </TableCell>
                         <TableCell>
                           {u.is_verified ? (
-                            <Badge variant="success" className="bg-blue-500 hover:bg-blue-600">Verified</Badge>
+                            <Badge variant="success" className="bg-blue-500 hover:bg-blue-600">{t('admin.users.verified')}</Badge>
                           ) : (
-                            <Badge variant="outline">Unverified</Badge>
+                            <Badge variant="outline">{t('admin.users.unverified')}</Badge>
                           )}
                         </TableCell>
                         <TableCell>{new Date(u.created_at).toLocaleDateString()}</TableCell>
@@ -1187,36 +1196,36 @@ const AdminDashboard = () => {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                              <DropdownMenuLabel>{t('admin.users.actionsLabel')}</DropdownMenuLabel>
                               <DropdownMenuItem onClick={() => handleBlockUser(u._id, u.is_blocked)}>
                                 {u.is_blocked ? (
-                                  <><UserCheck className="mr-2 h-4 w-4" /> Unblock</>
+                                  <><UserCheck className="mr-2 h-4 w-4" /> {t('admin.users.unblock')}</>
                                 ) : (
-                                  <><UserX className="mr-2 h-4 w-4" /> Block</>
+                                  <><UserX className="mr-2 h-4 w-4" /> {t('admin.users.block')}</>
                                 )}
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => handleVerifyUser(u._id, u.is_verified)}>
                                 <ShieldCheckIcon className="mr-2 h-4 w-4 text-blue-500" />
-                                {u.is_verified ? 'Unverify' : 'Verify'} Account
+                                {u.is_verified ? t('admin.users.unverifyAccount') : t('admin.users.verifyAccount')}
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem onClick={() => {
                                 const roles = ['user', 'vendor', 'super_admin'];
                                 const next = roles[(roles.indexOf(u.role) + 1) % roles.length];
                                 adminAPI.updateUserRole(u._id, next).then(() => {
-                                  toast({ title: 'Success', description: `Role changed to ${next}` });
+                                  toast({ title: t('common.success'), description: t('admin.users.roleChanged', { role: next }) });
                                   fetchUsers();
-                                }).catch(() => toast({ title: 'Error', description: 'Failed to update role', variant: 'destructive' }));
+                                }).catch(() => toast({ title: t('common.error'), description: t('admin.users.failedUpdateRole'), variant: 'destructive' }));
                               }}>
                                 <ShieldAlert className="mr-2 h-4 w-4" />
-                                Change Role
+                                {t('admin.users.changeRole')}
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem
                                 className="text-destructive focus:text-destructive"
                                 onClick={() => handleDeleteUser(u._id)}
                               >
-                                <Trash2 className="mr-2 h-4 w-4" /> Delete User
+                                <Trash2 className="mr-2 h-4 w-4" /> {t('admin.users.deleteUser')}
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -1241,21 +1250,21 @@ const AdminDashboard = () => {
             <CardHeader>
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                  <CardTitle>Stores Management</CardTitle>
-                  <CardDescription>View and manage vendor stores.</CardDescription>
+                  <CardTitle>{t('admin.stores.title')}</CardTitle>
+                  <CardDescription>{t('admin.stores.desc')}</CardDescription>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   {selectedStoreIds.length > 0 && (
                     <div className="flex items-center gap-2 mr-4 bg-muted p-1 px-2 rounded-md">
-                      <span className="text-xs font-medium">{selectedStoreIds.length} selected</span>
+                      <span className="text-xs font-medium">{t('admin.stores.selected', { count: selectedStoreIds.length })}</span>
                       <Button size="xs" variant="success" className="h-7 px-2" onClick={() => handleBulkUpdateStoreStatus('active')}>
-                        <CheckCircle className="w-3 h-3 mr-1" /> Activate
+                        <CheckCircle className="w-3 h-3 mr-1" /> {t('admin.stores.activate')}
                       </Button>
                       <Button size="xs" variant="destructive" className="h-7 px-2" onClick={() => handleBulkUpdateStoreStatus('suspended')}>
-                        <Ban className="w-3 h-3 mr-1" /> Suspend
+                        <Ban className="w-3 h-3 mr-1" /> {t('admin.stores.suspend')}
                       </Button>
                       <Button size="xs" variant="ghost" className="h-7 px-2" onClick={() => setSelectedStoreIds([])}>
-                        Clear
+                        {t('admin.stores.clear')}
                       </Button>
                     </div>
                   )}
@@ -1263,20 +1272,20 @@ const AdminDashboard = () => {
                     <Filter className="w-4 h-4 text-muted-foreground" />
                     <Select value={storeFilter} onValueChange={setStoreFilter}>
                       <SelectTrigger className="w-[130px] h-9">
-                        <SelectValue placeholder="Status" />
+                        <SelectValue placeholder={t('admin.stores.colStatus')} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">All Status</SelectItem>
-                        <SelectItem value="active">Active</SelectItem>
-                        <SelectItem value="pending">Pending</SelectItem>
-                        <SelectItem value="suspended">Suspended</SelectItem>
+                        <SelectItem value="all">{t('admin.stores.allStatus')}</SelectItem>
+                        <SelectItem value="active">{t('admin.stores.active')}</SelectItem>
+                        <SelectItem value="pending">{t('admin.stores.pending')}</SelectItem>
+                        <SelectItem value="suspended">{t('admin.stores.suspended')}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="relative">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
-                      placeholder="Search name or owner username..."
+                      placeholder={t('admin.stores.searchPlaceholder')}
                       className="pl-8 w-[200px] h-9"
                       value={storeSearch}
                       onChange={(e) => setStoreSearch(e.target.value)}
@@ -1284,7 +1293,7 @@ const AdminDashboard = () => {
                     />
                   </div>
                   <Button onClick={() => { setStorePage(1); fetchStores(1); }} disabled={storeLoading} size="sm" className="h-9">
-                    Search
+                    {t('common.search')}
                   </Button>
                 </div>
               </div>
@@ -1302,19 +1311,19 @@ const AdminDashboard = () => {
                         }}
                       />
                     </TableHead>
-                    <TableHead>Store Name</TableHead>
-                    <TableHead>Owner</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Verified</TableHead>
-                    <TableHead>Stats</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead>{t('admin.stores.colName')}</TableHead>
+                    <TableHead>{t('admin.stores.colOwner')}</TableHead>
+                    <TableHead>{t('admin.stores.colStatus')}</TableHead>
+                    <TableHead>{t('admin.stores.colVerified')}</TableHead>
+                    <TableHead>{t('admin.stores.colStats')}</TableHead>
+                    <TableHead className="text-right">{t('admin.stores.colActions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {stores.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                        No stores found.
+                        {t('admin.stores.empty')}
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -1343,15 +1352,15 @@ const AdminDashboard = () => {
                         </TableCell>
                         <TableCell>
                           {s.is_verified ? (
-                            <Badge variant="success" className="bg-blue-500 hover:bg-blue-600">Verified</Badge>
+                            <Badge variant="success" className="bg-blue-500 hover:bg-blue-600">{t('admin.stores.verified')}</Badge>
                           ) : (
-                            <Badge variant="outline">Unverified</Badge>
+                            <Badge variant="outline">{t('admin.stores.unverified')}</Badge>
                           )}
                         </TableCell>
                         <TableCell>
                           <div className="flex flex-col text-xs">
-                            <span>Products: {s.products_count || 0}</span>
-                            <span>Orders: {s.orders_count || 0}</span>
+                            <span>{t('admin.stores.productCount', { count: s.products_count || 0 })}</span>
+                            <span>{t('admin.stores.orderCount', { count: s.orders_count || 0 })}</span>
                           </div>
                         </TableCell>
                         <TableCell className="text-right">
@@ -1374,25 +1383,25 @@ const AdminDashboard = () => {
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
-                                <DropdownMenuLabel>Manage Store</DropdownMenuLabel>
+                                <DropdownMenuLabel>{t('admin.stores.manageLabel')}</DropdownMenuLabel>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem onClick={() => handleUpdateStoreStatus(s._id, 'active')}>
-                                  <CheckCircle className="w-4 h-4 mr-2 text-success" /> Set Active
+                                  <CheckCircle className="w-4 h-4 mr-2 text-success" /> {t('admin.stores.setActive')}
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => handleUpdateStoreStatus(s._id, 'suspended')}>
-                                  <AlertCircle className="w-4 h-4 mr-2 text-destructive" /> Suspend
+                                  <AlertCircle className="w-4 h-4 mr-2 text-destructive" /> {t('admin.stores.suspend')}
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem onClick={() => handleUpdateStoreVerification(s._id, !s.is_verified)}>
                                   <ShieldCheckIcon className="w-4 h-4 mr-2 text-blue-500" /> 
-                                  {s.is_verified ? 'Remove Verification' : 'Verify Store'}
+                                  {s.is_verified ? t('admin.stores.removeVerification') : t('admin.stores.verifyStore')}
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
                                   className="text-destructive focus:text-destructive"
                                   onClick={() => handleDeleteStore(s._id)}
                                 >
-                                  <Trash2 className="w-4 h-4 mr-2" /> Delete Store
+                                  <Trash2 className="w-4 h-4 mr-2" /> {t('admin.stores.deleteStore')}
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
@@ -1427,29 +1436,29 @@ const AdminDashboard = () => {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle>Product Catalog</CardTitle>
-                  <CardDescription>Monitor and moderate products across all stores.</CardDescription>
+                  <CardTitle>{t('admin.products.title')}</CardTitle>
+                  <CardDescription>{t('admin.products.desc')}</CardDescription>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="flex items-center gap-2 mr-4">
-                    <Label htmlFor="product-status" className="text-xs">Status:</Label>
+                    <Label htmlFor="product-status" className="text-xs">{t('admin.products.statusLabel')}</Label>
                     <Select value={productFilter} onValueChange={setProductFilter}>
                       <SelectTrigger id="product-status" className="w-[120px] h-9">
-                        <SelectValue placeholder="All Status" />
+                        <SelectValue placeholder={t('admin.products.allStatus')} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">All Status</SelectItem>
-                        <SelectItem value="active">Active</SelectItem>
-                        <SelectItem value="draft">Draft</SelectItem>
-                        <SelectItem value="sold_out">Sold Out</SelectItem>
-                        <SelectItem value="archived">Archived</SelectItem>
+                        <SelectItem value="all">{t('admin.products.allStatus')}</SelectItem>
+                        <SelectItem value="active">{t('admin.products.active')}</SelectItem>
+                        <SelectItem value="draft">{t('admin.products.draft')}</SelectItem>
+                        <SelectItem value="sold_out">{t('admin.products.soldOut')}</SelectItem>
+                        <SelectItem value="archived">{t('admin.products.archived')}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="relative">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
-                      placeholder="Search title or vendor..."
+                      placeholder={t('admin.products.searchPlaceholder')}
                       className="pl-8 w-[200px] h-9"
                       value={productSearch}
                       onChange={(e) => setProductSearch(e.target.value)}
@@ -1457,7 +1466,7 @@ const AdminDashboard = () => {
                     />
                   </div>
                   <Button onClick={() => { setProductPage(1); fetchProducts(1); }} disabled={productLoading} size="sm" className="h-9">
-                    Search
+                    {t('common.search')}
                   </Button>
                 </div>
               </div>
@@ -1466,19 +1475,19 @@ const AdminDashboard = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Product</TableHead>
-                    <TableHead>Store / Vendor</TableHead>
-                    <TableHead>Price</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Stats</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead>{t('admin.products.colProduct')}</TableHead>
+                    <TableHead>{t('admin.products.colStore')}</TableHead>
+                    <TableHead>{t('admin.products.colPrice')}</TableHead>
+                    <TableHead>{t('admin.products.colStatus')}</TableHead>
+                    <TableHead>{t('admin.products.colStats')}</TableHead>
+                    <TableHead className="text-right">{t('admin.products.colActions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {products.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                        No products found.
+                        {t('admin.products.empty')}
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -1524,8 +1533,8 @@ const AdminDashboard = () => {
                         </TableCell>
                         <TableCell>
                           <div className="flex flex-col text-xs">
-                            <span>Sales: {p.sales_count || 0}</span>
-                            <span>Views: {p.views_count || 0}</span>
+                            <span>{t('admin.products.salesCount', { count: p.sales_count || 0 })}</span>
+                            <span>{t('admin.products.viewsCount', { count: p.views_count || 0 })}</span>
                           </div>
                         </TableCell>
                         <TableCell className="text-right">
@@ -1537,20 +1546,20 @@ const AdminDashboard = () => {
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
-                                <DropdownMenuLabel>Product Actions</DropdownMenuLabel>
+                                <DropdownMenuLabel>{t('admin.products.menuLabel')}</DropdownMenuLabel>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem onClick={() => handleUpdateProductStatus(p._id, 'active')}>
-                                  <CheckCircle className="w-4 h-4 mr-2 text-success" /> Activate
+                                  <CheckCircle className="w-4 h-4 mr-2 text-success" /> {t('admin.products.activate')}
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => handleUpdateProductStatus(p._id, 'archived')}>
-                                  <Archive className="w-4 h-4 mr-2 text-muted-foreground" /> Archive
+                                  <Archive className="w-4 h-4 mr-2 text-muted-foreground" /> {t('admin.products.archive')}
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem 
                                   onClick={() => handleDeleteProduct(p._id)}
                                   className="text-destructive"
                                 >
-                                  <Trash2 className="w-4 h-4 mr-2" /> Delete Product
+                                  <Trash2 className="w-4 h-4 mr-2" /> {t('admin.products.deleteProduct')}
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
@@ -1576,32 +1585,32 @@ const AdminDashboard = () => {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle>System Orders</CardTitle>
-                  <CardDescription>View all orders across the platform.</CardDescription>
+                  <CardTitle>{t('admin.orders.title')}</CardTitle>
+                  <CardDescription>{t('admin.orders.desc')}</CardDescription>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="flex items-center gap-2">
                     <Filter className="w-4 h-4 text-muted-foreground" />
                     <Select value={orderFilter} onValueChange={(v) => { setOrderFilter(v); setOrderPage(1); }}>
                       <SelectTrigger className="w-[140px] h-9">
-                        <SelectValue placeholder="All Status" />
+                        <SelectValue placeholder={t('admin.orders.allStatus')} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">All Status</SelectItem>
-                        <SelectItem value="pending">Pending</SelectItem>
-                        <SelectItem value="confirmed">Confirmed</SelectItem>
-                        <SelectItem value="processing">Processing</SelectItem>
-                        <SelectItem value="shipped">Shipped</SelectItem>
-                        <SelectItem value="delivered">Delivered</SelectItem>
-                        <SelectItem value="cancelled">Cancelled</SelectItem>
-                        <SelectItem value="refunded">Refunded</SelectItem>
+                        <SelectItem value="all">{t('admin.orders.allStatus')}</SelectItem>
+                        <SelectItem value="pending">{t('admin.orders.pending')}</SelectItem>
+                        <SelectItem value="confirmed">{t('admin.orders.confirmed')}</SelectItem>
+                        <SelectItem value="processing">{t('admin.orders.processing')}</SelectItem>
+                        <SelectItem value="shipped">{t('admin.orders.shipped')}</SelectItem>
+                        <SelectItem value="delivered">{t('admin.orders.delivered')}</SelectItem>
+                        <SelectItem value="cancelled">{t('admin.orders.cancelled')}</SelectItem>
+                        <SelectItem value="refunded">{t('admin.orders.refunded')}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="relative">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
-                      placeholder="Search buyer, vendor or store..."
+                      placeholder={t('admin.orders.searchPlaceholder')}
                       className="pl-8 w-[230px] h-9"
                       value={orderSearch}
                       onChange={(e) => setOrderSearch(e.target.value)}
@@ -1609,7 +1618,7 @@ const AdminDashboard = () => {
                     />
                   </div>
                   <Button onClick={() => fetchOrders(1)} disabled={orderLoading} size="sm" className="h-9">
-                    Search
+                    {t('common.search')}
                   </Button>
                 </div>
               </div>
@@ -1618,21 +1627,21 @@ const AdminDashboard = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Order ID</TableHead>
-                    <TableHead>Buyer</TableHead>
-                    <TableHead>Store</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Payment</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead>{t('admin.orders.colId')}</TableHead>
+                    <TableHead>{t('admin.orders.colBuyer')}</TableHead>
+                    <TableHead>{t('admin.orders.colStore')}</TableHead>
+                    <TableHead>{t('admin.orders.colAmount')}</TableHead>
+                    <TableHead>{t('admin.orders.colStatus')}</TableHead>
+                    <TableHead>{t('admin.orders.colPayment')}</TableHead>
+                    <TableHead>{t('admin.orders.colDate')}</TableHead>
+                    <TableHead className="text-right">{t('admin.orders.colActions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {orders.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                        {orderLoading ? 'Loading orders...' : 'No orders found.'}
+                        {orderLoading ? t('admin.orders.loading') : t('admin.orders.empty')}
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -1677,7 +1686,7 @@ const AdminDashboard = () => {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuLabel>Update Status</DropdownMenuLabel>
+                              <DropdownMenuLabel>{t('admin.orders.menuLabel')}</DropdownMenuLabel>
                               <DropdownMenuSeparator />
                               {['confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded'].map((s) => (
                                 <DropdownMenuItem
@@ -1711,25 +1720,25 @@ const AdminDashboard = () => {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0">
               <div>
-                <CardTitle>Withdrawal Requests</CardTitle>
-                <CardDescription>Process vendor withdrawal requests.</CardDescription>
+                <CardTitle>{t('admin.withdrawals.title')}</CardTitle>
+                <CardDescription>{t('admin.withdrawals.desc')}</CardDescription>
               </div>
               <div className="flex items-center gap-2">
                 <Select value={withdrawalFilter} onValueChange={(v) => { setWithdrawalFilter(v); fetchWithdrawals(v); }}>
                   <SelectTrigger className="w-[140px] h-9">
-                    <SelectValue placeholder="All Status" />
+                    <SelectValue placeholder={t('admin.withdrawals.allStatus')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="processing">Processing</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                    <SelectItem value="rejected">Rejected</SelectItem>
+                    <SelectItem value="all">{t('admin.withdrawals.allStatus')}</SelectItem>
+                    <SelectItem value="pending">{t('admin.withdrawals.pending')}</SelectItem>
+                    <SelectItem value="processing">{t('admin.withdrawals.processing')}</SelectItem>
+                    <SelectItem value="completed">{t('admin.withdrawals.completed')}</SelectItem>
+                    <SelectItem value="rejected">{t('admin.withdrawals.rejected')}</SelectItem>
                   </SelectContent>
                 </Select>
                 <Button onClick={() => fetchWithdrawals(withdrawalFilter)} disabled={withdrawalLoading} variant="ghost" size="sm">
                   <RefreshCw className={`h-4 w-4 mr-2 ${withdrawalLoading ? 'animate-spin' : ''}`} />
-                  Refresh
+                  {t('common.refresh')}
                 </Button>
               </div>
             </CardHeader>
@@ -1737,19 +1746,19 @@ const AdminDashboard = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Vendor</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Method</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead>{t('admin.withdrawals.colVendor')}</TableHead>
+                    <TableHead>{t('admin.withdrawals.colAmount')}</TableHead>
+                    <TableHead>{t('admin.withdrawals.colMethod')}</TableHead>
+                    <TableHead>{t('admin.withdrawals.colStatus')}</TableHead>
+                    <TableHead>{t('admin.withdrawals.colDate')}</TableHead>
+                    <TableHead className="text-right">{t('admin.withdrawals.colActions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {withdrawals.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                        No withdrawal requests found.
+                        {t('admin.withdrawals.empty')}
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -1760,7 +1769,7 @@ const AdminDashboard = () => {
                             <span className="font-medium text-sm">@{w.vendor_username}</span>
                             {w.notes && (
                               <span className="text-xs text-muted-foreground italic truncate max-w-[200px]" title={w.notes}>
-                                Note: {w.notes}
+                                {t('admin.withdrawals.noteLabel', { note: w.notes })}
                               </span>
                             )}
                           </div>
@@ -1798,7 +1807,7 @@ const AdminDashboard = () => {
                                   setIsWithdrawalModalOpen(true);
                                 }}
                               >
-                                <CheckCircle className="w-4 h-4 mr-1" /> Approve
+                                <CheckCircle className="w-4 h-4 mr-1" /> {t('admin.withdrawals.approve')}
                               </Button>
                               <Button 
                                 size="sm" 
@@ -1811,7 +1820,7 @@ const AdminDashboard = () => {
                                   setIsWithdrawalModalOpen(true);
                                 }}
                               >
-                                <AlertCircle className="w-4 h-4 mr-1" /> Reject
+                                <AlertCircle className="w-4 h-4 mr-1" /> {t('admin.withdrawals.reject')}
                               </Button>
                             </div>
                           )}
@@ -1827,17 +1836,17 @@ const AdminDashboard = () => {
           <Dialog open={isWithdrawalModalOpen} onOpenChange={setIsWithdrawalModalOpen}>
             <DialogContent className="sm:max-w-md">
               <DialogHeader>
-                <DialogTitle>{withdrawalAction === 'completed' ? 'Approve' : 'Reject'} Withdrawal</DialogTitle>
+                <DialogTitle>{withdrawalAction === 'completed' ? t('admin.withdrawals.approveTitle') : t('admin.withdrawals.rejectTitle')}</DialogTitle>
                 <DialogDescription>
-                  Reviewing withdrawal request for @{selectedWithdrawal?.vendor_username} of {formatCurrency(selectedWithdrawal?.amount)}.
+                  {t('admin.withdrawals.reviewDesc', { vendor: selectedWithdrawal?.vendor_username, amount: formatCurrency(selectedWithdrawal?.amount) })}
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-2">
                 <div className="space-y-2">
-                  <Label htmlFor="notes">Admin Notes (Optional)</Label>
+                  <Label htmlFor="notes">{t('admin.withdrawals.adminNotes')}</Label>
                   <Textarea
                     id="notes"
-                    placeholder={withdrawalAction === 'completed' ? 'e.g. Transaction processed via Bank Transfer' : 'e.g. Invalid payment information provided'}
+                    placeholder={withdrawalAction === 'completed' ? t('admin.withdrawals.approvedPlaceholder') : t('admin.withdrawals.rejectedPlaceholder')}
                     value={withdrawalNotes}
                     onChange={(e) => setWithdrawalNotes(e.target.value)}
                     className="h-24"
@@ -1845,12 +1854,12 @@ const AdminDashboard = () => {
                 </div>
               </div>
               <DialogFooter>
-                <Button variant="ghost" onClick={() => setIsWithdrawalModalOpen(false)}>Cancel</Button>
+                <Button variant="ghost" onClick={() => setIsWithdrawalModalOpen(false)}>{t('common.cancel')}</Button>
                 <Button 
                   variant={withdrawalAction === 'completed' ? 'success' : 'destructive'}
                   onClick={() => handleWithdrawalStatus(selectedWithdrawal?._id, withdrawalAction, withdrawalNotes)}
                 >
-                  Confirm {withdrawalAction === 'completed' ? 'Approval' : 'Rejection'}
+                  {withdrawalAction === 'completed' ? t('admin.withdrawals.confirmApproval') : t('admin.withdrawals.confirmRejection')}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -1862,14 +1871,14 @@ const AdminDashboard = () => {
             <CardHeader>
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                  <CardTitle>Vendor Subscriptions</CardTitle>
-                  <CardDescription>Manage vendor subscription plans and status.</CardDescription>
+                  <CardTitle>{t('admin.subscriptions.title')}</CardTitle>
+                  <CardDescription>{t('admin.subscriptions.desc')}</CardDescription>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="relative">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
-                      placeholder="Search vendor or store..."
+                      placeholder={t('admin.subscriptions.searchPlaceholder')}
                       className="pl-8 w-[250px] h-9"
                       value={subscriptionSearch}
                       onChange={(e) => setSubscriptionSearch(e.target.value)}
@@ -1877,7 +1886,7 @@ const AdminDashboard = () => {
                     />
                   </div>
                   <Button onClick={fetchSubscriptions} disabled={subscriptionsLoading} size="sm" className="h-9">
-                    Search
+                    {t('common.search')}
                   </Button>
                 </div>
               </div>
@@ -1886,19 +1895,19 @@ const AdminDashboard = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Vendor / Store</TableHead>
-                    <TableHead>Plan</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Expires</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead>{t('admin.subscriptions.colVendor')}</TableHead>
+                    <TableHead>{t('admin.subscriptions.colPlan')}</TableHead>
+                    <TableHead>{t('admin.subscriptions.colStatus')}</TableHead>
+                    <TableHead>{t('admin.subscriptions.colAmount')}</TableHead>
+                    <TableHead>{t('admin.subscriptions.colExpires')}</TableHead>
+                    <TableHead className="text-right">{t('admin.subscriptions.colActions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {subscriptions.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                        {subscriptionsLoading ? 'Loading subscriptions...' : 'No subscriptions found.'}
+                        {subscriptionsLoading ? t('admin.subscriptions.loading') : t('admin.subscriptions.empty')}
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -1907,7 +1916,7 @@ const AdminDashboard = () => {
                         <TableCell>
                           <div className="flex flex-col">
                             <span className="font-medium">@{sub.vendor_username}</span>
-                            <span className="text-xs text-muted-foreground">Store ID: {sub.store_id}</span>
+                            <span className="text-xs text-muted-foreground">{t('admin.subscriptions.storeId', { id: sub.store_id })}</span>
                           </div>
                         </TableCell>
                         <TableCell>
@@ -1928,7 +1937,7 @@ const AdminDashboard = () => {
                           {formatCurrency(sub.amount || 0)}
                         </TableCell>
                         <TableCell className="text-sm">
-                          {sub.expires_at ? new Date(sub.expires_at).toLocaleDateString() : 'Never'}
+                          {sub.expires_at ? new Date(sub.expires_at).toLocaleDateString() : t('admin.subscriptions.never')}
                         </TableCell>
                         <TableCell className="text-right">
                           <DropdownMenu>
@@ -1938,16 +1947,16 @@ const AdminDashboard = () => {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                              <DropdownMenuLabel>{t('admin.subscriptions.menuLabel')}</DropdownMenuLabel>
                               <DropdownMenuItem onClick={() => {
-                                if (confirm('Are you sure you want to cancel this subscription?')) {
+                                if (confirm(t('admin.subscriptions.cancelConfirm'))) {
                                   vendorSubscriptionsAPI.cancel(sub._id).then(() => {
-                                    toast({ title: 'Success', description: 'Subscription cancelled' });
+                                    toast({ title: t('common.success'), description: t('admin.subscriptions.cancelledSuccess') });
                                     fetchSubscriptions();
                                   });
                                 }
                               }}>
-                                <UserX className="w-4 h-4 mr-2" /> Cancel Subscription
+                                <UserX className="w-4 h-4 mr-2" /> {t('admin.subscriptions.cancelSubscription')}
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -1965,24 +1974,24 @@ const AdminDashboard = () => {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0">
               <div>
-                <CardTitle>Moderation Queue</CardTitle>
-                <CardDescription>Review and resolve user-reported content.</CardDescription>
+                <CardTitle>{t('admin.moderation.title')}</CardTitle>
+                <CardDescription>{t('admin.moderation.desc')}</CardDescription>
               </div>
               <div className="flex items-center gap-2">
                 <Select value={reportFilter} onValueChange={(v) => { setReportFilter(v); fetchReports(v); }}>
                   <SelectTrigger className="w-[140px] h-9">
-                    <SelectValue placeholder="Filter status" />
+                    <SelectValue placeholder={t('admin.moderation.allReports')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Reports</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="resolved">Resolved</SelectItem>
-                    <SelectItem value="dismissed">Dismissed</SelectItem>
+                    <SelectItem value="all">{t('admin.moderation.allReports')}</SelectItem>
+                    <SelectItem value="pending">{t('admin.moderation.pending')}</SelectItem>
+                    <SelectItem value="resolved">{t('admin.moderation.resolved')}</SelectItem>
+                    <SelectItem value="dismissed">{t('admin.moderation.dismissed')}</SelectItem>
                   </SelectContent>
                 </Select>
                 <Button onClick={() => fetchReports(reportFilter)} disabled={reportsLoading} variant="ghost" size="sm">
                   <RefreshCw className={`h-4 w-4 mr-2 ${reportsLoading ? 'animate-spin' : ''}`} />
-                  Refresh
+                  {t('common.refresh')}
                 </Button>
               </div>
             </CardHeader>
@@ -1990,19 +1999,19 @@ const AdminDashboard = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Reason</TableHead>
-                    <TableHead>Reporter</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead>{t('admin.moderation.colType')}</TableHead>
+                    <TableHead>{t('admin.moderation.colReason')}</TableHead>
+                    <TableHead>{t('admin.moderation.colReporter')}</TableHead>
+                    <TableHead>{t('admin.moderation.colStatus')}</TableHead>
+                    <TableHead>{t('admin.moderation.colDate')}</TableHead>
+                    <TableHead className="text-right">{t('admin.moderation.colActions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {reports.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                        No reports found.
+                        {t('admin.moderation.empty')}
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -2018,13 +2027,13 @@ const AdminDashboard = () => {
                             </span>
                             {r.admin_notes && (
                               <span className="text-xs text-muted-foreground italic truncate max-w-[200px]">
-                                Admin: {r.admin_notes}
+                                {t('admin.moderation.adminNoteLabel', { notes: r.admin_notes })}
                               </span>
                             )}
                           </div>
                         </TableCell>
                         <TableCell className="text-sm">
-                          {r.reporter_id?.display_name || 'System'}
+                          {r.reporter_id?.display_name || t('admin.moderation.system')}
                         </TableCell>
                         <TableCell>
                           <Badge variant={
@@ -2046,14 +2055,14 @@ const AdminDashboard = () => {
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
-                                <DropdownMenuLabel>Resolve Report</DropdownMenuLabel>
+                                <DropdownMenuLabel>{t('admin.moderation.menuLabel')}</DropdownMenuLabel>
                                 <DropdownMenuItem onClick={() => {
                                   setSelectedReport(r);
                                   setReportAction('resolved');
                                   setReportNotes('');
                                   setIsReportModalOpen(true);
                                 }}>
-                                  <CheckCircle className="w-4 h-4 mr-2 text-success" /> Resolve
+                                  <CheckCircle className="w-4 h-4 mr-2 text-success" /> {t('admin.moderation.resolve')}
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => {
                                   setSelectedReport(r);
@@ -2061,7 +2070,7 @@ const AdminDashboard = () => {
                                   setReportNotes('');
                                   setIsReportModalOpen(true);
                                 }}>
-                                  <AlertCircle className="w-4 h-4 mr-2 text-muted-foreground" /> Dismiss
+                                  <AlertCircle className="w-4 h-4 mr-2 text-muted-foreground" /> {t('admin.moderation.dismiss')}
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
@@ -2078,9 +2087,11 @@ const AdminDashboard = () => {
           <Dialog open={isReportModalOpen} onOpenChange={setIsReportModalOpen}>
             <DialogContent className="sm:max-w-md">
               <DialogHeader>
-                <DialogTitle>{reportAction === 'resolved' ? 'Resolve' : 'Dismiss'} Report</DialogTitle>
+                <DialogTitle>{reportAction === 'resolved' ? t('admin.moderation.resolveTitle') : t('admin.moderation.dismissTitle')}</DialogTitle>
                 <DialogDescription>
-                  Provide {reportAction === 'resolved' ? 'resolution' : 'dismissal'} notes for this {selectedReport?.target_type} report.
+                  {reportAction === 'resolved'
+                    ? t('admin.moderation.resolveDesc', { type: selectedReport?.target_type })
+                    : t('admin.moderation.dismissDesc', { type: selectedReport?.target_type })}
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-2">
@@ -2089,10 +2100,10 @@ const AdminDashboard = () => {
                   <div className="mt-1 text-muted-foreground">{selectedReport?.description}</div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="report-notes">Admin Notes (Optional)</Label>
+                  <Label htmlFor="report-notes">{t('admin.moderation.adminNotes')}</Label>
                   <Textarea
                     id="report-notes"
-                    placeholder="Provide details about the action taken..."
+                    placeholder={t('admin.moderation.notesPlaceholder')}
                     value={reportNotes}
                     onChange={(e) => setReportNotes(e.target.value)}
                     className="h-24"
@@ -2100,12 +2111,12 @@ const AdminDashboard = () => {
                 </div>
               </div>
               <DialogFooter>
-                <Button variant="ghost" onClick={() => setIsReportModalOpen(false)}>Cancel</Button>
+                <Button variant="ghost" onClick={() => setIsReportModalOpen(false)}>{t('common.cancel')}</Button>
                 <Button 
                   variant={reportAction === 'resolved' ? 'success' : 'secondary'}
                   onClick={() => handleResolveReport(selectedReport?._id, reportAction, reportNotes)}
                 >
-                  Confirm {reportAction === 'resolved' ? 'Resolution' : 'Dismissal'}
+                  {reportAction === 'resolved' ? t('admin.moderation.confirmResolution') : t('admin.moderation.confirmDismissal')}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -2117,16 +2128,16 @@ const AdminDashboard = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Eye className="w-5 h-5" />
-                Post Management
+                {t('admin.posts.title')}
               </CardTitle>
-              <CardDescription>View, moderate, and delete user posts.</CardDescription>
+              <CardDescription>{t('admin.posts.desc')}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex gap-2 mb-4">
                 <div className="relative flex-1">
                   <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Search by content or author..."
+                    placeholder={t('admin.posts.searchPlaceholder')}
                     value={postSearch}
                     onChange={(e) => setPostSearch(e.target.value)}
                     onKeyDown={(e) => { if (e.key === 'Enter') { setPostPage(1); fetchPosts(1); } }}
@@ -2135,37 +2146,37 @@ const AdminDashboard = () => {
                 </div>
                 <Select value={postFilter} onValueChange={(v) => { setPostFilter(v); setPostPage(1); }}>
                   <SelectTrigger className="w-[160px]">
-                    <SelectValue placeholder="Visibility" />
+                    <SelectValue placeholder={t('admin.posts.all')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All</SelectItem>
-                    <SelectItem value="public">Public</SelectItem>
-                    <SelectItem value="followers">Followers</SelectItem>
-                    <SelectItem value="community">Community</SelectItem>
+                    <SelectItem value="all">{t('admin.posts.all')}</SelectItem>
+                    <SelectItem value="public">{t('admin.posts.public')}</SelectItem>
+                    <SelectItem value="followers">{t('admin.posts.followers')}</SelectItem>
+                    <SelectItem value="community">{t('admin.posts.community')}</SelectItem>
                   </SelectContent>
                 </Select>
                 <Button variant="outline" onClick={() => { setPostPage(1); fetchPosts(1); }} disabled={postLoading}>
-                  <Search className="w-4 h-4 mr-1" /> Search
+                  <Search className="w-4 h-4 mr-1" /> {t('common.search')}
                 </Button>
               </div>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Author</TableHead>
-                    <TableHead>Content</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Visibility</TableHead>
-                    <TableHead>Likes</TableHead>
-                    <TableHead>Comments</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Actions</TableHead>
+                    <TableHead>{t('admin.posts.colAuthor')}</TableHead>
+                    <TableHead>{t('admin.posts.colContent')}</TableHead>
+                    <TableHead>{t('admin.posts.colType')}</TableHead>
+                    <TableHead>{t('admin.posts.colVisibility')}</TableHead>
+                    <TableHead>{t('admin.posts.colLikes')}</TableHead>
+                    <TableHead>{t('admin.posts.colComments')}</TableHead>
+                    <TableHead>{t('admin.posts.colDate')}</TableHead>
+                    <TableHead>{t('admin.posts.colActions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {postLoading ? (
-                    <TableRow><TableCell colSpan={8} className="text-center py-8">Loading...</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={8} className="text-center py-8">{t('common.loading')}</TableCell></TableRow>
                   ) : posts.length === 0 ? (
-                    <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">No posts found</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">{t('admin.posts.empty')}</TableCell></TableRow>
                   ) : posts.map((post) => (
                     <TableRow key={post._id}>
                       <TableCell>
@@ -2173,9 +2184,9 @@ const AdminDashboard = () => {
                         {post.author_name && <div className="text-xs text-muted-foreground">{post.author_name}</div>}
                       </TableCell>
                       <TableCell className="max-w-[200px]">
-                        <p className="truncate text-sm">{post.content || <span className="text-muted-foreground italic">No text</span>}</p>
+                        <p className="truncate text-sm">{post.content || <span className="text-muted-foreground italic">{t('admin.posts.noText')}</span>}</p>
                         {post.media_urls?.length > 0 && (
-                          <span className="text-xs text-muted-foreground">{post.media_urls.length} media file(s)</span>
+                          <span className="text-xs text-muted-foreground">{t('admin.posts.mediaFiles', { count: post.media_urls.length })}</span>
                         )}
                       </TableCell>
                       <TableCell>
@@ -2197,20 +2208,20 @@ const AdminDashboard = () => {
                             <Button variant="ghost" size="sm"><MoreVertical className="w-4 h-4" /></Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuLabel>{t('admin.posts.menuLabel')}</DropdownMenuLabel>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem onClick={() => handleUpdatePostVisibility(post._id, 'public')}>
-                              Set Public
+                              {t('admin.posts.setPublic')}
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => handleUpdatePostVisibility(post._id, 'followers')}>
-                              Set Followers Only
+                              {t('admin.posts.setFollowers')}
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => handleUpdatePostVisibility(post._id, 'community')}>
-                              Set Community Only
+                              {t('admin.posts.setCommunity')}
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem className="text-destructive" onClick={() => handleDeletePost(post._id)}>
-                              <Trash2 className="w-4 h-4 mr-2" /> Delete Post
+                              <Trash2 className="w-4 h-4 mr-2" /> {t('admin.posts.deletePost')}
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -2222,12 +2233,12 @@ const AdminDashboard = () => {
               {postPagination && postPagination.pages > 1 && (
                 <div className="flex justify-between items-center mt-4">
                   <p className="text-sm text-muted-foreground">
-                    Showing {posts.length} of {postPagination.total} posts
+                    {t('admin.posts.showingCount', { count: posts.length, total: postPagination.total })}
                   </p>
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm" disabled={postPage <= 1} onClick={() => { setPostPage(p => p - 1); fetchPosts(postPage - 1); }}>Previous</Button>
-                    <span className="text-sm px-2 py-1">Page {postPage} of {postPagination.pages}</span>
-                    <Button variant="outline" size="sm" disabled={postPage >= postPagination.pages} onClick={() => { setPostPage(p => p + 1); fetchPosts(postPage + 1); }}>Next</Button>
+                    <Button variant="outline" size="sm" disabled={postPage <= 1} onClick={() => { setPostPage(p => p - 1); fetchPosts(postPage - 1); }}>{t('admin.posts.previous')}</Button>
+                    <span className="text-sm px-2 py-1">{t('admin.posts.pageOf', { page: postPage, pages: postPagination.pages })}</span>
+                    <Button variant="outline" size="sm" disabled={postPage >= postPagination.pages} onClick={() => { setPostPage(p => p + 1); fetchPosts(postPage + 1); }}>{t('admin.posts.next')}</Button>
                   </div>
                 </div>
               )}
@@ -2240,8 +2251,8 @@ const AdminDashboard = () => {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle>Platform Announcements</CardTitle>
-                  <CardDescription>Create and manage system-wide notifications for users and vendors.</CardDescription>
+                  <CardTitle>{t('admin.announcements.title')}</CardTitle>
+                  <CardDescription>{t('admin.announcements.desc')}</CardDescription>
                 </div>
                 <Button onClick={() => {
                   setSelectedAnnouncement(null);
@@ -2255,7 +2266,7 @@ const AdminDashboard = () => {
                   });
                   setIsAnnouncementModalOpen(true);
                 }} size="sm" className="flex items-center gap-2">
-                  <Plus className="w-4 h-4" /> New Announcement
+                  <Plus className="w-4 h-4" /> {t('admin.announcements.newButton')}
                 </Button>
               </div>
             </CardHeader>
@@ -2263,19 +2274,19 @@ const AdminDashboard = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Announcement</TableHead>
-                    <TableHead>Target</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Expires</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead>{t('admin.announcements.colAnnouncement')}</TableHead>
+                    <TableHead>{t('admin.announcements.colTarget')}</TableHead>
+                    <TableHead>{t('admin.announcements.colType')}</TableHead>
+                    <TableHead>{t('admin.announcements.colStatus')}</TableHead>
+                    <TableHead>{t('admin.announcements.colExpires')}</TableHead>
+                    <TableHead className="text-right">{t('admin.announcements.colActions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {announcements.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                        No announcements found.
+                        {t('admin.announcements.empty')}
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -2299,13 +2310,13 @@ const AdminDashboard = () => {
                         </TableCell>
                         <TableCell>
                           {a.is_active ? (
-                            <Badge variant="success">Active</Badge>
+                            <Badge variant="success">{t('admin.announcements.active')}</Badge>
                           ) : (
-                            <Badge variant="outline">Inactive</Badge>
+                            <Badge variant="outline">{t('admin.announcements.inactive')}</Badge>
                           )}
                         </TableCell>
                         <TableCell className="text-sm">
-                          {a.expires_at ? new Date(a.expires_at).toLocaleDateString() : 'Never'}
+                          {a.expires_at ? new Date(a.expires_at).toLocaleDateString() : t('admin.announcements.never')}
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
@@ -2349,27 +2360,27 @@ const AdminDashboard = () => {
           <Dialog open={isAnnouncementModalOpen} onOpenChange={setIsAnnouncementModalOpen}>
             <DialogContent className="sm:max-w-[500px]">
               <DialogHeader>
-                <DialogTitle>{selectedAnnouncement ? 'Edit' : 'Create'} Announcement</DialogTitle>
+                <DialogTitle>{selectedAnnouncement ? t('admin.announcements.editTitle') : t('admin.announcements.createTitle')}</DialogTitle>
                 <DialogDescription>
-                  This announcement will be shown to the targeted users on the platform.
+                  {t('admin.announcements.dialogDesc')}
                 </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleSaveAnnouncement} className="space-y-4 py-2">
                 <div className="space-y-2">
-                  <Label htmlFor="title">Title</Label>
+                  <Label htmlFor="title">{t('admin.announcements.titleLabel')}</Label>
                   <Input 
                     id="title" 
-                    placeholder="E.g., Scheduled Maintenance" 
+                    placeholder={t('admin.announcements.titlePlaceholder')}
                     value={announcementForm.title}
                     onChange={(e) => setAnnouncementForm({...announcementForm, title: e.target.value})}
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="content">Content</Label>
+                  <Label htmlFor="content">{t('admin.announcements.contentLabel')}</Label>
                   <Textarea 
                     id="content" 
-                    placeholder="Announcement details..." 
+                    placeholder={t('admin.announcements.contentPlaceholder')}
                     value={announcementForm.content}
                     onChange={(e) => setAnnouncementForm({...announcementForm, content: e.target.value})}
                     required
@@ -2378,7 +2389,7 @@ const AdminDashboard = () => {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="type">Type</Label>
+                    <Label htmlFor="type">{t('admin.announcements.typeLabel')}</Label>
                     <Select 
                       value={announcementForm.type} 
                       onValueChange={(v) => setAnnouncementForm({...announcementForm, type: v})}
@@ -2387,15 +2398,15 @@ const AdminDashboard = () => {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="info">Information</SelectItem>
-                        <SelectItem value="warning">Warning</SelectItem>
-                        <SelectItem value="success">Success</SelectItem>
-                        <SelectItem value="error">Critical/Error</SelectItem>
+                        <SelectItem value="info">{t('admin.announcements.information')}</SelectItem>
+                        <SelectItem value="warning">{t('admin.announcements.warning')}</SelectItem>
+                        <SelectItem value="success">{t('admin.announcements.success')}</SelectItem>
+                        <SelectItem value="error">{t('admin.announcements.critical')}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="target">Target Audience</Label>
+                    <Label htmlFor="target">{t('admin.announcements.targetLabel')}</Label>
                     <Select 
                       value={announcementForm.target} 
                       onValueChange={(v) => setAnnouncementForm({...announcementForm, target: v})}
@@ -2404,16 +2415,16 @@ const AdminDashboard = () => {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">Everyone</SelectItem>
-                        <SelectItem value="vendors">Vendors Only</SelectItem>
-                        <SelectItem value="users">Regular Users Only</SelectItem>
+                        <SelectItem value="all">{t('admin.announcements.everyone')}</SelectItem>
+                        <SelectItem value="vendors">{t('admin.announcements.vendorsOnly')}</SelectItem>
+                        <SelectItem value="users">{t('admin.announcements.usersOnly')}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="expires">Expiry Date (Optional)</Label>
+                    <Label htmlFor="expires">{t('admin.announcements.expiryLabel')}</Label>
                     <Input 
                       id="expires" 
                       type="date" 
@@ -2427,13 +2438,13 @@ const AdminDashboard = () => {
                       checked={announcementForm.is_active}
                       onCheckedChange={(v) => setAnnouncementForm({...announcementForm, is_active: v})}
                     />
-                    <Label htmlFor="is-active">Active</Label>
+                    <Label htmlFor="is-active">{t('admin.announcements.activeLabel')}</Label>
                   </div>
                 </div>
                 <DialogFooter className="pt-4">
-                  <Button type="button" variant="ghost" onClick={() => setIsAnnouncementModalOpen(false)}>Cancel</Button>
+                  <Button type="button" variant="ghost" onClick={() => setIsAnnouncementModalOpen(false)}>{t('common.cancel')}</Button>
                   <Button type="submit">
-                    {selectedAnnouncement ? 'Update' : 'Publish'} Announcement
+                    {selectedAnnouncement ? t('admin.announcements.updateBtn') : t('admin.announcements.publishBtn')}
                   </Button>
                 </DialogFooter>
               </form>
@@ -2444,32 +2455,32 @@ const AdminDashboard = () => {
         <TabsContent value="logs" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>System Activity Logs</CardTitle>
-              <CardDescription>Full audit trail of administrative actions.</CardDescription>
+              <CardTitle>{t('admin.logs.title')}</CardTitle>
+              <CardDescription>{t('admin.logs.desc')}</CardDescription>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Admin</TableHead>
-                    <TableHead>Action</TableHead>
-                    <TableHead>Target</TableHead>
-                    <TableHead>IP Address</TableHead>
-                    <TableHead>Date</TableHead>
+                    <TableHead>{t('admin.logs.colAdmin')}</TableHead>
+                    <TableHead>{t('admin.logs.colAction')}</TableHead>
+                    <TableHead>{t('admin.logs.colTarget')}</TableHead>
+                    <TableHead>{t('admin.logs.colIp')}</TableHead>
+                    <TableHead>{t('admin.logs.colDate')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {activityLogs.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                        {activityLogsLoading ? 'Loading logs...' : 'No activity logs found.'}
+                        {activityLogsLoading ? t('admin.logs.loading') : t('admin.logs.empty')}
                       </TableCell>
                     </TableRow>
                   ) : (
                     activityLogs.map((log) => (
                       <TableRow key={log._id}>
                         <TableCell>
-                          <div className="font-medium">{log.user_id?.display_name || 'System'}</div>
+                          <div className="font-medium">{log.user_id?.display_name || t('admin.logs.internal')}</div>
                           <div className="text-[10px] text-muted-foreground">{log.user_id?.email}</div>
                         </TableCell>
                         <TableCell>
@@ -2480,7 +2491,7 @@ const AdminDashboard = () => {
                         <TableCell>
                           <span className="text-xs capitalize">{log.target_type || '-'}</span>
                         </TableCell>
-                        <TableCell className="font-mono text-xs">{log.ip_address || 'Internal'}</TableCell>
+                        <TableCell className="font-mono text-xs">{log.ip_address || t('admin.logs.internal')}</TableCell>
                         <TableCell className="text-xs">
                           {new Date(log.created_at).toLocaleString()}
                         </TableCell>
@@ -2498,21 +2509,21 @@ const AdminDashboard = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <SettingsIcon className="w-5 h-5" />
-                System Settings
+                {t('admin.settings.title')}
               </CardTitle>
-              <CardDescription>Manage global platform configurations.</CardDescription>
+              <CardDescription>{t('admin.settings.desc')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-8">
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Security & Access</h3>
+                <h3 className="text-lg font-semibold">{t('admin.settings.securityTitle')}</h3>
                 <div className="flex items-center justify-between space-x-2 border p-4 rounded-lg bg-slate-50/50">
                   <div className="flex flex-col space-y-1">
                     <Label htmlFor="maintenance-mode" className="text-base flex items-center gap-2">
                       <ShieldAlert className="w-4 h-4 text-orange-500" />
-                      Maintenance Mode
+                      {t('admin.settings.maintenanceLabel')}
                     </Label>
                     <p className="text-sm text-muted-foreground">
-                      When enabled, the platform will be inaccessible to all users except Super Admins.
+                      {t('admin.settings.maintenanceDesc')}
                     </p>
                   </div>
                   <Switch
@@ -2524,10 +2535,10 @@ const AdminDashboard = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="maintenance-message">Maintenance Message</Label>
+                  <Label htmlFor="maintenance-message">{t('admin.settings.maintenanceMsgLabel')}</Label>
                   <Textarea
                     id="maintenance-message"
-                    placeholder="Enter the message users will see during maintenance..."
+                    placeholder={t('admin.settings.maintenanceMsgPlaceholder')}
                     value={settings.maintenance_message}
                     onChange={(e) => setSettings({ ...settings, maintenance_message: e.target.value })}
                     className="min-h-[100px]"
@@ -2537,23 +2548,23 @@ const AdminDashboard = () => {
                     disabled={settingsLoading}
                     size="sm"
                   >
-                    Save Message
+                    {t('admin.settings.saveMessage')}
                   </Button>
                 </div>
               </div>
 
               <div className="space-y-4 pt-4 border-t">
-                <h3 className="text-lg font-semibold">Subscription Management</h3>
+                <h3 className="text-lg font-semibold">{t('admin.settings.subscriptionTitle')}</h3>
                 <div className="flex items-center justify-between space-x-2 border p-4 rounded-lg bg-slate-50/50">
                   <div className="flex flex-col space-y-1">
                     <Label htmlFor="subscription-mode" className="text-base flex items-center gap-2">
                       <Crown className="w-4 h-4 text-yellow-500" />
-                      Subscription Mode
+                      {t('admin.settings.subscriptionModeLabel')}
                     </Label>
                     <p className="text-sm text-muted-foreground">
                       {settings.subscription_mode
-                        ? 'Enabled — vendors must subscribe to a paid plan to access premium features.'
-                        : 'Disabled — all vendors have free access to all features regardless of their plan.'}
+                        ? t('admin.settings.subscriptionEnabled')
+                        : t('admin.settings.subscriptionDisabled')}
                     </p>
                   </div>
                   <Switch
@@ -2565,18 +2576,18 @@ const AdminDashboard = () => {
                 </div>
                 {!settings.subscription_mode && (
                   <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
-                    ⚠️ Subscription mode is currently <strong>disabled</strong>. All vendors have elite-level access for free. Enabling it will immediately enforce plan limits and payment requirements.
+                    {t('admin.settings.subscriptionWarning')}
                   </p>
                 )}
               </div>
 
               <div className="space-y-4 pt-4 border-t">
-                <h3 className="text-lg font-semibold">Platform Policies</h3>
+                <h3 className="text-lg font-semibold">{t('admin.settings.policiesTitle')}</h3>
                 <div className="grid gap-6 md:grid-cols-2">
                   <div className="flex items-center justify-between space-x-2 border p-4 rounded-lg bg-slate-50/50">
                     <div className="flex flex-col space-y-1">
-                      <Label htmlFor="allow-reg" className="text-base">User Registration</Label>
-                      <p className="text-xs text-muted-foreground">Allow new users to sign up</p>
+                      <Label htmlFor="allow-reg" className="text-base">{t('admin.settings.registrationLabel')}</Label>
+                      <p className="text-xs text-muted-foreground">{t('admin.settings.registrationDesc')}</p>
                     </div>
                     <Switch
                       id="allow-reg"
@@ -2589,7 +2600,7 @@ const AdminDashboard = () => {
                   <div className="space-y-2 border p-4 rounded-lg bg-slate-50/50">
                     <div className="flex items-center gap-2 mb-1">
                       <Wallet className="w-4 h-4 text-indigo-500" />
-                      <Label htmlFor="min-withdrawal">Min Withdrawal ($)</Label>
+                      <Label htmlFor="min-withdrawal">{t('admin.settings.minWithdrawal')}</Label>
                     </div>
                     <div className="flex gap-2">
                       <Input
@@ -2603,7 +2614,7 @@ const AdminDashboard = () => {
                         onClick={() => handleUpdateSettings({ min_withdrawal_amount: settings.min_withdrawal_amount })}
                         disabled={settingsLoading}
                       >
-                        Update
+                        {t('admin.settings.update')}
                       </Button>
                     </div>
                   </div>
@@ -2611,7 +2622,7 @@ const AdminDashboard = () => {
                   <div className="space-y-2 border p-4 rounded-lg bg-slate-50/50">
                     <div className="flex items-center gap-2 mb-1">
                       <Percent className="w-4 h-4 text-emerald-500" />
-                      <Label htmlFor="fee-percent">Platform Fee (%)</Label>
+                      <Label htmlFor="fee-percent">{t('admin.settings.platformFee')}</Label>
                     </div>
                     <div className="flex gap-2">
                       <Input
@@ -2625,7 +2636,7 @@ const AdminDashboard = () => {
                         onClick={() => handleUpdateSettings({ platform_fee_percent: settings.platform_fee_percent })}
                         disabled={settingsLoading}
                       >
-                        Update
+                        {t('admin.settings.update')}
                       </Button>
                     </div>
                   </div>
