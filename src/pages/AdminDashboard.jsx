@@ -106,7 +106,7 @@ const StoreDetailsModal = ({ store, isOpen, onOpenChange, onUpdateStatus, onUpda
             {store.is_verified && <ShieldCheckIcon className="w-5 h-5 text-blue-500" />}
           </DialogTitle>
           <DialogDescription>
-            Store ID: {store._id}
+            {t('admin.storeModal.storeId', { id: store._id })}
           </DialogDescription>
         </DialogHeader>
 
@@ -998,7 +998,7 @@ const AdminDashboard = () => {
                     <YAxis />
                     <RechartsTooltip 
                       labelFormatter={(val) => new Date(val).toLocaleDateString()}
-                      formatter={(val) => [formatCurrency(val), 'Sales']}
+                      formatter={(val) => [formatCurrency(val), t('admin.overview.salesLabel')]}
                     />
                     <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                   </BarChart>
@@ -1017,7 +1017,7 @@ const AdminDashboard = () => {
                   {stats?.recent?.activity?.map((log) => (
                     <div key={log._id} className="flex flex-col border-b pb-2 last:border-0">
                       <div className="flex justify-between items-start">
-                        <span className="text-sm font-medium">{log.user_id?.display_name || 'Admin'}</span>
+                        <span className="text-sm font-medium">{log.user_id?.display_name || t('admin.overview.adminFallback')}</span>
                         <span className="text-[10px] text-muted-foreground">
                           {new Date(log.created_at).toLocaleString()}
                         </span>

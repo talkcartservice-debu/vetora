@@ -1422,7 +1422,9 @@
     "overview": {
       "salesTitle": "Sales Overview (Last 7 Days)",
       "salesDesc": "Revenue trends across the platform.",
+      "salesLabel": "Sales",
       "recentActivity": "Recent Admin Activity",
+      "adminFallback": "Admin",
       "noActivity": "No recent activity",
       "recentUsers": "Recent Users",
       "recentStores": "Recent Stores",
@@ -1519,6 +1521,7 @@
       "failedFetch": "Failed to fetch stores"
     },
     "storeModal": {
+      "storeId": "Store ID: {{id}}",
       "ownerInfo": "Owner Information",
       "status": "Status",
       "joinedAt": "Joined At",

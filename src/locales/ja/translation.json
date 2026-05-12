@@ -1389,7 +1389,9 @@
       "recentUsers": "Recent Users",
       "recentStores": "Recent Stores",
       "anonymous": "Anonymous",
-      "on": "on {{type}}"
+      "on": "on {{type}}",
+      "salesLabel": "Sales",
+      "adminFallback": "Admin"
     },
     "pagination": {
       "showing": "Showing {{from}}–{{to}} of {{total}}",
@@ -1496,7 +1498,8 @@
       "suspendStore": "Suspend Store",
       "removeVerification": "Remove Verification",
       "verifyStore": "Verify Store",
-      "deleteStore": "Delete Store"
+      "deleteStore": "Delete Store",
+      "storeId": "Store ID: {{id}}"
     },
     "products": {
       "title": "Product Catalog",
