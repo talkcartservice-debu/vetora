@@ -22,7 +22,6 @@ import { toast } from '@/components/ui/use-toast';
 const MemoizedBackground = React.memo(() => (
   <div className="absolute inset-0 overflow-hidden pointer-events-none">
     <div className="absolute inset-0 dark:bg-[radial-gradient(circle_at_50%_50%,rgba(17,17,19,1)_0%,rgba(0,0,0,1)_100%)] bg-gradient-to-br from-slate-50 via-orange-50/40 to-indigo-50/30" />
-
     <motion.div
       animate={{ scale: [1, 1.2, 1], x: [0, 100, 0], y: [0, 50, 0] }}
       transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
@@ -33,7 +32,6 @@ const MemoizedBackground = React.memo(() => (
       transition={{ duration: 25, repeat: Infinity, ease: "easeInOut" }}
       className="absolute -bottom-[20%] -right-[10%] w-[70%] h-[70%] dark:bg-indigo-600/10 bg-indigo-400/15 rounded-full blur-[120px]"
     />
-
     <div className="absolute inset-0 dark:bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[linear-gradient(to_right,#0000000a_1px,transparent_1px),linear-gradient(to_bottom,#0000000a_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
   </div>
 ));
@@ -45,6 +43,7 @@ const Login = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [show2FA, setShow2FA] = useState(false);
   const [twoFactorToken, setTwoFactorToken] = useState(null);
   const [otpToken, setOtpToken] = useState('');
@@ -90,7 +89,7 @@ const Login = () => {
       toast({ title: "Google sign-in failed", description: "No credential received. Please try again.", variant: "destructive" });
       return;
     }
-    setIsLoading(true);
+    setIsGoogleLoading(true);
     setError('');
     try {
       const res = await googleLogin(credentialResponse.credential);
@@ -101,7 +100,7 @@ const Login = () => {
       setError(msg);
       toast({ title: "Google sign-in failed", description: msg, variant: "destructive" });
     } finally {
-      setIsLoading(false);
+      setIsGoogleLoading(false);
     }
   };
 
@@ -152,6 +151,8 @@ const Login = () => {
     }
   };
 
+  const anyLoading = isLoading || isGoogleLoading;
+
   return (
     <div className="min-h-screen w-full relative flex items-center justify-center dark:bg-[#0a0a0c] bg-slate-50 selection:bg-orange-500/30 selection:text-orange-200 overflow-hidden font-sans transition-colors duration-300">
       <MemoizedBackground />
@@ -164,10 +165,7 @@ const Login = () => {
           onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
           className="h-10 w-10 rounded-full dark:bg-white/5 bg-white/90 dark:hover:bg-white/10 hover:bg-white dark:text-slate-400 text-slate-600 dark:border-white/10 border-slate-200 border backdrop-blur-sm shadow-sm transition-all duration-300"
         >
-          {resolvedTheme === 'dark'
-            ? <Sun className="h-4 w-4" />
-            : <Moon className="h-4 w-4" />
-          }
+          {resolvedTheme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
         </Button>
       </div>
 
@@ -313,7 +311,7 @@ const Login = () => {
 
                     <Button
                       type="submit"
-                      disabled={isLoading}
+                      disabled={anyLoading}
                       className="group w-full bg-orange-600 text-white py-7 sm:py-8 rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-orange-500 active:scale-[0.98] transition-all duration-300 flex items-center justify-center disabled:opacity-70 disabled:active:scale-100 shadow-[0_20px_40px_-10px_rgba(249,115,22,0.4)] hover:shadow-[0_20px_40px_-10px_rgba(249,115,22,0.6)] mt-2 border-t border-white/20"
                     >
                       {isLoading ? (
@@ -336,19 +334,36 @@ const Login = () => {
                   </div>
 
                   <div className="flex justify-center gap-8 items-center">
-                    <div className="flex flex-col items-center gap-2 group cursor-pointer">
-                      <div className="hover:scale-110 transition-transform duration-300">
-                        <GoogleLogin
-                          onSuccess={handleGoogleSuccess}
-                          onError={handleGoogleError}
-                          type="icon"
-                          text="signin_with"
-                          theme="filled_blue"
-                          shape="circle"
-                          size="large"
-                        />
+                    <div className="flex flex-col items-center gap-2">
+                      <div className="relative">
+                        <div className={`hover:scale-110 transition-transform duration-300 ${isGoogleLoading ? 'pointer-events-none' : ''}`}>
+                          <GoogleLogin
+                            onSuccess={handleGoogleSuccess}
+                            onError={handleGoogleError}
+                            type="icon"
+                            text="signin_with"
+                            theme="filled_blue"
+                            shape="circle"
+                            size="large"
+                          />
+                        </div>
+                        <AnimatePresence>
+                          {isGoogleLoading && (
+                            <motion.div
+                              initial={{ opacity: 0, scale: 0.8 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              exit={{ opacity: 0, scale: 0.8 }}
+                              transition={{ duration: 0.15 }}
+                              className="absolute inset-0 flex items-center justify-center rounded-full dark:bg-[#1a73e8] bg-[#1a73e8]"
+                            >
+                              <Loader2 className="h-5 w-5 animate-spin text-white" />
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
                       </div>
-                      <span className="text-[9px] font-black dark:text-slate-600 text-slate-500 uppercase tracking-[0.15em] group-hover:text-orange-400 transition-colors">Google</span>
+                      <span className={`text-[9px] font-black uppercase tracking-[0.15em] transition-colors ${isGoogleLoading ? 'text-orange-400' : 'dark:text-slate-600 text-slate-500'}`}>
+                        {isGoogleLoading ? 'Signing in...' : 'Google'}
+                      </span>
                     </div>
 
                     <div className="flex flex-col items-center gap-2 group cursor-pointer" onClick={handleBiometricLogin}>
@@ -356,10 +371,10 @@ const Login = () => {
                         type="button"
                         variant="outline"
                         size="icon"
-                        disabled={isLoading}
+                        disabled={anyLoading}
                         className="h-11 w-11 rounded-full dark:border-white/5 border-slate-200 dark:bg-white/5 bg-slate-50 group-hover:bg-orange-600 group-hover:border-orange-600 group-hover:text-white dark:text-slate-400 text-slate-500 transition-all duration-300 active:scale-95 disabled:opacity-50 shadow-sm"
                       >
-                        <Fingerprint className="h-5 w-5" />
+                        {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Fingerprint className="h-5 w-5" />}
                       </Button>
                       <span className="text-[9px] font-black dark:text-slate-600 text-slate-500 uppercase tracking-[0.15em] group-hover:text-orange-400 transition-colors">Biometric</span>
                     </div>

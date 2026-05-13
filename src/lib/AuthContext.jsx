@@ -75,62 +75,47 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password, rememberMe = false) => {
     try {
-      setIsLoadingAuth(true);
       const data = await authAPI.login(email, password, rememberMe);
-      
       if (data.two_factor_required) {
-        setIsLoadingAuth(false);
-        return data; // Return to handle in UI
+        return data;
       }
-
       setUser(data.user);
       setIsAuthenticated(true);
-      setIsLoadingAuth(false);
       return data;
     } catch (error) {
-      setIsLoadingAuth(false);
       throw error;
     }
   };
 
   const googleLogin = async (idToken) => {
     try {
-      setIsLoadingAuth(true);
       const data = await authAPI.googleLogin(idToken);
       setUser(data.user);
       setIsAuthenticated(true);
-      setIsLoadingAuth(false);
       return data;
     } catch (error) {
-      setIsLoadingAuth(false);
       throw error;
     }
   };
 
   const verify2FA = async (twoFactorToken, token) => {
     try {
-      setIsLoadingAuth(true);
       const data = await authAPI.verify2FALogin(twoFactorToken, token);
       setUser(data.user);
       setIsAuthenticated(true);
-      setIsLoadingAuth(false);
       return data;
     } catch (error) {
-      setIsLoadingAuth(false);
       throw error;
     }
   };
 
   const register = async (userData) => {
     try {
-      setIsLoadingAuth(true);
       const data = await authAPI.register(userData);
       setUser(data.user);
       setIsAuthenticated(true);
-      setIsLoadingAuth(false);
       return data;
     } catch (error) {
-      setIsLoadingAuth(false);
       throw error;
     }
   };
@@ -154,17 +139,13 @@ export const AuthProvider = ({ children }) => {
 
   const loginBiometrics = async (email) => {
     try {
-      setIsLoadingAuth(true);
       const options = await authAPI.getWebAuthnLoginOptions(email);
       const asseResp = await startAuthentication(options);
       const data = await authAPI.verifyWebAuthnLogin(email, asseResp);
-      
       setUser(data.user);
       setIsAuthenticated(true);
-      setIsLoadingAuth(false);
       return data;
     } catch (error) {
-      setIsLoadingAuth(false);
       console.error('Biometric login failed:', error);
       throw error;
     }

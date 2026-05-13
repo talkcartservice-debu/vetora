@@ -64,6 +64,7 @@ const Register = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const { register, googleLogin } = useAuth();
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -83,7 +84,7 @@ const Register = () => {
       toast({ title: "Google sign-up failed", description: "No credential received. Please try again.", variant: "destructive" });
       return;
     }
-    setIsLoading(true);
+    setIsGoogleLoading(true);
     setError('');
     try {
       const res = await googleLogin(credentialResponse.credential);
@@ -94,7 +95,7 @@ const Register = () => {
       setError(msg);
       toast({ title: "Google sign-up failed", description: msg, variant: "destructive" });
     } finally {
-      setIsLoading(false);
+      setIsGoogleLoading(false);
     }
   };
 
@@ -402,19 +403,36 @@ const Register = () => {
               </div>
 
               <div className="flex justify-center gap-8 items-center">
-                <div className="flex flex-col items-center gap-2 group cursor-pointer">
-                  <div className="hover:scale-110 transition-transform duration-300">
-                    <GoogleLogin
-                      onSuccess={handleGoogleSuccess}
-                      onError={handleGoogleError}
-                      type="icon"
-                      text="signup_with"
-                      theme="filled_blue"
-                      shape="circle"
-                      size="large"
-                    />
+                <div className="flex flex-col items-center gap-2">
+                  <div className="relative">
+                    <div className={`hover:scale-110 transition-transform duration-300 ${isGoogleLoading ? 'pointer-events-none' : ''}`}>
+                      <GoogleLogin
+                        onSuccess={handleGoogleSuccess}
+                        onError={handleGoogleError}
+                        type="icon"
+                        text="signup_with"
+                        theme="filled_blue"
+                        shape="circle"
+                        size="large"
+                      />
+                    </div>
+                    <AnimatePresence>
+                      {isGoogleLoading && (
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.8 }}
+                          transition={{ duration: 0.15 }}
+                          className="absolute inset-0 flex items-center justify-center rounded-full bg-[#1a73e8]"
+                        >
+                          <Loader2 className="h-5 w-5 animate-spin text-white" />
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
-                  <span className="text-[9px] font-black dark:text-slate-600 text-slate-500 uppercase tracking-[0.15em] group-hover:text-orange-400 transition-colors">Google</span>
+                  <span className={`text-[9px] font-black uppercase tracking-[0.15em] transition-colors ${isGoogleLoading ? 'text-orange-400' : 'dark:text-slate-600 text-slate-500'}`}>
+                    {isGoogleLoading ? 'Signing up...' : 'Google'}
+                  </span>
                 </div>
               </div>
 
