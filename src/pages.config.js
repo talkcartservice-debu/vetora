@@ -78,6 +78,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import AdminDashboard from './pages/AdminDashboard';
 import Support from './pages/Support';
+import LandingPage from './pages/LandingPage';
 import __Layout from './Layout.jsx';
 
 
@@ -113,6 +114,7 @@ export const PAGES = {
     "Register": Register,
     "AdminDashboard": AdminDashboard,
     "Support": Support,
+    "LandingPage": LandingPage,
 }
 
 export const pagesConfig = {

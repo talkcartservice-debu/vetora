@@ -54,9 +54,14 @@ const AppRoutes = () => {
       <Route path="/reset-password" element={<Pages.ResetPassword />} />
       <Route path="/ResetPassword" element={<Navigate to="/reset-password" replace />} />
 
+      {/* Welcome / Landing page — only for unauthenticated users */}
+      <Route path="/welcome" element={
+        isAuthenticated ? <Navigate to="/" replace /> : <Pages.LandingPage />
+      } />
+
       {/* Main app routes (with layout & auth check) */}
       <Route path="/" element={
-        !isAuthenticated ? <Pages.Login /> :
+        !isAuthenticated ? <Pages.LandingPage /> :
         // NOTE: This is a UX-only guard. Backend APIs must independently enforce super_admin authorization.
         user?.role === 'super_admin' ? <Navigate to="/admin-dashboard" replace /> :
         <LayoutWrapper currentPageName={mainPageKey}>
@@ -67,14 +72,14 @@ const AppRoutes = () => {
       {Object.entries(Pages).map(([path, Page]) => {
         const lowerPath = path.toLowerCase();
         // Skip Login and Register as they are handled above
-        if (['Login', 'Register', 'ForgotPassword', 'ResetPassword', 'AdminDashboard'].includes(path)) return null;
+        if (['Login', 'Register', 'ForgotPassword', 'ResetPassword', 'AdminDashboard', 'LandingPage'].includes(path)) return null;
         
         return (
           <Route
             key={path}
             path={`/${lowerPath}`}
             element={
-              !isAuthenticated ? <Pages.Login /> :
+              !isAuthenticated ? <Navigate to="/welcome" replace /> :
               // NOTE: This is a UX-only guard. Backend APIs must independently enforce super_admin authorization.
               user?.role === 'super_admin' && !['AdminDashboard', 'Profile', 'Chat', 'Notifications', 'Settings'].includes(path) ? 
               <Navigate to="/admin-dashboard" replace /> :
@@ -87,7 +92,7 @@ const AppRoutes = () => {
       })}
       
       <Route path="/admin-dashboard" element={
-        !isAuthenticated ? <Pages.Login /> :
+        !isAuthenticated ? <Navigate to="/welcome" replace /> :
         user?.role !== 'super_admin' ? <Navigate to="/" replace /> :
         <LayoutWrapper currentPageName="AdminDashboard">
           <Pages.AdminDashboard />
