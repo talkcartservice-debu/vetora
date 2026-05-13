@@ -1,8 +1,8 @@
-// Inspired by react-hot-toast library
 import { useState, useEffect } from "react";
 
-const TOAST_LIMIT = 20;
-const TOAST_REMOVE_DELAY = 1000000;
+const TOAST_LIMIT = 3;
+const TOAST_REMOVE_DELAY = 400;
+const TOAST_DEFAULT_DURATION = 5000;
 
 const actionTypes = {
   ADD_TOAST: "ADD_TOAST",
@@ -63,8 +63,6 @@ export const reducer = (state, action) => {
     case actionTypes.DISMISS_TOAST: {
       const { toastId } = action;
 
-      // ! Side effects ! - This could be extracted into a dismissToast() action,
-      // but I'll keep it here for simplicity
       if (toastId) {
         addToRemoveQueue(toastId);
       } else {
@@ -77,20 +75,14 @@ export const reducer = (state, action) => {
         ...state,
         toasts: state.toasts.map((t) =>
           t.id === toastId || toastId === undefined
-            ? {
-                ...t,
-                open: false,
-              }
+            ? { ...t, open: false }
             : t
         ),
       };
     }
     case actionTypes.REMOVE_TOAST:
       if (action.toastId === undefined) {
-        return {
-          ...state,
-          toasts: [],
-        };
+        return { ...state, toasts: [] };
       }
       return {
         ...state,
@@ -100,7 +92,6 @@ export const reducer = (state, action) => {
 };
 
 const listeners = [];
-
 let memoryState = { toasts: [] };
 
 function dispatch(action) {
@@ -110,14 +101,11 @@ function dispatch(action) {
   });
 }
 
-function toast({ ...props }) {
+function toast({ duration, ...props }) {
   const id = genId();
 
   const update = (props) =>
-    dispatch({
-      type: actionTypes.UPDATE_TOAST,
-      toast: { ...props, id },
-    });
+    dispatch({ type: actionTypes.UPDATE_TOAST, toast: { ...props, id } });
 
   const dismiss = () =>
     dispatch({ type: actionTypes.DISMISS_TOAST, toastId: id });
@@ -134,11 +122,12 @@ function toast({ ...props }) {
     },
   });
 
-  return {
-    id,
-    dismiss,
-    update,
-  };
+  const autoDismissAfter = duration ?? TOAST_DEFAULT_DURATION;
+  if (autoDismissAfter !== Infinity) {
+    setTimeout(() => dismiss(), autoDismissAfter);
+  }
+
+  return { id, dismiss, update };
 }
 
 function useToast() {
@@ -161,4 +150,4 @@ function useToast() {
   };
 }
 
-export { useToast, toast }; 
+export { useToast, toast };

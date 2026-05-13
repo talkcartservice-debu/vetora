@@ -35,8 +35,11 @@ const AppRoutes = () => {
   // Show loading spinner while checking auth
   if (isLoadingAuth) {
     return (
-      <div className="fixed inset-0 flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin"></div>
+      <div className="fixed inset-0 flex items-center justify-center dark:bg-[#0a0a0c] bg-slate-50 transition-colors">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-4 dark:border-slate-700 border-slate-200 dark:border-t-orange-500 border-t-orange-500 rounded-full animate-spin"></div>
+          <p className="text-[10px] font-black uppercase tracking-[0.3em] dark:text-slate-600 text-slate-400">Loading</p>
+        </div>
       </div>
     );
   }
