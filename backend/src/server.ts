@@ -67,10 +67,14 @@ fastify.register(cors, {
       .filter(Boolean);
 
     const allowedOrigins = [
+      // Production frontend — hardcoded as fallback in case env var is missing on Render
+      'https://aiconx.vercel.app',
       process.env.FRONTEND_URL,
+      // Local development
       'http://localhost:5173',
       'http://localhost:3000',
       'http://127.0.0.1:5173',
+      'http://localhost:4000',
       ...extraOrigins,
     ].filter(Boolean);
 
@@ -81,27 +85,33 @@ fastify.register(cors, {
       ? allowedVercelPreviews.some(p => origin === p || origin.endsWith(`.${p}`))
       : false;
 
+    // Allow any *.vercel.app deployment (preview & production)
     const isVercelApp = origin
-      ? /^https:\/\/[a-zA-Z0-9-]+(\.vercel\.app)$/.test(origin)
+      ? /^https:\/\/[a-zA-Z0-9_-]+(\.vercel\.app)$/.test(origin)
       : false;
 
-    if (!origin || allowedOrigins.includes(origin) || isAllowedVercel || isVercelApp) {
+    // Allow any *.onrender.com (server-to-server via Vercel proxy)
+    const isRenderApp = origin
+      ? /^https:\/\/[a-zA-Z0-9_-]+(\.onrender\.com)$/.test(origin)
+      : false;
+
+    if (!origin || allowedOrigins.includes(origin) || isAllowedVercel || isVercelApp || isRenderApp) {
       cb(null, true);
       return;
     }
 
-    console.warn(`CORS rejected origin: ${origin}`);
-    cb(null, false);
+    fastify.log.warn(`CORS rejected origin: ${origin}`);
+    cb(new Error(`CORS: origin ${origin} not allowed`), false);
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: [
-    'Content-Type', 
-    'Authorization', 
-    'Accept-Language', 
-    'x-requested-with', 
-    'Origin', 
-    'Accept'
+    'Content-Type',
+    'Authorization',
+    'Accept-Language',
+    'x-requested-with',
+    'Origin',
+    'Accept',
   ],
   exposedHeaders: ['set-cookie'],
 });
