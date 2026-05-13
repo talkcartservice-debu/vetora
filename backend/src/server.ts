@@ -81,7 +81,11 @@ fastify.register(cors, {
       ? allowedVercelPreviews.some(p => origin === p || origin.endsWith(`.${p}`))
       : false;
 
-    if (!origin || allowedOrigins.includes(origin) || isAllowedVercel) {
+    const isVercelApp = origin
+      ? /^https:\/\/[a-zA-Z0-9-]+(\.vercel\.app)$/.test(origin)
+      : false;
+
+    if (!origin || allowedOrigins.includes(origin) || isAllowedVercel || isVercelApp) {
       cb(null, true);
       return;
     }
