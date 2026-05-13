@@ -5,14 +5,16 @@ import { storiesAPI } from "@/api/apiClient";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import { authAPI } from "@/api/apiClient";
+import { useNavigate } from "react-router-dom";
 
-export default function StoryViewer({ stories = [], startIndex = 0, onClose, onNext, onPrev }) {
+export default function StoryViewer({ stories = [], startIndex = 0, onClose, onNext, onPrev, guestMode = false }) {
   const [current, setCurrent] = useState(startIndex >= stories.length ? 0 : startIndex);
   const [progress, setProgress] = useState(0);
   const [liked, setLiked] = useState(false);
   const [replyText, setReplyText] = useState("");
   const [isPaused, setIsPaused] = useState(false);
   const inputRef = useRef(null);
+  const navigate = useNavigate();
 
   // When stories array changes (e.g. next group), reset state
   useEffect(() => {
@@ -24,6 +26,7 @@ export default function StoryViewer({ stories = [], startIndex = 0, onClose, onN
   const { data: currentUser } = useQuery({
     queryKey: ["currentUser"],
     queryFn: () => authAPI.me(),
+    enabled: !guestMode,
   });
 
   useEffect(() => {
@@ -79,6 +82,7 @@ export default function StoryViewer({ stories = [], startIndex = 0, onClose, onN
   }, [progress, current, stories.length, onNext, onClose]);
 
   const handleLike = async () => {
+    if (guestMode) { navigate("/register"); return; }
     if (liked) return;
     try {
       setLiked(true);
@@ -90,6 +94,7 @@ export default function StoryViewer({ stories = [], startIndex = 0, onClose, onN
 
   const handleReply = async (e) => {
     e.preventDefault();
+    if (guestMode) { navigate("/register"); return; }
     if (!replyText.trim() || isOwner) return;
 
     try {
@@ -212,16 +217,16 @@ export default function StoryViewer({ stories = [], startIndex = 0, onClose, onN
 
         {/* Bottom actions */}
         <div className="absolute bottom-6 left-0 right-0 px-4 flex items-center gap-3 z-30">
-          {!isOwner && !isLoadingUser ? (
+          {(guestMode || (!isOwner && !isLoadingUser)) ? (
             <form onSubmit={handleReply} className="flex-1 flex items-center gap-2">
               <input
                 ref={inputRef}
                 type="text"
                 value={replyText}
                 onChange={(e) => setReplyText(e.target.value)}
-                onFocus={() => setIsPaused(true)}
+                onFocus={() => { if (guestMode) { navigate("/register"); } else setIsPaused(true); }}
                 onBlur={() => setIsPaused(false)}
-                placeholder="Send message..."
+                placeholder={guestMode ? "Sign in to reply..." : "Send message..."}
                 className="flex-1 bg-black/40 hover:bg-black/60 focus:bg-black/70 backdrop-blur-xl border border-white/20 rounded-full h-12 px-5 text-white text-sm outline-none transition-all placeholder:text-white/40 shadow-inner"
               />
               {replyText.trim() && (
@@ -235,9 +240,9 @@ export default function StoryViewer({ stories = [], startIndex = 0, onClose, onN
                <p className="text-white/60 text-xs font-medium italic">Viewing your own story</p>
             </div>
           ) : (
-            <div className="flex-1 h-12" /> // Loading placeholder
+            <div className="flex-1 h-12" />
           )}
-          {!isOwner && !isLoadingUser && !replyText.trim() && (
+          {(guestMode || (!isOwner && !isLoadingUser)) && !replyText.trim() && (
             <button 
               onClick={handleLike} 
               className={`w-12 h-12 rounded-full backdrop-blur-xl border border-white/20 flex items-center justify-center transition-all ${liked ? 'bg-red-500/20 border-red-500/50 scale-110 shadow-[0_0_20px_rgba(239,68,68,0.3)]' : 'bg-black/40 hover:bg-black/60 active:scale-90'}`}
