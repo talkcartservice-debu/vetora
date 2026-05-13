@@ -20,7 +20,7 @@ export const AuthProvider = ({ children }) => {
       setUser(null);
       setIsAuthenticated(false);
       if (!window.location.pathname.startsWith('/login') && !window.location.pathname.startsWith('/register')) {
-        window.location.href = '/login';
+        window.location.href = '/';
       }
     };
     window.addEventListener('auth:unauthorized', handleUnauthorized);
@@ -175,7 +175,7 @@ export const AuthProvider = ({ children }) => {
     authAPI.logout();
     setUser(null);
     setIsAuthenticated(false);
-    window.location.href = '/login';
+    window.location.href = '/';
   };
 
   const navigateToLogin = () => {
