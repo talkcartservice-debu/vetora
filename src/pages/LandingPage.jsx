@@ -47,9 +47,19 @@ export default function LandingPage() {
       const res = await storiesAPI.list({ is_active: true, limit: 20 });
       return res.data || [];
     },
+    refetchInterval: 5 * 60 * 1000,
+    staleTime: 5 * 60 * 1000,
   });
 
-  const uniqueStories = storiesRaw.reduce((acc, story) => {
+  const now = Date.now();
+  const activeStories = storiesRaw.filter((story) => {
+    if (story.expires_at) return new Date(story.expires_at).getTime() > now;
+    const created = story.created_at || story.created_date;
+    if (created) return now - new Date(created).getTime() < 24 * 60 * 60 * 1000;
+    return false;
+  });
+
+  const uniqueStories = activeStories.reduce((acc, story) => {
     if (!acc.find(s => s.author_username === story.author_username)) acc.push(story);
     return acc;
   }, []);
