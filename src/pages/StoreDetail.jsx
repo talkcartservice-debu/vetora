@@ -110,9 +110,9 @@ export default function StoreDetail() {
   if (!isValidId) {
     return (
       <div className="max-w-5xl mx-auto px-4 py-16 flex flex-col items-center justify-center text-center">
-        <ArrowLeft className="w-12 h-12 text-slate-200 mb-4" />
-        <h2 className="text-xl font-bold text-slate-900 mb-2">{t("storeDetail.invalidStore")}</h2>
-        <p className="text-slate-500 mb-6">{t("storeDetail.invalidStoreDesc")}</p>
+        <ArrowLeft className="w-12 h-12 text-slate-200 dark:text-slate-700 mb-4" />
+        <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">{t("storeDetail.invalidStore")}</h2>
+        <p className="text-slate-500 dark:text-slate-400 mb-6">{t("storeDetail.invalidStoreDesc")}</p>
         <Link to={createPageUrl("Marketplace")}>
           <Button className="bg-indigo-600 hover:bg-indigo-700 rounded-xl">{t("storeDetail.backToMarketplace")}</Button>
         </Link>
@@ -124,8 +124,8 @@ export default function StoreDetail() {
   if (storeError) {
     return (
       <div className="max-w-5xl mx-auto px-4 py-16 flex flex-col items-center justify-center text-center">
-        <h2 className="text-xl font-bold text-slate-900 mb-2">{t("storeDetail.storeNotFound")}</h2>
-        <p className="text-slate-500 mb-6">{storeError.status === 404 ? t("storeDetail.storeMovedOrDeleted") : t("storeDetail.storeLoadError")}</p>
+        <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">{t("storeDetail.storeNotFound")}</h2>
+        <p className="text-slate-500 dark:text-slate-400 mb-6">{storeError.status === 404 ? t("storeDetail.storeMovedOrDeleted") : t("storeDetail.storeLoadError")}</p>
         <Link to={createPageUrl("Marketplace")}>
           <Button className="bg-indigo-600 hover:bg-indigo-700 rounded-xl">{t("storeDetail.backToMarketplace")}</Button>
         </Link>
@@ -133,7 +133,7 @@ export default function StoreDetail() {
     );
   }
 
-  if (storeLoading && !store) return <div className="flex items-center justify-center h-64 text-slate-400">{t("common.loading")}</div>;
+  if (storeLoading && !store) return <div className="flex items-center justify-center h-64 text-slate-400 dark:text-slate-500">{t("common.loading")}</div>;
 
   const avgRating = storeReviews.length > 0
     ? storeReviews.reduce((sum, r) => sum + (r.rating || 0), 0) / storeReviews.length
@@ -149,17 +149,17 @@ export default function StoreDetail() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-4 lg:py-6">
-      <Link to={createPageUrl("Marketplace")} className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 mb-4">
+      <Link to={createPageUrl("Marketplace")} className="inline-flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 mb-4">
         <ArrowLeft className="w-4 h-4" /> {t("storeDetail.marketplace")}
       </Link>
 
       {/* Store Banner */}
-      <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden mb-6">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 overflow-hidden mb-6">
         <div className="h-32 lg:h-48 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 relative">
           {store.banner_url && <img src={store.banner_url} alt="" className="w-full h-full object-cover" />}
         </div>
         <div className="p-6 -mt-10 relative">
-          <div className="w-20 h-20 rounded-2xl bg-white shadow-lg border-4 border-white flex items-center justify-center text-2xl font-bold overflow-hidden">
+          <div className="w-20 h-20 rounded-2xl bg-white dark:bg-slate-700 shadow-lg border-4 border-white dark:border-slate-700 flex items-center justify-center text-2xl font-bold overflow-hidden">
             {store.logo_url ? (
               <img src={store.logo_url} alt="" className="w-full h-full object-cover" />
             ) : (
@@ -170,20 +170,20 @@ export default function StoreDetail() {
           </div>
           <div className="mt-3">
             <div className="flex items-center gap-2 mb-1">
-              <h1 className="text-2xl font-bold text-slate-900">{store.name}</h1>
+              <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{store.name}</h1>
               {store.is_verified && (
-                <Badge className="bg-blue-100 text-blue-600 border-0"><CheckCircle className="w-3 h-3 mr-1" />{t("common.verified")}</Badge>
+                <Badge className="bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 border-0"><CheckCircle className="w-3 h-3 mr-1" />{t("common.verified")}</Badge>
               )}
             </div>
-            <p className="text-sm text-slate-500 mb-3">{store.description}</p>
-            <div className="flex items-center flex-wrap gap-4 text-sm text-slate-500">
+            <p className="text-sm text-slate-500 dark:text-slate-400 mb-3">{store.description}</p>
+            <div className="flex items-center flex-wrap gap-4 text-sm text-slate-500 dark:text-slate-400">
               <span className="flex items-center gap-1"><Package className="w-4 h-4" /> {t("storeDetail.productsCount", { count: products.length })}</span>
               <span className="flex items-center gap-1"><Users className="w-4 h-4" /> {t("storeDetail.followersCount", { count: store.follower_count || 0 })}</span>
               {avgRating > 0 && (
                 <span className="flex items-center gap-1.5">
                   <StarRating value={Math.round(avgRating)} readonly size={4} />
                   <span className="text-amber-600 font-semibold">{avgRating.toFixed(1)}</span>
-                  <span className="text-slate-400">{t("storeDetail.reviewsCount", { count: storeReviews.length })}</span>
+                  <span className="text-slate-400 dark:text-slate-500">{t("storeDetail.reviewsCount", { count: storeReviews.length })}</span>
                 </span>
               )}
             </div>
@@ -194,7 +194,7 @@ export default function StoreDetail() {
                   disabled={followMutation.isPending}
                   className={`rounded-xl gap-2 font-semibold transition-all ${
                     isFollowing 
-                      ? "bg-slate-100 text-slate-700 hover:bg-slate-200" 
+                      ? "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-600" 
                       : "bg-indigo-600 text-white hover:bg-indigo-700 shadow-md shadow-indigo-100"
                   }`}
                   size="sm"
@@ -210,7 +210,7 @@ export default function StoreDetail() {
                 </Button>
 
                 <Link to={createPageUrl("Chat") + `?to=${store.owner_username}`}>
-                  <Button variant="outline" className="rounded-xl gap-2 border-slate-200" size="sm">
+                  <Button variant="outline" className="rounded-xl gap-2 border-slate-200 dark:border-slate-600" size="sm">
                     <MessageCircle className="w-4 h-4" /> {t("storeDetail.chatWithVendor")}
                   </Button>
                 </Link>
@@ -221,14 +221,14 @@ export default function StoreDetail() {
       </div>
 
       {/* Products */}
-      <h2 className="text-lg font-bold text-slate-900 mb-4">{t("storeDetail.allProducts")}</h2>
+      <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-4">{t("storeDetail.allProducts")}</h2>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 lg:gap-4">
         {isLoading
           ? Array(8).fill(0).map((_, i) => <ProductSkeleton key={`p-skeleton-${i}`} />)
           : products.map((p, idx) => <ProductCard key={p.id || p._id || `p-${idx}`} product={p} />)}
       </div>
       {!isLoading && products.length === 0 && (
-        <div className="text-center py-16 text-slate-400">{t("storeDetail.noProductsYet")}</div>
+        <div className="text-center py-16 text-slate-400 dark:text-slate-500">{t("storeDetail.noProductsYet")}</div>
       )}
 
       <StoreReviewSection store={store} currentUser={currentUser} />
