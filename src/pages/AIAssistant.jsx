@@ -55,7 +55,7 @@ function ProductRecommendation({ product, onAddToCart, isAdding }) {
       <Link to={createPageUrl("ProductDetail") + `?id=${product.id}`}>
         <motion.div
           whileHover={{ y: -2 }}
-          className="flex gap-3 bg-white rounded-2xl border border-slate-100 p-3 hover:shadow-md transition-all"
+          className="flex gap-3 bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-3 hover:shadow-md transition-all"
         >
           <div className="relative w-16 h-16 rounded-xl overflow-hidden shrink-0">
             <img src={product.images?.[0] || "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=200"} alt={product.title} loading="lazy" decoding="async" className="w-full h-full object-cover" />
@@ -64,24 +64,24 @@ function ProductRecommendation({ product, onAddToCart, isAdding }) {
             )}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs text-slate-400 font-medium">{product.store_name}</p>
-            <p className="text-sm font-semibold text-slate-900 line-clamp-1">{product.title}</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500 font-medium">{product.store_name}</p>
+            <p className="text-sm font-semibold text-slate-900 dark:text-white line-clamp-1">{product.title}</p>
             <div className="flex items-center justify-between mt-1">
               <div className="flex items-center gap-1.5">
                 <span className="text-sm font-bold text-indigo-600">${product.price?.toFixed(2)}</span>
                 {product.compare_at_price > 0 && (
-                  <span className="text-xs text-slate-400 line-through">${product.compare_at_price?.toFixed(2)}</span>
+                  <span className="text-xs text-slate-400 dark:text-slate-500 line-through">${product.compare_at_price?.toFixed(2)}</span>
                 )}
               </div>
               {product.rating_avg > 0 && (
                 <div className="flex items-center gap-0.5">
                   <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                  <span className="text-xs text-slate-500">{product.rating_avg?.toFixed(1)}</span>
+                  <span className="text-xs text-slate-500 dark:text-slate-400">{product.rating_avg?.toFixed(1)}</span>
                 </div>
               )}
             </div>
           </div>
-          <ChevronRight className="w-4 h-4 text-slate-300 self-center shrink-0" />
+          <ChevronRight className="w-4 h-4 text-slate-300 dark:text-slate-600 self-center shrink-0" />
         </motion.div>
       </Link>
       <Button
@@ -123,13 +123,13 @@ function ChatMessage({ message, onAddToCart, addingProductId }) {
         <div className={`rounded-2xl px-4 py-3 ${
           isUser
             ? "bg-gradient-to-br from-indigo-600 to-purple-600 text-white"
-            : "bg-white border border-slate-100 text-slate-800 shadow-sm"
+            : "bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-slate-800 dark:text-slate-200 shadow-sm"
         }`}>
           {isUser ? (
             <p className="text-sm leading-relaxed">{displayContent}</p>
           ) : (
             <ReactMarkdown
-              className="text-sm leading-relaxed prose prose-sm max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&_strong]:text-slate-900 [&_ul]:my-1 [&_li]:my-0.5"
+              className="text-sm leading-relaxed prose prose-sm max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&_strong]:text-slate-900 dark:[&_strong]:text-white [&_ul]:my-1 [&_li]:my-0.5"
             >
               {displayContent}
             </ReactMarkdown>
@@ -147,7 +147,7 @@ function ChatMessage({ message, onAddToCart, addingProductId }) {
 
         {message.products?.length > 0 && (
           <div className="w-full space-y-2">
-            <p className="text-xs text-slate-400 font-medium px-1">{t("ai.recommendedForYou")}</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500 font-medium px-1">{t("ai.recommendedForYou")}</p>
             {message.products.map(p => (
               <ProductRecommendation 
                 key={p.id} 
@@ -169,7 +169,7 @@ function TypingIndicator() {
       <div className="w-8 h-8 rounded-full bg-gradient-to-br from-pink-500 to-indigo-600 flex items-center justify-center">
         <Bot className="w-4 h-4 text-white" />
       </div>
-      <div className="bg-white border border-slate-100 rounded-2xl px-4 py-3 flex items-center gap-1.5">
+      <div className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl px-4 py-3 flex items-center gap-1.5">
         {[0, 1, 2].map(i => (
           <motion.div
             key={i}
@@ -347,21 +347,21 @@ export default function AIAssistant() {
   return (
     <div className="max-w-2xl mx-auto flex flex-col h-[calc(100vh-56px)] lg:h-screen">
       {/* Header */}
-      <div className="px-4 py-4 bg-white/80 backdrop-blur-xl border-b border-slate-100 flex items-center justify-between shrink-0">
+      <div className="px-4 py-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-pink-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-200">
             <Sparkles className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-base font-bold text-slate-900">{t("ai.title")}</h1>
+            <h1 className="text-base font-bold text-slate-900 dark:text-white">{t("ai.title")}</h1>
             <div className="flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
-              <p className="text-xs text-slate-500">{t("ai.status")}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">{t("ai.status")}</p>
             </div>
           </div>
         </div>
-        <button onClick={clearChat} className="p-2 rounded-xl hover:bg-slate-100 transition-colors" title={t("ai.clearChat")}>
-          <RefreshCw className="w-4 h-4 text-slate-400" />
+        <button onClick={clearChat} className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" title={t("ai.clearChat")}>
+          <RefreshCw className="w-4 h-4 text-slate-400 dark:text-slate-500" />
         </button>
       </div>
 
@@ -389,21 +389,21 @@ export default function AIAssistant() {
       )}
 
       {/* Input */}
-      <div className="px-4 py-3 bg-white/80 backdrop-blur-xl border-t border-slate-100 shrink-0">
+      <div className="px-4 py-3 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-t border-slate-100 dark:border-slate-800 shrink-0">
         <div className="flex gap-2">
           <Input
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => e.key === "Enter" && !e.shiftKey && sendMessage(input)}
             placeholder={t("ai.placeholder")}
-            className="rounded-2xl border-slate-200 bg-slate-50 focus:bg-white text-sm"
+            className="rounded-2xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:bg-white dark:focus:bg-slate-700 text-sm dark:text-slate-200 dark:placeholder:text-slate-500"
             disabled={isLoading}
           />
           <Button
             onClick={toggleListening}
             variant="outline"
             className={`w-10 h-10 rounded-2xl p-0 shrink-0 transition-all ${
-              isListening ? "bg-red-50 text-red-600 border-red-200" : "bg-slate-50 text-slate-500 hover:bg-slate-100"
+              isListening ? "bg-red-50 dark:bg-red-950 text-red-600 border-red-200 dark:border-red-800" : "bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700"
             }`}
           >
             {isListening ? (
@@ -422,7 +422,7 @@ export default function AIAssistant() {
             {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           </Button>
         </div>
-        <p className="text-[10px] text-slate-400 text-center mt-2">{t("ai.poweredBy")}</p>
+        <p className="text-[10px] text-slate-400 dark:text-slate-600 text-center mt-2">{t("ai.poweredBy")}</p>
       </div>
     </div>
   );
