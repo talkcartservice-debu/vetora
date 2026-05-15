@@ -184,6 +184,7 @@ const PostCard = memo(function PostCard({ post, currentUser }) {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["posts"] });
+      queryClient.invalidateQueries({ queryKey: ["communityPosts"] });
       queryClient.invalidateQueries({ queryKey: ["userPosts"] });
       queryClient.invalidateQueries({ queryKey: ["likedPosts"] });
       queryClient.invalidateQueries({ queryKey: ["userLikes"] });

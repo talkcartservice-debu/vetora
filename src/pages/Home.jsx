@@ -29,11 +29,9 @@ export default function Home() {
     hasNextPage,
     isFetchingNextPage
   } = useInfiniteQuery({
-    queryKey: ["posts", activeTab],
+    queryKey: ["posts", activeTab, currentUser?.username],
     queryFn: ({ pageParam = 1 }) => {
       const params = { limit: 10, page: pageParam };
-      
-      // Always pass user_username if available to ensure is_liked status is correctly returned
       if (currentUser?.username) {
         params.user_username = currentUser.username;
       }

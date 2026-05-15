@@ -44,9 +44,11 @@ const COMMUNITY_CATEGORIES = [
    }); 
 
    const { data: postsData, isLoading: postsLoading } = useQuery({ 
-     queryKey: ["communityPosts", communityId], 
+     queryKey: ["communityPosts", communityId, currentUser?.username], 
      queryFn: async () => {
-       const res = await postsAPI.list({ community_id: communityId, limit: 50 });
+       const params = { community_id: communityId, limit: 50 };
+       if (currentUser?.username) params.user_username = currentUser.username;
+       const res = await postsAPI.list(params);
        return res.data || [];
      },
      enabled: !!communityId, 
