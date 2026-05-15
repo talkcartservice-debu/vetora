@@ -90,20 +90,25 @@ export default function Cart() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-6">
-      <Link to={createPageUrl("Marketplace")} className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 mb-4">
+      <Link
+        to={createPageUrl("Marketplace")}
+        className="inline-flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 mb-4 transition-colors"
+      >
         <ArrowLeft className="w-4 h-4" /> {t("common.continueShopping")}
       </Link>
 
-      <h1 className="text-2xl font-bold text-slate-900 mb-6">{t("cart.title")} ({cartItems.length})</h1>
+      <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6">
+        {t("cart.title")} ({cartItems.length})
+      </h1>
 
       {isLoading ? (
         <div className="space-y-3">
           {Array(3).fill(0).map((_, i) => (
-            <div key={i} className="bg-white rounded-xl p-4 animate-pulse flex gap-4">
-              <div className="w-20 h-20 bg-slate-200 rounded-xl" />
+            <div key={i} className="bg-white dark:bg-slate-900 rounded-xl p-4 animate-pulse flex gap-4 border border-slate-100 dark:border-slate-800">
+              <div className="w-20 h-20 bg-slate-200 dark:bg-slate-700 rounded-xl" />
               <div className="flex-1 space-y-2">
-                <div className="h-4 w-3/4 bg-slate-200 rounded" />
-                <div className="h-3 w-1/4 bg-slate-100 rounded" />
+                <div className="h-4 w-3/4 bg-slate-200 dark:bg-slate-700 rounded" />
+                <div className="h-3 w-1/4 bg-slate-100 dark:bg-slate-800 rounded" />
               </div>
             </div>
           ))}
@@ -121,6 +126,7 @@ export default function Cart() {
         />
       ) : (
         <div className="grid lg:grid-cols-3 gap-6">
+          {/* Cart Items */}
           <div className="lg:col-span-2 space-y-3">
             <AnimatePresence>
               {cartItems.map((item) => (
@@ -128,26 +134,48 @@ export default function Cart() {
                   key={item._id || item.id}
                   layout
                   exit={{ opacity: 0, x: -100 }}
-                  className="bg-white rounded-2xl border border-slate-100 p-4 flex gap-4"
+                  className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 flex gap-4 transition-colors"
                 >
-                  <Link to={createPageUrl("ProductDetail") + `?id=${item.product_id}`} className="w-20 h-20 rounded-xl bg-slate-100 overflow-hidden shrink-0">
-                    {item.product_image && <img src={item.product_image} alt="" className="w-full h-full object-cover" />}
+                  <Link
+                    to={createPageUrl("ProductDetail") + `?id=${item.product_id}`}
+                    className="w-20 h-20 rounded-xl bg-slate-100 dark:bg-slate-800 overflow-hidden shrink-0"
+                  >
+                    {item.product_image && (
+                      <img src={item.product_image} alt="" className="w-full h-full object-cover" />
+                    )}
                   </Link>
+
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-slate-900 truncate">{item.product_title}</p>
-                    <p className="text-xs text-slate-400 mb-2">{item.store_name}</p>
-                    <p className="text-base font-bold text-indigo-600">{formatCurrency(item.product_price)}</p>
+                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
+                      {item.product_title}
+                    </p>
+                    <p className="text-xs text-slate-400 dark:text-slate-500 mb-2">{item.store_name}</p>
+                    <p className="text-base font-bold text-indigo-600 dark:text-indigo-400">
+                      {formatCurrency(item.product_price)}
+                    </p>
                   </div>
+
                   <div className="flex flex-col items-end justify-between">
-                    <button onClick={() => removeItemMutation.mutate(item._id || item.id)} className="text-slate-400 hover:text-red-500 p-1">
+                    <button
+                      onClick={() => removeItemMutation.mutate(item._id || item.id)}
+                      className="text-slate-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 p-1 transition-colors"
+                    >
                       <Trash2 className="w-4 h-4" />
                     </button>
-                    <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden">
-                      <button onClick={() => updateQuantityMutation.mutate({ id: item._id || item.id, quantity: (item.quantity || 1) - 1 })} className="w-8 h-8 flex items-center justify-center hover:bg-slate-50">
+                    <div className="flex items-center border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
+                      <button
+                        onClick={() => updateQuantityMutation.mutate({ id: item._id || item.id, quantity: (item.quantity || 1) - 1 })}
+                        className="w-8 h-8 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                      >
                         <Minus className="w-3 h-3" />
                       </button>
-                      <span className="w-8 text-center text-sm font-medium">{item.quantity || 1}</span>
-                      <button onClick={() => updateQuantityMutation.mutate({ id: item._id || item.id, quantity: (item.quantity || 1) + 1 })} className="w-8 h-8 flex items-center justify-center hover:bg-slate-50">
+                      <span className="w-8 text-center text-sm font-medium text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-900">
+                        {item.quantity || 1}
+                      </span>
+                      <button
+                        onClick={() => updateQuantityMutation.mutate({ id: item._id || item.id, quantity: (item.quantity || 1) + 1 })}
+                        className="w-8 h-8 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                      >
                         <Plus className="w-3 h-3" />
                       </button>
                     </div>
@@ -159,38 +187,51 @@ export default function Cart() {
 
           {/* Order Summary */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-2xl border border-slate-100 p-6 sticky top-6">
-              <h3 className="text-lg font-bold text-slate-900 mb-4">{t("cart.orderSummary")}</h3>
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-6 sticky top-6 transition-colors">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-4">
+                {t("cart.orderSummary")}
+              </h3>
+
               <div className="space-y-3 mb-4">
                 <div className="flex justify-between text-sm">
-                  <span className="text-slate-500">{t("cart.subtotal")}</span>
-                  <span className="font-medium">{formatCurrency(subtotal)}</span>
+                  <span className="text-slate-500 dark:text-slate-400">{t("cart.subtotal")}</span>
+                  <span className="font-medium text-slate-900 dark:text-slate-100">{formatCurrency(subtotal)}</span>
                 </div>
+
                 {discount > 0 && (
                   <div className="flex justify-between text-sm">
-                    <span className="text-green-600 flex items-center gap-1">
+                    <span className="text-green-600 dark:text-green-400 flex items-center gap-1">
                       <Tag className="w-3.5 h-3.5" /> {t("cart.discount", { code: appliedCoupon.code })}
                     </span>
-                    <span className="font-medium text-green-600">-{formatCurrency(discount)}</span>
+                    <span className="font-medium text-green-600 dark:text-green-400">-{formatCurrency(discount)}</span>
                   </div>
                 )}
+
                 <div className="flex justify-between text-sm">
-                  <span className="text-slate-500">{t("cart.shipping")}</span>
-                  <span className="font-medium">{shipping === 0 ? t("product.freeShipping") : formatCurrency(shipping)}</span>
+                  <span className="text-slate-500 dark:text-slate-400">{t("cart.shipping")}</span>
+                  <span className="font-medium text-slate-900 dark:text-slate-100">
+                    {shipping === 0 ? t("product.freeShipping") : formatCurrency(shipping)}
+                  </span>
                 </div>
-                <div className="border-t border-slate-100 pt-3 flex justify-between text-base">
-                  <span className="font-bold text-slate-900">{t("common.total")}</span>
-                  <span className="font-bold text-slate-900">{formatCurrency(total)}</span>
+
+                <div className="border-t border-slate-100 dark:border-slate-800 pt-3 flex justify-between text-base">
+                  <span className="font-bold text-slate-900 dark:text-slate-100">{t("common.total")}</span>
+                  <span className="font-bold text-slate-900 dark:text-slate-100">{formatCurrency(total)}</span>
                 </div>
               </div>
 
               {/* Coupon */}
               <div className="mb-4">
                 {appliedCoupon ? (
-                  <div className="flex items-center gap-2 p-2.5 bg-green-50 border border-green-200 rounded-xl">
-                    <CheckCircle2 className="w-4 h-4 text-green-600 shrink-0" />
-                    <span className="text-sm text-green-700 font-semibold flex-1">{t("cart.couponCodeApplied", { code: appliedCoupon.code })}</span>
-                    <button onClick={removeCoupon} className="text-green-600 hover:text-green-800">
+                  <div className="flex items-center gap-2 p-2.5 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl">
+                    <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400 shrink-0" />
+                    <span className="text-sm text-green-700 dark:text-green-400 font-semibold flex-1">
+                      {t("cart.couponCodeApplied", { code: appliedCoupon.code })}
+                    </span>
+                    <button
+                      onClick={removeCoupon}
+                      className="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 transition-colors"
+                    >
                       <X className="w-4 h-4" />
                     </button>
                   </div>
@@ -202,18 +243,22 @@ export default function Cart() {
                         value={couponCode}
                         onChange={e => { setCouponCode(e.target.value.toUpperCase()); setCouponError(""); }}
                         onKeyDown={e => e.key === "Enter" && applyCoupon()}
-                        className="rounded-xl font-mono text-sm"
+                        className="rounded-xl font-mono text-sm bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
                       />
                       <Button
                         variant="outline"
                         onClick={applyCoupon}
                         disabled={checkingCoupon || !couponCode.trim()}
-                        className="shrink-0 rounded-xl px-3"
+                        className="shrink-0 rounded-xl px-3 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
                       >
                         {checkingCoupon ? <Loader2 className="w-4 h-4 animate-spin" /> : t("cart.applyCoupon")}
                       </Button>
                     </div>
-                    {couponError && <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1"><X className="w-3 h-3" />{couponError}</p>}
+                    {couponError && (
+                      <p className="text-xs text-red-500 dark:text-red-400 mt-1.5 flex items-center gap-1">
+                        <X className="w-3 h-3" />{couponError}
+                      </p>
+                    )}
                   </div>
                 )}
               </div>
@@ -221,7 +266,7 @@ export default function Cart() {
               <Button
                 onClick={() => navigate(createPageUrl("Checkout") + "?quickpay=true")}
                 disabled={cartItems.length === 0}
-                className="w-full h-12 bg-slate-900 hover:bg-black text-white rounded-xl text-base font-bold shadow-lg shadow-slate-200 mb-2"
+                className="w-full h-12 bg-slate-900 dark:bg-indigo-600 hover:bg-black dark:hover:bg-indigo-700 text-white rounded-xl text-base font-bold shadow-lg shadow-slate-200/50 dark:shadow-indigo-900/30 mb-2 transition-colors"
               >
                 <Zap className="w-4 h-4 mr-2" /> {t("cart.payNow")}
               </Button>
@@ -230,13 +275,13 @@ export default function Cart() {
                 onClick={() => navigate(createPageUrl("Checkout"))}
                 disabled={cartItems.length === 0}
                 variant="outline"
-                className="w-full h-11 rounded-xl text-sm font-semibold border-slate-200 text-slate-600"
+                className="w-full h-11 rounded-xl text-sm font-semibold border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
               >
                 <CreditCard className="w-4 h-4 mr-2" /> {t("cart.proceedToCheckout")}
               </Button>
 
               {subtotal < 50 && (
-                <p className="text-xs text-center text-slate-400 mt-3">
+                <p className="text-xs text-center text-slate-400 dark:text-slate-500 mt-3">
                   {t("cart.freeShippingProgress", { amount: formatCurrency(50 - subtotal) })}
                 </p>
               )}
