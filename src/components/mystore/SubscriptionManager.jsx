@@ -20,8 +20,8 @@ const PLANS = [
     name: "Starter",
     price: 0,
     priceAnnual: 0,
-    color: "border-slate-200",
-    headerBg: "bg-slate-50",
+    color: "border-slate-200 dark:border-slate-700",
+    headerBg: "bg-slate-50 dark:bg-slate-800/50",
     badge: null,
     icon: Star,
     iconColor: "text-slate-500",
@@ -40,7 +40,7 @@ const PLANS = [
     price: 29,
     priceAnnual: 23,
     color: "border-indigo-400",
-    headerBg: "bg-gradient-to-br from-indigo-50 to-purple-50",
+    headerBg: "bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-950 dark:to-purple-950",
     badge: "subscription.badgeMostPopular",
     icon: Zap,
     iconColor: "text-indigo-600",
@@ -61,7 +61,7 @@ const PLANS = [
     price: 79,
     priceAnnual: 63,
     color: "border-amber-400",
-    headerBg: "bg-gradient-to-br from-amber-50 to-orange-50",
+    headerBg: "bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950 dark:to-orange-950",
     badge: "subscription.badgeBestValue",
     icon: Crown,
     iconColor: "text-amber-600",
@@ -89,7 +89,7 @@ function PlanCard({ plan, currentPlan, onSelect, billing }) {
   return (
     <motion.div
       whileHover={{ y: -2 }}
-      className={`relative rounded-2xl border-2 ${plan.color} ${isActive ? "ring-2 ring-indigo-500 ring-offset-2" : ""} overflow-hidden flex flex-col`}
+      className={`relative rounded-2xl border-2 ${plan.color} ${isActive ? "ring-2 ring-indigo-500 ring-offset-2 dark:ring-offset-slate-900" : ""} overflow-hidden flex flex-col`}
     >
       {plan.badge && (
         <div className={`absolute top-3 right-3 text-[10px] font-bold px-2 py-0.5 rounded-full ${plan.id === "pro" ? "bg-indigo-600 text-white" : "bg-amber-500 text-white"}`}>
@@ -97,13 +97,13 @@ function PlanCard({ plan, currentPlan, onSelect, billing }) {
         </div>
       )}
       <div className={`p-5 ${plan.headerBg}`}>
-        <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${plan.id === "free" ? "bg-slate-200" : plan.id === "pro" ? "bg-indigo-100" : "bg-amber-100"}`}>
+        <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${plan.id === "free" ? "bg-slate-200 dark:bg-slate-700" : plan.id === "pro" ? "bg-indigo-100 dark:bg-indigo-900" : "bg-amber-100 dark:bg-amber-900"}`}>
           <PlanIcon className={`w-5 h-5 ${plan.iconColor}`} />
         </div>
-        <h3 className="text-lg font-bold text-slate-900">{plan.name}</h3>
+        <h3 className="text-lg font-bold text-slate-900 dark:text-white">{plan.name}</h3>
         <div className="flex items-end gap-1 mt-1">
-          <span className="text-3xl font-black text-slate-900">{formatCurrency(price)}</span>
-          <span className="text-slate-500 text-sm mb-0.5">{t("subscription.perMonth")}</span>
+          <span className="text-3xl font-black text-slate-900 dark:text-white">{formatCurrency(price)}</span>
+          <span className="text-slate-500 dark:text-slate-400 text-sm mb-0.5">{t("subscription.perMonth")}</span>
         </div>
         {billing === "annual" && plan.price > 0 && (
           <p className="text-xs text-green-600 font-medium mt-0.5">{t("subscription.savePerYear", { amount: formatCurrency((plan.price - plan.priceAnnual) * 12) })}</p>
@@ -113,7 +113,7 @@ function PlanCard({ plan, currentPlan, onSelect, billing }) {
       <div className="p-5 flex flex-col flex-1">
         <ul className="space-y-2.5 flex-1 mb-5">
           {plan.features.map((f, i) => (
-            <li key={i} className="flex items-start gap-2 text-sm text-slate-600">
+            <li key={i} className="flex items-start gap-2 text-sm text-slate-600 dark:text-slate-300">
               <Check className="w-4 h-4 text-green-500 shrink-0 mt-0.5" />
               {t(f)}
             </li>
@@ -121,7 +121,7 @@ function PlanCard({ plan, currentPlan, onSelect, billing }) {
         </ul>
 
         {isActive ? (
-          <div className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-green-50 border border-green-200 text-green-700 text-sm font-semibold">
+          <div className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 text-sm font-semibold">
             <BadgeCheck className="w-4 h-4" /> {t("subscription.currentPlan")}
           </div>
         ) : (
@@ -163,11 +163,11 @@ function CustomDomainManager({ subscription, vendorUsername }) {
 
   if (!canUseDomain) {
     return (
-      <div className="bg-slate-50 rounded-2xl border border-slate-200 p-5 flex items-center gap-3">
-        <Shield className="w-8 h-8 text-slate-400 shrink-0" />
+      <div className="bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 flex items-center gap-3">
+        <Shield className="w-8 h-8 text-slate-400 dark:text-slate-500 shrink-0" />
         <div>
-          <p className="text-sm font-semibold text-slate-700">{t("subscription.customDomainTitle")}</p>
-          <p className="text-xs text-slate-500">{t("subscription.customDomainUpgradeHint")}</p>
+          <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">{t("subscription.customDomainTitle")}</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">{t("subscription.customDomainUpgradeHint")}</p>
         </div>
         <Badge className="ml-auto bg-indigo-600 text-white text-xs">Pro+</Badge>
       </div>
@@ -175,17 +175,17 @@ function CustomDomainManager({ subscription, vendorUsername }) {
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-100 p-5">
+    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-5">
       <div className="flex items-center gap-2 mb-3">
         <Globe className="w-5 h-5 text-indigo-500" />
-        <h4 className="text-sm font-semibold text-slate-900">{t("subscription.customDomainTitle")}{isElite && " & SSL"}</h4>
+        <h4 className="text-sm font-semibold text-slate-900 dark:text-white">{t("subscription.customDomainTitle")}{isElite && " & SSL"}</h4>
         {subscription?.custom_domain ? (
           <Badge className="ml-auto bg-green-100 text-green-700 border-0 text-xs">{t("subscription.domainActive")}</Badge>
         ) : (
-          <Badge className="ml-auto bg-slate-100 text-slate-500 border-0 text-xs">{t("subscription.domainNotConfigured")}</Badge>
+          <Badge className="ml-auto bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 border-0 text-xs">{t("subscription.domainNotConfigured")}</Badge>
         )}
       </div>
-      <p className="text-xs text-slate-500 mb-3">
+      <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
         {t("subscription.domainDescription")}
         {isElite && ` ${t("subscription.domainEliteSSL")}`}
       </p>
@@ -201,8 +201,8 @@ function CustomDomainManager({ subscription, vendorUsername }) {
         </Button>
       </div>
       {domain && (
-        <p className="text-xs text-slate-400 mt-2">
-          Add a CNAME record: <code className="bg-slate-100 px-1 rounded text-indigo-700">store.iqon.app</code>
+        <p className="text-xs text-slate-400 dark:text-slate-500 mt-2">
+          Add a CNAME record: <code className="bg-slate-100 dark:bg-slate-700 px-1 rounded text-indigo-700 dark:text-indigo-400">store.iqon.app</code>
         </p>
       )}
     </div>
@@ -341,11 +341,11 @@ export default function SubscriptionManager({ store, vendorUsername }) {
   return (
     <div className="space-y-6">
       {/* Current Plan Banner */}
-      <div className={`relative rounded-2xl p-5 flex items-center gap-4 ${subscription?.plan === "elite" ? "bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200" : subscription?.plan === "pro" ? "bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200" : "bg-slate-50 border border-slate-200"}`}>
+      <div className={`relative rounded-2xl p-5 flex items-center gap-4 ${subscription?.plan === "elite" ? "bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950 dark:to-orange-950 border border-amber-200 dark:border-amber-800" : subscription?.plan === "pro" ? "bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-950 dark:to-purple-950 border border-indigo-200 dark:border-indigo-800" : "bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"}`}>
         {currentPlanInfo && <currentPlanInfo.icon className={`w-8 h-8 shrink-0 ${currentPlanInfo.iconColor}`} />}
         <div className="flex-1">
           <div className="flex items-center gap-2">
-            <p className="text-sm font-bold text-slate-900">
+            <p className="text-sm font-bold text-slate-900 dark:text-white">
               {t("subscription.onPlan", { name: currentPlanInfo?.name })}
             </p>
             {isPending && (
@@ -353,7 +353,7 @@ export default function SubscriptionManager({ store, vendorUsername }) {
             )}
           </div>
           {subscription?.expires_at && (
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
               {subscription.status === 'cancelled'
                 ? t("subscription.expires", { date: new Date(subscription.expires_at).toLocaleDateString() })
                 : t("subscription.renews", { date: new Date(subscription.expires_at).toLocaleDateString() })}
@@ -404,9 +404,9 @@ export default function SubscriptionManager({ store, vendorUsername }) {
       </div>
 
       {isPending && (
-        <div className="bg-amber-50/50 border border-amber-100 rounded-xl p-4 flex items-start gap-3">
+        <div className="bg-amber-50/50 dark:bg-amber-950/50 border border-amber-100 dark:border-amber-900 rounded-xl p-4 flex items-start gap-3">
           <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-          <div className="text-xs text-amber-700 leading-relaxed">
+          <div className="text-xs text-amber-700 dark:text-amber-400 leading-relaxed">
             <strong>{t("subscription.paymentRequired")}:</strong>{" "}
             {t("subscription.pendingFeatureWarning", { plan: pendingUpgradePlan ? pendingUpgradePlan.name : currentPlanInfo?.name })}{" "}
             {pendingUpgradePlan && (
@@ -419,14 +419,14 @@ export default function SubscriptionManager({ store, vendorUsername }) {
 
       {/* Billing toggle */}
       <div className="flex items-center justify-center gap-3">
-        <span className={`text-sm font-medium ${billing === "monthly" ? "text-slate-900" : "text-slate-400"}`}>{t("subscription.monthly")}</span>
+        <span className={`text-sm font-medium ${billing === "monthly" ? "text-slate-900 dark:text-white" : "text-slate-400 dark:text-slate-500"}`}>{t("subscription.monthly")}</span>
         <button
           onClick={() => setBilling(b => b === "monthly" ? "annual" : "monthly")}
-          className={`relative w-12 h-6 rounded-full transition-colors ${billing === "annual" ? "bg-indigo-600" : "bg-slate-200"}`}
+          className={`relative w-12 h-6 rounded-full transition-colors ${billing === "annual" ? "bg-indigo-600" : "bg-slate-200 dark:bg-slate-700"}`}
         >
           <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all ${billing === "annual" ? "left-7" : "left-1"}`} />
         </button>
-        <span className={`text-sm font-medium ${billing === "annual" ? "text-slate-900" : "text-slate-400"}`}>
+        <span className={`text-sm font-medium ${billing === "annual" ? "text-slate-900 dark:text-white" : "text-slate-400 dark:text-slate-500"}`}>
           {t("subscription.annual")} <span className="text-green-600 text-xs font-bold">{t("subscription.save20")}</span>
         </span>
       </div>
@@ -454,10 +454,10 @@ export default function SubscriptionManager({ store, vendorUsername }) {
           { icon: Image, label: t("subscription.unlimitedMedia"), plans: ["Elite"], color: "text-amber-500" },
           { icon: Globe, label: t("subscription.customDomain"), plans: ["Pro", "Elite"], color: "text-green-500" },
         ].map(f => (
-          <div key={f.label} className="bg-white rounded-xl border border-slate-100 p-3">
+          <div key={f.label} className="bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 p-3">
             <f.icon className={`w-5 h-5 mx-auto mb-1.5 ${f.color}`} />
-            <p className="text-xs font-semibold text-slate-700">{f.label}</p>
-            <p className="text-[10px] text-slate-400">{t("subscription.onlyPlans", { plans: f.plans.join(", ") })}</p>
+            <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">{f.label}</p>
+            <p className="text-[10px] text-slate-400 dark:text-slate-500">{t("subscription.onlyPlans", { plans: f.plans.join(", ") })}</p>
           </div>
         ))}
       </div>
@@ -466,12 +466,12 @@ export default function SubscriptionManager({ store, vendorUsername }) {
       <AnimatePresence>
         {showConfirm && (
           <div className="fixed inset-0 bg-black/50 z-50 flex items-end lg:items-center justify-center p-4">
-            <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 30 }} className="bg-white rounded-2xl p-6 w-full max-w-sm">
+            <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 30 }} className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-sm">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-slate-900">{t("subscription.confirmUpgrade")}</h3>
-                <button onClick={() => setShowConfirm(null)}><X className="w-5 h-5 text-slate-400" /></button>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">{t("subscription.confirmUpgrade")}</h3>
+                <button onClick={() => setShowConfirm(null)}><X className="w-5 h-5 text-slate-400 dark:text-slate-500" /></button>
               </div>
-              <p className="text-slate-600 text-sm mb-2">
+              <p className="text-slate-600 dark:text-slate-300 text-sm mb-2">
                 {t("subscription.confirmUpgradeDesc", {
                   name: showConfirm.name,
                   price: billing === "annual" ? showConfirm.priceAnnual : showConfirm.price,
