@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl, formatCurrency } from "@/lib/utils";
 import EmptyState from "@/components/shared/EmptyState";
-import { Minus, Plus, Trash2, ArrowLeft, CreditCard, Loader2, ShoppingBag, Tag, X, CheckCircle2
+import { Minus, Plus, Trash2, ArrowLeft, CreditCard, Loader2, ShoppingBag, Tag, X, CheckCircle2, Zap
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -219,11 +219,20 @@ export default function Cart() {
               </div>
 
               <Button
+                onClick={() => navigate(createPageUrl("Checkout") + "?quickpay=true")}
+                disabled={cartItems.length === 0}
+                className="w-full h-12 bg-slate-900 hover:bg-black text-white rounded-xl text-base font-bold shadow-lg shadow-slate-200 mb-2"
+              >
+                <Zap className="w-4 h-4 mr-2" /> {t("cart.payNow")}
+              </Button>
+
+              <Button
                 onClick={() => navigate(createPageUrl("Checkout"))}
                 disabled={cartItems.length === 0}
-                className="w-full h-12 bg-indigo-600 hover:bg-indigo-700 rounded-xl text-base font-semibold"
+                variant="outline"
+                className="w-full h-11 rounded-xl text-sm font-semibold border-slate-200 text-slate-600"
               >
-                <CreditCard className="w-5 h-5 mr-2" /> {t("cart.proceedToCheckout")}
+                <CreditCard className="w-4 h-4 mr-2" /> {t("cart.proceedToCheckout")}
               </Button>
 
               {subtotal < 50 && (

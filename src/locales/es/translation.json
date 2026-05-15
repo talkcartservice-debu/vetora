@@ -405,6 +405,7 @@
     "shipping": "Envío",
     "tax": "Impuesto",
     "total": "Total",
+    "payNow": "Pagar ahora",
     "proceedToCheckout": "Proceder al pago",
     "applyCoupon": "Aplicar cupón",
     "couponPlaceholder": "Ingresa código de cupón",
@@ -471,6 +472,7 @@
   },
   "checkout": {
     "continueToPayment": "Continuar al pago",
+    "paymentAndReview": "Pago y Revisión",
     "paymentMethod": "Método de pago",
     "reviewOrder": "Revisar pedido",
     "placeOrder": "Realizar pedido",

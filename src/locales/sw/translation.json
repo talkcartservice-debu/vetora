@@ -405,6 +405,7 @@
     "shipping": "Usafirishaji",
     "tax": "Kodi",
     "total": "Jumla",
+    "payNow": "Lipa sasa",
     "proceedToCheckout": "Endelea kulipa",
     "applyCoupon": "Tumia kuponi",
     "couponPlaceholder": "Ingiza msimbo wa kuponi",
@@ -471,6 +472,7 @@
   },
   "checkout": {
     "continueToPayment": "Endelea kwa malipo",
+    "paymentAndReview": "Malipo & Ukaguzi",
     "paymentMethod": "Njia ya malipo",
     "reviewOrder": "Kagua agizo",
     "placeOrder": "Weka agizo",

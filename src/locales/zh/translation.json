@@ -344,6 +344,7 @@
     "shipping": "运费",
     "tax": "税费",
     "total": "合计",
+    "payNow": "立即支付",
     "proceedToCheckout": "去结账",
     "applyCoupon": "使用优惠券",
     "couponPlaceholder": "输入优惠券码",
@@ -410,6 +411,7 @@
   },
   "checkout": {
     "continueToPayment": "继续付款",
+    "paymentAndReview": "支付与确认",
     "paymentMethod": "支付方式",
     "reviewOrder": "确认订单",
     "placeOrder": "提交订单",

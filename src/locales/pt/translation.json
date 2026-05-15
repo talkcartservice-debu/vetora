@@ -344,6 +344,7 @@
     "shipping": "Frete",
     "tax": "Impostos",
     "total": "Total",
+    "payNow": "Pagar agora",
     "proceedToCheckout": "Finalizar compra",
     "applyCoupon": "Aplicar cupom",
     "couponPlaceholder": "Digite o código do cupom",
@@ -411,6 +412,7 @@
   },
   "checkout": {
     "continueToPayment": "Continuar para o pagamento",
+    "paymentAndReview": "Pagamento & Revisão",
     "paymentMethod": "Método de pagamento",
     "reviewOrder": "Revisar pedido",
     "placeOrder": "Realizar pedido",

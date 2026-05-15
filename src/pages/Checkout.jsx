@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/lib/utils";
 import { 
   ArrowLeft, CreditCard, Shield, Truck, 
@@ -147,6 +147,9 @@ export default function Checkout() {
   const [storeDeliverySelections, setStoreDeliverySelections] = useState({});
 
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isQuickPay = searchParams.get("quickpay") === "true";
+  const hasAutoAdvanced = useRef(false);
   const queryClient = useQueryClient();
   const { user: currentUser, isLoadingAuth, isAuthenticated } = useAuth();
 
@@ -234,6 +237,13 @@ export default function Checkout() {
         setSelectedAddressId(selectedAddress._id);
     }
   }, [selectedAddress, selectedAddressId]);
+
+  useEffect(() => {
+    if (isQuickPay && selectedAddress && Object.keys(storesMap).length > 0 && !hasAutoAdvanced.current) {
+      hasAutoAdvanced.current = true;
+      setStep(2);
+    }
+  }, [isQuickPay, selectedAddress, storesMap]);
 
   // Whether any store requires an address (shipping or delivery selected)
   const needsAddress = useMemo(() => {
@@ -588,144 +598,123 @@ export default function Checkout() {
             </div>
           </CheckoutStep>
 
-          {/* STEP 2: PAYMENT METHOD */}
+          {/* STEP 2: PAYMENT & REVIEW */}
           <CheckoutStep 
             number="2" 
-            title={t("checkout.paymentMethod")} 
+            title={t("checkout.paymentAndReview")} 
             active={step === 2} 
-            completed={step > 2} 
-            onEdit={() => setStep(2)}
-            summary={(
-                <div className="flex items-center justify-between bg-slate-50/80 p-5 rounded-2xl border border-slate-100 backdrop-blur-sm">
-                    <div className="flex items-start gap-4">
-                        <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-white flex-shrink-0 shadow-lg shadow-slate-200">
-                            {paymentMethod === 'card' ? <CreditCard className="w-5 h-5" /> : <Wallet className="w-5 h-5" />}
-                        </div>
-                        <div>
-                            <p className="font-black text-slate-900 leading-tight uppercase text-[10px] tracking-widest text-slate-400 mb-1">{t("checkout.payingVia")}</p>
-                            <p className="font-bold text-slate-700 text-sm leading-snug">{paymentMethod === 'card' ? t("checkout.creditDebitCard") : t("checkout.mobileMoney")}</p>
-                            <p className="text-xs text-slate-500 font-medium tracking-tight mt-0.5">{t("checkout.safeSecurePaystack")}</p>
-                        </div>
-                    </div>
-                </div>
-            )}
+            completed={false}
           >
-            <div className="space-y-3">
-              {[
-                { id: "card", name: t("checkout.creditDebitCard"), icon: CreditCard, desc: t("checkout.safeSecurePaystack") },
-                { id: "mobile_money", name: t("checkout.mobileMoney"), icon: Wallet, desc: t("checkout.mobileMoneyProviders") }
-              ].map(method => (
-                <button
-                  key={method.id}
-                  onClick={() => setPaymentMethod(method.id)}
-                  className={`w-full flex items-center justify-between p-5 rounded-2xl border-2 transition-all ${
-                    paymentMethod === method.id ? "border-indigo-600 bg-indigo-50/50" : "border-slate-100 hover:border-slate-200"
-                  }`}
-                >
-                  <div className="flex items-center gap-5">
-                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${paymentMethod === method.id ? "bg-indigo-600 text-white" : "bg-slate-50 text-slate-500"}`}>
-                      <method.icon className="w-6 h-6" />
-                    </div>
-                    <div className="text-left">
-                        <p className={`font-black ${paymentMethod === method.id ? "text-indigo-900" : "text-slate-900"}`}>{method.name}</p>
-                        <p className="text-xs text-slate-500 font-medium">{method.desc}</p>
-                    </div>
-                  </div>
-                  {paymentMethod === method.id && <div className="w-6 h-6 rounded-full bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-200"><CheckCircle2 className="w-4 h-4 text-white" /></div>}
-                </button>
-              ))}
-
-              <div className="mt-8 p-6 bg-indigo-50/30 rounded-3xl border border-indigo-100/50">
-                  <div className="flex items-center gap-3 mb-4">
-                      <Shield className="w-5 h-5 text-indigo-600" />
-                      <span className="text-xs font-black text-indigo-900 uppercase tracking-wider">{t("checkout.securePaymentGuarantee")}</span>
-                  </div>
-                  <p className="text-xs text-slate-600 leading-relaxed font-medium">
-                      {t("checkout.securePaymentDesc")}
-                  </p>
+            <div className="space-y-6">
+              {/* Payment Method */}
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3">{t("checkout.paymentMethod")}</p>
+                <div className="space-y-3">
+                  {[
+                    { id: "card", name: t("checkout.creditDebitCard"), icon: CreditCard, desc: t("checkout.safeSecurePaystack") },
+                    { id: "mobile_money", name: t("checkout.mobileMoney"), icon: Wallet, desc: t("checkout.mobileMoneyProviders") }
+                  ].map(method => (
+                    <button
+                      key={method.id}
+                      onClick={() => setPaymentMethod(method.id)}
+                      className={`w-full flex items-center justify-between p-4 rounded-2xl border-2 transition-all ${
+                        paymentMethod === method.id ? "border-indigo-600 bg-indigo-50/50" : "border-slate-100 hover:border-slate-200"
+                      }`}
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${paymentMethod === method.id ? "bg-indigo-600 text-white" : "bg-slate-50 text-slate-500"}`}>
+                          <method.icon className="w-5 h-5" />
+                        </div>
+                        <div className="text-left">
+                          <p className={`font-black text-sm ${paymentMethod === method.id ? "text-indigo-900" : "text-slate-900"}`}>{method.name}</p>
+                          <p className="text-xs text-slate-500 font-medium">{method.desc}</p>
+                        </div>
+                      </div>
+                      {paymentMethod === method.id && <div className="w-5 h-5 rounded-full bg-indigo-600 flex items-center justify-center"><CheckCircle2 className="w-3.5 h-3.5 text-white" /></div>}
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              <div className="flex gap-4 mt-8">
-                <Button variant="outline" onClick={() => setStep(1)} className="flex-1 h-14 rounded-2xl font-black text-slate-600 border-slate-200">{t("common.back")}</Button>
-                <Button onClick={() => setStep(3)} className="flex-2 bg-indigo-600 hover:bg-indigo-700 h-14 rounded-2xl font-black text-lg">{t("checkout.reviewOrder")}</Button>
-              </div>
-            </div>
-          </CheckoutStep>
-
-          {/* STEP 3: REVIEW ORDER */}
-          <CheckoutStep number="3" title={t("checkout.orderReview")} active={step === 3} completed={step > 3}>
-            <div className="space-y-8">
-              {calculations.storeBreakdown.map((store, idx) => {
-                const FulfillIcon = FULFILLMENT_ICONS[store.delivery_method] || Truck;
-                const storeInfo = storesMap[store.store_id];
-                const ds = storeInfo?.delivery_settings || {};
-
-                return (
-                  <div key={store.store_id} className={`space-y-4 ${idx !== 0 && "pt-8 border-t border-slate-100"}`}>
-                    <div className="flex items-center gap-2 mb-4">
+              {/* Order Items Review */}
+              <div className="pt-6 border-t-2 border-slate-100">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">{t("checkout.orderReview")}</p>
+                {calculations.storeBreakdown.map((store, idx) => {
+                  const FulfillIcon = FULFILLMENT_ICONS[store.delivery_method] || Truck;
+                  const storeInfo = storesMap[store.store_id];
+                  const ds = storeInfo?.delivery_settings || {};
+                  return (
+                    <div key={store.store_id} className={`space-y-3 ${idx !== 0 ? "pt-6 border-t border-slate-100 mt-4" : ""}`}>
+                      <div className="flex items-center gap-2">
                         <StoreIcon className="w-4 h-4 text-indigo-600" />
-                        <h3 className="font-black text-slate-900 tracking-tight">{store.store_name}</h3>
+                        <h3 className="font-black text-sm text-slate-900 tracking-tight">{store.store_name}</h3>
                         <span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-bold">{t("checkout.itemsCount", { count: store.items.length })}</span>
-                    </div>
-                    <div className="space-y-4">
+                      </div>
+                      <div className="space-y-3">
                         {store.items.map(item => (
-                            <div key={item._id} className="flex gap-4 group">
-                                <div className="w-16 h-16 rounded-2xl overflow-hidden bg-slate-50 border border-slate-100 shrink-0">
-                                    <img src={item.product_image} alt={item.product_title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                                </div>
-                                <div className="flex-1 min-w-0 flex flex-col justify-center">
-                                    <h4 className="font-bold text-slate-900 text-sm truncate">{item.product_title}</h4>
-                                    <p className="text-xs text-slate-500 font-medium">{t("checkout.qty", { qty: item.quantity, price: formatCurrency(item.product_price) })}</p>
-                                </div>
-                                <div className="text-right flex flex-col justify-center">
-                                    <p className="font-black text-slate-900 text-sm">{formatCurrency(item.product_price * item.quantity)}</p>
-                                </div>
+                          <div key={item._id} className="flex gap-3 group">
+                            <div className="w-14 h-14 rounded-xl overflow-hidden bg-slate-50 border border-slate-100 shrink-0">
+                              <img src={item.product_image} alt={item.product_title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                             </div>
+                            <div className="flex-1 min-w-0 flex flex-col justify-center">
+                              <h4 className="font-bold text-slate-900 text-sm truncate">{item.product_title}</h4>
+                              <p className="text-xs text-slate-500 font-medium">{t("checkout.qty", { qty: item.quantity, price: formatCurrency(item.product_price) })}</p>
+                            </div>
+                            <div className="text-right flex flex-col justify-center">
+                              <p className="font-black text-slate-900 text-sm">{formatCurrency(item.product_price * item.quantity)}</p>
+                            </div>
+                          </div>
                         ))}
-                    </div>
-
-                    <div className="flex justify-between items-center py-3 px-4 bg-slate-50 rounded-2xl border border-slate-100/50">
+                      </div>
+                      <div className="flex justify-between items-center py-2.5 px-3 bg-slate-50 rounded-xl border border-slate-100/50">
                         <div className="flex items-center gap-2 text-xs text-slate-500 font-bold">
-                            <FulfillIcon className="w-3.5 h-3.5" />
-                            {store.delivery_method === "shipping" ? t("checkout.shippingLabel") : store.delivery_method === "delivery" ? t("checkout.deliveryLabel") : t("checkout.pickupLabel")}
+                          <FulfillIcon className="w-3.5 h-3.5" />
+                          {store.delivery_method === "shipping" ? t("checkout.shippingLabel") : store.delivery_method === "delivery" ? t("checkout.deliveryLabel") : t("checkout.pickupLabel")}
                         </div>
                         <span className="text-xs font-black text-slate-900">{store.shipping === 0 ? t("checkout.freeBadge") : formatCurrency(store.shipping)}</span>
-                    </div>
-
-                    {store.delivery_method === "pickup" && ds.pickup_instructions && (
-                      <div className="flex items-start gap-3 bg-amber-50 border border-amber-100 rounded-2xl p-3">
-                        <Info className="w-3.5 h-3.5 text-amber-600 flex-shrink-0 mt-0.5" />
-                        <p className="text-xs text-amber-700 font-medium">{ds.pickup_instructions}</p>
                       </div>
-                    )}
-                  </div>
-                );
-              })}
-
-              <div className="space-y-4 pt-6 border-t-2 border-slate-100">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">{t("checkout.orderNote")}</label>
-                  <Textarea 
-                    value={orderNote} 
-                    onChange={e => setOrderNote(e.target.value)} 
-                    placeholder={t("checkout.orderNotePlaceholder")} 
-                    className="rounded-2xl min-h-[100px] border-slate-200 resize-none focus:ring-indigo-500 focus:border-indigo-500" 
-                  />
+                      {store.delivery_method === "pickup" && ds.pickup_instructions && (
+                        <div className="flex items-start gap-3 bg-amber-50 border border-amber-100 rounded-2xl p-3">
+                          <Info className="w-3.5 h-3.5 text-amber-600 flex-shrink-0 mt-0.5" />
+                          <p className="text-xs text-amber-700 font-medium">{ds.pickup_instructions}</p>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
 
-              <div className="flex gap-4 mt-8">
-                <Button variant="outline" onClick={() => setStep(2)} className="flex-1 h-14 rounded-2xl font-black text-slate-600 border-slate-200">{t("common.back")}</Button>
+              {/* Order Note */}
+              <div className="pt-6 border-t-2 border-slate-100 space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block">{t("checkout.orderNote")}</label>
+                <Textarea 
+                  value={orderNote} 
+                  onChange={e => setOrderNote(e.target.value)} 
+                  placeholder={t("checkout.orderNotePlaceholder")} 
+                  className="rounded-2xl min-h-[80px] border-slate-200 resize-none focus:ring-indigo-500 focus:border-indigo-500" 
+                />
+              </div>
+
+              {/* Secure Badge */}
+              <div className="flex items-center gap-2 bg-indigo-50/50 rounded-2xl px-4 py-3 border border-indigo-100/50">
+                <Shield className="w-4 h-4 text-indigo-600 flex-shrink-0" />
+                <p className="text-xs text-slate-600 font-medium">{t("checkout.securePaymentDesc")}</p>
+              </div>
+
+              <div className="flex gap-4">
+                <Button variant="outline" onClick={() => setStep(1)} className="flex-1 h-14 rounded-2xl font-black text-slate-600 border-slate-200">{t("common.back")}</Button>
                 <Button 
-                    onClick={() => checkoutMutation.mutate()} 
-                    disabled={checkoutMutation.isPending}
-                    className="flex-2 bg-slate-900 hover:bg-black text-white h-14 rounded-2xl font-black text-lg shadow-xl shadow-slate-200 flex items-center justify-center gap-3 group"
+                  onClick={() => checkoutMutation.mutate()} 
+                  disabled={checkoutMutation.isPending}
+                  className="flex-[2] bg-slate-900 hover:bg-black text-white h-14 rounded-2xl font-black text-lg shadow-xl shadow-slate-200 flex items-center justify-center gap-3 group"
                 >
-                    {checkoutMutation.isPending ? (
-                        <Loader2 className="w-6 h-6 animate-spin" />
-                    ) : (
-                        <>
-                            {t("checkout.placeOrder")} <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                        </>
-                    )}
+                  {checkoutMutation.isPending ? (
+                    <Loader2 className="w-6 h-6 animate-spin" />
+                  ) : (
+                    <>
+                      {t("checkout.placeOrder")} <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                    </>
+                  )}
                 </Button>
               </div>
             </div>

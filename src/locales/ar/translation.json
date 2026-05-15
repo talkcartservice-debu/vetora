@@ -344,6 +344,7 @@
     "shipping": "الشحن",
     "tax": "الضريبة",
     "total": "الإجمالي",
+    "payNow": "ادفع الآن",
     "proceedToCheckout": "المتابعة للدفع",
     "applyCoupon": "تطبيق قسيمة",
     "couponPlaceholder": "أدخل رمز القسيمة",
@@ -411,6 +412,7 @@
   },
   "checkout": {
     "continueToPayment": "المتابعة إلى الدفع",
+    "paymentAndReview": "الدفع والمراجعة",
     "paymentMethod": "طريقة الدفع",
     "reviewOrder": "مراجعة الطلب",
     "placeOrder": "تأكيد الطلب",

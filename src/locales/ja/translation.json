@@ -344,6 +344,7 @@
     "shipping": "送料",
     "tax": "税金",
     "total": "合計",
+    "payNow": "今すぐ支払う",
     "proceedToCheckout": "購入手続きへ",
     "applyCoupon": "クーポンを適用",
     "couponPlaceholder": "クーポンコードを入力",
@@ -411,6 +412,7 @@
   },
   "checkout": {
     "continueToPayment": "支払いに進む",
+    "paymentAndReview": "支払いと確認",
     "paymentMethod": "支払い方法",
     "reviewOrder": "注文を確認",
     "placeOrder": "注文を確定",

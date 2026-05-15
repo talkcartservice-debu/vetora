@@ -415,6 +415,7 @@
     "shipping": "Shipping",
     "tax": "Tax",
     "total": "Total",
+    "payNow": "Pay Now",
     "proceedToCheckout": "Proceed to Checkout",
     "applyCoupon": "Apply Coupon",
     "couponPlaceholder": "Enter coupon code",
@@ -1050,6 +1051,7 @@
   },
   "checkout": {
     "continueToPayment": "Continue to Payment",
+    "paymentAndReview": "Payment & Review",
     "paymentMethod": "Payment Method",
     "reviewOrder": "Review Order",
     "placeOrder": "Place Order",

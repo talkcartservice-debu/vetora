@@ -405,6 +405,7 @@
     "shipping": "Kohereza",
     "tax": "Umusoro",
     "total": "Igiteranyo",
+    "payNow": "Ishyura ubu",
     "proceedToCheckout": "Komeza kwishyura",
     "applyCoupon": "Shyira mu bikorwa ikarita",
     "couponPlaceholder": "Injiza kode y'ikarita",
@@ -472,6 +473,7 @@
   },
   "checkout": {
     "continueToPayment": "Komeza no kwishyura",
+    "paymentAndReview": "Kwishyura & Kureba",
     "paymentMethod": "Uburyo bwo kwishyura",
     "reviewOrder": "Reba itumiza",
     "placeOrder": "Gusaba itumiza",

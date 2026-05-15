@@ -405,6 +405,7 @@
     "shipping": "Versand",
     "tax": "Steuer",
     "total": "Gesamt",
+    "payNow": "Jetzt bezahlen",
     "proceedToCheckout": "Zur Kasse",
     "applyCoupon": "Gutschein anwenden",
     "couponPlaceholder": "Gutscheincode eingeben",
@@ -471,6 +472,7 @@
   },
   "checkout": {
     "continueToPayment": "Weiter zur Zahlung",
+    "paymentAndReview": "Zahlung & Überprüfung",
     "paymentMethod": "Zahlungsmethode",
     "reviewOrder": "Bestellung prüfen",
     "placeOrder": "Bestellung aufgeben",
