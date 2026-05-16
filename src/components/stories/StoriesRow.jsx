@@ -70,7 +70,7 @@ export default function StoriesRow({ currentUser }) {
             className="shrink-0 flex flex-col items-center gap-1.5"
           >
             <div className={`w-14 h-14 rounded-full flex items-center justify-center relative overflow-hidden ${myStory ? 'p-0.5 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 shadow-sm' : 'bg-indigo-50 border-2 border-dashed border-indigo-200'}`}>
-              <div className="w-full h-full rounded-full bg-white flex items-center justify-center relative overflow-hidden">
+              <div className="w-full h-full rounded-full bg-white dark:bg-slate-800 flex items-center justify-center relative overflow-hidden">
                 {myStory ? (
                   // Show preview of the latest story
                   (() => {
@@ -113,13 +113,13 @@ export default function StoriesRow({ currentUser }) {
               
               {/* User Avatar Badge (Small overlay) */}
               {myStory && currentUser?.avatar_url && (
-                <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full border-2 border-white overflow-hidden shadow-sm">
+                <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full border-2 border-white dark:border-slate-800 overflow-hidden shadow-sm">
                   <img src={currentUser.avatar_url} alt="" className="w-full h-full object-cover" />
                 </div>
               )}
 
               {!myStory && (
-                <div className="absolute bottom-0 right-0 w-5 h-5 bg-indigo-600 rounded-full border-2 border-white flex items-center justify-center shadow-sm">
+                <div className="absolute bottom-0 right-0 w-5 h-5 bg-indigo-600 rounded-full border-2 border-white dark:border-slate-800 flex items-center justify-center shadow-sm">
                   <Plus className="w-3 h-3 text-white" />
                 </div>
               )}
@@ -144,7 +144,7 @@ export default function StoriesRow({ currentUser }) {
                 className="shrink-0 flex flex-col items-center gap-1.5"
               >
                 <div className="w-14 h-14 rounded-full p-0.5 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 shadow-sm relative">
-                  <div className="w-full h-full rounded-full bg-white flex items-center justify-center relative overflow-hidden">
+                  <div className="w-full h-full rounded-full bg-white dark:bg-slate-800 flex items-center justify-center relative overflow-hidden">
                     {hasMedia ? (
                       isVideo ? (
                         <video 
@@ -170,7 +170,7 @@ export default function StoriesRow({ currentUser }) {
                   </div>
                   {/* Small Avatar Overlay for other users */}
                   {(hasMedia || isText) && (group.avatar || latestStory.author_avatar) && (
-                    <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full border-2 border-white overflow-hidden shadow-sm">
+                    <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full border-2 border-white dark:border-slate-800 overflow-hidden shadow-sm">
                       <img src={group.avatar || latestStory.author_avatar} alt="" className="w-full h-full object-cover" />
                     </div>
                   )}

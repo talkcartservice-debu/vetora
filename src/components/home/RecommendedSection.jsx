@@ -24,7 +24,7 @@ export default function RecommendedSection({ currentUser }) {
   return (
     <div className="mb-6">
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+        <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-purple-500" />
           {t("home.recommendedForYou")}
         </h2>

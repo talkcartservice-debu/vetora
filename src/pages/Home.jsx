@@ -92,21 +92,21 @@ export default function Home() {
       <StoriesRow currentUser={currentUser} />
 
       {/* Feed Tabs */}
-      <div className="flex items-center gap-1 py-3 border-b border-slate-100 mb-4 sticky top-0 bg-white/80 backdrop-blur-md z-30">
+      <div className="flex items-center gap-1 py-3 border-b border-slate-100 dark:border-slate-700 mb-4 sticky top-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md z-30">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={`relative flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all ${
               activeTab === tab.id
-                ? "text-white"
-                : "text-slate-500 hover:bg-slate-50"
+                ? "text-white dark:text-slate-900"
+                : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800"
             }`}
           >
             {activeTab === tab.id && (
               <motion.div
                 layoutId="activeTab"
-                className="absolute inset-0 bg-slate-900 rounded-full -z-10"
+                className="absolute inset-0 bg-slate-900 dark:bg-white rounded-full -z-10"
                 transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
               />
             )}
@@ -131,7 +131,7 @@ export default function Home() {
           {trendingProducts.length > 0 && activeTab === "trending" && (
             <div className="mb-6">
               <div className="flex items-center justify-between mb-3">
-                <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
                   <Flame className="w-4 h-4 text-orange-500" />
                   {t("home.trending")}
                 </h2>
@@ -216,9 +216,9 @@ export default function Home() {
                       <p className="text-xs text-slate-400 font-medium">{t("home.loadingMore")}</p>
                     </div>
                   ) : hasNextPage ? (
-                    <p className="text-xs text-slate-300">{t("home.scrollForMore")}</p>
+                    <p className="text-xs text-slate-300 dark:text-slate-600">{t("home.scrollForMore")}</p>
                   ) : (
-                    <p className="text-xs text-slate-300 italic">{t("home.endOfFeed")}</p>
+                    <p className="text-xs text-slate-300 dark:text-slate-600 italic">{t("home.endOfFeed")}</p>
                   )}
                 </div>
               </>

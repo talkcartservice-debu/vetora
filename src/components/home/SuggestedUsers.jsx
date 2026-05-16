@@ -67,21 +67,21 @@ export default function SuggestedUsers({ currentUser }) {
   if (suggestions.length === 0) return null;
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden mb-6">
-      <div className="p-4 border-b border-slate-50 flex items-center justify-between">
-        <h3 className="text-sm font-bold text-slate-900">Suggested for you</h3>
+    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 overflow-hidden mb-6">
+      <div className="p-4 border-b border-slate-50 dark:border-slate-700 flex items-center justify-between">
+        <h3 className="text-sm font-bold text-slate-900 dark:text-white">Suggested for you</h3>
         <Link to={createPageUrl("Explore")} className="text-[11px] font-bold text-indigo-600 hover:text-indigo-700">
           See All
         </Link>
       </div>
-      <div className="divide-y divide-slate-50">
+      <div className="divide-y divide-slate-50 dark:divide-slate-700">
         {suggestions.map((item, idx) => (
-          <div key={`${item.type}-${item.username}-${idx}`} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
+          <div key={`${item.type}-${item.username}-${idx}`} className="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
             <Link 
               to={item.type === 'store' ? createPageUrl("StoreDetail") + `?id=${item.id}` : createPageUrl("Profile") + `?username=${item.username}`}
               className="flex items-center gap-3"
             >
-              <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center overflow-hidden border border-slate-200">
+              <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center overflow-hidden border border-slate-200 dark:border-slate-600">
                 {item.avatar_url ? (
                   <img src={item.avatar_url} alt="" className="w-full h-full object-cover" />
                 ) : (
@@ -90,10 +90,10 @@ export default function SuggestedUsers({ currentUser }) {
               </div>
               <div>
                 <div className="flex items-center gap-1.5">
-                  <p className="text-sm font-bold text-slate-900 leading-none">{item.display_name}</p>
-                  {item.type === 'store' && <span className="px-1 py-0.5 bg-indigo-50 text-indigo-600 rounded text-[9px] font-bold uppercase tracking-tighter">Store</span>}
+                  <p className="text-sm font-bold text-slate-900 dark:text-white leading-none">{item.display_name}</p>
+                  {item.type === 'store' && <span className="px-1 py-0.5 bg-indigo-50 dark:bg-indigo-950 text-indigo-600 rounded text-[9px] font-bold uppercase tracking-tighter">Store</span>}
                 </div>
-                <p className="text-[11px] text-slate-500 mt-1">@{item.username}</p>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">@{item.username}</p>
               </div>
             </Link>
             <button
@@ -104,7 +104,7 @@ export default function SuggestedUsers({ currentUser }) {
                 display_name: item.display_name 
               })}
               disabled={followMutation.isPending}
-              className="p-2 rounded-full bg-slate-100 text-slate-600 hover:bg-indigo-600 hover:text-white transition-all duration-200"
+              className="p-2 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-indigo-600 hover:text-white transition-all duration-200"
             >
               {followMutation.isPending ? (
                 <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
@@ -117,7 +117,7 @@ export default function SuggestedUsers({ currentUser }) {
       </div>
       <Link 
         to={createPageUrl("Explore")}
-        className="block p-3 text-center text-xs font-bold text-slate-500 hover:text-slate-900 bg-slate-50/50 transition-colors"
+        className="block p-3 text-center text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white bg-slate-50/50 dark:bg-slate-900/30 transition-colors"
       >
         Discover more people and stores
       </Link>
