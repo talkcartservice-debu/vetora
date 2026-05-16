@@ -70,13 +70,13 @@ export default function Bookmarks() {
           <Bookmark className="w-6 h-6 text-white" />
         </div>
         <div>
-          <h1 className="text-2xl font-black text-slate-900 leading-tight">{t("bookmarks.title")}</h1>
-          <p className="text-sm text-slate-500">{t("bookmarks.desc")}</p>
+          <h1 className="text-2xl font-black text-slate-900 dark:text-white leading-tight">{t("bookmarks.title")}</h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400">{t("bookmarks.desc")}</p>
         </div>
       </div>
 
       <Tabs defaultValue="posts" onValueChange={setActiveTab} className="mb-6">
-        <TabsList className="grid w-full grid-cols-2 p-1 bg-slate-100/50 rounded-xl">
+        <TabsList className="grid w-full grid-cols-2 p-1 bg-slate-100/50 dark:bg-slate-800 rounded-xl">
           <TabsTrigger value="posts" className="rounded-lg py-2 font-bold text-xs uppercase tracking-wider">
             <LayoutGrid className="w-4 h-4 mr-2" /> {t("communities.posts")}
           </TabsTrigger>
@@ -117,7 +117,7 @@ export default function Bookmarks() {
                   
                   <button
                     onClick={() => handleRemove(item.id || item._id)}
-                    className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm border border-slate-100 flex items-center justify-center text-red-500 shadow-sm opacity-0 group-hover:opacity-100 transition-all hover:bg-red-50 z-10"
+                    className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 dark:bg-slate-700/90 backdrop-blur-sm border border-slate-100 dark:border-slate-600 flex items-center justify-center text-red-500 shadow-sm opacity-0 group-hover:opacity-100 transition-all hover:bg-red-50 dark:hover:bg-red-900/30 z-10"
                     title={activeTab === "posts" ? t("bookmarks.removeFromBookmarks") : t("bookmarks.removeFromWishlist")}
                   >
                     <Trash2 className="w-4 h-4" />
