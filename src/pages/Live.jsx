@@ -938,11 +938,11 @@ export default function Live() {
     <div className="max-w-2xl mx-auto px-4 py-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
             <span className="w-8 h-8 rounded-xl bg-red-500 flex items-center justify-center"><Radio className="w-4 h-4 text-white" /></span>
             {t("live.title")}
           </h1>
-          <p className="text-slate-500 text-sm mt-0.5">{t("live.watching")}</p>
+          <p className="text-slate-500 dark:text-slate-400 text-sm mt-0.5">{t("live.watching")}</p>
         </div>
         {currentUser && (
           <Button 
@@ -968,7 +968,7 @@ export default function Live() {
 
       <div className="flex gap-2 overflow-x-auto pb-2 mb-6 hide-scrollbar">
         {categories.map(cat => (
-          <button key={cat} onClick={() => setFilter(cat)} className={`shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-all ${filter === cat ? "bg-slate-900 text-white" : "bg-white text-slate-600 border border-slate-200 hover:border-slate-300"}`}>
+          <button key={cat} onClick={() => setFilter(cat)} className={`shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-all ${filter === cat ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900" : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600"}`}>
             {t(`live.cat_${cat}`)}
           </button>
         ))}
@@ -976,7 +976,7 @@ export default function Live() {
 
       {liveSessions.length > 0 ? (
         <section className="mb-8">
-          <h2 className="text-lg font-bold text-slate-900 mb-3 flex items-center gap-2">
+          <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" /> {t("live.liveNow")}
           </h2>
           <div className="space-y-4">
@@ -1013,22 +1013,22 @@ export default function Live() {
           </div>
         </section>
       ) : (
-        <div className="text-center py-12 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200 mb-8">
-          <div className="w-12 h-12 bg-slate-200 rounded-full flex items-center justify-center mx-auto mb-3">
-            <Radio className="w-6 h-6 text-slate-400" />
+        <div className="text-center py-12 bg-slate-50 dark:bg-slate-800 rounded-3xl border-2 border-dashed border-slate-200 dark:border-slate-700 mb-8">
+          <div className="w-12 h-12 bg-slate-200 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-3">
+            <Radio className="w-6 h-6 text-slate-400 dark:text-slate-500" />
           </div>
-          <p className="text-slate-500 font-medium">{t("live.noLiveSessions")}</p>
-          <p className="text-slate-400 text-xs mt-1">{t("live.checkBackLater")}</p>
+          <p className="text-slate-500 dark:text-slate-400 font-medium">{t("live.noLiveSessions")}</p>
+          <p className="text-slate-400 dark:text-slate-500 text-xs mt-1">{t("live.checkBackLater")}</p>
         </div>
       )}
 
       {upcomingSessions.length > 0 && (
         <section>
-          <h2 className="text-lg font-bold text-slate-900 mb-3">{t("live.upcomingStreams")}</h2>
+          <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-3">{t("live.upcomingStreams")}</h2>
           <div className="space-y-3">
             {upcomingSessions.map(session => (
-              <div key={session.id} className="bg-white rounded-2xl border border-slate-100 p-4 flex gap-3 shadow-sm">
-                <div className="relative w-24 h-20 rounded-xl overflow-hidden shrink-0 bg-slate-100">
+              <div key={session.id} className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-4 flex gap-3 shadow-sm">
+                <div className="relative w-24 h-20 rounded-xl overflow-hidden shrink-0 bg-slate-100 dark:bg-slate-700">
                   <img src={session.thumbnail} alt="" className="w-full h-full object-cover" />
                   <div className="absolute top-1 left-1">
                     <Badge className="bg-black/60 backdrop-blur-md border-none text-[8px] px-1.5 py-0">
@@ -1037,11 +1037,11 @@ export default function Live() {
                   </div>
                 </div>
                 <div className="flex-1 min-w-0 flex flex-col justify-center">
-                  <p className="text-slate-900 font-bold text-sm line-clamp-1 leading-tight">{session.title}</p>
-                  <p className="text-slate-500 text-[11px] mt-1 font-medium">{session.host_name} · {session.store_name}</p>
+                  <p className="text-slate-900 dark:text-white font-bold text-sm line-clamp-1 leading-tight">{session.title}</p>
+                  <p className="text-slate-500 dark:text-slate-400 text-[11px] mt-1 font-medium">{session.host_name} · {session.store_name}</p>
                   
                   <div className="flex items-center gap-2.5 mt-2">
-                    <span className="text-[10px] text-indigo-600 font-bold bg-indigo-50 px-2 py-0.5 rounded-md flex items-center gap-1">
+                    <span className="text-[10px] text-indigo-600 font-bold bg-indigo-50 dark:bg-indigo-950 px-2 py-0.5 rounded-md flex items-center gap-1">
                       <Radio className="w-2.5 h-2.5" />
                       {session.scheduled_at ? new Date(session.scheduled_at).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : t("live.soon")}
                     </span>
@@ -1050,7 +1050,7 @@ export default function Live() {
                 </div>
                 <button 
                   onClick={() => toast.success(t("live.reminderSet", { title: session.title }))}
-                  className="shrink-0 w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-100 flex items-center justify-center transition-colors self-center"
+                  className="shrink-0 w-10 h-10 bg-indigo-50 dark:bg-indigo-950 text-indigo-600 rounded-xl hover:bg-indigo-100 dark:hover:bg-indigo-900 flex items-center justify-center transition-colors self-center"
                 >
                   <Heart className="w-5 h-5" />
                 </button>
@@ -1072,24 +1072,24 @@ export default function Live() {
               {t("live.liveShoppingForStoreOwners")}
             </DialogDescription>
           </div>
-          <div className="p-6 space-y-4">
+          <div className="p-6 space-y-4 bg-white dark:bg-slate-900">
             <div className="space-y-3">
-              <div className="flex items-start gap-3 p-3 bg-indigo-50 rounded-2xl">
-                <div className="w-8 h-8 bg-indigo-100 rounded-xl flex items-center justify-center shrink-0">
+              <div className="flex items-start gap-3 p-3 bg-indigo-50 dark:bg-indigo-950 rounded-2xl">
+                <div className="w-8 h-8 bg-indigo-100 dark:bg-indigo-900 rounded-xl flex items-center justify-center shrink-0">
                   <Store className="w-4 h-4 text-indigo-600" />
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-slate-900">{t("live.step1CreateStore")}</p>
-                  <p className="text-xs text-slate-500 mt-0.5">{t("live.step1Desc")}</p>
+                  <p className="text-sm font-bold text-slate-900 dark:text-white">{t("live.step1CreateStore")}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{t("live.step1Desc")}</p>
                 </div>
               </div>
-              <div className="flex items-start gap-3 p-3 bg-purple-50 rounded-2xl">
-                <div className="w-8 h-8 bg-purple-100 rounded-xl flex items-center justify-center shrink-0">
+              <div className="flex items-start gap-3 p-3 bg-purple-50 dark:bg-purple-950 rounded-2xl">
+                <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900 rounded-xl flex items-center justify-center shrink-0">
                   <Crown className="w-4 h-4 text-purple-600" />
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-slate-900">{t("live.step2UpgradeElite")}</p>
-                  <p className="text-xs text-slate-500 mt-0.5">{t("live.step2Desc")}</p>
+                  <p className="text-sm font-bold text-slate-900 dark:text-white">{t("live.step2UpgradeElite")}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{t("live.step2Desc")}</p>
                 </div>
               </div>
             </div>
@@ -1098,7 +1098,7 @@ export default function Live() {
                 {t("live.createMyStore")}
               </Button>
             </Link>
-            <button onClick={() => setAccessDialog(null)} className="w-full text-xs text-slate-400 hover:text-slate-600 transition-colors">
+            <button onClick={() => setAccessDialog(null)} className="w-full text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
               {t("live.maybeLater")}
             </button>
           </div>
@@ -1117,18 +1117,18 @@ export default function Live() {
               {t("live.eliteOnlyFeature")}
             </DialogDescription>
           </div>
-          <div className="p-6 space-y-4">
+          <div className="p-6 space-y-4 bg-white dark:bg-slate-900">
             <div className="space-y-2.5">
               {[
-                { icon: Radio, tKey: "live.unlimitedLiveStreams", color: "text-red-500 bg-red-50" },
-                { icon: Zap, tKey: "live.affiliateMarketplaceAccess", color: "text-amber-500 bg-amber-50" },
-                { icon: ShoppingBag, tKey: "live.instreamProductPinning", color: "text-indigo-500 bg-indigo-50" },
+                { icon: Radio, tKey: "live.unlimitedLiveStreams", color: "text-red-500 bg-red-50 dark:bg-red-950" },
+                { icon: Zap, tKey: "live.affiliateMarketplaceAccess", color: "text-amber-500 bg-amber-50 dark:bg-amber-950" },
+                { icon: ShoppingBag, tKey: "live.instreamProductPinning", color: "text-indigo-500 bg-indigo-50 dark:bg-indigo-950" },
               ].map(({ icon: Icon, tKey, color }) => (
-                <div key={tKey} className="flex items-center gap-3 p-3 bg-slate-50 rounded-2xl">
+                <div key={tKey} className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800 rounded-2xl">
                   <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${color}`}>
                     <Icon className="w-4 h-4" />
                   </div>
-                  <p className="text-sm font-semibold text-slate-800">{t(tKey)}</p>
+                  <p className="text-sm font-semibold text-slate-800 dark:text-white">{t(tKey)}</p>
                 </div>
               ))}
             </div>
@@ -1137,7 +1137,7 @@ export default function Live() {
                 <Crown className="w-4 h-4 mr-2" /> {t("live.upgradeToElite")}
               </Button>
             </Link>
-            <button onClick={() => setAccessDialog(null)} className="w-full text-xs text-slate-400 hover:text-slate-600 transition-colors">
+            <button onClick={() => setAccessDialog(null)} className="w-full text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
               {t("live.maybeLater")}
             </button>
           </div>
