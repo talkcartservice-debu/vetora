@@ -60,7 +60,7 @@ export default function OrderDetailModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto p-0 gap-0">
-        <DialogHeader className="p-6 pb-4 bg-slate-50/50 sticky top-0 z-10 backdrop-blur-md border-b">
+        <DialogHeader className="p-6 pb-4 bg-slate-50/50 dark:bg-slate-800/50 sticky top-0 z-10 backdrop-blur-md border-b dark:border-slate-700">
           <div className="flex items-center justify-between mb-2">
             <Badge className={`${status.color} border-0 flex items-center gap-1.5`}>
               <StatusIcon className="w-3.5 h-3.5" />
@@ -68,8 +68,8 @@ export default function OrderDetailModal({
             </Badge>
             <p className="text-xs text-slate-400 font-mono">#{order._id?.slice(-12)}</p>
           </div>
-          <DialogTitle className="text-xl font-bold text-slate-900">Order Details</DialogTitle>
-          <div className="flex items-center gap-4 mt-2 text-xs text-slate-500">
+          <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white">Order Details</DialogTitle>
+          <div className="flex items-center gap-4 mt-2 text-xs text-slate-500 dark:text-slate-400">
             <div className="flex items-center gap-1 font-medium">
               <Calendar className="w-3.5 h-3.5" />
               {new Date(order.created_at).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}
@@ -93,8 +93,8 @@ export default function OrderDetailModal({
         <div className="p-6 space-y-8">
           {/* Vendor Status Management */}
           {isVendor && (
-            <section className="bg-indigo-50/30 border border-indigo-100 rounded-2xl p-4">
-              <h3 className="text-sm font-bold text-indigo-900 mb-3 flex items-center gap-2">
+            <section className="bg-indigo-50/30 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 rounded-2xl p-4">
+              <h3 className="text-sm font-bold text-indigo-900 dark:text-indigo-300 mb-3 flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4" />
                 Manage Order Status
               </h3>
@@ -103,7 +103,7 @@ export default function OrderDetailModal({
                   value={order.status} 
                   onValueChange={(newStatus) => onUpdateStatus?.(order._id || order.id, newStatus)}
                 >
-                  <SelectTrigger className="flex-1 bg-white rounded-xl h-11 border-indigo-100">
+                  <SelectTrigger className="flex-1 bg-white dark:bg-slate-700 rounded-xl h-11 border-indigo-100 dark:border-indigo-800">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -121,8 +121,8 @@ export default function OrderDetailModal({
 
           {/* Status Tracker — only for shipped/shipping orders, not pickup */}
           {["pending", "processing", "shipped", "delivered", "confirmed"].includes(order.status) && order.delivery_method !== "pickup" && (
-            <div className="bg-white border rounded-2xl p-4 shadow-sm">
-              <h3 className="text-sm font-semibold text-slate-900 mb-4 flex items-center gap-2">
+            <div className="bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-2xl p-4 shadow-sm">
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
                 {order.delivery_method === "delivery" ? (
                   <Navigation className="w-4 h-4 text-indigo-600" />
                 ) : (
@@ -136,10 +136,10 @@ export default function OrderDetailModal({
 
           {/* Pickup status info */}
           {order.delivery_method === "pickup" && ["pending", "confirmed", "processing"].includes(order.status) && order.pickup_instructions && (
-            <div className="flex items-start gap-3 bg-amber-50 border border-amber-100 rounded-2xl p-4">
+            <div className="flex items-start gap-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800/30 rounded-2xl p-4">
               <Package className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="text-xs font-black text-amber-900 uppercase tracking-wider mb-1">Pickup Instructions</p>
+                <p className="text-xs font-black text-amber-900 dark:text-amber-300 uppercase tracking-wider mb-1">Pickup Instructions</p>
                 <p className="text-xs text-amber-700 leading-relaxed">{order.pickup_instructions}</p>
               </div>
             </div>
@@ -147,14 +147,14 @@ export default function OrderDetailModal({
 
           {/* Items Section */}
           <section>
-            <h3 className="text-sm font-semibold text-slate-900 mb-4 flex items-center gap-2">
+            <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
               <Package className="w-4 h-4 text-indigo-600" />
               Items ({order.items?.length})
             </h3>
             <div className="space-y-4">
               {order.items?.map((item, idx) => (
-                <div key={idx} className="flex gap-4 p-2 hover:bg-slate-50 rounded-2xl transition-colors">
-                  <div className="w-16 h-16 rounded-xl bg-slate-100 overflow-hidden shrink-0 border border-slate-100">
+                <div key={idx} className="flex gap-4 p-2 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-2xl transition-colors">
+                  <div className="w-16 h-16 rounded-xl bg-slate-100 dark:bg-slate-700 overflow-hidden shrink-0 border border-slate-100 dark:border-slate-600">
                     {item.product_image ? (
                       <img src={item.product_image} alt="" className="w-full h-full object-cover" />
                     ) : (
@@ -164,12 +164,12 @@ export default function OrderDetailModal({
                     )}
                   </div>
                   <div className="flex-1 min-w-0 flex flex-col justify-center">
-                    <p className="text-sm font-medium text-slate-900 truncate">{item.product_title}</p>
-                    <p className="text-xs text-slate-500 mt-0.5">
+                    <p className="text-sm font-medium text-slate-900 dark:text-white truncate">{item.product_title}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                       {item.quantity} x {formatCurrency(item.price)}
                     </p>
                   </div>
-                  <div className="text-sm font-bold text-slate-900 flex items-center">
+                  <div className="text-sm font-bold text-slate-900 dark:text-white flex items-center">
                     {formatCurrency(item.quantity * item.price)}
                   </div>
                 </div>
@@ -177,29 +177,29 @@ export default function OrderDetailModal({
             </div>
           </section>
 
-          <Separator className="bg-slate-100" />
+          <Separator className="bg-slate-100 dark:bg-slate-700" />
 
           {/* Summary and Payment */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <section>
-              <h3 className="text-sm font-semibold text-slate-900 mb-4 flex items-center gap-2">
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
                 <CreditCard className="w-4 h-4 text-indigo-600" />
                 Payment Info
               </h3>
-              <div className="space-y-3 bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
+              <div className="space-y-3 bg-slate-50/50 dark:bg-slate-700/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-600">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-slate-500">Method</span>
-                  <span className="font-medium text-slate-900 capitalize">{order.payment_method?.replace('_', ' ') || 'Card'}</span>
+                  <span className="text-slate-500 dark:text-slate-400">Method</span>
+                  <span className="font-medium text-slate-900 dark:text-white capitalize">{order.payment_method?.replace('_', ' ') || 'Card'}</span>
                 </div>
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-slate-500">Status</span>
+                  <span className="text-slate-500 dark:text-slate-400">Status</span>
                   <Badge variant="outline" className={`text-[10px] h-5 capitalize px-1.5 ${
                     order.payment_status === 'paid' ? 'bg-green-50 text-green-700 border-green-100' : 'bg-amber-50 text-amber-700 border-amber-100'
                   }`}>
                     {order.payment_status}
                   </Badge>
                 </div>
-                <div className="pt-2 flex items-center justify-between text-xs font-bold text-slate-900 border-t border-slate-200/60">
+                <div className="pt-2 flex items-center justify-between text-xs font-bold text-slate-900 dark:text-white border-t border-slate-200/60 dark:border-slate-600">
                   <span>Total Amount</span>
                   <span>{formatCurrency(order.total)}</span>
                 </div>
@@ -207,7 +207,7 @@ export default function OrderDetailModal({
             </section>
 
             <section>
-              <h3 className="text-sm font-semibold text-slate-900 mb-4 flex items-center gap-2">
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
                 {order.delivery_method === "pickup" ? (
                   <Package className="w-4 h-4 text-indigo-600" />
                 ) : order.delivery_method === "delivery" ? (
@@ -217,24 +217,24 @@ export default function OrderDetailModal({
                 )}
                 {order.delivery_method === "pickup" ? "Store Pickup" : order.delivery_method === "delivery" ? "Local Delivery" : "Delivery Address"}
               </h3>
-              <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100 h-full min-h-[100px] flex flex-col gap-3">
+              <div className="bg-slate-50/50 dark:bg-slate-700/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-600 h-full min-h-[100px] flex flex-col gap-3">
                 {order.delivery_method === "pickup" ? (
                   <>
                     {order.pickup_instructions && (
-                      <div className="flex items-start gap-2 bg-amber-50 border border-amber-100 rounded-xl p-3">
+                      <div className="flex items-start gap-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800/30 rounded-xl p-3">
                         <Info className="w-3.5 h-3.5 text-amber-600 flex-shrink-0 mt-0.5" />
                         <p className="text-xs text-amber-700 leading-relaxed">{order.pickup_instructions}</p>
                       </div>
                     )}
                     {order.shipping_address && (
-                      <p className="text-xs text-slate-600 leading-relaxed">{order.shipping_address}</p>
+                      <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">{order.shipping_address}</p>
                     )}
                     {!order.pickup_instructions && !order.shipping_address && (
-                      <p className="text-xs text-slate-500">Collect from store location</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">Collect from store location</p>
                     )}
                   </>
                 ) : (
-                  <p className="text-xs text-slate-600 leading-relaxed flex-1">
+                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed flex-1">
                     {order.shipping_address || "No address provided"}
                   </p>
                 )}
@@ -254,7 +254,7 @@ export default function OrderDetailModal({
           </div>
 
           {order.order_note && (
-            <section className="bg-amber-50/50 rounded-2xl p-4 border border-amber-100">
+            <section className="bg-amber-50/50 dark:bg-amber-900/20 rounded-2xl p-4 border border-amber-100 dark:border-amber-800/30">
               <h4 className="text-xs font-bold text-amber-900 mb-1 flex items-center gap-1.5 uppercase tracking-wider">
                 <AlertCircle className="w-3.5 h-3.5" />
                 Customer Note
@@ -287,7 +287,7 @@ export default function OrderDetailModal({
                   <Button 
                     variant="outline" 
                     onClick={() => onBuyAgain?.(order)}
-                    className="w-full rounded-xl gap-2 border-slate-200 h-12 font-semibold hover:bg-slate-50 transition-all"
+                    className="w-full rounded-xl gap-2 border-slate-200 dark:border-slate-600 h-12 font-semibold hover:bg-slate-50 dark:hover:bg-slate-700 transition-all"
                   >
                     <ShoppingBag className="w-4 h-4" />
                     Buy Again
