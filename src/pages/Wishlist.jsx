@@ -71,11 +71,11 @@ export default function Wishlist() {
     <div className="max-w-3xl mx-auto px-4 py-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
             <Heart className="w-6 h-6 fill-red-500 text-red-500" />
             {t("common.wishlist")}
           </h1>
-          <p className="text-slate-500 text-sm mt-0.5">{t("wishlist.savedItems_other", { count: wishlistItems.length })}</p>
+          <p className="text-slate-500 dark:text-slate-400 text-sm mt-0.5">{t("wishlist.savedItems_other", { count: wishlistItems.length })}</p>
         </div>
         {wishlistItems.length > 0 && (
           <Button
@@ -90,11 +90,11 @@ export default function Wishlist() {
       {isLoading ? (
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {Array(6).fill(0).map((_, i) => (
-            <div key={i} className="bg-white rounded-2xl border border-slate-100 overflow-hidden animate-pulse">
-              <div className="aspect-square bg-slate-200" />
+            <div key={i} className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 overflow-hidden animate-pulse">
+              <div className="aspect-square bg-slate-200 dark:bg-slate-700" />
               <div className="p-3 space-y-2">
-                <div className="h-3 w-3/4 bg-slate-200 rounded" />
-                <div className="h-4 w-1/2 bg-slate-200 rounded" />
+                <div className="h-3 w-3/4 bg-slate-200 dark:bg-slate-700 rounded" />
+                <div className="h-4 w-1/2 bg-slate-200 dark:bg-slate-700 rounded" />
               </div>
             </div>
           ))}
@@ -123,7 +123,7 @@ export default function Wishlist() {
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.9 }}
-                  className="bg-white rounded-2xl border border-slate-100 overflow-hidden group hover:shadow-lg hover:shadow-slate-100 transition-all"
+                  className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 overflow-hidden group hover:shadow-lg hover:shadow-slate-100 dark:hover:shadow-slate-900 transition-all"
                 >
                   <Link to={createPageUrl("ProductDetail") + `?id=${item.product_id}`}>
                     <div className="relative aspect-square overflow-hidden">
@@ -141,9 +141,9 @@ export default function Wishlist() {
                   </Link>
                   <div className="p-3">
                     <p className="text-[10px] text-slate-400 font-medium mb-0.5">{item.store_name}</p>
-                    <p className="text-xs font-semibold text-slate-900 line-clamp-2 leading-tight mb-2">{item.product_title}</p>
+                    <p className="text-xs font-semibold text-slate-900 dark:text-white line-clamp-2 leading-tight mb-2">{item.product_title}</p>
                     <div className="flex items-center gap-1.5 mb-3">
-                      <span className="text-sm font-bold text-slate-900">{formatCurrency(item.product_price)}</span>
+                      <span className="text-sm font-bold text-slate-900 dark:text-white">{formatCurrency(item.product_price)}</span>
                       {item.compare_at_price > 0 && (
                         <span className="text-xs text-slate-400 line-through">{formatCurrency(item.compare_at_price)}</span>
                       )}
@@ -157,7 +157,7 @@ export default function Wishlist() {
                       </button>
                       <button
                         onClick={() => removeMutation.mutate(item.product_id)}
-                        className="w-8 h-8 flex items-center justify-center rounded-xl bg-red-50 hover:bg-red-100 text-red-400 hover:text-red-500 transition-colors"
+                        className="w-8 h-8 flex items-center justify-center rounded-xl bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 text-red-400 hover:text-red-500 transition-colors"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
