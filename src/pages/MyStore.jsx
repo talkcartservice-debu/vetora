@@ -335,11 +335,11 @@ export default function MyStore() {
   if (!store) {
     return (
       <div className="max-w-lg mx-auto px-4 py-20 text-center">
-        <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center mx-auto mb-6">
+        <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900 dark:to-purple-900 flex items-center justify-center mx-auto mb-6">
           <Store className="w-9 h-9 text-indigo-500" />
         </div>
-        <h1 className="text-2xl font-bold text-slate-900 mb-2">{t("store.createStoreTitle")}</h1>
-        <p className="text-slate-500 mb-8">{t("store.createStoreSubtitle")}</p>
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">{t("store.createStoreTitle")}</h1>
+        <p className="text-slate-500 dark:text-slate-400 mb-8">{t("store.createStoreSubtitle")}</p>
 
         <Dialog open={showCreateStore} onOpenChange={setShowCreateStore}>
           <DialogTrigger asChild>
@@ -573,15 +573,15 @@ export default function MyStore() {
   return (
     <div className="max-w-5xl mx-auto px-4 py-6">
       {/* Store Header */}
-      <div className="bg-white rounded-2xl border border-slate-100 p-6 mb-6">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-6 mb-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white text-xl font-bold">
               {store.name?.[0]?.toUpperCase()}
             </div>
             <div>
-              <h1 className="text-xl font-bold text-slate-900">{store.name}</h1>
-              <p className="text-sm text-slate-500">{store.description || t("store.noDescription")}</p>
+              <h1 className="text-xl font-bold text-slate-900 dark:text-white">{store.name}</h1>
+              <p className="text-sm text-slate-500 dark:text-slate-400">{store.description || t("store.noDescription")}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -957,9 +957,9 @@ export default function MyStore() {
 
         {/* Onboarding Checklist */}
         {(!store.logo_url || !store.description || products.length === 0 || !store.payment_method) && (
-          <div className="mb-6 p-4 bg-indigo-50/50 rounded-2xl border border-indigo-100/50">
+          <div className="mb-6 p-4 bg-indigo-50/50 dark:bg-indigo-950/30 rounded-2xl border border-indigo-100/50 dark:border-indigo-900/50">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-bold text-indigo-900 flex items-center gap-2">
+              <h3 className="text-sm font-bold text-indigo-900 dark:text-indigo-300 flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4" /> {t("store.setupProgress")}
               </h3>
               <span className="text-[10px] font-bold text-indigo-600 bg-indigo-100 px-2 py-0.5 rounded-full uppercase tracking-wider">
@@ -978,7 +978,7 @@ export default function MyStore() {
                 { label: t("store.setupAddProduct"), done: products.length > 0 },
                 { label: t("store.setupPayoutMethod"), done: !!store.payment_method },
               ].map((step, i) => (
-                <div key={i} className={`flex items-center gap-2 p-2 rounded-xl border ${step.done ? 'bg-white/50 border-indigo-100 text-indigo-600' : 'bg-slate-50/50 border-slate-100 text-slate-400'}`}>
+                <div key={i} className={`flex items-center gap-2 p-2 rounded-xl border ${step.done ? 'bg-white/50 dark:bg-slate-700/50 border-indigo-100 dark:border-indigo-900 text-indigo-600' : 'bg-slate-50/50 dark:bg-slate-800/50 border-slate-100 dark:border-slate-700 text-slate-400'}`}>
                   {step.done ? <CheckCircle2 className="w-3.5 h-3.5" /> : <div className="w-3.5 h-3.5 rounded-full border-2 border-slate-200" />}
                   <span className="text-xs font-medium">{step.label}</span>
                 </div>
@@ -990,17 +990,17 @@ export default function MyStore() {
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {[
-            { label: t("store.products"), value: products.length, icon: Package, color: "text-indigo-500 bg-indigo-50" },
-            { label: t("store.orders"), value: orders.length, icon: ShoppingCart, color: "text-purple-500 bg-purple-50" },
-            { label: t("store.revenue"), value: formatCurrency(totalRevenue), icon: DollarSign, color: "text-green-500 bg-green-50" },
-            { label: t("store.pending"), value: pendingOrders, icon: BarChart3, color: "text-amber-500 bg-amber-50" },
+            { label: t("store.products"), value: products.length, icon: Package, color: "text-indigo-500 bg-indigo-50 dark:bg-indigo-950" },
+            { label: t("store.orders"), value: orders.length, icon: ShoppingCart, color: "text-purple-500 bg-purple-50 dark:bg-purple-950" },
+            { label: t("store.revenue"), value: formatCurrency(totalRevenue), icon: DollarSign, color: "text-green-500 bg-green-50 dark:bg-green-950" },
+            { label: t("store.pending"), value: pendingOrders, icon: BarChart3, color: "text-amber-500 bg-amber-50 dark:bg-amber-950" },
           ].map((stat) => (
-            <div key={stat.label} className="bg-slate-50 rounded-xl p-3">
+            <div key={stat.label} className="bg-slate-50 dark:bg-slate-800 rounded-xl p-3">
               <div className={`w-8 h-8 rounded-lg ${stat.color} flex items-center justify-center mb-2`}>
                 <stat.icon className="w-4 h-4" />
               </div>
-              <p className="text-xl font-bold text-slate-900">{stat.value}</p>
-              <p className="text-xs text-slate-500">{stat.label}</p>
+              <p className="text-xl font-bold text-slate-900 dark:text-white">{stat.value}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">{stat.label}</p>
             </div>
           ))}
         </div>
@@ -1009,7 +1009,7 @@ export default function MyStore() {
       {/* Tabs */}
       <div className="flex items-center justify-between mb-4">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="bg-white border border-slate-100">
+          <TabsList className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700">
             <TabsTrigger value="products">{t("store.products")}</TabsTrigger>
             <TabsTrigger value="orders">{t("store.orders")}</TabsTrigger>
             <TabsTrigger value="coupons">{t("store.coupons")}</TabsTrigger>
@@ -1134,24 +1134,24 @@ export default function MyStore() {
       {activeTab === "products" && (
         <div className="space-y-2">
           {products.length === 0 ? (
-            <div className="text-center py-16 text-slate-400">{t("store.noProductsDesc")}</div>
+            <div className="text-center py-16 text-slate-400 dark:text-slate-500">{t("store.noProductsDesc")}</div>
           ) : (
             products.map((product, idx) => {
               const productId = product.id || product._id || `product-${idx}`;
               return (
-                <motion.div key={productId} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white rounded-xl border border-slate-100 p-4 flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-xl bg-slate-100 overflow-hidden shrink-0">
+                <motion.div key={productId} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 p-4 flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-xl bg-slate-100 dark:bg-slate-700 overflow-hidden shrink-0">
                     {product.images?.[0] && <img src={product.images[0]} alt="" className="w-full h-full object-cover" />}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-slate-900 truncate">{product.title}</p>
+                    <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">{product.title}</p>
                     <div className="flex items-center gap-2 mt-0.5">
                       <span className="text-sm font-bold text-indigo-600">{formatCurrency(product.price)}</span>
                       <Badge variant="secondary" className="text-[10px]">{product.status}</Badge>
-                      <span className="text-xs text-slate-400">{t("store.stock")}: {product.inventory_count || 0}</span>
+                      <span className="text-xs text-slate-400 dark:text-slate-500">{t("store.stock")}: {product.inventory_count || 0}</span>
                     </div>
                   </div>
-                  <button onClick={() => deleteProductMutation.mutate(productId)} className="p-2 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-500 transition-colors">
+                  <button onClick={() => deleteProductMutation.mutate(productId)} className="p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-950 text-slate-400 hover:text-red-500 transition-colors">
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </motion.div>
@@ -1164,12 +1164,12 @@ export default function MyStore() {
       {/* Shipping Tab */}
       {activeTab === "shipping" && (
         currentPlan === 'free' ? (
-          <div className="bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200 p-12 text-center">
-             <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mx-auto mb-4">
-               <Package className="w-8 h-8 text-slate-300" />
+          <div className="bg-slate-50 dark:bg-slate-900 rounded-3xl border-2 border-dashed border-slate-200 dark:border-slate-700 p-12 text-center">
+             <div className="w-16 h-16 bg-white dark:bg-slate-800 rounded-2xl shadow-sm flex items-center justify-center mx-auto mb-4">
+               <Package className="w-8 h-8 text-slate-300 dark:text-slate-600" />
              </div>
-             <h3 className="text-lg font-bold text-slate-900 mb-2">{t("store.shippingZonesRestricted")}</h3>
-             <p className="text-slate-500 max-w-sm mx-auto mb-6">{t("store.shippingZonesRestrictedDesc")}</p>
+             <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">{t("store.shippingZonesRestricted")}</h3>
+             <p className="text-slate-500 dark:text-slate-400 max-w-sm mx-auto mb-6">{t("store.shippingZonesRestrictedDesc")}</p>
              <Button onClick={() => setActiveTab("subscription")} className="bg-indigo-600 hover:bg-indigo-700 rounded-xl">{t("store.upgradePlan")}</Button>
           </div>
         ) : (
@@ -1190,12 +1190,12 @@ export default function MyStore() {
       {/* Coupons Tab */}
       {activeTab === "coupons" && (
         currentPlan === 'free' ? (
-          <div className="bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200 p-12 text-center">
-             <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mx-auto mb-4">
-               <Tag className="w-8 h-8 text-slate-300" />
+          <div className="bg-slate-50 dark:bg-slate-900 rounded-3xl border-2 border-dashed border-slate-200 dark:border-slate-700 p-12 text-center">
+             <div className="w-16 h-16 bg-white dark:bg-slate-800 rounded-2xl shadow-sm flex items-center justify-center mx-auto mb-4">
+               <Tag className="w-8 h-8 text-slate-300 dark:text-slate-600" />
              </div>
-             <h3 className="text-lg font-bold text-slate-900 mb-2">{t("store.couponsRestricted")}</h3>
-             <p className="text-slate-500 max-w-sm mx-auto mb-6">{t("store.couponsRestrictedDesc")}</p>
+             <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">{t("store.couponsRestricted")}</h3>
+             <p className="text-slate-500 dark:text-slate-400 max-w-sm mx-auto mb-6">{t("store.couponsRestrictedDesc")}</p>
              <Button onClick={() => setActiveTab("subscription")} className="bg-indigo-600 hover:bg-indigo-700 rounded-xl">{t("store.upgradePlan")}</Button>
           </div>
         ) : (
@@ -1222,13 +1222,13 @@ export default function MyStore() {
                 placeholder={t("store.searchOrders")}
                 value={orderSearch}
                 onChange={(e) => setOrderSearch(e.target.value)}
-                className="pl-10 bg-white border-slate-100 rounded-2xl"
+                className="pl-10 bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 rounded-2xl"
               />
             </div>
           </div>
 
           <Tabs value={orderTab} onValueChange={setOrderTab} className="w-full">
-            <TabsList className="bg-white border border-slate-100 w-full justify-start overflow-x-auto hide-scrollbar h-auto p-1">
+            <TabsList className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 w-full justify-start overflow-x-auto hide-scrollbar h-auto p-1">
               <TabsTrigger value="all" className="rounded-xl px-4 py-2">{t("store.all")}</TabsTrigger>
               <TabsTrigger value="pending" className="rounded-xl px-4 py-2">{t("orders.pending")}</TabsTrigger>
               <TabsTrigger value="processing" className="rounded-xl px-4 py-2">{t("orders.processing")}</TabsTrigger>
@@ -1265,18 +1265,18 @@ export default function MyStore() {
                       layout
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="bg-white rounded-2xl border border-slate-100 p-5 hover:shadow-md transition-all cursor-pointer group"
+                      className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-5 hover:shadow-md transition-all cursor-pointer group"
                       onClick={() => setSelectedOrder(order)}
                     >
                       <div className="flex items-start justify-between mb-4">
                         <div>
-                          <p className="text-[10px] font-mono text-slate-400 uppercase tracking-wider mb-1">
+                          <p className="text-[10px] font-mono text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">
                             {t("store.orderRef", { id: orderId?.slice(-8) })}
                           </p>
-                          <h4 className="text-sm font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
+                          <h4 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 transition-colors">
                             {order.buyer_name || `@${order.buyer_username}`}
                           </h4>
-                          <p className="text-xs text-slate-500 mt-0.5">
+                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                             {new Date(order.created_at || order.created_date).toLocaleDateString()} · {t("store.itemsCount", { count: order.items?.length || 0 })}
                           </p>
                         </div>
@@ -1304,19 +1304,19 @@ export default function MyStore() {
                               {t(`orders.${status}`)}
                             </Badge>
                           </div>
-                          <p className="text-sm font-black text-slate-900">{formatCurrency(order.total)}</p>
+                          <p className="text-sm font-black text-slate-900 dark:text-white">{formatCurrency(order.total)}</p>
                         </div>
                       </div>
 
-                      <div className="flex items-center justify-between pt-4 border-t border-slate-50">
+                      <div className="flex items-center justify-between pt-4 border-t border-slate-50 dark:border-slate-700">
                         <div className="flex gap-1.5 overflow-hidden">
                           {order.items?.slice(0, 4).map((item, i) => (
-                            <div key={i} className="w-10 h-10 rounded-lg bg-slate-50 border border-slate-100 overflow-hidden shrink-0">
+                            <div key={i} className="w-10 h-10 rounded-lg bg-slate-50 dark:bg-slate-700 border border-slate-100 dark:border-slate-600 overflow-hidden shrink-0">
                               {item.product_image && <img src={item.product_image} alt="" className="w-full h-full object-cover" />}
                             </div>
                           ))}
                           {order.items?.length > 4 && (
-                            <div className="w-10 h-10 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-400">
+                            <div className="w-10 h-10 rounded-lg bg-slate-50 dark:bg-slate-700 border border-slate-100 dark:border-slate-600 flex items-center justify-center text-[10px] font-bold text-slate-400 dark:text-slate-500">
                               +{order.items.length - 4}
                             </div>
                           )}
