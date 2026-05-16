@@ -39,8 +39,8 @@ function UserListModal({ open, onClose, title, users = [] }) {
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-sm rounded-2xl p-0 overflow-hidden">
-        <DialogHeader className="p-4 border-b border-slate-50">
-          <DialogTitle className="text-base font-bold text-slate-900">{title}</DialogTitle>
+        <DialogHeader className="p-4 border-b border-slate-50 dark:border-slate-700">
+          <DialogTitle className="text-base font-bold text-slate-900 dark:text-white">{title}</DialogTitle>
         </DialogHeader>
         
         <div className="p-3">
@@ -50,14 +50,14 @@ function UserListModal({ open, onClose, title, users = [] }) {
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder={t("profile.searchUsers")}
-              className="w-full bg-slate-50 border-none rounded-xl py-2 pl-9 pr-4 text-sm focus:ring-1 focus:ring-indigo-300 outline-none"
+              className="w-full bg-slate-50 dark:bg-slate-700 dark:text-white dark:placeholder:text-slate-400 border-none rounded-xl py-2 pl-9 pr-4 text-sm focus:ring-1 focus:ring-indigo-300 outline-none"
             />
           </div>
 
           <div className="max-h-[60vh] overflow-y-auto space-y-1 custom-scrollbar">
             {filtered.length === 0 ? (
               <div className="py-10 text-center">
-                <Users2 className="w-10 h-10 text-slate-100 mx-auto mb-2" />
+                <Users2 className="w-10 h-10 text-slate-100 dark:text-slate-600 mx-auto mb-2" />
                 <p className="text-xs text-slate-400">{t("profile.noUsersFound")}</p>
               </div>
             ) : filtered.map((u, i) => {
@@ -68,18 +68,17 @@ function UserListModal({ open, onClose, title, users = [] }) {
                   key={i} 
                   to={createPageUrl("Profile") + `?username=${username}`}
                   onClick={onClose}
-                  className="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-xl transition-colors"
+                  className="flex items-center gap-3 p-2 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-xl transition-colors"
                 >
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center overflow-hidden border border-slate-50">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900 dark:to-purple-900 flex items-center justify-center overflow-hidden border border-slate-50 dark:border-slate-700">
                     {u.avatar_url ? (
                       <img src={u.avatar_url} alt="" className="w-full h-full object-cover" />
                     ) : (
-                      <span className="text-indigo-600 font-bold text-xs">{name[0]?.toUpperCase()}</span>
+                      <span className="text-indigo-600 dark:text-indigo-400 font-bold text-xs">{name[0]?.toUpperCase()}</span>
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-slate-900 truncate">{name}</p>
-                    {/* Hide email, maybe show bio snippet or followers instead */}
+                    <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">{name}</p>
                     <p className="text-[10px] text-slate-400 truncate">{t("profile.viewProfile")}</p>
                   </div>
                 </Link>
@@ -274,10 +273,10 @@ export default function Profile() {
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white rounded-2xl border border-slate-100 overflow-hidden mb-5 shadow-sm"
+        className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 overflow-hidden mb-5 shadow-sm"
       >
         {/* Banner */}
-        <div className="h-32 relative overflow-hidden bg-slate-100">
+        <div className="h-32 relative overflow-hidden bg-slate-100 dark:bg-slate-700">
           {bannerUrl ? (
             <img src={bannerUrl} alt="" className="w-full h-full object-cover" />
           ) : (
@@ -289,7 +288,7 @@ export default function Profile() {
           <div className="flex items-end justify-between -mt-12 mb-4">
             {/* Avatar */}
             <div className="relative">
-              <div className="w-24 h-24 rounded-3xl border-4 border-white shadow-xl overflow-hidden bg-gradient-to-br from-indigo-400 via-purple-500 to-pink-500 flex items-center justify-center transition-transform hover:scale-105 duration-300">
+              <div className="w-24 h-24 rounded-3xl border-4 border-white dark:border-slate-800 shadow-xl overflow-hidden bg-gradient-to-br from-indigo-400 via-purple-500 to-pink-500 flex items-center justify-center transition-transform hover:scale-105 duration-300">
                 {avatarUrl ? (
                   <img src={avatarUrl} alt={displayName} className="w-full h-full object-cover" />
                 ) : (
@@ -297,7 +296,7 @@ export default function Profile() {
                 )}
               </div>
               {(profileUser?.is_verified || store?.is_verified) && (
-                <div className="absolute -bottom-1.5 -right-1.5 w-7 h-7 bg-blue-500 rounded-full flex items-center justify-center border-2 border-white shadow-lg">
+                <div className="absolute -bottom-1.5 -right-1.5 w-7 h-7 bg-blue-500 rounded-full flex items-center justify-center border-2 border-white dark:border-slate-800 shadow-lg">
                   <BadgeCheck className="w-4 h-4 text-white" />
                 </div>
               )}
@@ -386,12 +385,12 @@ export default function Profile() {
           {/* Name + bio */}
           <div className="mb-4">
             <div className="flex items-center gap-2 mb-0.5">
-              <h1 className="text-xl font-extrabold text-slate-900 tracking-tight">{displayName}</h1>
+              <h1 className="text-xl font-extrabold text-slate-900 dark:text-white tracking-tight">{displayName}</h1>
               {isOwnProfile && (
-                <Badge variant="secondary" className="bg-indigo-50 text-indigo-600 border-0 text-[10px] font-bold py-0 px-1.5 h-4 uppercase tracking-wider">{t("profile.youBadge")}</Badge>
+                <Badge variant="secondary" className="bg-indigo-50 dark:bg-indigo-950 text-indigo-600 border-0 text-[10px] font-bold py-0 px-1.5 h-4 uppercase tracking-wider">{t("profile.youBadge")}</Badge>
               )}
               {!isOwnProfile && isFollowedBy && (
-                <Badge variant="secondary" className="bg-slate-100 text-slate-500 border-0 text-[9px] font-bold py-0 px-1.5 h-4 uppercase tracking-wider">{t("profile.followsYou")}</Badge>
+                <Badge variant="secondary" className="bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 border-0 text-[9px] font-bold py-0 px-1.5 h-4 uppercase tracking-wider">{t("profile.followsYou")}</Badge>
               )}
             </div>
             <p className="text-xs text-slate-400 font-medium mb-2">@{profileUser?.username || profileUser?.display_name?.replace(/\s+/g, '_').toLowerCase() || profileUser?.email?.split('@')[0]}</p>
@@ -406,13 +405,13 @@ export default function Profile() {
               </div>
             )}
 
-            {bio && <p className="text-sm text-slate-600 leading-relaxed mt-2 max-w-lg">{bio}</p>}
+            {bio && <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed mt-2 max-w-lg">{bio}</p>}
             
             <div className="mt-3 flex flex-wrap items-center gap-3">
               {store && (
                 <Link 
                   to={createPageUrl("StoreDetail") + `?id=${store.id || store._id}`} 
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-indigo-50 rounded-lg text-xs text-indigo-700 font-bold hover:bg-indigo-100 transition-colors"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-indigo-50 dark:bg-indigo-950 rounded-lg text-xs text-indigo-700 dark:text-indigo-400 font-bold hover:bg-indigo-100 dark:hover:bg-indigo-900 transition-colors"
                 >
                   <Store className="w-3.5 h-3.5" /> {store.name}
                 </Link>
@@ -428,7 +427,7 @@ export default function Profile() {
           </div>
 
           {/* Stats row */}
-          <div className="flex gap-5 mt-4 pt-4 border-t border-slate-50">
+          <div className="flex gap-5 mt-4 pt-4 border-t border-slate-50 dark:border-slate-700">
             {[
               { label: t("profile.posts"), value: posts.length, onClick: null },
               { 
@@ -452,10 +451,10 @@ export default function Profile() {
             ].map(stat => (
               <div 
                 key={stat.label} 
-                className={`text-center ${stat.onClick ? "cursor-pointer hover:bg-slate-50 rounded-lg px-2 transition-colors" : ""}`}
+                className={`text-center ${stat.onClick ? "cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg px-2 transition-colors" : ""}`}
                 onClick={stat.onClick}
               >
-                <p className="text-base font-bold text-slate-900">{stat.value}</p>
+                <p className="text-base font-bold text-slate-900 dark:text-white">{stat.value}</p>
                 <p className="text-[10px] text-slate-400">{stat.label}</p>
               </div>
             ))}
@@ -488,9 +487,9 @@ export default function Profile() {
         <div className="space-y-6 mb-6">
           {/* Store Highlights */}
           {userProducts.length > 0 && (
-            <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-4 shadow-sm">
               <div className="flex items-center justify-between mb-3 px-1">
-                <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
                   <ShoppingBag className="w-4 h-4 text-indigo-500" />
                   {t("profile.storeHighlights")}
                 </h2>
@@ -510,29 +509,29 @@ export default function Profile() {
 
           {/* Recent Store Feedback */}
           {vendorStoreReviews.length > 0 && (
-            <div className="bg-slate-50/50 rounded-2xl p-4 border border-slate-100">
+            <div className="bg-slate-50/50 dark:bg-slate-800 rounded-2xl p-4 border border-slate-100 dark:border-slate-700">
               <div className="flex items-center justify-between mb-3">
-                <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
                   <Star className="w-4 h-4 text-amber-500" />
                   {t("profile.recentStoreFeedback")}
                 </h2>
-                <span className="text-[10px] font-bold text-slate-400 bg-white px-2 py-0.5 rounded-full border border-slate-100 shadow-sm">
+                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-300 bg-white dark:bg-slate-700 px-2 py-0.5 rounded-full border border-slate-100 dark:border-slate-600 shadow-sm">
                   {vendorAvgRating.toFixed(1)} / 5.0
                 </span>
               </div>
               <div className="space-y-3">
                 {vendorStoreReviews.slice(0, 2).map((review, idx) => (
-                  <div key={review.id || review._id || `review-${idx}`} className="bg-white rounded-xl p-3 border border-slate-100 shadow-sm">
+                  <div key={review.id || review._id || `review-${idx}`} className="bg-white dark:bg-slate-700 rounded-xl p-3 border border-slate-100 dark:border-slate-600 shadow-sm">
                     <div className="flex items-center justify-between mb-1.5">
                       <div className="flex items-center gap-1.5">
                         <StarRating value={review.rating} readonly size={2.5} />
-                        <span className="text-[10px] font-bold text-slate-900">{review.reviewer_name || t("profile.verifiedBuyer")}</span>
+                        <span className="text-[10px] font-bold text-slate-900 dark:text-white">{review.reviewer_name || t("profile.verifiedBuyer")}</span>
                       </div>
                       <span className="text-[9px] text-slate-400 font-medium">
                         {review.created_at ? new Date(review.created_at).toLocaleDateString() : t("profile.recently")}
                       </span>
                     </div>
-                    <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed italic">"{review.content}"</p>
+                    <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed italic">"{review.content}"</p>
                   </div>
                 ))}
               </div>
@@ -543,7 +542,7 @@ export default function Profile() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-4">
-        <TabsList id="profile-tabs-list" className="bg-white border border-slate-100 w-full">
+        <TabsList id="profile-tabs-list" className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 w-full">
           <TabsTrigger value="posts" className="flex-1 gap-1.5"><Grid3X3 className="w-4 h-4" />{t("profile.posts")}</TabsTrigger>
           <TabsTrigger value="products" className="flex-1 gap-1.5"><ShoppingBag className="w-4 h-4" />{t("shop.products")}</TabsTrigger>
           {isOwnProfile && <TabsTrigger value="orders" className="flex-1 gap-1.5"><Package className="w-4 h-4" />{t("orders.title")}</TabsTrigger>}
@@ -589,7 +588,7 @@ export default function Profile() {
             </div>
           ) : (
             <div className="text-center py-16">
-              <ShoppingBag className="w-10 h-10 text-slate-200 mx-auto mb-2" />
+              <ShoppingBag className="w-10 h-10 text-slate-200 dark:text-slate-600 mx-auto mb-2" />
               <p className="text-sm text-slate-400">{t("profile.noProductsYet")}</p>
               {isOwnProfile && (
                 <Link to={createPageUrl("MyStore")}>
@@ -605,10 +604,10 @@ export default function Profile() {
       {activeTab === "orders" && isOwnProfile && (
         <div className="space-y-3">
           {ordersLoading ? (
-            Array(3).fill(0).map((_, i) => <div key={`order-skeleton-${i}`} className="bg-white rounded-2xl border border-slate-100 p-4 animate-pulse h-20" />)
+            Array(3).fill(0).map((_, i) => <div key={`order-skeleton-${i}`} className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-4 animate-pulse h-20" />)
           ) : buyerOrders.length === 0 ? (
             <div className="text-center py-16">
-              <Package className="w-10 h-10 text-slate-200 mx-auto mb-2" />
+              <Package className="w-10 h-10 text-slate-200 dark:text-slate-600 mx-auto mb-2" />
               <p className="text-sm text-slate-400">{t("orders.noOrders")}</p>
               <Link to={createPageUrl("Marketplace")}>
                 <Button size="sm" className="mt-3 bg-indigo-600 hover:bg-indigo-700 rounded-xl">{t("profile.browseMarketplace")}</Button>
@@ -623,12 +622,12 @@ export default function Profile() {
                   key={order.id || order._id || `order-${idx}`}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm"
+                  className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-4 shadow-sm"
                 >
                   <div className="flex items-start justify-between mb-2">
                     <div>
                       <p className="text-xs text-slate-400">#{order.id?.slice(-8)} · {new Date(order.created_at || order.created_date).toLocaleDateString()}</p>
-                      <p className="text-sm font-semibold text-slate-800">{order.store_name || "Store"}</p>
+                      <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">{order.store_name || "Store"}</p>
                     </div>
                     <Badge className={`${cfg.color} border-0 text-[10px] gap-0.5`}>
                       <StatusIcon className="w-3 h-3" />{t(cfg.tKey)}
@@ -636,14 +635,14 @@ export default function Profile() {
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
                     {order.items?.slice(0, 3).map((item, i) => (
-                      <div key={`${item.product_id || i}-${i}`} className="flex items-center gap-1.5 text-xs text-slate-600">
+                      <div key={`${item.product_id || i}-${i}`} className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-300">
                         {item.product_image && <img src={item.product_image} className="w-7 h-7 rounded-lg object-cover" alt="" />}
                         <span className="truncate max-w-[100px]">{item.product_title}</span>
                       </div>
                     ))}
                   </div>
-                  <div className="mt-2 pt-2 border-t border-slate-50 flex justify-between">
-                    <span className="text-xs font-bold text-slate-800">{t("orders.total")}: {formatCurrency(order.total)}</span>
+                  <div className="mt-2 pt-2 border-t border-slate-50 dark:border-slate-700 flex justify-between">
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200">{t("orders.total")}: {formatCurrency(order.total)}</span>
                     <Link to={createPageUrl("Orders")} className="text-xs text-indigo-500 font-semibold hover:underline">{t("profile.orderDetails")}</Link>
                   </div>
                 </motion.div>
@@ -667,7 +666,7 @@ export default function Profile() {
               ))}
           {!likedPostsLoading && likedPosts.length === 0 && (
             <div className="text-center py-16">
-              <Heart className="w-10 h-10 text-slate-200 mx-auto mb-2" />
+              <Heart className="w-10 h-10 text-slate-200 dark:text-slate-600 mx-auto mb-2" />
               <p className="text-sm text-slate-400">{t("profile.noLikedPosts")}</p>
             </div>
           )}
@@ -679,12 +678,12 @@ export default function Profile() {
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm"
+          className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-6 shadow-sm"
         >
           <div className="mb-6 flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-bold text-slate-900">{t("profile.subscriptionMgmt")}</h2>
-              <p className="text-sm text-slate-500">{t("profile.managePlanDesc")}</p>
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white">{t("profile.subscriptionMgmt")}</h2>
+              <p className="text-sm text-slate-500 dark:text-slate-400">{t("profile.managePlanDesc")}</p>
             </div>
           </div>
           <SubscriptionManager store={store} vendorUsername={currentUser?.username} />
