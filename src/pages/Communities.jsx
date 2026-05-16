@@ -81,7 +81,7 @@ import React, { useState } from "react";
    return ( 
      <div className="max-w-4xl mx-auto px-4 py-6"> 
        <div className="flex items-center justify-between mb-6"> 
-         <h1 className="text-2xl font-bold text-slate-900">{t("communities.title")}</h1> 
+         <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t("communities.title")}</h1> 
          <Dialog open={createOpen} onOpenChange={setCreateOpen}> 
            <DialogTrigger asChild> 
              <Button className="bg-indigo-600 hover:bg-indigo-700 rounded-xl"> 
@@ -141,14 +141,14 @@ import React, { useState } from "react";
            placeholder={t("communities.searchCommunities")} 
            value={search} 
            onChange={(e) => setSearch(e.target.value)} 
-           className="pl-9 h-12 rounded-xl shadow-sm border-slate-200" 
+           className="pl-9 h-12 rounded-xl shadow-sm border-slate-200 dark:border-slate-700" 
          /> 
        </div> 
  
        {/* My Communities */} 
        {myCommunities.length > 0 && ( 
          <div className="mb-10"> 
-           <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+           <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
              <Users className="w-5 h-5 text-indigo-500" /> {t("communities.myCommunities")}
            </h2> 
            <div className="grid sm:grid-cols-2 gap-4"> 
@@ -161,19 +161,19 @@ import React, { useState } from "react";
  
        {/* Discover */} 
        <div> 
-         <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2"> 
+         <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2"> 
            <TrendingUp className="w-5 h-5 text-green-500" /> {t("communities.discover")}
          </h2> 
          {isLoading ? (
            <div className="grid sm:grid-cols-2 gap-4">
              {[1, 2, 3, 4].map(i => (
-               <div key={i} className="h-40 bg-slate-100 animate-pulse rounded-2xl"></div>
+               <div key={i} className="h-40 bg-slate-100 dark:bg-slate-800 animate-pulse rounded-2xl"></div>
              ))}
            </div>
          ) : discoverCommunities.length === 0 ? ( 
-           <div className="text-center py-16 bg-white rounded-3xl border border-dashed border-slate-200"> 
-             <Users className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-             <p className="text-slate-500 font-medium">{t("communities.noDiscover")}</p> 
+           <div className="text-center py-16 bg-white dark:bg-slate-800/50 rounded-3xl border border-dashed border-slate-200 dark:border-slate-700"> 
+             <Users className="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
+             <p className="text-slate-500 dark:text-slate-400 font-medium">{t("communities.noDiscover")}</p> 
            </div> 
          ) : ( 
            <div className="grid sm:grid-cols-2 gap-4"> 
@@ -195,7 +195,7 @@ import React, { useState } from "react";
      <Link to={`/CommunityDetail?id=${community._id}`}> 
        <motion.div 
          whileHover={{ y: -4 }} 
-         className="bg-white rounded-2xl border border-slate-100 overflow-hidden hover:shadow-xl transition-all h-full shadow-sm" 
+         className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 overflow-hidden hover:shadow-xl transition-all h-full shadow-sm" 
        > 
          <div className="h-28 bg-gradient-to-br from-indigo-400 via-purple-400 to-pink-400 relative"> 
            {community.cover_image && <img src={community.cover_image} alt="" className="w-full h-full object-cover" />} 
@@ -206,12 +206,12 @@ import React, { useState } from "react";
            )} 
          </div> 
          <div className="p-5 -mt-6 relative"> 
-           <div className="w-12 h-12 rounded-xl bg-white shadow-md border border-slate-100 flex items-center justify-center text-xl mb-3"> 
+           <div className="w-12 h-12 rounded-xl bg-white dark:bg-slate-700 shadow-md border border-slate-100 dark:border-slate-600 flex items-center justify-center text-xl mb-3"> 
              {catEmoji} 
            </div> 
-           <h3 className="text-base font-bold text-slate-900 truncate">{community.name}</h3> 
-           <p className="text-xs text-slate-500 line-clamp-2 mt-1.5 leading-relaxed">{community.description}</p> 
-           <div className="flex items-center gap-3 mt-4 pt-4 border-t border-slate-50 text-[11px] font-bold text-slate-400 uppercase tracking-tight"> 
+           <h3 className="text-base font-bold text-slate-900 dark:text-white truncate">{community.name}</h3> 
+           <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mt-1.5 leading-relaxed">{community.description}</p> 
+           <div className="flex items-center gap-3 mt-4 pt-4 border-t border-slate-50 dark:border-slate-700 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tight"> 
              <span className="flex items-center gap-1">
                <Users className="w-3.5 h-3.5" /> 
                {t("communities.members_other", { count: community.member_count || 0 })}
