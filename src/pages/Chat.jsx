@@ -70,21 +70,21 @@ function ProductSharePicker({ onShare, onClose, currentUser }) {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 10 }}
-      className="absolute bottom-full mb-2 left-0 right-0 bg-white rounded-2xl border border-slate-200 shadow-xl p-3 z-20"
+      className="absolute bottom-full mb-2 left-0 right-0 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xl p-3 z-20"
     >
       <div className="flex items-center justify-between mb-2">
-        <p className="text-sm font-semibold text-slate-800">{t("chat.shareProductTitle")}</p>
+        <p className="text-sm font-semibold text-slate-800 dark:text-white">{t("chat.shareProductTitle")}</p>
         <button onClick={onClose}><X className="w-4 h-4 text-slate-400" /></button>
       </div>
-      <div className="flex gap-1 mb-2 p-1 bg-slate-100 rounded-xl">
-        <button onClick={() => setTab("all")} className={`flex-1 text-xs py-1 rounded-lg font-medium transition-colors ${tab === "all" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"}`}>{t("chat.allProducts")}</button>
-        <button onClick={() => setTab("mine")} className={`flex-1 text-xs py-1 rounded-lg font-medium transition-colors ${tab === "mine" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"}`}>{t("chat.myStore")}</button>
+      <div className="flex gap-1 mb-2 p-1 bg-slate-100 dark:bg-slate-700 rounded-xl">
+        <button onClick={() => setTab("all")} className={`flex-1 text-xs py-1 rounded-lg font-medium transition-colors ${tab === "all" ? "bg-white dark:bg-slate-600 text-slate-900 dark:text-white shadow-sm" : "text-slate-500 dark:text-slate-400"}`}>{t("chat.allProducts")}</button>
+        <button onClick={() => setTab("mine")} className={`flex-1 text-xs py-1 rounded-lg font-medium transition-colors ${tab === "mine" ? "bg-white dark:bg-slate-600 text-slate-900 dark:text-white shadow-sm" : "text-slate-500 dark:text-slate-400"}`}>{t("chat.myStore")}</button>
       </div>
       <input
         value={search}
         onChange={e => setSearch(e.target.value)}
         placeholder={t("chat.searchProductsPlaceholder")}
-        className="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 mb-2 outline-none focus:border-indigo-300"
+        className="w-full text-xs bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl px-2.5 py-1.5 mb-2 outline-none focus:border-indigo-300 dark:text-white dark:placeholder:text-slate-400"
       />
       {isLoading ? (
         <div className="flex justify-center py-4"><Loader2 className="w-5 h-5 animate-spin text-slate-400" /></div>
@@ -93,11 +93,11 @@ function ProductSharePicker({ onShare, onClose, currentUser }) {
       ) : (
         <div className="grid grid-cols-3 gap-2 max-h-52 overflow-y-auto">
           {products.map(p => (
-            <button key={p.id} onClick={() => onShare(p)} className="text-left hover:bg-indigo-50 rounded-xl p-1.5 transition-colors border border-transparent hover:border-indigo-100">
-              <div className="aspect-square rounded-xl overflow-hidden bg-slate-100 mb-1">
+            <button key={p.id} onClick={() => onShare(p)} className="text-left hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-xl p-1.5 transition-colors border border-transparent hover:border-indigo-100 dark:hover:border-indigo-800">
+              <div className="aspect-square rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-700 mb-1">
                 {p.images?.[0] ? <img src={p.images[0]} alt="" className="w-full h-full object-cover" /> : <Package className="w-5 h-5 text-slate-300 m-auto mt-2" />}
               </div>
-              <p className="text-[10px] text-slate-700 line-clamp-2 font-medium">{p.title}</p>
+              <p className="text-[10px] text-slate-700 dark:text-slate-300 line-clamp-2 font-medium">{p.title}</p>
               <p className="text-[10px] font-bold text-indigo-600">{formatCurrency(p.price)}</p>
             </button>
           ))}
@@ -115,13 +115,13 @@ function OfferModal({ onSend, onClose }) {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 10 }}
-      className="absolute bottom-full mb-2 left-0 right-0 bg-white rounded-2xl border border-slate-200 shadow-xl p-4 z-20"
+      className="absolute bottom-full mb-2 left-0 right-0 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xl p-4 z-20"
     >
       <div className="flex items-center justify-between mb-3">
-        <p className="text-sm font-semibold text-slate-800">{t("chat.makeOfferTitle")}</p>
+        <p className="text-sm font-semibold text-slate-800 dark:text-white">{t("chat.makeOfferTitle")}</p>
         <button onClick={onClose}><X className="w-4 h-4 text-slate-400" /></button>
       </div>
-      <p className="text-xs text-slate-500 mb-2">{t("chat.enterPriceOffer")}</p>
+      <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">{t("chat.enterPriceOffer")}</p>
       <div className="flex gap-2">
         <Input type="number" placeholder="RWF 0" value={amount} onChange={e => setAmount(e.target.value)} className="rounded-xl" />
         <Button onClick={() => { onSend(parseFloat(amount)); onClose(); }} disabled={!amount} className="bg-indigo-600 hover:bg-indigo-700 rounded-xl shrink-0">{t("chat.send")}</Button>
@@ -342,12 +342,12 @@ export default function Chat() {
   const unreadTotal = conversations.reduce((acc, c) => acc + (c.unread_count || 0), 0);
 
   return (
-    <div className="h-[calc(100vh-3.5rem)] lg:h-screen flex bg-white">
+    <div className="h-[calc(100vh-3.5rem)] lg:h-screen flex bg-white dark:bg-slate-900">
       {/* Sidebar */}
-      <div className={`w-full lg:w-80 border-r border-slate-100 flex flex-col ${selectedConvo ? "hidden lg:flex" : "flex"}`}>
-        <div className="p-4 border-b border-slate-100">
+      <div className={`w-full lg:w-80 border-r border-slate-100 dark:border-slate-700 flex flex-col ${selectedConvo ? "hidden lg:flex" : "flex"}`}>
+        <div className="p-4 border-b border-slate-100 dark:border-slate-700">
           <div className="flex items-center justify-between mb-3">
-            <h1 className="text-xl font-bold text-slate-900">
+            <h1 className="text-xl font-bold text-slate-900 dark:text-white">
               {t("chat.title")}
               {unreadTotal > 0 && (
                 <span className="ml-2 text-xs bg-indigo-600 text-white rounded-full px-1.5 py-0.5">{unreadTotal}</span>
@@ -355,7 +355,7 @@ export default function Chat() {
             </h1>
             <button
               onClick={() => { setComposing(v => !v); setUserSearch(""); }}
-              className={`p-1.5 rounded-xl transition-colors ${composing ? "bg-indigo-100 text-indigo-600" : "hover:bg-slate-100 text-slate-400 hover:text-slate-600"}`}
+              className={`p-1.5 rounded-xl transition-colors ${composing ? "bg-indigo-100 text-indigo-600" : "hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"}`}
               title={t("chat.newConversation")}
             >
               <PenSquare className="w-4 h-4" />
@@ -392,13 +392,13 @@ export default function Chat() {
                           setComposing(false);
                           setUserSearch("");
                         }}
-                        className="w-full flex items-center gap-2.5 px-2 py-2 hover:bg-indigo-50 rounded-xl transition-colors text-left"
+                        className="w-full flex items-center gap-2.5 px-2 py-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-xl transition-colors text-left"
                       >
                         <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white text-xs font-semibold shrink-0">
                           {(u.display_name || u.username)?.[0]?.toUpperCase() || "U"}
                         </div>
                         <div className="min-w-0">
-                          <p className="text-sm font-semibold text-slate-800 truncate">{u.display_name || u.username}</p>
+                          <p className="text-sm font-semibold text-slate-800 dark:text-white truncate">{u.display_name || u.username}</p>
                           <p className="text-xs text-slate-400">@{u.username}</p>
                         </div>
                       </button>
@@ -427,10 +427,10 @@ export default function Chat() {
         <div className="flex-1 overflow-y-auto">
           {conversations.length === 0 ? (
             <div className="text-center py-16 px-4">
-              <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-3">
+              <div className="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-slate-700 flex items-center justify-center mx-auto mb-3">
                 <Send className="w-6 h-6 text-slate-400" />
               </div>
-              <p className="text-sm font-medium text-slate-600">{t("chat.noConversations")}</p>
+              <p className="text-sm font-medium text-slate-600 dark:text-slate-400">{t("chat.noConversations")}</p>
               <p className="text-xs text-slate-400 mt-1">{t("chat.startConversation")}</p>
             </div>
           ) : (
@@ -440,20 +440,20 @@ export default function Chat() {
                 <button
                   key={convo.other_user_username}
                   onClick={() => setSelectedConvo(convo.other_user_username)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition-colors text-left border-b border-slate-50 ${selectedConvo === convo.other_user_username ? "bg-indigo-50" : ""}`}
+                  className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-left border-b border-slate-50 dark:border-slate-700/50 ${selectedConvo === convo.other_user_username ? "bg-indigo-50 dark:bg-indigo-900/30" : ""}`}
                 >
                   <div className="relative shrink-0">
                     <Avatar name={convo.other_user_name} size={11} />
-                    <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-400 border-2 border-white rounded-full" />
+                    <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-400 border-2 border-white dark:border-slate-800 rounded-full" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-center">
-                      <p className={`text-sm truncate ${convo.unread_count > 0 ? "font-bold text-slate-900" : "font-semibold text-slate-700"}`}>{convo.other_user_name}</p>
+                      <p className={`text-sm truncate ${convo.unread_count > 0 ? "font-bold text-slate-900 dark:text-white" : "font-semibold text-slate-700 dark:text-slate-300"}`}>{convo.other_user_name}</p>
                       <span className="text-[10px] text-slate-400 shrink-0 ml-1">
                         {new Date(convo.last_message_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                       </span>
                     </div>
-                    <p className={`text-xs truncate ${convo.unread_count > 0 ? "text-slate-700 font-medium" : "text-slate-400"}`}>
+                    <p className={`text-xs truncate ${convo.unread_count > 0 ? "text-slate-700 dark:text-slate-300 font-medium" : "text-slate-400"}`}>
                       {convo.last_message_type === "product_share" ? t("chat.sharedProduct") : convo.last_message_type === "offer" ? t("chat.priceOffer") : convo.last_message_content}
                     </p>
                   </div>
@@ -473,39 +473,39 @@ export default function Chat() {
         {selectedConvo ? (
           <>
             {/* Header */}
-            <div className="h-16 border-b border-slate-100 flex items-center justify-between px-4 bg-white shadow-sm">
+            <div className="h-16 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between px-4 bg-white dark:bg-slate-800 shadow-sm">
               <div className="flex items-center gap-3">
-                <button onClick={() => setSelectedConvo(null)} className="lg:hidden p-1 rounded-lg hover:bg-slate-100">
-                  <ArrowLeft className="w-5 h-5" />
+                <button onClick={() => setSelectedConvo(null)} className="lg:hidden p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700">
+                  <ArrowLeft className="w-5 h-5 dark:text-slate-300" />
                 </button>
                 <div className="relative">
                   <Avatar name={selectedConvoName} size={9} />
-                  <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-400 border-2 border-white rounded-full" />
+                  <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-400 border-2 border-white dark:border-slate-800 rounded-full" />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-slate-900">{selectedConvoName}</p>
+                  <p className="text-sm font-semibold text-slate-900 dark:text-white">{selectedConvoName}</p>
                   <p className="text-xs text-green-500 font-medium">{t("chat.online")}</p>
                 </div>
               </div>
               <div className="flex items-center gap-1">
-                <button className="p-2 hover:bg-slate-100 rounded-xl transition-colors" title={t("chat.voiceCall")}>
-                  <Phone className="w-4 h-4 text-slate-500" />
+                <button className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors" title={t("chat.voiceCall")}>
+                  <Phone className="w-4 h-4 text-slate-500 dark:text-slate-400" />
                 </button>
-                <button className="p-2 hover:bg-slate-100 rounded-xl transition-colors" title={t("chat.videoCall")}>
-                  <Video className="w-4 h-4 text-slate-500" />
+                <button className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors" title={t("chat.videoCall")}>
+                  <Video className="w-4 h-4 text-slate-500 dark:text-slate-400" />
                 </button>
-                <button className="p-2 hover:bg-slate-100 rounded-xl transition-colors" onClick={() => setShowActionMenu(v => !v)}>
+                <button className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors" onClick={() => setShowActionMenu(v => !v)}>
                   <MoreVertical className="w-5 h-5 text-slate-400" />
                 </button>
               </div>
             </div>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-2 bg-slate-50/60">
+            <div className="flex-1 overflow-y-auto p-4 space-y-2 bg-slate-50/60 dark:bg-slate-900/60">
               {selectedMessages.length === 0 && (
                 <div className="text-center py-12 text-slate-400 text-sm">
-                  <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                    <Send className="w-5 h-5 text-slate-300" />
+                  <div className="w-12 h-12 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-2">
+                    <Send className="w-5 h-5 text-slate-300 dark:text-slate-500" />
                   </div>
                   {t("chat.startConversationWith", { name: selectedConvoName })}
                 </div>
@@ -531,7 +531,7 @@ export default function Chat() {
             </div>
 
             {/* Input Area */}
-            <div className="border-t border-slate-100 bg-white">
+            <div className="border-t border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800">
               {/* Reply preview */}
               <AnimatePresence>
                 {replyingTo && (
@@ -539,15 +539,15 @@ export default function Chat() {
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: "auto" }}
                     exit={{ opacity: 0, height: 0 }}
-                    className="flex items-center gap-2 px-4 py-2 bg-indigo-50 border-b border-indigo-100"
+                    className="flex items-center gap-2 px-4 py-2 bg-indigo-50 dark:bg-indigo-900/30 border-b border-indigo-100 dark:border-indigo-800"
                   >
                     <Reply className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
                     <div className="flex-1 min-w-0">
                       <p className="text-[10px] text-indigo-500 font-semibold">{t("chat.replyingTo")}</p>
-                      <p className="text-xs text-slate-600 truncate">{replyingTo.content}</p>
+                      <p className="text-xs text-slate-600 dark:text-slate-400 truncate">{replyingTo.content}</p>
                     </div>
-                    <button onClick={() => setReplyingTo(null)} className="w-5 h-5 rounded-full bg-slate-200 flex items-center justify-center">
-                      <X className="w-3 h-3 text-slate-500" />
+                    <button onClick={() => setReplyingTo(null)} className="w-5 h-5 rounded-full bg-slate-200 dark:bg-slate-600 flex items-center justify-center">
+                      <X className="w-3 h-3 text-slate-500 dark:text-slate-300" />
                     </button>
                   </motion.div>
                 )}
@@ -561,10 +561,10 @@ export default function Chat() {
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 10 }}
-                      className="absolute bottom-full mb-2 left-0 right-0 bg-white rounded-2xl border border-slate-200 shadow-xl p-3 z-20"
+                      className="absolute bottom-full mb-2 left-0 right-0 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xl p-3 z-20"
                     >
                       <div className="flex items-center justify-between mb-2">
-                        <p className="text-sm font-semibold text-slate-800">{t("chat.emojis")}</p>
+                        <p className="text-sm font-semibold text-slate-800 dark:text-white">{t("chat.emojis")}</p>
                         <button onClick={() => setShowEmojiPicker(false)}><X className="w-4 h-4 text-slate-400" /></button>
                       </div>
                       <div className="grid grid-cols-8 gap-2 max-h-48 overflow-y-auto p-1">
@@ -582,18 +582,18 @@ export default function Chat() {
                   )}
                 </AnimatePresence>
 
-                <div className="flex items-center gap-2 bg-slate-100 rounded-2xl px-3 py-1.5">
+                <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-700 rounded-2xl px-3 py-1.5">
                   <div className="flex items-center gap-1">
                     <button
                       onClick={() => { setShowProductPicker(v => !v); setShowOfferModal(false); setShowEmojiPicker(false); }}
-                      className={`p-1.5 rounded-xl transition-colors ${showProductPicker ? "bg-indigo-100 text-indigo-600" : "hover:bg-slate-200 text-slate-500"}`}
+                      className={`p-1.5 rounded-xl transition-colors ${showProductPicker ? "bg-indigo-100 text-indigo-600" : "hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-500 dark:text-slate-400"}`}
                       title={t("chat.shareProductTooltip")}
                     >
                       <ShoppingBag className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => { setShowOfferModal(v => !v); setShowProductPicker(false); setShowEmojiPicker(false); }}
-                      className={`p-1.5 rounded-xl transition-colors ${showOfferModal ? "bg-indigo-100 text-indigo-600" : "hover:bg-slate-200 text-slate-500"}`}
+                      className={`p-1.5 rounded-xl transition-colors ${showOfferModal ? "bg-indigo-100 text-indigo-600" : "hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-500 dark:text-slate-400"}`}
                       title={t("chat.makeAnOffer")}
                     >
                       <Star className="w-4 h-4" />
@@ -609,14 +609,14 @@ export default function Chat() {
                     value={newMessage}
                     onChange={e => setNewMessage(e.target.value)}
                     placeholder={t("chat.typeMessage")}
-                    className="flex-1 bg-transparent text-sm text-slate-700 placeholder:text-slate-400 outline-none py-1"
+                    className="flex-1 bg-transparent text-sm text-slate-700 dark:text-white placeholder:text-slate-400 outline-none py-1"
                     onKeyDown={e => e.key === "Enter" && !e.shiftKey && sendText()}
                   />
 
                   <div className="flex items-center gap-1">
                     <button
                       onClick={() => { setShowEmojiPicker(v => !v); setShowProductPicker(false); setShowOfferModal(false); }}
-                      className={`p-1.5 rounded-xl transition-colors ${showEmojiPicker ? "bg-indigo-100 text-indigo-600" : "hover:bg-slate-200 text-slate-500"}`}
+                      className={`p-1.5 rounded-xl transition-colors ${showEmojiPicker ? "bg-indigo-100 text-indigo-600" : "hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-500 dark:text-slate-400"}`}
                       title="Emoji picker"
                     >
                       <Smile className="w-4 h-4" />
@@ -646,11 +646,11 @@ export default function Chat() {
                   <motion.div
                     initial={{ scale: 0.95 }}
                     animate={{ scale: 1 }}
-                    className="bg-white rounded-2xl p-5 w-full max-w-sm shadow-2xl"
+                    className="bg-white dark:bg-slate-800 rounded-2xl p-5 w-full max-w-sm shadow-2xl"
                   >
-                    <h3 className="text-sm font-bold text-slate-900 mb-1">{t("chat.forwardMessage")}</h3>
-                    <p className="text-xs text-slate-500 mb-3 bg-slate-50 rounded-xl px-3 py-2 line-clamp-2">{forwardMsg.content}</p>
-                    <p className="text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wide">{t("chat.sendTo")}</p>
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-1">{t("chat.forwardMessage")}</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-3 bg-slate-50 dark:bg-slate-700 rounded-xl px-3 py-2 line-clamp-2">{forwardMsg.content}</p>
+                    <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-wide">{t("chat.sendTo")}</p>
                     {conversations.length > 0 ? (
                       <div className="space-y-1 max-h-52 overflow-y-auto mb-3">
                         {conversations.map(c => (
@@ -659,15 +659,15 @@ export default function Chat() {
                             onClick={() => setForwardToUsername(c.other_user_username)}
                             className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl transition-colors text-left border-2 ${
                               forwardToUsername === c.other_user_username
-                                ? "border-indigo-500 bg-indigo-50"
-                                : "border-transparent hover:bg-slate-50"
+                                ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30"
+                                : "border-transparent hover:bg-slate-50 dark:hover:bg-slate-700"
                             }`}
                           >
                             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white text-xs font-semibold shrink-0">
                               {(c.other_user_name)?.[0]?.toUpperCase() || "U"}
                             </div>
                             <div className="min-w-0">
-                              <p className="text-sm font-semibold text-slate-800 truncate">{c.other_user_name}</p>
+                              <p className="text-sm font-semibold text-slate-800 dark:text-white truncate">{c.other_user_name}</p>
                               <p className="text-xs text-slate-400">@{c.other_user_username}</p>
                             </div>
                             {forwardToUsername === c.other_user_username && (
@@ -693,10 +693,10 @@ export default function Chat() {
         ) : (
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center">
-              <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center mx-auto mb-4">
+              <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900 dark:to-purple-900 flex items-center justify-center mx-auto mb-4">
                 <Send className="w-9 h-9 text-indigo-400" />
               </div>
-              <h3 className="text-lg font-bold text-slate-900 mb-1">{t("chat.yourMessages")}</h3>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">{t("chat.yourMessages")}</h3>
               <p className="text-sm text-slate-400">{t("chat.selectConversation")}</p>
             </div>
           </div>
