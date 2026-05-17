@@ -255,7 +255,7 @@ function CommentItem({ comment, currentUser, replies, postId, onReplyPosted }) {
                     placeholder={`${t("common.replyTo") || "Reply to"} @${comment.author_username || "User"}...`}
                     className="rounded-xl border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 dark:text-white dark:placeholder:text-slate-400 h-9 text-sm focus:ring-indigo-100"
                     onKeyDown={(e) => {
-                      if (e.key === "Enter" && replyText.trim()) {
+                      if (e.key === "Enter" && !e.shiftKey && replyText.trim() && !replyMutation.isPending) {
                         e.preventDefault();
                         replyMutation.mutate();
                       }
@@ -444,7 +444,7 @@ export default function PostDetail() {
                   placeholder={t("chat.typeMessage")}
                   className="rounded-2xl border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 dark:text-white dark:placeholder:text-slate-400 h-11 focus:ring-indigo-100"
                   onKeyDown={(e) => {
-                    if (e.key === "Enter" && commentText.trim()) {
+                    if (e.key === "Enter" && !e.shiftKey && commentText.trim() && !addCommentMutation.isPending) {
                       e.preventDefault();
                       addCommentMutation.mutate();
                     }
