@@ -28,17 +28,17 @@ const CheckoutStep = ({ number, title, active, completed, children, onEdit, summ
   const { t } = useTranslation();
   return (
   <div 
-    className={`bg-white rounded-3xl border ${active ? "border-indigo-500 shadow-xl shadow-indigo-100/50" : "border-slate-100"} p-6 mb-4 transition-all duration-300`}
+    className={`bg-white dark:bg-slate-900 rounded-3xl border ${active ? "border-indigo-500 shadow-xl shadow-indigo-100/50 dark:shadow-indigo-900/20" : "border-slate-100 dark:border-slate-700"} p-6 mb-4 transition-all duration-300`}
   >
     <div className="flex items-center justify-between mb-6">
       <div className="flex items-center gap-4">
-        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${completed ? "bg-green-500 text-white" : active ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-400"}`}>
+        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${completed ? "bg-green-500 text-white" : active ? "bg-indigo-600 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500"}`}>
           {completed ? <CheckCircle2 className="w-5 h-5" /> : number}
         </div>
-        <h2 className={`font-black text-lg tracking-tight ${active ? "text-slate-900" : "text-slate-400"}`}>{title}</h2>
+        <h2 className={`font-black text-lg tracking-tight ${active ? "text-slate-900 dark:text-white" : "text-slate-400 dark:text-slate-500"}`}>{title}</h2>
       </div>
       {completed && onEdit && (
-        <button onClick={onEdit} className="text-[10px] font-black uppercase tracking-widest text-indigo-600 hover:text-indigo-700 bg-indigo-50 px-3 py-1 rounded-full transition-colors">{t("checkout.editDetails")}</button>
+        <button onClick={onEdit} className="text-[10px] font-black uppercase tracking-widest text-indigo-600 hover:text-indigo-700 bg-indigo-50 dark:bg-indigo-900/30 px-3 py-1 rounded-full transition-colors">{t("checkout.editDetails")}</button>
       )}
     </div>
     {(active || !completed) && (
@@ -49,7 +49,7 @@ const CheckoutStep = ({ number, title, active, completed, children, onEdit, summ
     {completed && !active && (
         <div className="animate-in fade-in slide-in-from-top-2 duration-500">
             {summary || (
-                <div className="text-sm text-slate-500 font-medium bg-slate-50/50 p-4 rounded-2xl border border-slate-100/50">
+                <div className="text-sm text-slate-500 dark:text-slate-400 font-medium bg-slate-50/50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100/50 dark:border-slate-700">
                     {t("checkout.requirementCompleted")}
                 </div>
             )}
@@ -109,24 +109,24 @@ const FulfillmentMethodCard = ({ method, selected, onSelect, store, subtotal }) 
       disabled={disabled}
       className={`w-full flex items-center justify-between p-4 rounded-2xl border-2 transition-all text-left ${
         disabled
-          ? "border-slate-100 bg-slate-50/50 opacity-60 cursor-not-allowed"
+          ? "border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 opacity-60 cursor-not-allowed"
           : selected
-          ? "border-indigo-600 bg-indigo-50/40 ring-4 ring-indigo-50"
-          : "border-slate-100 hover:border-slate-200"
+          ? "border-indigo-600 bg-indigo-50/40 dark:bg-indigo-900/20 ring-4 ring-indigo-50 dark:ring-indigo-900/30"
+          : "border-slate-100 dark:border-slate-700 hover:border-slate-200 dark:hover:border-slate-600"
       }`}
     >
       <div className="flex items-center gap-4">
-        <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${selected ? "bg-indigo-600 text-white" : "bg-slate-50 text-slate-500"}`}>
+        <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${selected ? "bg-indigo-600 text-white" : "bg-slate-50 dark:bg-slate-700 text-slate-500 dark:text-slate-400"}`}>
           <Icon className="w-5 h-5" />
         </div>
         <div>
-          <p className={`font-black text-sm ${selected ? "text-indigo-900" : "text-slate-900"}`}>{getMethodLabel(method)}</p>
-          <p className="text-xs text-slate-500 font-medium mt-0.5">{getSubLabel()}</p>
+          <p className={`font-black text-sm ${selected ? "text-indigo-900 dark:text-indigo-300" : "text-slate-900 dark:text-white"}`}>{getMethodLabel(method)}</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">{getSubLabel()}</p>
         </div>
       </div>
       <div className="flex items-center gap-3 flex-shrink-0">
         {fee !== null && (
-          <span className={`text-sm font-black ${fee === freeLabel ? "text-green-600" : "text-slate-900"}`}>{fee}</span>
+          <span className={`text-sm font-black ${fee === freeLabel ? "text-green-600" : "text-slate-900 dark:text-white"}`}>{fee}</span>
         )}
         {selected && <div className="w-5 h-5 rounded-full bg-indigo-600 flex items-center justify-center"><CheckCircle2 className="w-3.5 h-3.5 text-white" /></div>}
       </div>
@@ -403,13 +403,13 @@ export default function Checkout() {
     });
 
     return (
-      <div className="bg-slate-50/80 p-5 rounded-2xl border border-slate-100 space-y-3">
+      <div className="bg-slate-50/80 dark:bg-slate-800/50 p-5 rounded-2xl border border-slate-100 dark:border-slate-700 space-y-3">
         {methodSummary}
         {needsAddress && selectedAddress && (
-          <div className="flex items-start gap-3 pt-3 border-t border-slate-100 mt-3">
+          <div className="flex items-start gap-3 pt-3 border-t border-slate-100 dark:border-slate-700 mt-3">
             <MapPin className="w-4 h-4 text-indigo-500 flex-shrink-0 mt-0.5" />
             <div>
-              <p className="text-xs font-bold text-slate-700">{selectedAddress.street}</p>
+              <p className="text-xs font-bold text-slate-700 dark:text-slate-300">{selectedAddress.street}</p>
               <p className="text-xs text-slate-500">{selectedAddress.city}, {selectedAddress.state} {selectedAddress.zip}</p>
             </div>
           </div>
@@ -422,13 +422,13 @@ export default function Checkout() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8 lg:py-12">
-      <Link to={createPageUrl("cart")} className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-900 mb-8 transition-colors">
+      <Link to={createPageUrl("cart")} className="inline-flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white mb-8 transition-colors">
         <ArrowLeft className="w-4 h-4" /> {t("checkout.backToCart")}
       </Link>
 
       <div className="grid lg:grid-cols-12 gap-8 lg:gap-12">
         <div className="lg:col-span-8">
-          <h1 className="text-4xl font-black text-slate-900 mb-10 tracking-tight">{t("common.checkout")}</h1>
+          <h1 className="text-4xl font-black text-slate-900 dark:text-white mb-10 tracking-tight">{t("common.checkout")}</h1>
           
           {/* STEP 1: DELIVERY OPTIONS */}
           <CheckoutStep 
@@ -455,12 +455,12 @@ export default function Checkout() {
                 const storeHasPickup = selectedMethod === "pickup";
 
                 return (
-                  <div key={group.store_id} className={`space-y-3 ${idx !== 0 ? "pt-6 border-t border-slate-100" : ""}`}>
+                  <div key={group.store_id} className={`space-y-3 ${idx !== 0 ? "pt-6 border-t border-slate-100 dark:border-slate-700" : ""}`}>
                     <div className="flex items-center gap-2 mb-3">
                       <StoreIcon className="w-4 h-4 text-indigo-500" />
-                      <h3 className="font-black text-sm text-slate-900 tracking-tight">{group.store_name}</h3>
+                      <h3 className="font-black text-sm text-slate-900 dark:text-white tracking-tight">{group.store_name}</h3>
                       {enabledMethods.length === 1 && (
-                        <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full capitalize">{t("checkout.methodOnly", { method: enabledMethods[0] === "shipping" ? t("checkout.shippingLabel") : enabledMethods[0] === "delivery" ? t("checkout.deliveryLabel") : t("checkout.pickupLabel") })}</span>
+                        <span className="text-[10px] font-bold text-slate-400 bg-slate-100 dark:bg-slate-700 dark:text-slate-400 px-2 py-0.5 rounded-full capitalize">{t("checkout.methodOnly", { method: enabledMethods[0] === "shipping" ? t("checkout.shippingLabel") : enabledMethods[0] === "delivery" ? t("checkout.deliveryLabel") : t("checkout.pickupLabel") })}</span>
                       )}
                     </div>
 
@@ -476,13 +476,13 @@ export default function Checkout() {
                     ))}
 
                     {storeHasPickup && ds.pickup_instructions && (
-                      <div className="flex items-start gap-3 bg-amber-50 border border-amber-100 rounded-2xl p-4 animate-in fade-in duration-300">
+                      <div className="flex items-start gap-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800/30 rounded-2xl p-4 animate-in fade-in duration-300">
                         <Info className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
                         <div>
-                          <p className="text-xs font-black text-amber-900 uppercase tracking-wider mb-1">{t("checkout.pickupInstructions")}</p>
-                          <p className="text-xs text-amber-700 leading-relaxed">{ds.pickup_instructions}</p>
+                          <p className="text-xs font-black text-amber-900 dark:text-amber-300 uppercase tracking-wider mb-1">{t("checkout.pickupInstructions")}</p>
+                          <p className="text-xs text-amber-700 dark:text-amber-400 leading-relaxed">{ds.pickup_instructions}</p>
                           {store?.address && (
-                            <p className="text-xs text-amber-600 font-bold mt-2 flex items-center gap-1">
+                            <p className="text-xs text-amber-600 dark:text-amber-400 font-bold mt-2 flex items-center gap-1">
                               <MapPin className="w-3 h-3" /> {store.address}
                             </p>
                           )}
@@ -491,7 +491,7 @@ export default function Checkout() {
                     )}
 
                     {selectedMethod === "delivery" && ds.delivery_radius_km && (
-                      <div className="flex items-center gap-2 bg-blue-50 border border-blue-100 rounded-xl px-4 py-2.5 text-xs text-blue-700 font-medium">
+                      <div className="flex items-center gap-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/30 rounded-xl px-4 py-2.5 text-xs text-blue-700 dark:text-blue-300 font-medium">
                         <Navigation className="w-3.5 h-3.5 flex-shrink-0" />
                         {t("checkout.deliveryRadius", { km: ds.delivery_radius_km })}
                       </div>
@@ -502,10 +502,10 @@ export default function Checkout() {
 
               {/* Delivery Address (only when needed) */}
               {needsAddress && (
-                <div className="pt-6 border-t-2 border-slate-100 space-y-4">
+                <div className="pt-6 border-t-2 border-slate-100 dark:border-slate-700 space-y-4">
                   <div className="flex items-center gap-2 mb-2">
                     <MapPin className="w-4 h-4 text-indigo-500" />
-                    <h3 className="font-black text-sm text-slate-900">
+                    <h3 className="font-black text-sm text-slate-900 dark:text-white">
                       {storeGroups.every(g => storeDeliverySelections[g.store_id] === "delivery") ? t("checkout.deliveryAddress") : t("checkout.shippingAddress")}
                     </h3>
                   </div>
@@ -516,24 +516,24 @@ export default function Checkout() {
                         key={addr._id}
                         onClick={() => setSelectedAddressId(addr._id)}
                         className={`flex flex-col text-left p-4 rounded-2xl border-2 transition-all relative ${
-                          selectedAddressId === addr._id ? "border-indigo-600 bg-indigo-50/30 ring-4 ring-indigo-50" : "border-slate-100 hover:border-slate-200"
+                          selectedAddressId === addr._id ? "border-indigo-600 bg-indigo-50/30 dark:bg-indigo-900/20 ring-4 ring-indigo-50 dark:ring-indigo-900/30" : "border-slate-100 dark:border-slate-700 hover:border-slate-200 dark:hover:border-slate-600"
                         }`}
                       >
                         <div className="flex items-center justify-between mb-2">
-                            <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 bg-indigo-100/50 px-2 py-0.5 rounded-full">{addr.label || "Address"}</span>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 bg-indigo-100/50 dark:bg-indigo-900/30 px-2 py-0.5 rounded-full">{addr.label || "Address"}</span>
                             {selectedAddressId === addr._id && <CheckCircle2 className="w-4 h-4 text-indigo-600" />}
                         </div>
-                        <p className="font-bold text-slate-900 text-sm line-clamp-1">{addr.street}</p>
-                        <p className="text-xs text-slate-500 font-medium">{addr.city}, {addr.state} {addr.zip}</p>
-                        <p className="text-xs text-slate-400 mt-1">{addr.country}</p>
+                        <p className="font-bold text-slate-900 dark:text-white text-sm line-clamp-1">{addr.street}</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">{addr.city}, {addr.state} {addr.zip}</p>
+                        <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">{addr.country}</p>
                       </button>
                     ))}
                     
                     <button 
                         onClick={() => setIsAddingAddress(true)}
-                        className="flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-dashed border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/30 transition-all group"
+                        className="flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700 hover:border-indigo-400 dark:hover:border-indigo-500 hover:bg-indigo-50/30 dark:hover:bg-indigo-900/10 transition-all group"
                     >
-                        <div className="w-10 h-10 rounded-full bg-slate-50 group-hover:bg-indigo-100 flex items-center justify-center mb-2 transition-colors">
+                        <div className="w-10 h-10 rounded-full bg-slate-50 dark:bg-slate-700 group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/40 flex items-center justify-center mb-2 transition-colors">
                             <Plus className="w-5 h-5 text-slate-400 group-hover:text-indigo-600" />
                         </div>
                         <span className="text-sm font-bold text-slate-500 group-hover:text-indigo-600">{t("checkout.addNewAddress")}</span>
@@ -541,35 +541,35 @@ export default function Checkout() {
                   </div>
 
                   {isAddingAddress && (
-                    <div className="mt-6 p-6 bg-slate-50 rounded-2xl border border-slate-100 space-y-4 animate-in fade-in slide-in-from-top-4 duration-300">
+                    <div className="mt-6 p-6 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 space-y-4 animate-in fade-in slide-in-from-top-4 duration-300">
                       <div className="flex items-center justify-between mb-2">
-                          <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight">{t("checkout.newAddressDetails")}</h4>
-                          <button onClick={() => setIsAddingAddress(false)} className="text-xs font-bold text-slate-400 hover:text-slate-600">{t("common.cancel")}</button>
+                          <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight">{t("checkout.newAddressDetails")}</h4>
+                          <button onClick={() => setIsAddingAddress(false)} className="text-xs font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">{t("common.cancel")}</button>
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="col-span-2">
                             <label htmlFor="addr-label" className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">{t("checkout.addressLabel")}</label>
-                            <Input id="addr-label" value={newAddress.label} onChange={e => setNewAddress({...newAddress, label: e.target.value})} placeholder="Home" className="rounded-xl h-11 bg-white border-slate-200" />
+                            <Input id="addr-label" value={newAddress.label} onChange={e => setNewAddress({...newAddress, label: e.target.value})} placeholder="Home" className="rounded-xl h-11 bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600 dark:text-white" />
                         </div>
                         <div className="col-span-2">
                           <label htmlFor="addr-street" className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">{t("checkout.streetAddress")}</label>
-                          <Input id="addr-street" value={newAddress.street} onChange={e => setNewAddress({...newAddress, street: e.target.value})} placeholder="123 Main St" className="rounded-xl h-11 bg-white border-slate-200" />
+                          <Input id="addr-street" value={newAddress.street} onChange={e => setNewAddress({...newAddress, street: e.target.value})} placeholder="123 Main St" className="rounded-xl h-11 bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600 dark:text-white" />
                         </div>
                         <div>
                           <label htmlFor="addr-city" className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">{t("checkout.city")}</label>
-                          <Input id="addr-city" value={newAddress.city} onChange={e => setNewAddress({...newAddress, city: e.target.value})} placeholder="Lagos" className="rounded-xl h-11 bg-white border-slate-200" />
+                          <Input id="addr-city" value={newAddress.city} onChange={e => setNewAddress({...newAddress, city: e.target.value})} placeholder="Lagos" className="rounded-xl h-11 bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600 dark:text-white" />
                         </div>
                         <div>
                           <label htmlFor="addr-state" className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">{t("checkout.state")}</label>
-                          <Input id="addr-state" value={newAddress.state} onChange={e => setNewAddress({...newAddress, state: e.target.value})} placeholder="Lagos" className="rounded-xl h-11 bg-white border-slate-200" />
+                          <Input id="addr-state" value={newAddress.state} onChange={e => setNewAddress({...newAddress, state: e.target.value})} placeholder="Lagos" className="rounded-xl h-11 bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600 dark:text-white" />
                         </div>
                         <div>
                           <label htmlFor="addr-zip" className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">{t("checkout.zipCode")}</label>
-                          <Input id="addr-zip" value={newAddress.zip} onChange={e => setNewAddress({...newAddress, zip: e.target.value})} placeholder="100001" className="rounded-xl h-11 bg-white border-slate-200" />
+                          <Input id="addr-zip" value={newAddress.zip} onChange={e => setNewAddress({...newAddress, zip: e.target.value})} placeholder="100001" className="rounded-xl h-11 bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600 dark:text-white" />
                         </div>
                         <div>
                           <label htmlFor="addr-phone" className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">{t("checkout.phone")}</label>
-                          <Input id="addr-phone" value={newAddress.phone} onChange={e => setNewAddress({...newAddress, phone: e.target.value})} placeholder="+234..." className="rounded-xl h-11 bg-white border-slate-200" />
+                          <Input id="addr-phone" value={newAddress.phone} onChange={e => setNewAddress({...newAddress, phone: e.target.value})} placeholder="+234..." className="rounded-xl h-11 bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600 dark:text-white" />
                         </div>
                       </div>
                       <Button 
@@ -618,16 +618,16 @@ export default function Checkout() {
                       key={method.id}
                       onClick={() => setPaymentMethod(method.id)}
                       className={`w-full flex items-center justify-between p-4 rounded-2xl border-2 transition-all ${
-                        paymentMethod === method.id ? "border-indigo-600 bg-indigo-50/50" : "border-slate-100 hover:border-slate-200"
+                        paymentMethod === method.id ? "border-indigo-600 bg-indigo-50/50 dark:bg-indigo-900/20" : "border-slate-100 dark:border-slate-700 hover:border-slate-200 dark:hover:border-slate-600"
                       }`}
                     >
                       <div className="flex items-center gap-4">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${paymentMethod === method.id ? "bg-indigo-600 text-white" : "bg-slate-50 text-slate-500"}`}>
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${paymentMethod === method.id ? "bg-indigo-600 text-white" : "bg-slate-50 dark:bg-slate-700 text-slate-500 dark:text-slate-400"}`}>
                           <method.icon className="w-5 h-5" />
                         </div>
                         <div className="text-left">
-                          <p className={`font-black text-sm ${paymentMethod === method.id ? "text-indigo-900" : "text-slate-900"}`}>{method.name}</p>
-                          <p className="text-xs text-slate-500 font-medium">{method.desc}</p>
+                          <p className={`font-black text-sm ${paymentMethod === method.id ? "text-indigo-900 dark:text-indigo-300" : "text-slate-900 dark:text-white"}`}>{method.name}</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">{method.desc}</p>
                         </div>
                       </div>
                       {paymentMethod === method.id && <div className="w-5 h-5 rounded-full bg-indigo-600 flex items-center justify-center"><CheckCircle2 className="w-3.5 h-3.5 text-white" /></div>}
@@ -637,46 +637,46 @@ export default function Checkout() {
               </div>
 
               {/* Order Items Review */}
-              <div className="pt-6 border-t-2 border-slate-100">
+              <div className="pt-6 border-t-2 border-slate-100 dark:border-slate-700">
                 <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">{t("checkout.orderReview")}</p>
                 {calculations.storeBreakdown.map((store, idx) => {
                   const FulfillIcon = FULFILLMENT_ICONS[store.delivery_method] || Truck;
                   const storeInfo = storesMap[store.store_id];
                   const ds = storeInfo?.delivery_settings || {};
                   return (
-                    <div key={store.store_id} className={`space-y-3 ${idx !== 0 ? "pt-6 border-t border-slate-100 mt-4" : ""}`}>
+                    <div key={store.store_id} className={`space-y-3 ${idx !== 0 ? "pt-6 border-t border-slate-100 dark:border-slate-700 mt-4" : ""}`}>
                       <div className="flex items-center gap-2">
                         <StoreIcon className="w-4 h-4 text-indigo-600" />
-                        <h3 className="font-black text-sm text-slate-900 tracking-tight">{store.store_name}</h3>
-                        <span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-bold">{t("checkout.itemsCount", { count: store.items.length })}</span>
+                        <h3 className="font-black text-sm text-slate-900 dark:text-white tracking-tight">{store.store_name}</h3>
+                        <span className="text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 px-2 py-0.5 rounded-full font-bold">{t("checkout.itemsCount", { count: store.items.length })}</span>
                       </div>
                       <div className="space-y-3">
                         {store.items.map(item => (
                           <div key={item._id} className="flex gap-3 group">
-                            <div className="w-14 h-14 rounded-xl overflow-hidden bg-slate-50 border border-slate-100 shrink-0">
+                            <div className="w-14 h-14 rounded-xl overflow-hidden bg-slate-50 dark:bg-slate-700 border border-slate-100 dark:border-slate-600 shrink-0">
                               <img src={item.product_image} alt={item.product_title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                             </div>
                             <div className="flex-1 min-w-0 flex flex-col justify-center">
-                              <h4 className="font-bold text-slate-900 text-sm truncate">{item.product_title}</h4>
-                              <p className="text-xs text-slate-500 font-medium">{t("checkout.qty", { qty: item.quantity, price: formatCurrency(item.product_price) })}</p>
+                              <h4 className="font-bold text-slate-900 dark:text-white text-sm truncate">{item.product_title}</h4>
+                              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">{t("checkout.qty", { qty: item.quantity, price: formatCurrency(item.product_price) })}</p>
                             </div>
                             <div className="text-right flex flex-col justify-center">
-                              <p className="font-black text-slate-900 text-sm">{formatCurrency(item.product_price * item.quantity)}</p>
+                              <p className="font-black text-slate-900 dark:text-white text-sm">{formatCurrency(item.product_price * item.quantity)}</p>
                             </div>
                           </div>
                         ))}
                       </div>
-                      <div className="flex justify-between items-center py-2.5 px-3 bg-slate-50 rounded-xl border border-slate-100/50">
-                        <div className="flex items-center gap-2 text-xs text-slate-500 font-bold">
+                      <div className="flex justify-between items-center py-2.5 px-3 bg-slate-50 dark:bg-slate-700/50 rounded-xl border border-slate-100/50 dark:border-slate-600">
+                        <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 font-bold">
                           <FulfillIcon className="w-3.5 h-3.5" />
                           {store.delivery_method === "shipping" ? t("checkout.shippingLabel") : store.delivery_method === "delivery" ? t("checkout.deliveryLabel") : t("checkout.pickupLabel")}
                         </div>
-                        <span className="text-xs font-black text-slate-900">{store.shipping === 0 ? t("checkout.freeBadge") : formatCurrency(store.shipping)}</span>
+                        <span className="text-xs font-black text-slate-900 dark:text-white">{store.shipping === 0 ? t("checkout.freeBadge") : formatCurrency(store.shipping)}</span>
                       </div>
                       {store.delivery_method === "pickup" && ds.pickup_instructions && (
-                        <div className="flex items-start gap-3 bg-amber-50 border border-amber-100 rounded-2xl p-3">
+                        <div className="flex items-start gap-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800/30 rounded-2xl p-3">
                           <Info className="w-3.5 h-3.5 text-amber-600 flex-shrink-0 mt-0.5" />
-                          <p className="text-xs text-amber-700 font-medium">{ds.pickup_instructions}</p>
+                          <p className="text-xs text-amber-700 dark:text-amber-400 font-medium">{ds.pickup_instructions}</p>
                         </div>
                       )}
                     </div>
@@ -685,24 +685,24 @@ export default function Checkout() {
               </div>
 
               {/* Order Note */}
-              <div className="pt-6 border-t-2 border-slate-100 space-y-3">
+              <div className="pt-6 border-t-2 border-slate-100 dark:border-slate-700 space-y-3">
                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block">{t("checkout.orderNote")}</label>
                 <Textarea 
                   value={orderNote} 
                   onChange={e => setOrderNote(e.target.value)} 
                   placeholder={t("checkout.orderNotePlaceholder")} 
-                  className="rounded-2xl min-h-[80px] border-slate-200 resize-none focus:ring-indigo-500 focus:border-indigo-500" 
+                  className="rounded-2xl min-h-[80px] border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder:text-slate-400 resize-none focus:ring-indigo-500 focus:border-indigo-500" 
                 />
               </div>
 
               {/* Secure Badge */}
-              <div className="flex items-center gap-2 bg-indigo-50/50 rounded-2xl px-4 py-3 border border-indigo-100/50">
+              <div className="flex items-center gap-2 bg-indigo-50/50 dark:bg-indigo-900/20 rounded-2xl px-4 py-3 border border-indigo-100/50 dark:border-indigo-800/30">
                 <Shield className="w-4 h-4 text-indigo-600 flex-shrink-0" />
-                <p className="text-xs text-slate-600 font-medium">{t("checkout.securePaymentDesc")}</p>
+                <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">{t("checkout.securePaymentDesc")}</p>
               </div>
 
               <div className="flex gap-4">
-                <Button variant="outline" onClick={() => setStep(1)} className="flex-1 h-14 rounded-2xl font-black text-slate-600 border-slate-200">{t("common.back")}</Button>
+                <Button variant="outline" onClick={() => setStep(1)} className="flex-1 h-14 rounded-2xl font-black text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-600 dark:hover:bg-slate-700">{t("common.back")}</Button>
                 <Button 
                   onClick={() => checkoutMutation.mutate()} 
                   disabled={checkoutMutation.isPending}
@@ -724,40 +724,40 @@ export default function Checkout() {
         {/* SUMMARY SIDEBAR */}
         <div className="lg:col-span-4">
           <div className="sticky top-24 space-y-6">
-            <div className="bg-white rounded-[2.5rem] border border-slate-100 p-8 shadow-2xl shadow-slate-200/50 overflow-hidden relative">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-full -mr-16 -mt-16 opacity-50" />
+            <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 p-8 shadow-2xl shadow-slate-200/50 dark:shadow-slate-950/50 overflow-hidden relative">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 dark:bg-indigo-900/20 rounded-full -mr-16 -mt-16 opacity-50" />
               
-              <h3 className="font-black text-xl text-slate-900 mb-8 tracking-tight flex items-center gap-3">
+              <h3 className="font-black text-xl text-slate-900 dark:text-white mb-8 tracking-tight flex items-center gap-3">
                   <ShoppingBag className="w-5 h-5 text-indigo-600" /> {t("cart.orderSummary")}
               </h3>
 
               <div className="space-y-5 relative z-10">
-                <div className="flex justify-between text-slate-500 font-bold">
+                <div className="flex justify-between text-slate-500 dark:text-slate-400 font-bold">
                   <span>{t("cart.subtotal")}</span>
-                  <span className="text-slate-900">{formatCurrency(calculations.subtotal)}</span>
+                  <span className="text-slate-900 dark:text-white">{formatCurrency(calculations.subtotal)}</span>
                 </div>
-                <div className="flex justify-between text-slate-500 font-bold">
+                <div className="flex justify-between text-slate-500 dark:text-slate-400 font-bold">
                   <span>{t("checkout.fulfillment")}</span>
-                  <span className="text-slate-900">{calculations.shipping === 0 ? t("checkout.freeBadge") : formatCurrency(calculations.shipping)}</span>
+                  <span className="text-slate-900 dark:text-white">{calculations.shipping === 0 ? t("checkout.freeBadge") : formatCurrency(calculations.shipping)}</span>
                 </div>
                 {calculations.discount > 0 && (
-                  <div className="flex justify-between text-green-600 font-bold bg-green-50 px-3 py-2 rounded-xl border border-green-100">
+                  <div className="flex justify-between text-green-600 font-bold bg-green-50 dark:bg-green-900/20 px-3 py-2 rounded-xl border border-green-100 dark:border-green-800/30">
                     <span className="flex items-center gap-2"><Tag className="w-3.5 h-3.5" /> {t("common.discount")}</span>
                     <span>-{formatCurrency(calculations.discount)}</span>
                   </div>
                 )}
                 
-                <div className="h-px bg-slate-100 my-2" />
+                <div className="h-px bg-slate-100 dark:bg-slate-700 my-2" />
                 
                 <div className="flex justify-between items-end pt-2">
                   <div className="flex flex-col">
                       <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{t("cart.total")}</span>
-                      <span className="text-3xl font-black text-slate-900 tracking-tighter">{formatCurrency(calculations.total)}</span>
+                      <span className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">{formatCurrency(calculations.total)}</span>
                   </div>
                 </div>
 
                 {/* Coupon Code */}
-                <div className="mt-8 pt-8 border-t border-slate-100">
+                <div className="mt-8 pt-8 border-t border-slate-100 dark:border-slate-700">
                     {!appliedCoupon ? (
                         <div className="space-y-3">
                             <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">{t("checkout.couponCode")}</label>
@@ -766,7 +766,7 @@ export default function Checkout() {
                                     value={couponCode} 
                                     onChange={e => setCouponCode(e.target.value)} 
                                     placeholder={t("checkout.couponPlaceholder")} 
-                                    className="rounded-xl h-11 border-slate-200"
+                                    className="rounded-xl h-11 border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder:text-slate-400"
                                 />
                                 <Button 
                                     onClick={() => validateCouponMutation.mutate(couponCode)}
