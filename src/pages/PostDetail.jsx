@@ -61,7 +61,7 @@ function ReplyItem({ reply, currentUser }) {
       animate={{ opacity: 1, y: 0 }}
       className="flex gap-2.5 ml-10 mt-3"
     >
-      <div className="w-7 h-7 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 text-[10px] font-bold shrink-0 overflow-hidden border border-white shadow-sm">
+      <div className="w-7 h-7 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400 text-[10px] font-bold shrink-0 overflow-hidden border border-white dark:border-slate-800 shadow-sm">
         {reply.author_avatar ? (
           <img src={reply.author_avatar} alt="" className="w-full h-full object-cover" />
         ) : (
@@ -69,16 +69,16 @@ function ReplyItem({ reply, currentUser }) {
         )}
       </div>
       <div className="flex-1">
-        <div className="bg-slate-50 border border-slate-100 rounded-2xl rounded-tl-sm px-3.5 py-3">
+        <div className="bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl rounded-tl-sm px-3.5 py-3">
           <div className="flex items-center gap-1.5 mb-1">
-            <span className="text-xs font-bold text-slate-900">{reply.author_name || "User"}</span>
+            <span className="text-xs font-bold text-slate-900 dark:text-white">{reply.author_name || "User"}</span>
             <span className="text-[10px] text-slate-400">@{reply.author_username || "anonymous"}</span>
             <span className="text-[10px] text-slate-300">·</span>
             <span className="text-[10px] text-slate-400">
               {new Date(reply.created_at || reply.created_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
             </span>
           </div>
-          <p className="text-sm text-slate-600 leading-relaxed">{reply.content}</p>
+          <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">{reply.content}</p>
         </div>
         <button
           onClick={() => currentUser && likeMutation.mutate()}
@@ -173,7 +173,7 @@ function CommentItem({ comment, currentUser, replies, postId, onReplyPosted }) {
       animate={{ opacity: 1, y: 0 }}
       className="flex gap-3 group"
     >
-      <div className="w-9 h-9 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 text-xs font-bold shrink-0 border border-white shadow-sm overflow-hidden">
+      <div className="w-9 h-9 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400 text-xs font-bold shrink-0 border border-white dark:border-slate-800 shadow-sm overflow-hidden">
         {comment.author_avatar ? (
           <img src={comment.author_avatar} alt="" className="w-full h-full rounded-full object-cover" />
         ) : (
@@ -181,17 +181,17 @@ function CommentItem({ comment, currentUser, replies, postId, onReplyPosted }) {
         )}
       </div>
       <div className="flex-1 min-w-0">
-        <div className="bg-white border border-slate-100 rounded-2xl rounded-tl-sm p-4 hover:shadow-md hover:shadow-slate-100 transition-all">
+        <div className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl rounded-tl-sm p-4 hover:shadow-md hover:shadow-slate-100 dark:hover:shadow-slate-700/50 transition-all">
           <div className="flex items-center justify-between mb-1.5">
             <div className="flex items-center gap-1.5">
-              <span className="text-sm font-bold text-slate-900">{comment.author_name || "User"}</span>
+              <span className="text-sm font-bold text-slate-900 dark:text-white">{comment.author_name || "User"}</span>
               <span className="text-[10px] text-slate-400 font-medium">@{comment.author_username || "anonymous"}</span>
             </div>
             <span className="text-[10px] font-medium text-slate-400">
               {new Date(comment.created_at || comment.created_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
             </span>
           </div>
-          <p className="text-sm text-slate-600 leading-relaxed mb-3">{comment.content}</p>
+          <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed mb-3">{comment.content}</p>
 
           <div className="flex items-center gap-4">
             <button
@@ -232,7 +232,7 @@ function CommentItem({ comment, currentUser, replies, postId, onReplyPosted }) {
                     value={replyText}
                     onChange={(e) => setReplyText(e.target.value)}
                     placeholder={`${t("common.replyTo") || "Reply to"} @${comment.author_username || "User"}...`}
-                    className="rounded-xl border-slate-200 bg-white h-9 text-sm focus:ring-indigo-100"
+                    className="rounded-xl border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 dark:text-white dark:placeholder:text-slate-400 h-9 text-sm focus:ring-indigo-100"
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && replyText.trim()) {
                         e.preventDefault();
@@ -372,16 +372,16 @@ export default function PostDetail() {
     return (
       <div className="max-w-2xl mx-auto px-4 py-8 animate-pulse">
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-full bg-slate-200" />
+          <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700" />
           <div className="space-y-2">
-            <div className="h-3 w-24 bg-slate-200 rounded" />
-            <div className="h-2 w-16 bg-slate-100 rounded" />
+            <div className="h-3 w-24 bg-slate-200 dark:bg-slate-700 rounded" />
+            <div className="h-2 w-16 bg-slate-100 dark:bg-slate-800 rounded" />
           </div>
         </div>
-        <div className="aspect-square bg-slate-100 rounded-3xl mb-4" />
+        <div className="aspect-square bg-slate-100 dark:bg-slate-800 rounded-3xl mb-4" />
         <div className="space-y-2">
-          <div className="h-3 w-full bg-slate-200 rounded" />
-          <div className="h-3 w-3/4 bg-slate-100 rounded" />
+          <div className="h-3 w-full bg-slate-200 dark:bg-slate-700 rounded" />
+          <div className="h-3 w-3/4 bg-slate-100 dark:bg-slate-800 rounded" />
         </div>
       </div>
     );
@@ -397,13 +397,13 @@ export default function PostDetail() {
 
       {/* Comments */}
       <div className="mt-6">
-        <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+        <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
           {t("common.comments")}
           <span className="text-sm font-normal text-slate-400">({topLevelComments.length || post?.comments_count || 0})</span>
         </h3>
 
         {commentsError && (
-          <div className="mb-4 p-4 bg-red-50 border border-red-100 rounded-2xl text-red-600 text-sm flex items-center gap-2">
+          <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800/30 rounded-2xl text-red-600 dark:text-red-400 text-sm flex items-center gap-2">
             <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
             Failed to load comments. Please refresh.
           </div>
@@ -421,7 +421,7 @@ export default function PostDetail() {
                   value={commentText}
                   onChange={(e) => setCommentText(e.target.value)}
                   placeholder={t("chat.typeMessage")}
-                  className="rounded-2xl border-slate-200 bg-white h-11 focus:ring-indigo-100"
+                  className="rounded-2xl border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 dark:text-white dark:placeholder:text-slate-400 h-11 focus:ring-indigo-100"
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && commentText.trim()) {
                       e.preventDefault();
@@ -447,15 +447,15 @@ export default function PostDetail() {
           {commentsLoading ? (
             Array(3).fill(0).map((_, i) => (
               <div key={i} className="flex gap-3 animate-pulse">
-                <div className="w-9 h-9 rounded-full bg-slate-100" />
-                <div className="flex-1 bg-slate-50/50 rounded-2xl p-4 space-y-2">
-                  <div className="h-2.5 w-24 bg-slate-100 rounded" />
-                  <div className="h-2 w-full bg-slate-50 rounded" />
+                <div className="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-700" />
+                <div className="flex-1 bg-slate-50/50 dark:bg-slate-800/50 rounded-2xl p-4 space-y-2">
+                  <div className="h-2.5 w-24 bg-slate-100 dark:bg-slate-700 rounded" />
+                  <div className="h-2 w-full bg-slate-50 dark:bg-slate-700/50 rounded" />
                 </div>
               </div>
             ))
           ) : topLevelComments.length === 0 ? (
-            <div className="text-center py-12 bg-slate-50/50 rounded-3xl border border-dashed border-slate-200">
+            <div className="text-center py-12 bg-slate-50/50 dark:bg-slate-800/50 rounded-3xl border border-dashed border-slate-200 dark:border-slate-700">
               <MessageCircle className="w-10 h-10 text-slate-200 mx-auto mb-3" />
               <p className="text-slate-400 text-sm font-medium">No comments yet. Be the first!</p>
             </div>
