@@ -20,12 +20,12 @@ import { useTranslation } from "react-i18next";
 function StatCard({ icon: Icon, label, value, sub, color }) {
   // Icon is a component, rendered as <Icon />
   return (
-    <div className="bg-white rounded-2xl border border-slate-100 p-5">
+    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-5">
       <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${color}`}>
         <Icon className="w-5 h-5" />
       </div>
-      <p className="text-2xl font-bold text-slate-900">{value}</p>
-      <p className="text-sm text-slate-500 mt-0.5">{label}</p>
+      <p className="text-2xl font-bold text-slate-900 dark:text-white">{value}</p>
+      <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{label}</p>
       {sub && <p className="text-xs text-slate-400 mt-1">{sub}</p>}
     </div>
   );
@@ -264,8 +264,8 @@ export default function VendorFinance() {
     <div className="max-w-4xl mx-auto px-4 py-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">{t("finance.title")}</h1>
-          <p className="text-sm text-slate-500 mt-0.5">{t("finance.subtitle")}</p>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t("finance.title")}</h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{t("finance.subtitle")}</p>
         </div>
         <Dialog open={withdrawOpen} onOpenChange={setWithdrawOpen}>
           <DialogTrigger asChild>
@@ -283,16 +283,16 @@ export default function VendorFinance() {
               )}
             </DialogHeader>
             <div className="space-y-4 mt-2">
-              <div className="p-3 bg-indigo-50 rounded-xl">
-                <p className="text-xs text-slate-500">{t("finance.availableBalance")}</p>
+              <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl">
+                <p className="text-xs text-slate-500 dark:text-slate-400">{t("finance.availableBalance")}</p>
                 <p className="text-2xl font-bold text-indigo-700">${availableBalance.toFixed(2)}</p>
               </div>
 
               {!store?.payment_method && (
-                <div className="p-3 bg-amber-50 border border-amber-100 rounded-xl flex gap-3 items-start">
+                <div className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800/30 rounded-xl flex gap-3 items-start">
                   <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-xs font-bold text-amber-900">{t("finance.payoutMethodNotSet")}</p>
+                    <p className="text-xs font-bold text-amber-900 dark:text-amber-300">{t("finance.payoutMethodNotSet")}</p>
                     <p className="text-[10px] text-amber-700 mt-0.5 leading-relaxed">
                       {t("finance.payoutMethodNotSetDesc")}
                     </p>
@@ -300,7 +300,7 @@ export default function VendorFinance() {
                 </div>
               )}
               <div>
-                <label className="text-xs font-medium text-slate-600 mb-1 block">{t("finance.withdrawalAmount")} *</label>
+                <label className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">{t("finance.withdrawalAmount")} *</label>
                 <Input
                   type="number"
                   placeholder="0.00"
@@ -316,34 +316,34 @@ export default function VendorFinance() {
                 )}
               </div>
               
-              <div className="pt-2 border-t border-slate-100">
-                <label className="text-xs font-medium text-slate-600 mb-1 block">{t("finance.payoutMethod")}</label>
+              <div className="pt-2 border-t border-slate-100 dark:border-slate-700">
+                <label className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">{t("finance.payoutMethod")}</label>
                 <div className="flex gap-2">
                   <button 
                     type="button"
                     onClick={() => setWithdrawForm(p => ({ ...p, payment_method: "bank_transfer" }))}
-                    className={`flex-1 py-2 px-3 rounded-lg border text-xs font-medium transition-colors ${withdrawForm.payment_method === "bank_transfer" ? "bg-indigo-50 border-indigo-200 text-indigo-700" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}`}
+                    className={`flex-1 py-2 px-3 rounded-lg border text-xs font-medium transition-colors ${withdrawForm.payment_method === "bank_transfer" ? "bg-indigo-50 border-indigo-200 text-indigo-700" : "bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600"}`}
                   >
                     Bank
                   </button>
                   <button 
                     type="button"
                     onClick={() => setWithdrawForm(p => ({ ...p, payment_method: "paypal" }))}
-                    className={`flex-1 py-2 px-3 rounded-lg border text-xs font-medium transition-colors ${withdrawForm.payment_method === "paypal" ? "bg-indigo-50 border-indigo-200 text-indigo-700" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}`}
+                    className={`flex-1 py-2 px-3 rounded-lg border text-xs font-medium transition-colors ${withdrawForm.payment_method === "paypal" ? "bg-indigo-50 border-indigo-200 text-indigo-700" : "bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600"}`}
                   >
                     PayPal
                   </button>
                   <button 
                     type="button"
                     onClick={() => setWithdrawForm(p => ({ ...p, payment_method: "paystack" }))}
-                    className={`flex-1 py-2 px-3 rounded-lg border text-xs font-medium transition-colors ${withdrawForm.payment_method === "paystack" ? "bg-indigo-50 border-indigo-200 text-indigo-700" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}`}
+                    className={`flex-1 py-2 px-3 rounded-lg border text-xs font-medium transition-colors ${withdrawForm.payment_method === "paystack" ? "bg-indigo-50 border-indigo-200 text-indigo-700" : "bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600"}`}
                   >
                     Paystack
                   </button>
                   <button 
                     type="button"
                     onClick={() => setWithdrawForm(p => ({ ...p, payment_method: "mobile_money" }))}
-                    className={`flex-1 py-2 px-3 rounded-lg border text-xs font-medium transition-colors ${withdrawForm.payment_method === "mobile_money" ? "bg-indigo-50 border-indigo-200 text-indigo-700" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}`}
+                    className={`flex-1 py-2 px-3 rounded-lg border text-xs font-medium transition-colors ${withdrawForm.payment_method === "mobile_money" ? "bg-indigo-50 border-indigo-200 text-indigo-700" : "bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600"}`}
                   >
                     M-Money
                   </button>
@@ -353,20 +353,20 @@ export default function VendorFinance() {
               {(withdrawForm.payment_method === "bank_transfer" || withdrawForm.payment_method === "paystack") && (
                 <div className="space-y-4">
                   <div>
-                    <label className="text-xs font-medium text-slate-600 mb-1 block">Bank Name *</label>
+                    <label className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">Bank Name *</label>
                     <Input placeholder="e.g. Chase, Bank of America" value={withdrawForm.bank_name} onChange={e => setWithdrawForm(p => ({ ...p, bank_name: e.target.value }))} />
                   </div>
                   <div>
-                    <label className="text-xs font-medium text-slate-600 mb-1 block">Account Holder Name *</label>
+                    <label className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">Account Holder Name *</label>
                     <Input placeholder="Full name on account" value={withdrawForm.bank_account_name} onChange={e => setWithdrawForm(p => ({ ...p, bank_account_name: e.target.value }))} />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-xs font-medium text-slate-600 mb-1 block">Account Number *</label>
+                      <label className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">Account Number *</label>
                       <Input placeholder="Account #" value={withdrawForm.bank_account_number} onChange={e => setWithdrawForm(p => ({ ...p, bank_account_number: e.target.value }))} />
                     </div>
                     <div>
-                      <label className="text-xs font-medium text-slate-600 mb-1 block">Routing Number</label>
+                      <label className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">Routing Number</label>
                       <Input placeholder="Routing #" value={withdrawForm.routing_number} onChange={e => setWithdrawForm(p => ({ ...p, routing_number: e.target.value }))} />
                     </div>
                   </div>
@@ -376,7 +376,7 @@ export default function VendorFinance() {
               {withdrawForm.payment_method === "paypal" && (
                 <div className="space-y-4">
                   <div>
-                    <label className="text-xs font-medium text-slate-600 mb-1 block">PayPal Email *</label>
+                    <label className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">PayPal Email *</label>
                     <Input type="email" placeholder="your-paypal@email.com" value={withdrawForm.paypal_email} onChange={e => setWithdrawForm(p => ({ ...p, paypal_email: e.target.value }))} />
                   </div>
                   <p className="text-[10px] text-slate-400">Payouts will be sent to this PayPal address within 1-3 business days.</p>
@@ -386,7 +386,7 @@ export default function VendorFinance() {
               {withdrawForm.payment_method === "mobile_money" && (
                 <div className="space-y-4">
                   <div>
-                    <label className="text-xs font-medium text-slate-600 mb-1 block">Mobile Money Number *</label>
+                    <label className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">Mobile Money Number *</label>
                     <Input placeholder="07XXXXXXXX" value={withdrawForm.mobile_money_number} onChange={e => setWithdrawForm(p => ({ ...p, mobile_money_number: e.target.value }))} />
                   </div>
                   <p className="text-[10px] text-slate-400">Payouts will be sent to this Mobile Money number via Paystack.</p>
@@ -424,15 +424,15 @@ export default function VendorFinance() {
 
       {/* Monthly Chart */}
       {chartData.length > 0 && (
-        <div className="bg-white rounded-2xl border border-slate-100 p-5 mb-6">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-5 mb-6">
           <div className="flex items-center gap-2 mb-4">
             <BarChart3 className="w-5 h-5 text-indigo-500" />
-            <h3 className="font-semibold text-slate-900">{t("finance.monthlyRevenue")}</h3>
+            <h3 className="font-semibold text-slate-900 dark:text-white">{t("finance.monthlyRevenue")}</h3>
           </div>
           <div className="flex items-end gap-2 h-28">
             {chartData.map(([month, val]) => (
               <div key={month} className="flex-1 flex flex-col items-center gap-1">
-                <span className="text-[10px] text-slate-500">${val.toFixed(0)}</span>
+                <span className="text-[10px] text-slate-500 dark:text-slate-400">${val.toFixed(0)}</span>
                 <div
                   className="w-full bg-gradient-to-t from-indigo-600 to-indigo-400 rounded-t-lg transition-all"
                   style={{ height: `${Math.max(8, (val / maxVal) * 80)}px` }}
@@ -446,9 +446,9 @@ export default function VendorFinance() {
 
       <div className="grid lg:grid-cols-2 gap-6">
         {/* Transaction History */}
-        <div className="bg-white rounded-2xl border border-slate-100 p-5">
-          <h3 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
-            <CreditCard className="w-5 h-5 text-slate-500" /> {t("finance.transactionHistory")}
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-5">
+          <h3 className="font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+            <CreditCard className="w-5 h-5 text-slate-500 dark:text-slate-400" /> {t("finance.transactionHistory")}
           </h3>
           <div className="space-y-2 max-h-96 overflow-y-auto">
             {orders.length === 0 ? (
@@ -458,13 +458,13 @@ export default function VendorFinance() {
                 <div key={order.id}>
                   <button
                     onClick={() => setExpandedOrder(expandedOrder === order.id ? null : order.id)}
-                    className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-50 transition-colors text-left"
+                    className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-left"
                   >
                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${orderStatusColors[order.status] || "bg-slate-50 text-slate-600"}`}>
                       <DollarSign className="w-4 h-4" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-slate-700 truncate">
+                      <p className="text-xs font-semibold text-slate-700 dark:text-slate-300 truncate">
                         {order.buyer_name || `@${order.buyer_username}`}
                       </p>
                       <p className="text-[10px] text-slate-400">
@@ -486,16 +486,16 @@ export default function VendorFinance() {
                         exit={{ height: 0, opacity: 0 }}
                         className="overflow-hidden"
                       >
-                        <div className="mx-2.5 mb-2 p-3 bg-slate-50 rounded-xl space-y-1.5">
+                        <div className="mx-2.5 mb-2 p-3 bg-slate-50 dark:bg-slate-700 rounded-xl space-y-1.5">
                           <div className="flex justify-between text-xs">
-                            <span className="text-slate-500">{t("finance.gross")}</span>
+                            <span className="text-slate-500 dark:text-slate-400">{t("finance.gross")}</span>
                             <span className="font-medium">{formatCurrency(order.total)}</span>
                           </div>
                           <div className="flex justify-between text-xs">
-                            <span className="text-slate-500">{t("finance.platformFee")}</span>
+                            <span className="text-slate-500 dark:text-slate-400">{t("finance.platformFee")}</span>
                             <span className="text-red-500">-{formatCurrency(order.total * 0.1)}</span>
                           </div>
-                          <div className="flex justify-between text-xs font-semibold border-t border-slate-200 pt-1.5">
+                          <div className="flex justify-between text-xs font-semibold border-t border-slate-200 dark:border-slate-600 pt-1.5">
                             <span>{t("finance.netPayout")}</span>
                             <span className="text-green-600">{formatCurrency(order.total * 0.9)}</span>
                           </div>
@@ -505,7 +505,7 @@ export default function VendorFinance() {
                           </div>
                           <button
                             onClick={() => downloadTaxInvoice(order)}
-                            className="w-full flex items-center justify-center gap-1.5 mt-2 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+                            className="w-full flex items-center justify-center gap-1.5 mt-2 py-1.5 bg-white dark:bg-slate-600 border border-slate-200 dark:border-slate-500 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-500 transition-colors"
                           >
                             <FileText className="w-3.5 h-3.5" /> {t("finance.downloadInvoice")}
                           </button>
@@ -520,12 +520,12 @@ export default function VendorFinance() {
         </div>
 
         {/* Withdrawal History */}
-        <div className="bg-white rounded-2xl border border-slate-100 p-5">
-          <h3 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
-            <Building2 className="w-5 h-5 text-slate-500" /> {t("finance.withdrawalRequests")}
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-5">
+          <h3 className="font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+            <Building2 className="w-5 h-5 text-slate-500 dark:text-slate-400" /> {t("finance.withdrawalRequests")}
           </h3>
           {pendingWithdrawals > 0 && (
-            <div className="flex items-center gap-2 p-3 bg-amber-50 rounded-xl mb-3">
+            <div className="flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-xl mb-3">
               <Clock className="w-4 h-4 text-amber-600 shrink-0" />
               <p className="text-xs text-amber-700">{t("finance.pendingProcessing", { amount: pendingWithdrawals.toFixed(2) })}</p>
             </div>
@@ -539,12 +539,12 @@ export default function VendorFinance() {
               </div>
             ) : (
               withdrawals.map(w => (
-                <div key={w.id} className="flex items-center gap-3 p-3 rounded-xl border border-slate-100">
+                <div key={w.id} className="flex items-center gap-3 p-3 rounded-xl border border-slate-100 dark:border-slate-700">
                   <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${statusColors[w.status] || "bg-slate-50 text-slate-600"}`}>
                     <ArrowDownCircle className="w-4 h-4" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-slate-900">{formatCurrency(w.amount)}</p>
+                    <p className="text-sm font-semibold text-slate-900 dark:text-white">{formatCurrency(w.amount)}</p>
                     <p className="text-xs text-slate-400">
                       {w.payment_method === 'mobile_money'
                         ? (w.mobile_money_number || 'Mobile Money')
