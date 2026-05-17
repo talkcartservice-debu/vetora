@@ -116,26 +116,26 @@ export default function Support() {
     <div className="max-w-5xl mx-auto px-4 py-12">
       <Link 
         to={createPageUrl("Home")} 
-        className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-900 mb-8 transition-colors"
+        className="inline-flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white mb-8 transition-colors"
       >
         <ArrowLeft className="w-4 h-4" /> {t('support.backToHome')}
       </Link>
 
       <div className="text-center mb-16">
-        <h1 className="text-4xl font-black text-slate-900 mb-4 tracking-tight">{t('support.title')}</h1>
-        <p className="text-slate-500 max-w-lg mx-auto font-medium">
+        <h1 className="text-4xl font-black text-slate-900 dark:text-white mb-4 tracking-tight">{t('support.title')}</h1>
+        <p className="text-slate-500 dark:text-slate-400 max-w-lg mx-auto font-medium">
           {t('support.subtitle')}
         </p>
       </div>
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
         {supportChannels.map((channel, idx) => (
-          <div key={idx} className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/50 text-center flex flex-col items-center group hover:border-indigo-100 transition-all">
-            <div className={`w-14 h-14 rounded-2xl ${channel.color} flex items-center justify-center text-white mb-6 shadow-lg shadow-slate-200 group-hover:scale-110 transition-transform`}>
+          <div key={idx} className="bg-white dark:bg-slate-800 p-6 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-xl shadow-slate-200/50 dark:shadow-slate-950/30 text-center flex flex-col items-center group hover:border-indigo-100 dark:hover:border-indigo-700 transition-all">
+            <div className={`w-14 h-14 rounded-2xl ${channel.color} flex items-center justify-center text-white mb-6 shadow-lg shadow-slate-200 dark:shadow-slate-900/50 group-hover:scale-110 transition-transform`}>
               <channel.icon className="w-7 h-7" />
             </div>
-            <h3 className="font-black text-lg mb-2">{channel.title}</h3>
-            <p className="text-xs text-slate-500 font-medium mb-6 leading-relaxed flex-1">
+            <h3 className="font-black text-lg mb-2 text-slate-900 dark:text-white">{channel.title}</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mb-6 leading-relaxed flex-1">
               {channel.description}
             </p>
             <Button 
@@ -201,7 +201,7 @@ export default function Support() {
             <div className="space-y-2">
               <Label htmlFor="reason" className="text-sm font-bold">{t('support.report.reasonLabel')}</Label>
               <Select onValueChange={(v) => setReportData({ ...reportData, reason: v })} value={reportData.reason}>
-                <SelectTrigger id="reason" className="rounded-xl border-slate-200">
+                <SelectTrigger id="reason" className="rounded-xl border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-white">
                   <SelectValue placeholder={t('support.report.reasonPlaceholder')} />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl">
@@ -219,7 +219,7 @@ export default function Support() {
               <Textarea
                 id="description"
                 placeholder={t('support.report.detailsPlaceholder')}
-                className="min-h-[120px] rounded-xl border-slate-200 resize-none"
+                className="min-h-[120px] rounded-xl border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder:text-slate-400 resize-none"
                 value={reportData.description}
                 onChange={(e) => setReportData({ ...reportData, description: e.target.value })}
               />
