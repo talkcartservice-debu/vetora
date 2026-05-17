@@ -17,6 +17,7 @@ import { affiliateLinksAPI, productsAPI, vendorSubscriptionsAPI } from "@/api/ap
 import { useAuth } from "@/lib/AuthContext";
 import { useTranslation } from "react-i18next";
 import { createPageUrl, formatCurrency } from "@/lib/utils";
+import { usePlatformSettings } from "@/hooks/usePlatformSettings";
 
 const RANK_MEDAL = {
   1: { bg: "bg-yellow-100 dark:bg-yellow-900", text: "text-yellow-700 dark:text-yellow-400", border: "border-yellow-200 dark:border-yellow-700", icon: Crown },
@@ -290,6 +291,7 @@ export default function Affiliate() {
   const [leaderboardPeriod, setLeaderboardPeriod] = useState("month");
   const queryClient = useQueryClient();
   const { user: currentUser } = useAuth();
+  const { subscriptionMode } = usePlatformSettings();
 
   const { data: subscription } = useQuery({
     queryKey: ["vendorSubscription", currentUser?.username],
@@ -298,10 +300,10 @@ export default function Affiliate() {
       const subs = res.subscriptions || res.data || (Array.isArray(res) ? res : []);
       return subs.find(s => s.status === 'active') || null;
     },
-    enabled: !!currentUser?.username,
+    enabled: !!currentUser?.username && subscriptionMode,
   });
 
-  const isEliteVendor = subscription?.plan === "elite";
+  const isEliteVendor = !subscriptionMode || subscription?.plan === "elite";
 
   const { data: myData, isLoading } = useQuery({
     queryKey: ["affiliateLinks", currentUser?.username],
@@ -320,21 +322,25 @@ export default function Affiliate() {
   };
 
   const { data: products = [], isPending: productsLoading } = useQuery({
-    queryKey: ["affiliateProducts", search],
+    queryKey: ["affiliateProducts", search, subscriptionMode],
     queryFn: async () => {
-      const res = await productsAPI.list({ 
-        status: "active", 
-        vendor_plan: "elite", // Only show products from elite vendors
+      const params = {
+        status: "active",
         search: search || undefined,
-        sort: "-sales_count", 
-        limit: 30 
-      });
+        sort: "-sales_count",
+        limit: 50,
+      };
+      if (subscriptionMode) {
+        params.vendor_plan = "elite";
+      }
+      const res = await productsAPI.list(params);
       return res.data || [];
     },
     staleTime: 60000,
   });
 
-  const filteredProducts = search ? products : products.slice(0, 12);
+  const filteredProducts = (search ? products : products.slice(0, 12))
+    .filter(p => p.vendor_username !== currentUser?.username);
 
   const { data: leaderboardData, isLoading: leaderboardLoading } = useQuery({
     queryKey: ["affiliateLeaderboard", leaderboardPeriod],
@@ -357,6 +363,10 @@ export default function Affiliate() {
       setCreating(false);
       setSelectedProduct(null);
       queryClient.invalidateQueries({ queryKey: ["affiliateLinks"] });
+    },
+    onError: (error) => {
+      const msg = error?.message || t("affiliate.linkCreateFailed") || "Failed to create affiliate link";
+      toast.error(msg);
     },
     onSettled: () => {
       setPendingProductId(null);
