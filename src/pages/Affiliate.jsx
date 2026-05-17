@@ -186,17 +186,39 @@ function LeaderboardItem({ rank, name, avatar_url, total_earned, total_sales, is
   );
 }
 
-function AssetCard({ asset }) {
+function AssetCard({ asset, affiliateUrl }) {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const [copied, setCopied] = useState(false);
   const Icon = asset.icon;
 
+  const resolvedContent = affiliateUrl
+    ? asset.content.replace(/\{YOUR_LINK\}/g, affiliateUrl)
+    : asset.content;
+
   const handleCopy = () => {
-    navigator.clipboard.writeText(asset.content);
+    navigator.clipboard.writeText(resolvedContent);
     setCopied(true);
     toast.success(t("affiliate.assetCopied", { title: asset.title }));
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const renderPreview = () => {
+    if (!affiliateUrl) {
+      return <pre className="text-xs text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-xl p-4 whitespace-pre-wrap font-sans leading-relaxed mb-3 max-h-64 overflow-y-auto">{resolvedContent}</pre>;
+    }
+    const parts = asset.content.split(/(\{YOUR_LINK\})/g);
+    return (
+      <pre className="text-xs text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-xl p-4 whitespace-pre-wrap font-sans leading-relaxed mb-3 max-h-64 overflow-y-auto">
+        {parts.map((part, i) =>
+          part === "{YOUR_LINK}" ? (
+            <span key={i} className="text-indigo-600 dark:text-indigo-400 font-semibold break-all">{affiliateUrl}</span>
+          ) : (
+            part
+          )
+        )}
+      </pre>
+    );
   };
 
   return (
@@ -221,9 +243,7 @@ function AssetCard({ asset }) {
               exit={{ opacity: 0, height: 0 }}
               className="overflow-hidden"
             >
-              <pre className="text-xs text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-xl p-4 whitespace-pre-wrap font-sans leading-relaxed mb-3 max-h-64 overflow-y-auto">
-                {asset.content}
-              </pre>
+              {renderPreview()}
             </motion.div>
           )}
         </AnimatePresence>
@@ -386,6 +406,11 @@ export default function Affiliate() {
   const pendingPayout = (stats.total_earned || 0) - (stats.total_paid || 0);
 
   const alreadyLinked = (productId) => myLinks.some(l => l.product_id === productId);
+
+  const activeLink = myLinks.find(l => l.status === "active");
+  const affiliateUrl = activeLink
+    ? `${window.location.origin}/Marketplace?ref=${activeLink.ref_code}`
+    : null;
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-6">
@@ -664,15 +689,25 @@ export default function Affiliate() {
                 {t("affiliate.templatesCount", { count: MARKETING_ASSETS.length })}
               </Badge>
             </div>
-            <div className="bg-amber-50 dark:bg-amber-950 border border-amber-100 dark:border-amber-900 rounded-2xl px-4 py-3 flex items-center gap-3">
-              <Zap className="w-4 h-4 text-amber-600 shrink-0" />
-              <p className="text-xs text-amber-800 dark:text-amber-400 font-medium">
-                {t("affiliate.replaceLinkHint")}
-              </p>
-            </div>
+            {affiliateUrl ? (
+              <div className="bg-green-50 dark:bg-green-950 border border-green-100 dark:border-green-900 rounded-2xl px-4 py-3 flex items-start gap-3">
+                <Check className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />
+                <div className="min-w-0">
+                  <p className="text-xs text-green-800 dark:text-green-400 font-semibold mb-0.5">Your link is auto-filled in every template</p>
+                  <p className="text-[11px] text-green-700 dark:text-green-500 font-mono truncate">{affiliateUrl}</p>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-amber-50 dark:bg-amber-950 border border-amber-100 dark:border-amber-900 rounded-2xl px-4 py-3 flex items-center gap-3">
+                <Zap className="w-4 h-4 text-amber-600 shrink-0" />
+                <p className="text-xs text-amber-800 dark:text-amber-400 font-medium">
+                  Create an affiliate link in the <strong>Links</strong> tab first — it will be auto-filled here.
+                </p>
+              </div>
+            )}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {MARKETING_ASSETS.map(asset => (
-                <AssetCard key={asset.id} asset={asset} />
+                <AssetCard key={asset.id} asset={asset} affiliateUrl={affiliateUrl} />
               ))}
             </div>
           </div>
