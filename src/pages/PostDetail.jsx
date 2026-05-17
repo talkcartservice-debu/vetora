@@ -13,6 +13,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { useSocket } from "@/lib/SocketContext";
 
 function ReplyItem({ reply, currentUser }) {
+  const queryClient = useQueryClient();
   const { on } = useSocket();
   const replyId = (reply.id || reply._id)?.toString();
   const [isLiked, setIsLiked] = useState(!!reply.is_liked);
@@ -48,6 +49,16 @@ function ReplyItem({ reply, currentUser }) {
     onSuccess: (data) => {
       if (data?.likes_count !== undefined) setLikesCount(data.likes_count);
       if (data?.is_liked !== undefined) setIsLiked(data.is_liked);
+      queryClient.setQueriesData({ queryKey: ["postComments"] }, (old) => {
+        if (!old) return old;
+        const updateReply = (c) =>
+          (c.id || c._id)?.toString() === replyId
+            ? { ...c, likes_count: data?.likes_count ?? c.likes_count, is_liked: data?.is_liked ?? c.is_liked }
+            : c;
+        if (Array.isArray(old)) return old.map(updateReply);
+        if (old.comments) return { ...old, comments: old.comments.map(updateReply) };
+        return old;
+      });
     },
     onError: () => {
       setIsLiked(!!reply.is_liked);
@@ -140,6 +151,16 @@ function CommentItem({ comment, currentUser, replies, postId, onReplyPosted }) {
     onSuccess: (data) => {
       if (data?.likes_count !== undefined) setLikesCount(data.likes_count);
       if (data?.is_liked !== undefined) setIsLiked(data.is_liked);
+      queryClient.setQueriesData({ queryKey: ["postComments"] }, (old) => {
+        if (!old) return old;
+        const updateComment = (c) =>
+          (c.id || c._id)?.toString() === commentId
+            ? { ...c, likes_count: data?.likes_count ?? c.likes_count, is_liked: data?.is_liked ?? c.is_liked }
+            : c;
+        if (Array.isArray(old)) return old.map(updateComment);
+        if (old.comments) return { ...old, comments: old.comments.map(updateComment) };
+        return old;
+      });
     },
     onError: () => {
       setIsLiked(!!comment.is_liked);

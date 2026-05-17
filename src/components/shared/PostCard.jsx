@@ -170,25 +170,50 @@ const PostCard = memo(function PostCard({ post, currentUser }) {
       if (data && data.is_liked !== undefined) {
         setOptimisticLiked(data.is_liked);
       }
+      const updatePostInCache = (queryKey) => {
+        queryClient.setQueriesData({ queryKey }, (old) => {
+          if (!old) return old;
+          if (old.pages) {
+            return {
+              ...old,
+              pages: old.pages.map((page) => ({
+                ...page,
+                data: page.data?.map((p) =>
+                  (p.id || p._id)?.toString() === postId
+                    ? { ...p, likes_count: data?.likes_count ?? p.likes_count, is_liked: data?.is_liked ?? p.is_liked }
+                    : p
+                ),
+              })),
+            };
+          }
+          if (Array.isArray(old)) {
+            return old.map((p) =>
+              (p.id || p._id)?.toString() === postId
+                ? { ...p, likes_count: data?.likes_count ?? p.likes_count, is_liked: data?.is_liked ?? p.is_liked }
+                : p
+            );
+          }
+          return old;
+        });
+      };
+      updatePostInCache(["posts"]);
+      updatePostInCache(["communityPosts"]);
+      updatePostInCache(["userPosts"]);
+      updatePostInCache(["likedPosts"]);
+      updatePostInCache(["userLikes"]);
+      queryClient.setQueryData(["postDetail", postId, currentUser?.username], (old) =>
+        old ? { ...old, likes_count: data?.likes_count ?? old.likes_count, is_liked: data?.is_liked ?? old.is_liked } : old
+      );
     },
     onError: (error) => {
       if (error.status === 404) {
         toast.error("This post is no longer available");
-        // We could invalidate queries here to remove it from the feed
         queryClient.invalidateQueries({ queryKey: ["posts"] });
       } else {
         toast.error("Failed to update like");
       }
       setOptimisticLiked(isLiked);
       setOptimisticCount(post?.likes_count || 0);
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["posts"] });
-      queryClient.invalidateQueries({ queryKey: ["communityPosts"] });
-      queryClient.invalidateQueries({ queryKey: ["userPosts"] });
-      queryClient.invalidateQueries({ queryKey: ["likedPosts"] });
-      queryClient.invalidateQueries({ queryKey: ["userLikes"] });
-      queryClient.invalidateQueries({ queryKey: ["postDetail", postId] });
     },
   });
 
