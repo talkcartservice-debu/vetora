@@ -1,7 +1,8 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { io } from 'socket.io-client';
 import { useAuth } from './AuthContext';
 import { showLocalNotification } from './pushNotifications';
+import { notificationsAPI } from '@/api/apiClient';
 
 const SocketContext = createContext(null);
 
@@ -19,6 +20,7 @@ export const SocketProvider = ({ children }) => {
   const { user } = useAuth();
   const [socket, setSocket] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
+  const lastNotificationTime = useRef(new Date().toISOString());
 
   useEffect(() => {
     if (!user) {
@@ -49,6 +51,7 @@ export const SocketProvider = ({ children }) => {
     newSocket.on('reconnect', (attempt) => {
       setIsConnected(true);
       console.info(`WebSocket reconnected after ${attempt} attempt(s)`);
+      checkForMissedNotifications();
     });
 
     newSocket.on('reconnect_error', (error) => {
@@ -65,6 +68,7 @@ export const SocketProvider = ({ children }) => {
 
     newSocket.on('notification:new', (notification) => {
       console.log('New notification received via socket:', notification);
+      lastNotificationTime.current = notification.created_at || notification.created_date || new Date().toISOString();
       showLocalNotification(
         notification.title || 'New Notification',
         notification.body || '',
@@ -72,14 +76,43 @@ export const SocketProvider = ({ children }) => {
       );
     });
 
+    const checkForMissedNotifications = async () => {
+      try {
+        console.log('Checking for missed notifications since:', lastNotificationTime.current);
+        const response = await notificationsAPI.list({
+          limit: 10,
+          since: lastNotificationTime.current,
+          unread_only: 'true'
+        });
+        
+        const missed = response.data || [];
+        if (missed.length > 0) {
+          console.log(`Found ${missed.length} missed notifications`);
+          missed.forEach(notification => {
+            showLocalNotification(
+              notification.title || 'Missed Activity',
+              notification.body || '',
+              { link: notification.link, ...notification.metadata }
+            );
+          });
+          // Update last time to the newest missed notification
+          const latest = missed[0];
+          lastNotificationTime.current = latest.created_at || latest.created_date || new Date().toISOString();
+        }
+      } catch (err) {
+        console.error('Failed to fetch missed notifications:', err);
+      }
+    };
+
     setSocket(newSocket);
 
-    // Force reconnection when browser comes back online
+    // Force reconnection and check when browser comes back online
     const handleOnline = () => {
       if (newSocket && !newSocket.connected) {
         console.log('Device back online, reconnecting socket...');
         newSocket.connect();
       }
+      checkForMissedNotifications();
     };
     window.addEventListener('online', handleOnline);
 

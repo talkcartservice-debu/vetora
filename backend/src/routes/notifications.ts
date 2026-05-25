@@ -13,6 +13,7 @@ export async function notificationRoutes(fastify: FastifyInstance) {
       const limit = parseInt(query.limit) || 50;
       const skip = parseInt(query.skip) || 0;
       const unread_only = query.unread_only === 'true';
+      const since = query.since;
 
       if (!user?.username) {
         return reply.code(401).send({ error: 'Unauthorized - invalid user data' });
@@ -21,6 +22,10 @@ export async function notificationRoutes(fastify: FastifyInstance) {
       const filter: any = { recipient_username: user.username };
       if (unread_only) {
         filter.is_read = false;
+      }
+
+      if (since) {
+        filter.created_at = { $gt: new Date(since) };
       }
 
       // Use Promise.all to run queries in parallel
