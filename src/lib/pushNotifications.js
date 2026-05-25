@@ -10,6 +10,9 @@ export const setupPushNotifications = async () => {
   }
 
   try {
+    // Clear any existing listeners first to avoid duplicates
+    await PushNotifications.removeAllListeners();
+
     // Request permission to use push notifications
     let permStatus = await PushNotifications.checkPermissions();
 
@@ -89,5 +92,28 @@ export const setupWebNotifications = async () => {
     }
   } catch (err) {
     console.error('Error requesting web notification permission:', err);
+  }
+};
+
+export const showLocalNotification = (title, body, data = {}) => {
+  if (Capacitor.isNativePlatform()) {
+    // For native, we could use LocalNotifications plugin if installed
+    // But Capacitor.push-notifications already shows notifications in foreground if configured
+    console.log('Native local notification (via Capacitor):', { title, body, data });
+  } else if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+    const notification = new Notification(title, {
+      body: body,
+      icon: '/favicon.ico', // Adjust icon path as needed
+      data: data
+    });
+
+    notification.onclick = (event) => {
+      event.preventDefault();
+      if (data.link) {
+        window.location.href = data.link;
+      }
+      window.focus();
+      notification.close();
+    };
   }
 };

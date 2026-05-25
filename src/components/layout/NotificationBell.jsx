@@ -5,6 +5,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/lib/utils";
 import { Bell, MessageCircle, Package, DollarSign, Heart, UserPlus, CheckCheck, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useSocket } from "@/lib/SocketContext";
 
 const TYPE_CONFIG = {
   message:      { icon: MessageCircle, color: "bg-indigo-100 text-indigo-600", label: "Message" },
@@ -31,8 +32,21 @@ export default function NotificationBell({ userEmail }) {
       return response.data || [];
     },
     enabled: !!userEmail,
-    refetchInterval: 15000,
+    refetchInterval: 60000, // Increased from 15s since we have sockets
   });
+
+  const { on } = useSocket();
+
+  useEffect(() => {
+    if (!userEmail) return;
+
+    const cleanup = on('notification:new', () => {
+      queryClient.invalidateQueries({ queryKey: ["notifications", userEmail] });
+      queryClient.invalidateQueries({ queryKey: ["unreadNotifs"] });
+    });
+
+    return cleanup;
+  }, [userEmail, on, queryClient]);
 
   // Close on outside click
   useEffect(() => {

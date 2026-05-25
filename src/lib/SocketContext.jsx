@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
 import { useAuth } from './AuthContext';
+import { showLocalNotification } from './pushNotifications';
 
 const SocketContext = createContext(null);
 
@@ -60,6 +61,15 @@ export const SocketProvider = ({ children }) => {
 
     newSocket.on('error', (error) => {
       console.error('Socket error:', error);
+    });
+
+    newSocket.on('notification:new', (notification) => {
+      console.log('New notification received via socket:', notification);
+      showLocalNotification(
+        notification.title || 'New Notification',
+        notification.body || '',
+        { link: notification.link, ...notification.metadata }
+      );
     });
 
     setSocket(newSocket);
