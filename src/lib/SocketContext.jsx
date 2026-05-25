@@ -74,7 +74,17 @@ export const SocketProvider = ({ children }) => {
 
     setSocket(newSocket);
 
+    // Force reconnection when browser comes back online
+    const handleOnline = () => {
+      if (newSocket && !newSocket.connected) {
+        console.log('Device back online, reconnecting socket...');
+        newSocket.connect();
+      }
+    };
+    window.addEventListener('online', handleOnline);
+
     return () => {
+      window.removeEventListener('online', handleOnline);
       newSocket.disconnect();
     };
   }, [user]);

@@ -63,6 +63,14 @@ export const setupPushNotifications = async () => {
   }
 };
 
+// Auto-setup when coming back online
+if (typeof window !== 'undefined') {
+  window.addEventListener('online', () => {
+    console.log('Device back online, re-initializing push notifications...');
+    setupPushNotifications();
+  });
+}
+
 export const removePushNotifications = async () => {
   if (!Capacitor.isNativePlatform()) return;
   
