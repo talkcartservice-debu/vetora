@@ -85,17 +85,7 @@ fastify.register(cors, {
       ? allowedVercelPreviews.some(p => origin === p || origin.endsWith(`.${p}`))
       : false;
 
-    // Allow any *.vercel.app deployment (preview & production)
-    const isVercelApp = origin
-      ? /^https:\/\/[a-zA-Z0-9_-]+(\.vercel\.app)$/.test(origin)
-      : false;
-
-    // Allow any *.onrender.com (server-to-server via Vercel proxy)
-    const isRenderApp = origin
-      ? /^https:\/\/[a-zA-Z0-9_-]+(\.onrender\.com)$/.test(origin)
-      : false;
-
-    if (!origin || allowedOrigins.includes(origin) || isAllowedVercel || isVercelApp || isRenderApp) {
+    if (!origin || allowedOrigins.includes(origin) || isAllowedVercel) {
       cb(null, true);
       return;
     }
@@ -147,12 +137,10 @@ fastify.setErrorHandler((error, request, reply) => {
   fastify.log.error(error);
   
   const statusCode = error.statusCode || 500;
-  const isDev = process.env.NODE_ENV === 'development';
   
   reply.status(statusCode).send({
-    error: isDev ? error.message : 'Internal server error',
-    message: isDev ? error.message : 'Internal server error',
-    details: isDev ? error.stack : undefined,
+    error: 'Internal server error',
+    message: statusCode < 500 ? error.message : 'Internal server error',
     statusCode
   });
 });

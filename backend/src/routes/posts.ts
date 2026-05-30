@@ -1,4 +1,5 @@
 import { FastifyInstance } from 'fastify';
+import { escapeRegex } from '../utils/sanitize';
 import mongoose from 'mongoose';
 import { Post, IPost } from '../models/Post';
 import { User } from '../models/User';
@@ -78,7 +79,7 @@ export async function postRoutes(fastify: FastifyInstance) {
       }
 
       if (search) {
-        filter.content = { $regex: search, $options: 'i' };
+        filter.content = { $regex: escapeRegex(search), $options: 'i' };
       }
 
       const posts = await Post.find(filter)
