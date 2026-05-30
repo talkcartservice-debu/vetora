@@ -1,30 +1,28 @@
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { paystackService } from '../services/paystackService';
+import { itechpayService } from '../services/itechpayService';
 import { Order } from '../models/Order';
 
-const VALID_PAYSTACK_CHANNELS = ['card', 'bank', 'ussd', 'mobile_money', 'bank_transfer', 'qr'] as const;
+const VALID_CHANNELS = ['card', 'mtn', 'airtel', 'mobile_money'] as const;
 
 const initializePaymentSchema = z.object({
-  amount: z.number().min(1).optional(), // Optional since we verify against DB
+  amount: z.number().min(1).optional(),
   email: z.string().email(),
   phone: z.string().optional(),
   order_id: z.string(),
-  currency: z.string().optional(),
-  channels: z.array(z.enum(VALID_PAYSTACK_CHANNELS)).optional(),
+  channel: z.enum(VALID_CHANNELS).optional(),
 });
 
 export async function paymentRoutes(fastify: FastifyInstance) {
-  // Initialize Paystack payment
-  fastify.post('/paystack/initialize', {
+  // Initialize iTechPay payment
+  fastify.post('/itechpay/initialize', {
     preHandler: [fastify.authenticate],
   }, async (request, reply) => {
     try {
-      const { amount: clientAmount, email, phone, order_id, currency, channels } = initializePaymentSchema.parse(request.body);
+      const { amount: clientAmount, email, phone, order_id, channel } = initializePaymentSchema.parse(request.body);
 
       let totalAmount: number;
 
-      // Subscription payments use a "SUB-" prefixed ID and don't map to Order documents
       const isSubscriptionPayment = order_id.split(',').every(id => id.trim().startsWith('SUB-'));
 
       if (isSubscriptionPayment) {
@@ -33,7 +31,6 @@ export async function paymentRoutes(fastify: FastifyInstance) {
         }
         totalAmount = clientAmount;
       } else {
-        // Calculate total from all orders (comma-separated IDs)
         const orderIds = order_id.split(',').map(id => id.trim());
         const orders = await Order.find({ _id: { $in: orderIds } });
 
@@ -44,8 +41,7 @@ export async function paymentRoutes(fastify: FastifyInstance) {
         totalAmount = orders.reduce((sum, order) => sum + order.total, 0);
       }
 
-      // Use the server-side total amount
-      const data = await paystackService.initializeTransaction(email, totalAmount, order_id, currency, channels, phone);
+      const data = await itechpayService.initializeTransaction(email, totalAmount, order_id, channel || 'card', phone);
       return data;
     } catch (error: any) {
       if (error instanceof z.ZodError) {
@@ -61,14 +57,14 @@ export async function paymentRoutes(fastify: FastifyInstance) {
     }
   });
 
-  // Verify Paystack payment
-  fastify.get('/paystack/verify/:reference', {
+  // Verify iTechPay payment
+  fastify.get('/itechpay/verify/:reference', {
     preHandler: [fastify.authenticate],
   }, async (request, reply) => {
     const { reference } = request.params as { reference: string };
 
     try {
-      const data = await paystackService.verifyTransaction(reference);
+      const data = await itechpayService.verifyTransaction(reference);
       return data;
     } catch (error: any) {
       fastify.log.error(error);
@@ -76,36 +72,42 @@ export async function paymentRoutes(fastify: FastifyInstance) {
     }
   });
 
-  // Paystack Webhook
-  fastify.post('/paystack/webhook', async (request, reply) => {
-    const signature = request.headers['x-paystack-signature'] as string;
-    
-    if (!signature) {
-      return reply.code(401).send({ error: 'Missing Paystack signature' });
+  // iTechPay Callback
+  fastify.post('/itechpay/callback', async (request, reply) => {
+    const { secret } = request.query as { secret?: string };
+
+    if (!secret) {
+      return reply.code(401).send({ error: 'Missing callback secret' });
     }
 
-    const isValid = paystackService.verifyWebhookSignature(request.body, signature);
-    
+    const isValid = itechpayService.verifyCallbackSecret(secret);
+
     if (!isValid) {
-      return reply.code(401).send({ error: 'Invalid Paystack signature' });
+      return reply.code(401).send({ error: 'Invalid callback secret' });
     }
 
-    const event = request.body as any;
+    const body = request.body as any;
 
     try {
-      if (event.event === 'charge.success') {
-        const data = event.data;
-        const orderId = data.metadata.order_id;
-        const reference = data.reference;
-        
-        await paystackService.handleSuccessfulPayment(orderId, reference);
-        console.log(`✅ Webhook: Payment success for order ${orderId}`);
+      const { PCODE, amount, transID } = body;
+
+      if (!PCODE || !transID) {
+        return reply.code(400).send({ error: 'Missing required callback fields: PCODE, transID' });
+      }
+
+      // Look up the order by payment reference (PCODE was stored as reference)
+      const orders = await Order.find({ payment_reference: PCODE, payment_status: { $ne: 'paid' } });
+
+      if (orders.length > 0) {
+        const orderIds = orders.map(o => o._id.toString()).join(',');
+        await itechpayService.handleSuccessfulPayment(orderIds, transID);
+        console.log(`✅ Callback: Payment success for PCODE ${PCODE}, transID ${transID}, amount ${amount}`);
       }
 
       return reply.code(200).send({ status: 'success' });
     } catch (error) {
       fastify.log.error(error);
-      return reply.code(500).send({ error: 'Webhook processing failed' });
+      return reply.code(500).send({ error: 'Callback processing failed' });
     }
   });
 }

@@ -755,9 +755,9 @@ export const filesAPI = {
 };
 
 export const paymentAPI = {
-  paystack: {
-    initialize: (data) => apiClient.post('/payments/paystack/initialize', data),
-    verify: (reference) => apiClient.get(`/payments/paystack/verify/${reference}`),
+  itechpay: {
+    initialize: (data) => apiClient.post('/payments/itechpay/initialize', data),
+    verify: (reference) => apiClient.get(`/payments/itechpay/verify/${reference}`),
   }
 };
 

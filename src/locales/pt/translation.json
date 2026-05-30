@@ -465,10 +465,10 @@
     "payingVia": "Pagando com",
     "creditDebitCard": "Cartão de crédito/débito",
     "mobileMoney": "Dinheiro móvel",
-    "safeSecurePaystack": "Seguro com Paystack",
+    "safeSecurePaystack": "Seguro com iTechPay",
     "mobileMoneyProviders": "Airtel, MTN, etc.",
     "securePaymentGuarantee": "Garantia de pagamento seguro",
-    "securePaymentDesc": "Todas as transações são processadas pela infraestrutura segura do Paystack. O Aicon X não armazena seus dados de pagamento.",
+    "securePaymentDesc": "Todas as transações são processadas pela infraestrutura segura do iTechPay. O Aicon X não armazena seus dados de pagamento.",
     "itemsCount_one": "{{count}} item",
     "itemsCount_other": "{{count}} itens",
     "qty": "Qtd: {{qty}} × {{price}}",
@@ -765,7 +765,7 @@
     "category": "Categoria",
     "configureEarnings": "Configure como deseja receber seus ganhos.",
     "bankTransfer": "Transferência Bancária",
-    "mobileMoney": "Dinheiro Móvel (Paystack)",
+    "mobileMoney": "Dinheiro Móvel (iTechPay)",
     "defaultPayoutMethod": "Método de Pagamento Padrão",
     "bankName": "Nome do Banco",
     "bankNamePlaceholder": "ex. Itaú, Bradesco",
@@ -1301,7 +1301,7 @@
       "q3": "Como me torno um vendedor?",
       "a3": "Basta ir a 'Minha loja' no menu de navegação e seguir as instruções de configuração. Você precisará fornecer algumas informações básicas e verificar sua identidade.",
       "q4": "Meus pagamentos são seguros?",
-      "a4": "Sim, todos os pagamentos são processados por meio de gateways seguros e criptografados como o Paystack. Nunca armazenamos seus dados completos do cartão em nossos servidores."
+      "a4": "Sim, todos os pagamentos são processados por meio de gateways seguros e criptografados como o iTechPay. Nunca armazenamos seus dados completos do cartão em nossos servidores."
     },
     "report": {
       "title": "Reportar um problema",

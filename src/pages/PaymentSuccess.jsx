@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { CheckCircle2, XCircle, Loader2, ArrowRight, ShoppingBag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { verifyPayment } from '@/lib/paystack';
+import { verifyPayment } from '@/lib/itechpay';
 import { cartAPI } from '@/api/apiClient';
 import { createPageUrl } from '@/lib/utils';
 import { toast } from 'sonner';

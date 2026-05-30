@@ -335,10 +335,10 @@ export default function VendorFinance() {
                   </button>
                   <button 
                     type="button"
-                    onClick={() => setWithdrawForm(p => ({ ...p, payment_method: "paystack" }))}
-                    className={`flex-1 py-2 px-3 rounded-lg border text-xs font-medium transition-colors ${withdrawForm.payment_method === "paystack" ? "bg-indigo-50 border-indigo-200 text-indigo-700" : "bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600"}`}
+                    onClick={() => setWithdrawForm(p => ({ ...p, payment_method: "itechpay" }))}
+                    className={`flex-1 py-2 px-3 rounded-lg border text-xs font-medium transition-colors ${withdrawForm.payment_method === "itechpay" ? "bg-indigo-50 border-indigo-200 text-indigo-700" : "bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600"}`}
                   >
-                    Paystack
+                    iTechPay
                   </button>
                   <button 
                     type="button"
@@ -350,7 +350,7 @@ export default function VendorFinance() {
                 </div>
               </div>
 
-              {(withdrawForm.payment_method === "bank_transfer" || withdrawForm.payment_method === "paystack") && (
+              {(withdrawForm.payment_method === "bank_transfer" || withdrawForm.payment_method === "itechpay") && (
                 <div className="space-y-4">
                   <div>
                     <label className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">Bank Name *</label>
@@ -389,7 +389,7 @@ export default function VendorFinance() {
                     <label className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">Mobile Money Number *</label>
                     <Input placeholder="07XXXXXXXX" value={withdrawForm.mobile_money_number} onChange={e => setWithdrawForm(p => ({ ...p, mobile_money_number: e.target.value }))} />
                   </div>
-                  <p className="text-[10px] text-slate-400">Payouts will be sent to this Mobile Money number via Paystack.</p>
+                  <p className="text-[10px] text-slate-400">Payouts will be sent to this Mobile Money number via iTechPay.</p>
                 </div>
               )}
 
@@ -398,7 +398,7 @@ export default function VendorFinance() {
                 disabled={
                   withdrawMutation.isPending ||
                   !withdrawForm.amount || 
-                  ((withdrawForm.payment_method === "bank_transfer" || withdrawForm.payment_method === "paystack") && (!withdrawForm.bank_name || !withdrawForm.bank_account_name || !withdrawForm.bank_account_number)) ||
+                  ((withdrawForm.payment_method === "bank_transfer" || withdrawForm.payment_method === "itechpay") && (!withdrawForm.bank_name || !withdrawForm.bank_account_name || !withdrawForm.bank_account_number)) ||
                   (withdrawForm.payment_method === "paypal" && !withdrawForm.paypal_email) ||
                   (withdrawForm.payment_method === "mobile_money" && !withdrawForm.mobile_money_number) ||
                   parseFloat(withdrawForm.amount) < 20 ||

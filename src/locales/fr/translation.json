@@ -525,10 +525,10 @@
     "payingVia": "Paiement via",
     "creditDebitCard": "Carte de crédit/débit",
     "mobileMoney": "Mobile Money",
-    "safeSecurePaystack": "Sécurisé avec Paystack",
+    "safeSecurePaystack": "Sécurisé avec iTechPay",
     "mobileMoneyProviders": "Airtel, MTN, etc.",
     "securePaymentGuarantee": "Garantie de paiement sécurisé",
-    "securePaymentDesc": "Toutes les transactions sont traitées via l'infrastructure sécurisée de Paystack. Aicon X ne stocke pas vos données de paiement.",
+    "securePaymentDesc": "Toutes les transactions sont traitées via l'infrastructure sécurisée de iTechPay. Aicon X ne stocke pas vos données de paiement.",
     "itemsCount_one": "{{count}} article",
     "itemsCount_other": "{{count}} articles",
     "qty": "Qté : {{qty}} × {{price}}",
@@ -825,7 +825,7 @@
     "category": "Catégorie",
     "configureEarnings": "Configurez comment vous souhaitez recevoir vos gains.",
     "bankTransfer": "Virement Bancaire",
-    "mobileMoney": "Mobile Money (Paystack)",
+    "mobileMoney": "Mobile Money (iTechPay)",
     "defaultPayoutMethod": "Méthode de Paiement par Défaut",
     "bankName": "Nom de la Banque",
     "bankNamePlaceholder": "ex. BNP, Crédit Agricole",
@@ -1361,7 +1361,7 @@
       "q3": "Comment devenir vendeur ?",
       "a3": "Accédez simplement à 'Ma boutique' dans le menu de navigation et suivez les instructions de configuration. Vous devrez fournir des informations de base et vérifier votre identité.",
       "q4": "Mes paiements sont-ils sécurisés ?",
-      "a4": "Oui, tous les paiements sont traités via des passerelles sécurisées et chiffrées comme Paystack. Nous ne stockons jamais vos coordonnées bancaires complètes sur nos serveurs."
+      "a4": "Oui, tous les paiements sont traités via des passerelles sécurisées et chiffrées comme iTechPay. Nous ne stockons jamais vos coordonnées bancaires complètes sur nos serveurs."
     },
     "report": {
       "title": "Signaler un problème",

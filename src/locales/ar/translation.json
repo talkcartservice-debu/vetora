@@ -465,10 +465,10 @@
     "payingVia": "الدفع عبر",
     "creditDebitCard": "بطاقة ائتمان/خصم",
     "mobileMoney": "المحفظة المحمولة",
-    "safeSecurePaystack": "آمن مع Paystack",
+    "safeSecurePaystack": "آمن مع iTechPay",
     "mobileMoneyProviders": "Airtel وMTN وغيرها",
     "securePaymentGuarantee": "ضمان الدفع الآمن",
-    "securePaymentDesc": "تتم معالجة جميع المعاملات عبر البنية التحتية الآمنة لـ Paystack. لا يخزن Aicon X بيانات الدفع الخاصة بك.",
+    "securePaymentDesc": "تتم معالجة جميع المعاملات عبر البنية التحتية الآمنة لـ iTechPay. لا يخزن Aicon X بيانات الدفع الخاصة بك.",
     "itemsCount_one": "{{count}} منتج",
     "itemsCount_other": "{{count}} منتجات",
     "qty": "الكمية: {{qty}} × {{price}}",
@@ -765,7 +765,7 @@
     "category": "الفئة",
     "configureEarnings": "قم بتكوين كيفية استلام أرباحك.",
     "bankTransfer": "تحويل بنكي",
-    "mobileMoney": "أموال الجوال (Paystack)",
+    "mobileMoney": "أموال الجوال (iTechPay)",
     "defaultPayoutMethod": "طريقة الدفع الافتراضية",
     "bankName": "اسم البنك",
     "bankNamePlaceholder": "مثال. البنك الأهلي، مصرف الراجحي",
@@ -1301,7 +1301,7 @@
       "q3": "كيف أصبح بائعاً؟",
       "a3": "ببساطة اذهب إلى 'متجري' في قائمة التنقل واتبع تعليمات الإعداد. ستحتاج إلى تقديم بعض المعلومات الأساسية والتحقق من هويتك.",
       "q4": "هل مدفوعاتي آمنة؟",
-      "a4": "نعم، تتم معالجة جميع المدفوعات عبر بوابات آمنة ومشفرة مثل Paystack. لا نخزن أبداً تفاصيل بطاقتك الكاملة على خوادمنا."
+      "a4": "نعم، تتم معالجة جميع المدفوعات عبر بوابات آمنة ومشفرة مثل iTechPay. لا نخزن أبداً تفاصيل بطاقتك الكاملة على خوادمنا."
     },
     "report": {
       "title": "الإبلاغ عن مشكلة",

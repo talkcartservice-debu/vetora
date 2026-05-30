@@ -7,7 +7,7 @@ import { Store } from '../models/Store';
 import { CartItem } from '../models/CartItem';
 import { ShippingZone } from '../models/ShippingZone';
 import { AffiliateLink } from '../models/AffiliateLink';
-import { paystackService } from '../services/paystackService';
+import { itechpayService } from '../services/itechpayService';
 import { Coupon } from '../models/Coupon';
 
 const checkoutSchema = z.object({
@@ -23,7 +23,7 @@ const checkoutSchema = z.object({
     country: z.string().default('NG'),
     phone: z.string(),
   }).optional(),
-  payment_method: z.enum(['card', 'mobile_money', 'bank_transfer', 'paystack']).default('paystack'),
+  payment_method: z.enum(['card', 'mobile_money', 'mtn', 'airtel', 'bank_transfer']).default('card'),
   order_note: z.string().optional(),
   coupon_code: z.string().optional(),
   affiliate_ref: z.string().optional(),
@@ -351,16 +351,15 @@ export async function checkoutRoutes(fastify: FastifyInstance) {
         await Coupon.findByIdAndUpdate(coupon._id, { $inc: { uses_count: 1 } }, { session });
       }
 
-      // 6. Initialize Payment if Paystack
+      // 6. Initialize Payment via iTechPay
       let paymentData = null;
-      if (['card', 'paystack', 'mobile_money'].includes(body.payment_method)) {
+      if (['card', 'mobile_money', 'mtn', 'airtel'].includes(body.payment_method)) {
         const orderIds = orders.map(o => o._id.toString()).join(',');
-        paymentData = await paystackService.initializeTransaction(
+        paymentData = await itechpayService.initializeTransaction(
           user.email,
           totalAmount,
           orderIds,
-          undefined,
-          body.payment_method === 'mobile_money' ? ['mobile_money'] : ['card'],
+          body.payment_method,
           body.shipping_address?.phone || user.phone_number || ''
         );
       }
@@ -374,7 +373,7 @@ export async function checkoutRoutes(fastify: FastifyInstance) {
         message: 'Checkout successful',
         orders: orders.map(o => o._id),
         total_amount: totalAmount,
-        payment_url: paymentData?.data?.authorization_url,
+        payment_url: paymentData?.data?.payment_url,
         reference: paymentData?.data?.reference,
       };
 
