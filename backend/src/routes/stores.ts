@@ -3,6 +3,7 @@ import { Store, IStore } from '../models/Store';
 import { Product } from '../models/Product';
 import { z } from 'zod';
 import { checkCustomDomainLimit, checkShippingZoneLimit } from '../middleware/subscription';
+import { escapeRegex } from '../utils/sanitize';
 
 const createStoreSchema = z.object({
   name: z.string().min(1),
@@ -66,7 +67,7 @@ export async function storeRoutes(fastify: FastifyInstance) {
       if (status) filter.status = status;
 
       if (search) {
-        filter.name = { $regex: search, $options: 'i' };
+        filter.name = { $regex: escapeRegex(search), $options: 'i' };
       }
 
       const stores = await Store.find(filter)

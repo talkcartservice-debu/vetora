@@ -6,6 +6,7 @@ import { Product } from '../models/Product';
 import { Post } from '../models/Post';
 import { Announcement } from '../models/Announcement';
 import { Store } from '../models/Store';
+import { escapeRegex } from '../utils/sanitize';
 
 /**
  * Service to fetch and format user context for the AI prompt
@@ -147,7 +148,7 @@ export async function searchProducts(query: string) {
   if (!query) return [];
 
   // Simple regex-based search for titles, descriptions, categories, and tags
-  const searchRegex = new RegExp(query, 'i');
+  const searchRegex = new RegExp(escapeRegex(query), 'i');
   const products = await Product.find({
     status: 'active',
     $or: [
@@ -179,7 +180,7 @@ export async function searchProducts(query: string) {
 export async function searchStores(query: string) {
   if (!query) return [];
 
-  const searchRegex = new RegExp(query, 'i');
+  const searchRegex = new RegExp(escapeRegex(query), 'i');
   const stores = await Store.find({
     status: 'active',
     $or: [

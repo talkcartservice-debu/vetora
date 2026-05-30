@@ -93,6 +93,16 @@ class APIClient {
         throw new Error('Unauthorized - Please login again');
       }
 
+      // Handle rate limiting
+      if (response.status === 429) {
+        const retryAfter = response.headers.get('retry-after');
+        const waitSec = retryAfter ? parseInt(retryAfter, 10) : 15;
+        const err = new Error(`Too many requests. Please wait ${waitSec} seconds and try again.`);
+        err.status = 429;
+        err.retryAfter = waitSec;
+        throw err;
+      }
+
       let data;
       const contentType = response.headers.get('content-type');
       

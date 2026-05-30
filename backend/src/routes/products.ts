@@ -1,4 +1,5 @@
 import { FastifyInstance } from 'fastify';
+import mongoose from 'mongoose';
 import { Product, IProduct } from '../models/Product';
 import { User } from '../models/User';
 import { Like } from '../models/Like';
@@ -8,6 +9,7 @@ import { Follow } from '../models/Follow';
 import { Notification } from '../models/Notification';
 import { Store } from '../models/Store';
 import { NotificationService } from '../services/notificationService';
+import { escapeRegex } from '../utils/sanitize';
 import { checkProductCountLimit, checkProductMediaLimit, checkAdvancedAnalyticsLimit, checkAffiliateLimit } from '../middleware/subscription';
 
 export async function productRoutes(fastify: FastifyInstance) {
@@ -90,10 +92,11 @@ export async function productRoutes(fastify: FastifyInstance) {
 
       // Text search
       if (search) {
+        const safeSearch = escapeRegex(search);
         filter.$or = [
-          { title: { $regex: search, $options: 'i' } },
-          { description: { $regex: search, $options: 'i' } },
-          { tags: { $in: [new RegExp(search, 'i')] } }
+          { title: { $regex: safeSearch, $options: 'i' } },
+          { description: { $regex: safeSearch, $options: 'i' } },
+          { tags: { $in: [new RegExp(safeSearch, 'i')] } }
         ];
       }
 
@@ -133,6 +136,11 @@ export async function productRoutes(fastify: FastifyInstance) {
   fastify.get('/:id', async (request, reply) => {
     try {
       const { id } = request.params as { id: string };
+
+      if (!mongoose.isValidObjectId(id)) {
+        return reply.code(400).send({ error: 'Invalid product ID' });
+      }
+
       const product = await Product.findById(id).lean({ virtuals: true });
 
       if (!product) {
