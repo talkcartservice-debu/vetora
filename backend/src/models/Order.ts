@@ -33,10 +33,10 @@ export interface IOrder extends Document {
   order_note?: string;
   affiliate_username?: string;
   affiliate_commission: number;
-  payment_method: 'card' | 'paypal' | 'crypto' | 'bank_transfer' | 'paystack' | 'mobile_money';
+  payment_method: 'card' | 'paypal' | 'crypto' | 'bank_transfer' | 'mobile_money' | 'mtn' | 'airtel';
   payment_status: 'pending' | 'paid' | 'failed' | 'refunded';
   payment_reference?: string;
-  payment_provider?: 'stripe' | 'paystack';
+  payment_provider?: 'stripe' | 'itechpay';
   created_at: Date;
   updated_at: Date;
 }
@@ -169,8 +169,8 @@ const OrderSchema = new Schema<IOrder>({
   },
   payment_method: {
     type: String,
-    enum: ['card', 'paypal', 'crypto', 'bank_transfer', 'paystack', 'mobile_money'],
-    default: 'paystack',
+    enum: ['card', 'paypal', 'crypto', 'bank_transfer', 'mobile_money', 'mtn', 'airtel'],
+    default: 'card',
   },
   payment_status: {
     type: String,
@@ -183,8 +183,8 @@ const OrderSchema = new Schema<IOrder>({
   },
   payment_provider: {
     type: String,
-    enum: ['stripe', 'paystack'],
-    default: 'paystack',
+    enum: ['stripe', 'itechpay'],
+    default: 'itechpay',
   },
 }, {
   timestamps: {

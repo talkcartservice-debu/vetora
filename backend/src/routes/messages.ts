@@ -32,6 +32,9 @@ export async function messageRoutes(fastify: FastifyInstance) {
         sort = '-created_at', limit = 200, skip = 0 
       } = query;
 
+      const parsedLimit = Math.min(parseInt(limit) || 200, 500);
+      const parsedSkip = Math.max(parseInt(skip) || 0, 0);
+
       // Build filter
       const filter: any = {};
       
@@ -56,8 +59,8 @@ export async function messageRoutes(fastify: FastifyInstance) {
 
       const messages = await Message.find(filter)
         .sort(sortObj)
-        .limit(parseInt(limit))
-        .skip(parseInt(skip))
+        .limit(parsedLimit)
+        .skip(parsedSkip)
         .lean();
 
       const total = await Message.countDocuments(filter);
@@ -65,8 +68,8 @@ export async function messageRoutes(fastify: FastifyInstance) {
       return {
         data: messages,
         total,
-        limit: parseInt(limit),
-        skip: parseInt(skip),
+        limit: parsedLimit,
+        skip: parsedSkip,
       };
     } catch (error: any) {
       fastify.log.error(error);
@@ -165,6 +168,21 @@ export async function messageRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     try {
       const { conversationId } = request.params as { conversationId: string };
+      const user = request.user as any;
+
+      // Verify the user is a participant in this conversation
+      const participantCheck = await Message.findOne({
+        conversation_id: conversationId,
+        $or: [
+          { sender_username: user.username },
+          { receiver_username: user.username }
+        ]
+      }).select('_id').lean();
+
+      if (!participantCheck) {
+        return reply.code(403).send({ error: 'You are not a participant in this conversation' });
+      }
+
       const messages = await Message.find({ conversation_id: conversationId })
         .sort({ created_at: 1 })
         .lean();
@@ -239,11 +257,21 @@ export async function messageRoutes(fastify: FastifyInstance) {
     try {
       const { id } = request.params as { id: string };
       const user = request.user as any;
-      const updateData = request.body as any;
+      const body = z.object({
+        is_read: z.boolean().optional(),
+        is_pinned: z.boolean().optional(),
+      }).parse(request.body);
+
+      const updateData: Record<string, any> = { updated_at: new Date() };
+      if (body.is_read !== undefined) {
+        updateData.is_read = body.is_read;
+        if (body.is_read) updateData.read_at = new Date();
+      }
+      if (body.is_pinned !== undefined) updateData.is_pinned = body.is_pinned;
 
       const message = await Message.findOneAndUpdate(
         { _id: id, receiver_username: user.username },
-        { ...updateData, updated_at: new Date() },
+        updateData,
         { new: true }
       );
 

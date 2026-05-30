@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { initializePaystackPayment } from "@/lib/paystack";
+import { initializeITechPayPayment } from "@/lib/itechpay";
 import { useAuth } from "@/lib/AuthContext";
 import { formatCurrency } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
@@ -285,16 +285,11 @@ export default function SubscriptionManager({ store, vendorUsername }) {
         setShowConfirm(null);
         queryClient.invalidateQueries({ queryKey: ["vendorSubscription"] });
         try {
-          await initializePaystackPayment({
+          await initializeITechPayPayment({
             amount: price,
             email: user.email,
             order_id: `SUB-${data.sub.id || data.sub._id}`,
-            onSuccess: (res) => {
-              verifyPayment({ 
-                id: data.sub.id || data.sub._id, 
-                reference: res.reference 
-              });
-            }
+            channel: 'card',
           });
         } catch (err) {
           toast.error(err.message || t("subscription.paymentInitFailed"));
@@ -381,16 +376,11 @@ export default function SubscriptionManager({ store, vendorUsername }) {
                 if (!plan) return;
                 const price = targetBillingCycle === "annual" ? plan.priceAnnual * 12 : plan.price;
                 try {
-                  await initializePaystackPayment({
+                  await initializeITechPayPayment({
                     amount: price,
                     email: user.email,
                     order_id: `SUB-${subscription.id || subscription._id}`,
-                    onSuccess: (res) => {
-                      verifyPayment({ 
-                        id: subscription.id || subscription._id, 
-                        reference: res.reference 
-                      });
-                    }
+                    channel: 'card',
                   });
                 } catch (err) {
                   toast.error(err.message || t("subscription.paymentInitFailed"));

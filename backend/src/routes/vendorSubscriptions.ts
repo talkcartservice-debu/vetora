@@ -1,11 +1,10 @@
 import { FastifyInstance } from 'fastify';
-import axios from 'axios';
 import { VendorSubscription, IVendorSubscription } from '../models/VendorSubscription';
 import { Product } from '../models/Product';
 import { Settings } from '../models/Settings';
 import { checkCustomDomainLimit, PLAN_PRIORITY } from '../middleware/subscription';
 
-const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY || 'sk_test_mock_key';
+import { itechpayService } from '../services/itechpayService';
 
 export async function vendorSubscriptionRoutes(fastify: FastifyInstance) {
   // Get subscription for a vendor
@@ -543,19 +542,12 @@ export async function vendorSubscriptionRoutes(fastify: FastifyInstance) {
         return reply.code(403).send({ error: 'You can only verify your own subscription' });
       }
 
-      // Actual Paystack API verification
+      // iTechPay verification
       try {
-        const response = await axios.get(
-          `https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`,
-          {
-            headers: {
-              Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
-            },
-          }
-        );
+        const verifyResult = await itechpayService.verifyTransaction(reference);
 
-        const data = response.data.data;
-        if (data.status !== 'success') {
+        const data = verifyResult.data;
+        if (data.status !== 'success' && data.status !== 'completed') {
           return reply.code(402).send({ error: 'Payment verification failed' });
         }
 
@@ -572,8 +564,7 @@ export async function vendorSubscriptionRoutes(fastify: FastifyInstance) {
         };
 
         const planPrice = prices[targetPlan]?.[targetBillingCycle] || 0;
-        // Paystack amount is in kobo (kobo = price * 100)
-        if (planPrice > 0 && data.amount < planPrice * 100) {
+        if (planPrice > 0 && data.amount && data.amount < planPrice) {
           return reply.code(402).send({ error: 'Payment amount mismatch. Incorrect price paid.' });
         }
 
@@ -614,9 +605,9 @@ export async function vendorSubscriptionRoutes(fastify: FastifyInstance) {
         }
 
         reply.send(subscription);
-      } catch (paystackError) {
-        fastify.log.error(paystackError);
-        return reply.code(402).send({ error: 'Failed to verify with Paystack' });
+      } catch (verifyError) {
+        fastify.log.error(verifyError);
+        return reply.code(402).send({ error: 'Failed to verify with iTechPay' });
       }
     } catch (error) {
       fastify.log.error(error);

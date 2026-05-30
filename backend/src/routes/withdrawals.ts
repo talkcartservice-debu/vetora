@@ -267,11 +267,9 @@ export async function withdrawalRoutes(fastify: FastifyInstance) {
         if (!body.mobile_money_number) {
           return reply.code(400).send({ error: 'Missing required field: mobile_money_number' });
         }
-      } else if (body.payment_method === 'paystack') {
-        // For Paystack, we might need a bank account or email
-        // We'll assume for now it uses the same fields as bank_transfer if it's a payout
+      } else if (body.payment_method === 'itechpay') {
         if (!body.bank_account_number || !body.bank_name) {
-          return reply.code(400).send({ error: 'Missing required bank details for Paystack payout' });
+          return reply.code(400).send({ error: 'Missing required bank details for iTechPay payout' });
         }
       }
 

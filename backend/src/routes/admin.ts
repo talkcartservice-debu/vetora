@@ -11,6 +11,7 @@ import { Report } from '../models/Report';
 import { ActivityLog } from '../models/ActivityLog';
 import { Post } from '../models/Post';
 import { authenticate, isAdmin, logActivity } from '../middleware/auth';
+import { escapeRegex } from '../utils/sanitize';
 
 export async function adminRoutes(fastify: FastifyInstance) {
   // Add authentication and admin check to all routes in this plugin
@@ -30,10 +31,11 @@ export async function adminRoutes(fastify: FastifyInstance) {
       
       const query: any = {};
       if (search) {
+        const safe = escapeRegex(search);
         query.$or = [
-          { email: { $regex: search, $options: 'i' } },
-          { display_name: { $regex: search, $options: 'i' } },
-          { username: { $regex: search, $options: 'i' } },
+          { email: { $regex: safe, $options: 'i' } },
+          { display_name: { $regex: safe, $options: 'i' } },
+          { username: { $regex: safe, $options: 'i' } },
         ];
       }
 
@@ -180,9 +182,10 @@ export async function adminRoutes(fastify: FastifyInstance) {
       const query: any = {};
       if (status) query.status = status;
       if (search) {
+        const safe = escapeRegex(search);
         query.$or = [
-          { name: { $regex: search, $options: 'i' } },
-          { owner_username: { $regex: search, $options: 'i' } }
+          { name: { $regex: safe, $options: 'i' } },
+          { owner_username: { $regex: safe, $options: 'i' } }
         ];
       }
 
@@ -466,10 +469,11 @@ export async function adminRoutes(fastify: FastifyInstance) {
       const query: any = {};
       if (status) query.status = status;
       if (search) {
+        const safe = escapeRegex(search);
         query.$or = [
-          { buyer_username: { $regex: search, $options: 'i' } },
-          { vendor_username: { $regex: search, $options: 'i' } },
-          { store_name: { $regex: search, $options: 'i' } }
+          { buyer_username: { $regex: safe, $options: 'i' } },
+          { vendor_username: { $regex: safe, $options: 'i' } },
+          { store_name: { $regex: safe, $options: 'i' } }
         ];
       }
 
@@ -531,10 +535,11 @@ export async function adminRoutes(fastify: FastifyInstance) {
       const query: any = {};
       if (status) query.status = status;
       if (search) {
+        const safe = escapeRegex(search);
         query.$or = [
-          { title: { $regex: search, $options: 'i' } },
-          { vendor_username: { $regex: search, $options: 'i' } },
-          { store_name: { $regex: search, $options: 'i' } }
+          { title: { $regex: safe, $options: 'i' } },
+          { vendor_username: { $regex: safe, $options: 'i' } },
+          { store_name: { $regex: safe, $options: 'i' } }
         ];
       }
 
@@ -815,10 +820,11 @@ export async function adminRoutes(fastify: FastifyInstance) {
       const query: any = {};
       if (visibility && visibility !== 'all') query.visibility = visibility;
       if (search) {
+        const safe = escapeRegex(search);
         query.$or = [
-          { content: { $regex: search, $options: 'i' } },
-          { author_username: { $regex: search, $options: 'i' } },
-          { author_name: { $regex: search, $options: 'i' } },
+          { content: { $regex: safe, $options: 'i' } },
+          { author_username: { $regex: safe, $options: 'i' } },
+          { author_name: { $regex: safe, $options: 'i' } },
         ];
       }
 

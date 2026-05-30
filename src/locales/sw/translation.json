@@ -525,10 +525,10 @@
     "payingVia": "Kulipa kwa",
     "creditDebitCard": "Kadi ya mkopo/malipo",
     "mobileMoney": "Pesa ya simu",
-    "safeSecurePaystack": "Salama na Paystack",
+    "safeSecurePaystack": "Salama na iTechPay",
     "mobileMoneyProviders": "Airtel, MTN, n.k.",
     "securePaymentGuarantee": "Dhamana ya malipo salama",
-    "securePaymentDesc": "Miamala yote inafanywa kupitia miundombinu salama ya Paystack. Aicon X haihifadhi maelezo ya malipo yako.",
+    "securePaymentDesc": "Miamala yote inafanywa kupitia miundombinu salama ya iTechPay. Aicon X haihifadhi maelezo ya malipo yako.",
     "itemsCount_one": "bidhaa {{count}}",
     "itemsCount_other": "bidhaa {{count}}",
     "qty": "Idadi: {{qty}} × {{price}}",
@@ -825,7 +825,7 @@
     "category": "Kategoria",
     "configureEarnings": "Sanidi jinsi unavyotaka kupokea mapato yako.",
     "bankTransfer": "Uhamisho wa Benki",
-    "mobileMoney": "Pesa ya Simu (Paystack)",
+    "mobileMoney": "Pesa ya Simu (iTechPay)",
     "defaultPayoutMethod": "Njia ya Malipo ya Kawaida",
     "bankName": "Jina la Benki",
     "bankNamePlaceholder": "mfano. Chase, Bank of America",
@@ -1361,7 +1361,7 @@
       "q3": "Ninakuwa muuzaji vipi?",
       "a3": "Nenda tu kwenye 'Duka Langu' katika menyu ya urambazaji na ufuate maagizo ya usanidi. Utahitaji kutoa maelezo ya msingi na kuthibitisha utambulisho wako.",
       "q4": "Je, malipo yangu yako salama?",
-      "a4": "Ndiyo, malipo yote yanashughulikiwa kupitia lango salama na zilizosimbwa kama Paystack. Hatuhifadhi kamwe maelezo yako kamili ya kadi kwenye seva zetu."
+      "a4": "Ndiyo, malipo yote yanashughulikiwa kupitia lango salama na zilizosimbwa kama iTechPay. Hatuhifadhi kamwe maelezo yako kamili ya kadi kwenye seva zetu."
     },
     "report": {
       "title": "Ripoti Tatizo",

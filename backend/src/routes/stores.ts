@@ -3,6 +3,7 @@ import { Store, IStore } from '../models/Store';
 import { Product } from '../models/Product';
 import { z } from 'zod';
 import { checkCustomDomainLimit, checkShippingZoneLimit } from '../middleware/subscription';
+import { escapeRegex } from '../utils/sanitize';
 
 const createStoreSchema = z.object({
   name: z.string().min(1),
@@ -13,7 +14,7 @@ const createStoreSchema = z.object({
   owner_name: z.string().optional(),
   
   // Payment Settings
-  payment_method: z.enum(['bank_transfer', 'paypal', 'paystack', 'mobile_money', 'other']).optional(),
+  payment_method: z.enum(['bank_transfer', 'paypal', 'mobile_money', 'itechpay', 'other']).optional(),
   bank_name: z.string().optional(),
   bank_account_name: z.string().optional(),
   bank_account_number: z.string().optional(),
@@ -66,7 +67,7 @@ export async function storeRoutes(fastify: FastifyInstance) {
       if (status) filter.status = status;
 
       if (search) {
-        filter.name = { $regex: search, $options: 'i' };
+        filter.name = { $regex: escapeRegex(search), $options: 'i' };
       }
 
       const stores = await Store.find(filter)

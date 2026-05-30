@@ -836,7 +836,7 @@
     "category": "Category",
     "configureEarnings": "Configure how you want to receive your earnings.",
     "bankTransfer": "Bank Transfer",
-    "mobileMoney": "Mobile Money (Paystack)",
+    "mobileMoney": "Mobile Money (iTechPay)",
     "defaultPayoutMethod": "Default Payout Method",
     "bankName": "Bank Name",
     "bankNamePlaceholder": "e.g. Chase, Bank of America",
@@ -1104,10 +1104,10 @@
     "payingVia": "Paying via",
     "creditDebitCard": "Credit/Debit Card",
     "mobileMoney": "Mobile Money",
-    "safeSecurePaystack": "Safe & Secure with Paystack",
+    "safeSecurePaystack": "Safe & Secure with iTechPay",
     "mobileMoneyProviders": "Airtel, MTN, etc.",
     "securePaymentGuarantee": "Secure Payment Guarantee",
-    "securePaymentDesc": "All transactions are processed through Paystack's secure infrastructure. Aicon X does not store or see your payment details.",
+    "securePaymentDesc": "All transactions are processed through iTechPay's secure infrastructure. Aicon X does not store or see your payment details.",
     "itemsCount_one": "{{count}} item",
     "itemsCount_other": "{{count}} items",
     "qty": "Qty: {{qty}} × {{price}}",
@@ -1368,7 +1368,7 @@
       "q3": "How do I become a vendor?",
       "a3": "Simply go to 'My Store' in the navigation menu and follow the setup instructions. You'll need to provide some basic information and verify your identity.",
       "q4": "Are my payments secure?",
-      "a4": "Yes, all payments are processed through secure, encrypted gateways like Paystack. We never store your full card details on our servers."
+      "a4": "Yes, all payments are processed through secure, encrypted gateways like iTechPay. We never store your full card details on our servers."
     },
     "report": {
       "title": "Report an Issue",
