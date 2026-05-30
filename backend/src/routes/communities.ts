@@ -133,7 +133,7 @@ export async function communityRoutes(fastify: FastifyInstance) {
 
       // Check if community name is already taken
       const existingCommunity = await Community.findOne({
-        name: { $regex: new RegExp(`^${body.name}$`, 'i') }
+        name: { $regex: new RegExp(`^${escapeRegex(body.name)}$`, 'i') }
       });
 
       if (existingCommunity) {
