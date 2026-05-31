@@ -115,14 +115,14 @@ async function handleAiRequest(params: {
 }
 
 export async function aiRoutes(fastify: FastifyInstance) {
-  // Health check
-  fastify.get('/health', async () => {
-    const apiKey = process.env.OPENROUTER_API_KEY?.trim();
+  // Health check (auth required to avoid leaking config details)
+  fastify.get('/health', {
+    preHandler: [fastify.authenticate],
+  }, async () => {
     return { 
       status: 'ok', 
       provider: 'openrouter',
       mock_mode: shouldShowMock(),
-      key_present: !!apiKey
     };
   });
 

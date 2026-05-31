@@ -4,7 +4,7 @@ const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/iqon';
 
 export const connectDB = async () => {
   try {
-    console.log(`📡 Connecting to MongoDB at ${MONGODB_URI}...`);
+    console.log('📡 Connecting to MongoDB...');
     await mongoose.connect(MONGODB_URI, {
       serverSelectionTimeoutMS: 5000,
       connectTimeoutMS: 10000,

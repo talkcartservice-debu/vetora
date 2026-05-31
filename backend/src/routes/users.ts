@@ -1,5 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { User, IUser } from '../models/User';
+import { escapeRegex } from '../utils/sanitize';
 import { z } from 'zod';
 
 export async function userRoutes(fastify: FastifyInstance) {
@@ -47,10 +48,11 @@ export async function userRoutes(fastify: FastifyInstance) {
       const { q, limit = 10 } = request.query as any;
       if (!q) return [];
 
+      const escaped = escapeRegex(q);
       const users = await User.find({
         $or: [
-          { username: { $regex: q, $options: 'i' } },
-          { display_name: { $regex: q, $options: 'i' } }
+          { username: { $regex: escaped, $options: 'i' } },
+          { display_name: { $regex: escaped, $options: 'i' } }
         ]
       })
       .limit(parseInt(limit))
