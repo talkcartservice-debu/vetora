@@ -9,6 +9,7 @@ import { Notification } from '../models/Notification';
 import { Store } from '../models/Store';
 import { NotificationService } from '../services/notificationService';
 import { checkProductCountLimit, checkProductMediaLimit, checkAdvancedAnalyticsLimit, checkAffiliateLimit } from '../middleware/subscription';
+import { escapeRegex } from '../utils/sanitize';
 
 export async function productRoutes(fastify: FastifyInstance) {
   // Get recommended products for the current user
@@ -90,10 +91,11 @@ export async function productRoutes(fastify: FastifyInstance) {
 
       // Text search
       if (search) {
+        const escaped = escapeRegex(search);
         filter.$or = [
-          { title: { $regex: search, $options: 'i' } },
-          { description: { $regex: search, $options: 'i' } },
-          { tags: { $in: [new RegExp(search, 'i')] } }
+          { title: { $regex: escaped, $options: 'i' } },
+          { description: { $regex: escaped, $options: 'i' } },
+          { tags: { $in: [new RegExp(escaped, 'i')] } }
         ];
       }
 

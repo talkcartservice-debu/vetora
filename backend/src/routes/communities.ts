@@ -1,4 +1,5 @@
 import { FastifyInstance } from 'fastify';
+import { escapeRegex } from '../utils/sanitize';
 import { Community, ICommunity } from '../models/Community';
 import { CommunityMember } from '../models/CommunityMember';
 import { User } from '../models/User';
@@ -34,9 +35,10 @@ export async function communityRoutes(fastify: FastifyInstance) {
 
       // Text search
       if (search) {
+        const escaped = escapeRegex(search);
         filter.$or = [
-          { name: { $regex: search, $options: 'i' } },
-          { description: { $regex: search, $options: 'i' } }
+          { name: { $regex: escaped, $options: 'i' } },
+          { description: { $regex: escaped, $options: 'i' } }
         ];
       }
 
@@ -131,7 +133,7 @@ export async function communityRoutes(fastify: FastifyInstance) {
 
       // Check if community name is already taken
       const existingCommunity = await Community.findOne({
-        name: { $regex: new RegExp(`^${body.name}$`, 'i') }
+        name: { $regex: new RegExp(`^${escapeRegex(body.name)}$`, 'i') }
       });
 
       if (existingCommunity) {

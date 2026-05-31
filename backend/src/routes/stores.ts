@@ -47,6 +47,8 @@ const createStoreSchema = z.object({
   }).optional(),
 });
 
+import { escapeRegex } from '../utils/sanitize';
+
 export async function storeRoutes(fastify: FastifyInstance) {
   // List stores with filtering and pagination
   fastify.get('/', async (request, reply) => {
@@ -66,7 +68,7 @@ export async function storeRoutes(fastify: FastifyInstance) {
       if (status) filter.status = status;
 
       if (search) {
-        filter.name = { $regex: search, $options: 'i' };
+        filter.name = { $regex: escapeRegex(search), $options: 'i' };
       }
 
       const stores = await Store.find(filter)

@@ -9,9 +9,14 @@ async function seedAdmin() {
     await connectDB();
     console.log('Connected to database...');
 
-    const email = 'iamthefirst2001@gmail.com';
-    const password = 'Mirror@2024123';
+    const email = process.env.ADMIN_EMAIL;
+    const password = process.env.ADMIN_PASSWORD;
     const role = 'super_admin';
+
+    if (!email || !password) {
+      console.error('❌ ADMIN_EMAIL and ADMIN_PASSWORD environment variables are required');
+      process.exit(1);
+    }
 
     let user = await User.findOne({ email });
 
