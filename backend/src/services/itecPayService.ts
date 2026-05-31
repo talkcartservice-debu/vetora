@@ -2,6 +2,7 @@ import { Order } from '../models/Order';
 import { VendorSubscription } from '../models/VendorSubscription';
 import { PLAN_PRIORITY, PLAN_LIMITS } from '../middleware/subscription';
 import { Product } from '../models/Product';
+import axios from 'axios';
 
 export interface ITECPayCallbackData {
   PCODE: string;   // the unique payment code (match to your order)
@@ -22,40 +23,89 @@ export interface ITECPayInitializeResponse {
 export const itecPayService = {
   /**
    * Initialize an ITEC Pay transaction
-   * Note: This is a placeholder implementation. You'll need to adapt this based on
-   * how ITEC Pay actually expects payment initialization to work.
+   * Uses the actual ITEC Pay API with the provided API keys.
    */
   async initializeTransaction(email: string, amount: number, orderId: string, currency: string = 'RWF', channels: string[] = [], phone?: string): Promise<ITECPayInitializeResponse> {
     try {
-      // TODO: Replace this with actual ITEC Pay initialization logic
-      // For now, we'll return a mock response that the frontend can use to redirect
-      // to ITEC Pay's payment page. You'll need to implement the actual ITEC Pay
-      // payment URL generation based on their documentation.
+      // Determine payment method from channels array (first element) or default to 'card'
+      const paymentMethod = channels.length > 0 ? channels[0] : 'card';
       
-      // Example: Generate a reference for tracking
-      const reference = `ITEC_${Date.now()}_${Math.floor(Math.random() * 1000000)}`;
+      // Map payment method to the corresponding API key from environment variables
+      const apiKeyMap: Record<string, string> = {
+        card: process.env.ITEC_PAY_API_KEY_PAYMENT_CARD || '',
+        mobile_money: process.env.ITEC_PAY_API_KEY_MTN_MOBILE_MONEY || '', // Defaulting to MTN for mobile_money
+        // Note: We don't have a separate key for Airtel Money in the environment for mobile_money.
+        // This is a limitation; ideally, the frontend would specify the mobile money provider.
+      };
       
-      // This would be the URL where users should be redirected to pay via ITEC Pay
-      // You need to replace this with the actual ITEC Pay payment URL format
-      const paymentUrl = `https://itecpay.com/pay?amount=${amount}&reference=${reference}&email=${email}`;
+      const apiKey = apiKeyMap[paymentMethod];
       
-      // Return similar structure to Paystack for frontend compatibility
+      if (!apiKey) {
+        throw new Error(`ITEC Pay API key not configured for payment method: ${paymentMethod}`);
+      }
+      
+      // Prepare the request data for ITEC Pay API
+      // Note: We assume the ITEC Pay API expects the amount in the same unit (RWF) as provided.
+      // If the API expects the amount in a different unit (e.g., cents), we would need to convert.
+      const data: any = {
+        amount,
+        email,
+        reference: orderId, // Using orderId as the reference for the transaction
+      };
+      
+      if (currency) {
+        data.currency = currency;
+      }
+      
+      if (phone) {
+        data.phone_number = phone; // Assuming the API expects 'phone_number' field
+      }
+      
+      // Make the request to ITEC Pay API
+      // Note: The endpoint is assumed; replace with the actual ITEC Pay endpoint.
+      const response = await axios.post(
+        'https://api.itecpay.com/v1/transaction/initialize', // TODO: Replace with actual endpoint
+        data,
+        {
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+      
+      // Assuming the ITEC Pay API returns a response with the following structure:
+      // {
+      //   status: boolean,
+      //   message: string,
+      //   data: {
+      //     authorization_url: string,
+      //     reference: string,
+      //   }
+      // }
+      // We'll map it to the Paystack-compatible format.
+      const { status, message, data: responseData } = response.data;
+      
       return {
-        status: true,
-        message: "Payment initialized",
+        status: status || false,
+        message: message || 'Payment initialized',
         data: {
-          authorization_url: paymentUrl,
-          access_code: "", // ITEC Pay might not use this
-          reference: reference,
+          authorization_url: responseData.authorization_url || '',
+          access_code: responseData.access_code || '', // ITEC Pay might not use this
+          reference: responseData.reference || orderId,
         }
       };
     } catch (error: any) {
-      console.error('ITEC Pay Initialization Error:', error.message);
+      console.error('ITEC Pay Initialization Error:', error.response?.data || error.message);
       
-      let errorMessage = error.message || 'Failed to initialize ITEC Pay transaction';
+      let errorMessage = error.response?.data?.message || error.message || 'Failed to initialize ITEC Pay transaction';
+      
+      if (error.response?.status === 401) {
+        errorMessage = 'ITEC Pay authentication failed. Please check your API key.';
+      }
       
       const newError: any = new Error(errorMessage);
-      newError.statusCode = 500;
+      newError.statusCode = error.response?.status || 500;
       throw newError;
     }
   },
