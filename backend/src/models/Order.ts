@@ -31,12 +31,12 @@ export interface IOrder extends Document {
   pickup_instructions?: string;
   tracking_number?: string;
   order_note?: string;
-  affiliate_username?: string;
-  affiliate_commission: number;
-  payment_method: 'card' | 'paypal' | 'crypto' | 'bank_transfer' | 'paystack' | 'mobile_money';
-  payment_status: 'pending' | 'paid' | 'failed' | 'refunded';
-  payment_reference?: string;
-  payment_provider?: 'stripe' | 'paystack';
+   affiliate_username?: string;
+   affiliate_commission: number;
+   payment_method: 'card' | 'paypal' | 'crypto' | 'bank_transfer' | 'mobile_money' | 'itecpay';
+   payment_status: 'pending' | 'paid' | 'failed' | 'refunded';
+   payment_reference?: string;
+   payment_provider?: 'stripe' | 'itecpay';
   created_at: Date;
   updated_at: Date;
 }
@@ -167,11 +167,11 @@ const OrderSchema = new Schema<IOrder>({
     default: 0,
     min: 0,
   },
-  payment_method: {
-    type: String,
-    enum: ['card', 'paypal', 'crypto', 'bank_transfer', 'paystack', 'mobile_money'],
-    default: 'paystack',
-  },
+   payment_method: {
+     type: String,
+     enum: ['card', 'paypal', 'crypto', 'bank_transfer', 'itecpay', 'mobile_money'],
+     default: 'itecpay',
+   },
   payment_status: {
     type: String,
     enum: ['pending', 'paid', 'failed', 'refunded'],
@@ -181,11 +181,11 @@ const OrderSchema = new Schema<IOrder>({
     type: String,
     trim: true,
   },
-  payment_provider: {
-    type: String,
-    enum: ['stripe', 'paystack'],
-    default: 'paystack',
-  },
+   payment_provider: {
+     type: String,
+     enum: ['stripe', 'itecpay'],
+     default: 'itecpay',
+   },
 }, {
   timestamps: {
     createdAt: 'created_at',

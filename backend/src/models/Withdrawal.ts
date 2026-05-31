@@ -1,22 +1,22 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IWithdrawal extends Document {
-  vendor_username: string;
-  store_id?: string;
-  store_name?: string;
-  amount: number;
-  payment_method: 'bank_transfer' | 'paypal' | 'mobile_money' | 'paystack';
-  bank_account_name?: string;
-  bank_account_number?: string;
-  bank_name?: string;
-  routing_number?: string;
-  paypal_email?: string;
-  mobile_money_number?: string;
-  status: 'pending' | 'processing' | 'completed' | 'rejected';
-  notes?: string;
-  processed_at?: Date;
-  created_at: Date;
-  updated_at: Date;
+   vendor_username: string;
+   store_id?: string;
+   store_name?: string;
+   amount: number;
+   payment_method: 'bank_transfer' | 'paypal' | 'mobile_money' | 'itecpay';
+   bank_account_name?: string;
+   bank_account_number?: string;
+   bank_name?: string;
+   routing_number?: string;
+   paypal_email?: string;
+   mobile_money_number?: string;
+   status: 'pending' | 'processing' | 'completed' | 'rejected';
+   notes?: string;
+   processed_at?: Date;
+   created_at: Date;
+   updated_at: Date;
 }
 
 const WithdrawalSchema = new Schema<IWithdrawal>({
@@ -37,12 +37,12 @@ const WithdrawalSchema = new Schema<IWithdrawal>({
     required: true,
     min: 20
   },
-  payment_method: {
-    type: String,
-    enum: ['bank_transfer', 'paypal', 'mobile_money', 'paystack'],
-    default: 'bank_transfer',
-    required: true
-  },
+   payment_method: {
+     type: String,
+     enum: ['bank_transfer', 'paypal', 'mobile_money', 'itecpay'],
+     default: 'bank_transfer',
+     required: true
+   },
   bank_account_name: {
     type: String,
   },

@@ -7,7 +7,7 @@ import { Store } from '../models/Store';
 import { CartItem } from '../models/CartItem';
 import { ShippingZone } from '../models/ShippingZone';
 import { AffiliateLink } from '../models/AffiliateLink';
-import { paystackService } from '../services/paystackService';
+import { itecPayService } from '../services/itecPayService';
 import { Coupon } from '../models/Coupon';
 
 const checkoutSchema = z.object({
@@ -23,7 +23,7 @@ const checkoutSchema = z.object({
     country: z.string().default('NG'),
     phone: z.string(),
   }).optional(),
-  payment_method: z.enum(['card', 'mobile_money', 'bank_transfer', 'paystack']).default('paystack'),
+    payment_method: z.enum(['card', 'itecpay', 'mobile_money', 'bank_transfer']).default('itecpay'),
   order_note: z.string().optional(),
   coupon_code: z.string().optional(),
   affiliate_ref: z.string().optional(),
@@ -351,19 +351,20 @@ export async function checkoutRoutes(fastify: FastifyInstance) {
         await Coupon.findByIdAndUpdate(coupon._id, { $inc: { uses_count: 1 } }, { session });
       }
 
-      // 6. Initialize Payment if Paystack
-      let paymentData = null;
-      if (['card', 'paystack', 'mobile_money'].includes(body.payment_method)) {
-        const orderIds = orders.map(o => o._id.toString()).join(',');
-        paymentData = await paystackService.initializeTransaction(
-          user.email,
-          totalAmount,
-          orderIds,
-          undefined,
-          body.payment_method === 'mobile_money' ? ['mobile_money'] : ['card'],
-          body.shipping_address?.phone || user.phone_number || ''
-        );
-      }
+       // 6. Initialize Payment if ITEC Pay or other methods
+       let paymentData = null;
+       if (['card', 'itecpay', 'mobile_money'].includes(body.payment_method)) {
+         const orderIds = orders.map(o => o._id.toString()).join(',');
+         // For ITEC Pay, we use our initialize endpoint which returns a payment URL
+         paymentData = await itecPayService.initializeTransaction(
+           user.email,
+           totalAmount,
+           orderIds,
+           undefined,
+           body.payment_method === 'mobile_money' ? ['mobile_money'] : ['card'],
+           body.shipping_address?.phone || user.phone_number || ''
+         );
+       }
 
       // 7. Clear Cart
       await CartItem.deleteMany({ user_username: user.username }, { session });

@@ -16,8 +16,8 @@ export interface IStore extends Document {
   total_sales: number;
   rating_avg: number;
   
-  // Payment Settings
-  payment_method?: 'bank_transfer' | 'paypal' | 'paystack' | 'mobile_money' | 'other';
+   // Payment Settings
+   payment_method?: 'bank_transfer' | 'paypal' | 'mobile_money' | 'itecpay' | 'other';
   bank_name?: string;
   bank_account_name?: string;
   bank_account_number?: string;
@@ -114,12 +114,12 @@ const StoreSchema = new Schema<IStore>({
     max: 5,
   },
   
-  // Payment Settings
-  payment_method: {
-    type: String,
-    enum: ['bank_transfer', 'paypal', 'paystack', 'mobile_money', 'other'],
-    default: 'bank_transfer',
-  },
+   // Payment Settings
+   payment_method: {
+     type: String,
+     enum: ['bank_transfer', 'paypal', 'itecpay', 'mobile_money', 'other'],
+     default: 'bank_transfer',
+   },
   bank_name: { type: String },
   bank_account_name: { type: String },
   bank_account_number: { type: String },

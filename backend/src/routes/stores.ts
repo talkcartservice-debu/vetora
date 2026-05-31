@@ -12,8 +12,8 @@ const createStoreSchema = z.object({
   banner_url: z.string().optional(),
   owner_name: z.string().optional(),
   
-  // Payment Settings
-  payment_method: z.enum(['bank_transfer', 'paypal', 'paystack', 'mobile_money', 'other']).optional(),
+    // Payment Settings
+    payment_method: z.enum(['bank_transfer', 'paypal', 'mobile_money', 'itecpay', 'other']).optional(),
   bank_name: z.string().optional(),
   bank_account_name: z.string().optional(),
   bank_account_number: z.string().optional(),

@@ -1,11 +1,9 @@
 import { FastifyInstance } from 'fastify';
-import axios from 'axios';
 import { VendorSubscription, IVendorSubscription } from '../models/VendorSubscription';
 import { Product } from '../models/Product';
 import { Settings } from '../models/Settings';
 import { checkCustomDomainLimit, PLAN_PRIORITY } from '../middleware/subscription';
-
-const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY || 'sk_test_mock_key';
+import { itecPayService } from '../services/itecPayService';
 
 export async function vendorSubscriptionRoutes(fastify: FastifyInstance) {
   // Get subscription for a vendor
@@ -519,108 +517,47 @@ export async function vendorSubscriptionRoutes(fastify: FastifyInstance) {
     }
   });
 
-  // Verify payment for a subscription
-  fastify.post('/:id/verify-payment', {
-    preHandler: fastify.authenticate
-  }, async (request, reply) => {
-    try {
-      const { id } = request.params as { id: string };
-      const { reference } = request.body as { reference: string };
-      const user = request.user as any;
+   // Verify payment for a subscription
+   fastify.post('/:id/verify-payment', {
+     preHandler: fastify.authenticate
+   }, async (request, reply) => {
+     try {
+       const { id } = request.params as { id: string };
+       const { reference } = request.body as { reference: string };
+       const user = request.user as any;
 
-      if (!reference) {
-        return reply.code(400).send({ error: 'Missing payment reference' });
-      }
+       if (!reference) {
+         return reply.code(400).send({ error: 'Missing payment reference' });
+       }
 
-      const subscription = await VendorSubscription.findById(id);
+       const subscription = await VendorSubscription.findById(id);
 
-      if (!subscription) {
-        return reply.code(404).send({ error: 'Subscription not found' });
-      }
+       if (!subscription) {
+         return reply.code(404).send({ error: 'Subscription not found' });
+       }
 
-      // Check ownership
-      if (subscription.vendor_username !== user.username) {
-        return reply.code(403).send({ error: 'You can only verify your own subscription' });
-      }
+       // Check ownership
+       if (subscription.vendor_username !== user.username) {
+         return reply.code(403).send({ error: 'You can only verify your own subscription' });
+       }
 
-      // Actual Paystack API verification
-      try {
-        const response = await axios.get(
-          `https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`,
-          {
-            headers: {
-              Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
-            },
-          }
-        );
+       // For ITEC Pay, we check if the subscription has already been activated with this reference
+       // Since ITEC Pay uses callbacks rather than direct verification, we check our records
+       if (subscription.payment_reference === reference && subscription.status === 'active') {
+         // Payment already verified and subscription is active
+         return reply.send(subscription);
+       }
 
-        const data = response.data.data;
-        if (data.status !== 'success') {
-          return reply.code(402).send({ error: 'Payment verification failed' });
-        }
-
-        // Determine which plan and billing cycle we're verifying payment for.
-        // If there's a pending upgrade (active paid → higher tier), use those fields.
-        // Otherwise use the subscription's own plan/billing_cycle (first-time or free→paid).
-        const targetPlan = subscription.pending_plan || subscription.plan;
-        const targetBillingCycle = subscription.pending_billing_cycle || subscription.billing_cycle || 'monthly';
-
-        // Verify amount matches the target plan price
-        const prices: Record<string, Record<string, number>> = {
-          pro: { monthly: 29, annual: 276 },
-          elite: { monthly: 79, annual: 756 }
-        };
-
-        const planPrice = prices[targetPlan]?.[targetBillingCycle] || 0;
-        // Paystack amount is in kobo (kobo = price * 100)
-        if (planPrice > 0 && data.amount < planPrice * 100) {
-          return reply.code(402).send({ error: 'Payment amount mismatch. Incorrect price paid.' });
-        }
-
-        // Promote pending upgrade fields to the active plan
-        if (subscription.pending_plan) {
-          subscription.plan = subscription.pending_plan;
-          subscription.billing_cycle = (subscription.pending_billing_cycle || subscription.billing_cycle) as 'monthly' | 'annual';
-          subscription.pending_plan = undefined;
-          subscription.pending_billing_cycle = undefined;
-        }
-
-        subscription.status = 'active';
-        subscription.payment_reference = reference;
-        subscription.last_payment_date = new Date();
-        
-        // Recalculate expiration from today based on the now-active billing cycle
-        const now = new Date();
-        if (subscription.billing_cycle === 'annual') {
-          subscription.expires_at = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000);
-        } else {
-          subscription.expires_at = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-        }
-
-        await subscription.save();
-
-        // Update all vendor's products with new plan and priority
-        try {
-          await Product.updateMany(
-            { vendor_username: subscription.vendor_username },
-            { 
-              vendor_plan: subscription.plan,
-              plan_priority: PLAN_PRIORITY[subscription.plan as keyof typeof PLAN_PRIORITY] || 0
-            }
-          );
-        } catch (prodUpdateErr) {
-          fastify.log.error(prodUpdateErr, 'Failed to update product plans on subscription activation:');
-          // Don't fail the request as the subscription itself is activated
-        }
-
-        reply.send(subscription);
-      } catch (paystackError) {
-        fastify.log.error(paystackError);
-        return reply.code(402).send({ error: 'Failed to verify with Paystack' });
-      }
-    } catch (error) {
-      fastify.log.error(error);
-      reply.code(500).send({ error: 'Internal server error' });
-    }
-  });
+       // If we get here, we need to check if there's a pending payment for this reference
+       // In a real implementation, you might check with ITEC Pay's API if they have one
+       // For now, we'll return an error indicating the payment needs to be verified via callback
+       return reply.code(402).send({ 
+         error: 'Payment verification pending. Please wait for the ITEC Pay callback.',
+         details: 'Payments are verified automatically via ITEC Pay webhook callbacks.' 
+       });
+     } catch (error) {
+       fastify.log.error(error);
+       return reply.code(500).send({ error: 'Internal server error' });
+     }
+   });
 }

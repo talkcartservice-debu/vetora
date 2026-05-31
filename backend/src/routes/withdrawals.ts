@@ -263,17 +263,17 @@ export async function withdrawalRoutes(fastify: FastifyInstance) {
         if (!body.paypal_email) {
           return reply.code(400).send({ error: 'Missing required field: paypal_email' });
         }
-      } else if (body.payment_method === 'mobile_money') {
-        if (!body.mobile_money_number) {
-          return reply.code(400).send({ error: 'Missing required field: mobile_money_number' });
+        } else if (body.payment_method === 'mobile_money') {
+          if (!body.mobile_money_number) {
+            return reply.code(400).send({ error: 'Missing required field: mobile_money_number' });
+          }
+        } else if (body.payment_method === 'itecpay') {
+          // For ITEC Pay, we might need a bank account or email
+          // We'll assume for now it uses the same fields as bank_transfer if it's a payout
+          if (!body.bank_account_number || !body.bank_name) {
+            return reply.code(400).send({ error: 'Missing required bank details for ITEC Pay payout' });
+          }
         }
-      } else if (body.payment_method === 'paystack') {
-        // For Paystack, we might need a bank account or email
-        // We'll assume for now it uses the same fields as bank_transfer if it's a payout
-        if (!body.bank_account_number || !body.bank_name) {
-          return reply.code(400).send({ error: 'Missing required bank details for Paystack payout' });
-        }
-      }
 
       // Set vendor_username from authenticated user
       body.vendor_username = user.username;
