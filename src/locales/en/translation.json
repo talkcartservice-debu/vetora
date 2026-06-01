@@ -435,7 +435,13 @@
     "couponUsageLimitReached": "This coupon has reached its usage limit",
     "couponMinOrder": "Minimum order of {{amount}} required",
     "couponAppliedToast": "Coupon applied! {{discount}}",
-    "freeShippingProgress": "Add {{amount}} more for free shipping"
+    "freeShippingProgress": "Add {{amount}} more for free shipping",
+    "itemsCount_one": "{{count}} item",
+    "itemsCount_other": "{{count}} items",
+    "clearCart": "Clear Cart",
+    "clearCartConfirm": "Remove all items from cart?",
+    "cleared": "Cart cleared",
+    "clearFailed": "Failed to clear cart"
   },
   "orders": {
     "title": "My Orders",
@@ -484,7 +490,8 @@
     "reviewPlaceholder": "Tell others about your experience...",
     "photosUpTo3": "Photos (up to 3)",
     "uploading": "Uploading...",
-    "reviewsSubmitted": "Reviews submitted! Thank you."
+    "reviewsSubmitted": "Reviews submitted! Thank you.",
+    "refundedTab": "Refunded"
   },
   "communities": {
     "title": "Communities",

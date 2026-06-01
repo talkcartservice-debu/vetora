@@ -51,6 +51,17 @@ export default function Cart() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["cart"] }),
   });
 
+  const clearCartMutation = useMutation({
+    mutationFn: () => cartAPI.clear(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["cart"] });
+      toast.success(t("cart.cleared"));
+    },
+    onError: () => {
+      toast.error(t("cart.clearFailed"));
+    },
+  });
+
   const applyCoupon = async () => {
     if (!couponCode.trim()) return;
     setCheckingCoupon(true);
@@ -222,6 +233,22 @@ export default function Cart() {
 
               {/* Coupon */}
               <div className="mb-4">
+                {cartItems.length > 0 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      if (window.confirm(t("cart.clearCartConfirm"))) {
+                        clearCartMutation.mutate();
+                      }
+                    }}
+                    disabled={clearCartMutation.isPending}
+                    className="w-full rounded-xl text-red-600 border-red-200 hover:bg-red-50 dark:text-red-400 dark:border-red-800 dark:hover:bg-red-900/20"
+                  >
+                    <Trash2 className="w-3.5 h-3.5 mr-1.5" />
+                    {t("cart.clearCart")}
+                  </Button>
+                )}
                 {appliedCoupon ? (
                   <div className="flex items-center gap-2 p-2.5 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl">
                     <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400 shrink-0" />

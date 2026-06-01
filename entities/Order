@@ -101,15 +101,17 @@
       "type": "number",
       "default": 0
     },
-    "payment_method": {
+"payment_method": {
       "type": "string",
       "enum": [
         "card",
         "paypal",
         "crypto",
-        "bank_transfer"
+        "bank_transfer",
+        "mobile_money",
+        "itecpay"
       ],
-      "default": "card"
+      "default": "itecpay"
     },
     "payment_status": {
       "type": "string",
@@ -120,6 +122,21 @@
         "refunded"
       ],
       "default": "pending"
+    },
+    "payment_reference": {
+      "type": "string"
+    },
+    "payment_provider": {
+      "type": "string",
+      "enum": ["stripe", "itecpay"]
+    },
+    "tax_amount": {
+      "type": "number",
+      "default": 0
+    },
+    "discount_amount": {
+      "type": "number",
+      "default": 0
     }
   },
   "required": [

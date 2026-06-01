@@ -114,16 +114,17 @@ export default function Orders() {
         />
       </div>
 
-      <Tabs value={tab} onValueChange={setTab} className="mb-6">
-        <TabsList className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 w-full justify-start overflow-x-auto hide-scrollbar h-auto p-1">
-          <TabsTrigger value="all" className="rounded-xl px-4 py-2">{t("common.all")}</TabsTrigger>
-          <TabsTrigger value="pending" className="rounded-xl px-4 py-2">{t("orders.pending")}</TabsTrigger>
-          <TabsTrigger value="processing" className="rounded-xl px-4 py-2">{t("orders.processing")}</TabsTrigger>
-          <TabsTrigger value="shipped" className="rounded-xl px-4 py-2">{t("orders.shipped")}</TabsTrigger>
-          <TabsTrigger value="delivered" className="rounded-xl px-4 py-2">{t("orders.delivered")}</TabsTrigger>
-          <TabsTrigger value="cancelled" className="rounded-xl px-4 py-2">{t("orders.cancelled")}</TabsTrigger>
-        </TabsList>
-      </Tabs>
+<Tabs value={tab} onValueChange={setTab} className="mb-6">
+         <TabsList className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 w-full justify-start overflow-x-auto hide-scrollbar h-auto p-1">
+           <TabsTrigger value="all" className="rounded-xl px-4 py-2">{t("common.all")}</TabsTrigger>
+           <TabsTrigger value="pending" className="rounded-xl px-4 py-2">{t("orders.pending")}</TabsTrigger>
+           <TabsTrigger value="processing" className="rounded-xl px-4 py-2">{t("orders.processing")}</TabsTrigger>
+           <TabsTrigger value="shipped" className="rounded-xl px-4 py-2">{t("orders.shipped")}</TabsTrigger>
+           <TabsTrigger value="delivered" className="rounded-xl px-4 py-2">{t("orders.delivered")}</TabsTrigger>
+           <TabsTrigger value="cancelled" className="rounded-xl px-4 py-2">{t("orders.cancelled")}</TabsTrigger>
+           <TabsTrigger value="refunded" className="rounded-xl px-4 py-2">{t("orders.refunded")}</TabsTrigger>
+         </TabsList>
+       </Tabs>
 
       {isLoading ? (
         <div className="space-y-3">
