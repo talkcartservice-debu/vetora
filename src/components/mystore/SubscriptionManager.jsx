@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { initializePaystackPayment } from "@/lib/paystack";
+import { initializeITECPayPayment } from "@/lib/itecpay";
 import { useAuth } from "@/lib/AuthContext";
 import { formatCurrency } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
@@ -381,7 +381,7 @@ export default function SubscriptionManager({ store, vendorUsername }) {
                 if (!plan) return;
                 const price = targetBillingCycle === "annual" ? plan.priceAnnual * 12 : plan.price;
                 try {
-                  await initializePaystackPayment({
+                  await initializeITECPayPayment({
                     amount: price,
                     email: user.email,
                     order_id: `SUB-${subscription.id || subscription._id}`,

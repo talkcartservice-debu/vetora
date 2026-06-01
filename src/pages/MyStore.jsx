@@ -721,7 +721,7 @@ export default function MyStore() {
                           <SelectContent>
                             <SelectItem value="bank_transfer">{t("store.bankTransfer")}</SelectItem>
                             <SelectItem value="paypal">PayPal</SelectItem>
-                            <SelectItem value="paystack">Paystack</SelectItem>
+                             <SelectItem value="itecpay">ITEC Pay</SelectItem>
                             <SelectItem value="mobile_money">{t("store.mobileMoney")}</SelectItem>
                           </SelectContent>
                         </Select>

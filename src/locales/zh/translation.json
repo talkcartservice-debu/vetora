@@ -467,7 +467,7 @@
     "safeSecurePaystack": "ITEC Pay 安全支付",
     "mobileMoneyProviders": "Airtel、MTN 等",
     "securePaymentGuarantee": "安全支付保障",
-    "securePaymentDesc": "所有交易通过 Paystack 的安全基础设施处理，Aicon X 不存储您的支付信息。",
+    "securePaymentDesc": "所有交易通过 ITEC Pay 的安全基础设施处理，Aicon X 不存储您的支付信息。",
     "itemsCount_one": "{{count}} 件",
     "itemsCount_other": "{{count}} 件",
     "qty": "数量：{{qty}} × {{price}}",
@@ -764,7 +764,7 @@
     "category": "类别",
     "configureEarnings": "配置您希望接收收益的方式。",
     "bankTransfer": "银行转账",
-    "mobileMoney": "移动支付 (Paystack)",
+    "mobileMoney": "移动支付 (ITEC Pay)",
     "defaultPayoutMethod": "默认收款方式",
     "bankName": "银行名称",
     "bankNamePlaceholder": "例如 工商银行、建设银行",
@@ -1300,7 +1300,7 @@
       "q3": "如何成为卖家？",
       "a3": "进入导航菜单中的「我的店铺」，按照设置说明操作即可。您需要提供基本信息并完成身份验证。",
       "q4": "我的付款安全吗？",
-      "a4": "是的，所有付款均通过 Paystack 等安全加密网关处理。我们从不将您的完整卡片信息存储在服务器上。"
+       "a4": "是的，所有付款均通过 ITEC Pay 等安全加密网关处理。我们从不将您的完整卡片信息存储在服务器上。"
     },
     "report": {
       "title": "反馈问题",

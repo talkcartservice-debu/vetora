@@ -1368,7 +1368,7 @@
       "q3": "How do I become a vendor?",
       "a3": "Simply go to 'My Store' in the navigation menu and follow the setup instructions. You'll need to provide some basic information and verify your identity.",
       "q4": "Are my payments secure?",
-      "a4": "Yes, all payments are processed through secure, encrypted gateways like Paystack. We never store your full card details on our servers."
+       "a4": "Yes, all payments are processed through secure, encrypted gateways like ITEC Pay. We never store your full card details on our servers."
     },
     "report": {
       "title": "Report an Issue",
