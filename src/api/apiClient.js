@@ -612,6 +612,19 @@ export const messagesAPI = {
   markConversationAsRead: (conversationId) => apiClient.patch(`/messages/conversation/${conversationId}/read`, {}),
 };
 
+export const callsAPI = {
+  create: (data) => apiClient.post('/calls', data),
+  getIncoming: () => apiClient.get('/calls/incoming'),
+  answer: (id) => apiClient.post(`/calls/${id}/answer`),
+  reject: (id) => apiClient.post(`/calls/${id}/reject`),
+  end: (id, data) => apiClient.post(`/calls/${id}/end`, data),
+  getHistory: (filters) => {
+    const query = apiClient.buildQueryString(filters);
+    return apiClient.get(`/calls/history?${query}`);
+  },
+  markMissed: () => apiClient.post('/calls/missed'),
+};
+
 export const notificationsAPI = {
   list: (filters) => {
     const query = apiClient.buildQueryString(filters);

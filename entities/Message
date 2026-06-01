@@ -5,13 +5,13 @@
     "conversation_id": {
       "type": "string"
     },
-    "sender_email": {
+    "sender_username": {
       "type": "string"
     },
     "sender_name": {
       "type": "string"
     },
-    "receiver_email": {
+    "receiver_username": {
       "type": "string"
     },
     "content": {
@@ -77,7 +77,7 @@
   },
   "required": [
     "conversation_id",
-    "sender_email",
+    "sender_username",
     "content"
   ]
 }

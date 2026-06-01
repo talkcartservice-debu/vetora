@@ -76,6 +76,36 @@ export const SocketProvider = ({ children }) => {
       );
     });
 
+newSocket.on('chat:new', (msg) => {
+       console.log('New chat message received via socket:', msg);
+       showLocalNotification(
+         'New Message',
+         msg.sender_name || msg.sender_username || 'Someone sent you a message',
+         { link: `/Chat?username=${msg.sender_username}` }
+       );
+     });
+
+     newSocket.on('call:incoming', (data) => {
+       console.log('Incoming call received via socket:', data);
+       showLocalNotification(
+         'Incoming Call',
+         data.caller_name || data.caller_username || 'Someone is calling you',
+         { link: '/Chat', call_type: data.call_type }
+       );
+     });
+
+     newSocket.on('call:answered', (data) => {
+       console.log('Call answered:', data);
+     });
+
+     newSocket.on('call:rejected', (data) => {
+       console.log('Call rejected:', data);
+     });
+
+     newSocket.on('call:ended', (data) => {
+       console.log('Call ended:', data);
+     });
+
     const checkForMissedNotifications = async () => {
       try {
         console.log('Checking for missed notifications since:', lastNotificationTime.current);
@@ -134,6 +164,12 @@ export const SocketProvider = ({ children }) => {
       return () => socket.off(event, callback);
     }
     return () => {};
+  };
+
+  const off = (event, callback) => {
+    if (socket) {
+      socket.off(event, callback);
+    }
   };
 
   return (

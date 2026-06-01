@@ -534,6 +534,7 @@
     "lastSeen": "Last seen {{time}}",
     "delivered": "Delivered",
     "read": "Read",
+    "typing": "Typing...",
     "image": "Image",
     "file": "File",
     "searchConversations": "Search conversations...",
@@ -567,7 +568,12 @@
     "searchProductsPlaceholder": "Search...",
     "noProductsFound": "No products found",
     "makeOfferTitle": "💰 Make an Offer",
-    "enterPriceOffer": "Enter your price offer"
+    "enterPriceOffer": "Enter your price offer",
+    "callInitiated": "Call initiated...",
+    "callAnswered": "Call answered",
+    "callRejected": "Call rejected",
+    "callEnded": "Call ended",
+    "failedToInitiateCall": "Failed to initiate call"
   },
   "notifications": {
     "title": "Notifications",

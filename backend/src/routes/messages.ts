@@ -217,10 +217,25 @@ export async function messageRoutes(fastify: FastifyInstance) {
         );
       }
       
-      // Emit real-time event via Socket.IO if available
+// Emit real-time event via Socket.IO if available
       if (body.recipient_username) {
         fastify.io?.to(`user:${body.recipient_username}`).emit('new-message', message.toObject());
+        fastify.io?.to(`user:${body.recipient_username}`).emit('chat:new', message.toObject());
       }
+
+      // Invalidate conversation cache for both parties
+      fastify.io?.to(`user:${body.recipient_username}`).emit('conversation:update', {
+        conversation_id: message.conversation_id,
+        last_message_content: message.content,
+        last_message_at: message.created_at,
+        last_message_type: message.message_type
+      });
+      fastify.io?.to(`user:${user.username}`).emit('conversation:update', {
+        conversation_id: message.conversation_id,
+        last_message_content: message.content,
+        last_message_at: message.created_at,
+        last_message_type: message.message_type
+      });
 
       return message;
     } catch (error) {

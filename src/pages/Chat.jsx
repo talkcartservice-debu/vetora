@@ -13,7 +13,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import MessageBubble from "@/components/chat/MessageBubble";
 import ChatImageUpload from "@/components/chat/ChatImageUpload";
-import { authAPI, productsAPI, messagesAPI, ordersAPI, usersAPI } from "@/api/apiClient";
+import { authAPI, productsAPI, messagesAPI, ordersAPI, usersAPI, callsAPI } from "@/api/apiClient";
 import { useSocket } from "@/lib/SocketContext";
 
 const EMOJI_QUICK = ["❤️", "😂", "🔥", "👍", "😍", "💯", "🎉", "😎", "✨", "🙌", "🤔", "👏", "🚀", "💡", "✅", "❌"];
@@ -147,6 +147,7 @@ export default function Chat() {
   const [pendingImageUrl, setPendingImageUrl] = useState(null);
   const [composing, setComposing] = useState(false);
   const [userSearch, setUserSearch] = useState("");
+  const [callStatus, setCallStatus] = useState(null);
   const messagesEndRef = useRef(null);
   const queryClient = useQueryClient();
   const { on } = useSocket();
@@ -332,6 +333,38 @@ export default function Chat() {
     }
   };
 
+  const handleVoiceCall = async () => {
+    if (!selectedConvo || !currentUser?.username) return;
+    try {
+      setCallStatus("initiating");
+      const response = await callsAPI.create({
+        callee_username: selectedConvo,
+        call_type: "voice",
+      });
+      setCallStatus("active");
+      toast.success(t("chat.callInitiated"));
+    } catch (error) {
+      setCallStatus(null);
+      toast.error(error.message || t("chat.failedToInitiateCall"));
+    }
+  };
+
+  const handleVideoCall = async () => {
+    if (!selectedConvo || !currentUser?.username) return;
+    try {
+      setCallStatus("initiating");
+      const response = await callsAPI.create({
+        callee_username: selectedConvo,
+        call_type: "video",
+      });
+      setCallStatus("active");
+      toast.success(t("chat.callInitiated"));
+    } catch (error) {
+      setCallStatus(null);
+      toast.error(error.message || t("chat.failedToInitiateCall"));
+    }
+  };
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     if (selectedConvo) markAsRead();
@@ -488,12 +521,12 @@ export default function Chat() {
                 </div>
               </div>
               <div className="flex items-center gap-1">
-                <button className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors" title={t("chat.voiceCall")}>
-                  <Phone className="w-4 h-4 text-slate-500 dark:text-slate-400" />
-                </button>
-                <button className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors" title={t("chat.videoCall")}>
-                  <Video className="w-4 h-4 text-slate-500 dark:text-slate-400" />
-                </button>
+<button onClick={handleVoiceCall} disabled={callStatus === "initiating"} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors" title={t("chat.voiceCall")}>
+                   <Phone className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+                 </button>
+                 <button onClick={handleVideoCall} disabled={callStatus === "initiating"} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors" title={t("chat.videoCall")}>
+                   <Video className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+                 </button>
                 <button className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors" onClick={() => setShowActionMenu(v => !v)}>
                   <MoreVertical className="w-5 h-5 text-slate-400" />
                 </button>
