@@ -464,7 +464,7 @@
     "payingVia": "支付方式",
     "creditDebitCard": "信用卡/借记卡",
     "mobileMoney": "移动支付",
-    "safeSecurePaystack": "Paystack 安全支付",
+    "safeSecurePaystack": "ITEC Pay 安全支付",
     "mobileMoneyProviders": "Airtel、MTN 等",
     "securePaymentGuarantee": "安全支付保障",
     "securePaymentDesc": "所有交易通过 Paystack 的安全基础设施处理，Aicon X 不存储您的支付信息。",
