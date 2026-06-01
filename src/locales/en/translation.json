@@ -1107,7 +1107,7 @@
     "safeSecurePaystack": "Safe & Secure with ITEC Pay",
     "mobileMoneyProviders": "Airtel, MTN, etc.",
     "securePaymentGuarantee": "Secure Payment Guarantee",
-    "securePaymentDesc": "All transactions are processed through ITEC Pay's secure infrastructure. Aicon X does not store or see your payment details.",,
+     "securePaymentDesc": "All transactions are processed through ITEC Pay's secure infrastructure. Aicon X does not store or see your payment details.",
     "itemsCount_one": "{{count}} item",
     "itemsCount_other": "{{count}} items",
     "qty": "Qty: {{qty}} × {{price}}",

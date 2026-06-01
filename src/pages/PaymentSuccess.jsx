@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { CheckCircle2, XCircle, Loader2, ArrowRight, ShoppingBag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { verifyPayment } from '@/lib/paystack';
+import { verifyITECPayPayment } from '@/lib/itecpay';
 import { cartAPI } from '@/api/apiClient';
 import { createPageUrl } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -24,8 +24,8 @@ export default function PaymentSuccess() {
         return;
       }
 
-      try {
-        const response = await verifyPayment(reference);
+       try {
+         const response = await verifyITECPayPayment(reference);
         if (response.status && response.data.status === 'success') {
           // Clear cart and affiliate ref on success
           await cartAPI.clear();

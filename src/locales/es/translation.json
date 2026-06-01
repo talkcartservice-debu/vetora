@@ -524,11 +524,11 @@
     "selectOrAddAddress": "Por favor selecciona o añade una dirección de entrega",
     "payingVia": "Pagando con",
     "creditDebitCard": "Tarjeta de crédito/débito",
-    "mobileMoney": "Dinero móvil",
-    "safeSecurePaystack": "Seguro con Paystack",
+     "mobileMoney": "Dinero móvil (ITEC Pay)",
+     "safeSecurePaystack": "Seguro con ITEC Pay",
     "mobileMoneyProviders": "Airtel, MTN, etc.",
     "securePaymentGuarantee": "Garantía de pago seguro",
-    "securePaymentDesc": "Todas las transacciones se procesan a través de la infraestructura segura de Paystack. Aicon X no almacena tus datos de pago.",
+     "securePaymentDesc": "Todas las transacciones se procesan a través de la infraestructura segura de ITEC Pay. Aicon X no almacena tus datos de pago.",
     "itemsCount_one": "{{count}} artículo",
     "itemsCount_other": "{{count}} artículos",
     "qty": "Cant: {{qty}} × {{price}}",
@@ -825,7 +825,7 @@
     "category": "Categoría",
     "configureEarnings": "Configura cómo deseas recibir tus ganancias.",
     "bankTransfer": "Transferencia Bancaria",
-    "mobileMoney": "Dinero Móvil (Paystack)",
+     "mobileMoney": "Dinero Móvil (ITEC Pay)",
     "defaultPayoutMethod": "Método de Pago Predeterminado",
     "bankName": "Nombre del Banco",
     "bankNamePlaceholder": "ej. BBVA, Santander",
@@ -1361,7 +1361,7 @@
       "q3": "¿Cómo me convierto en vendedor?",
       "a3": "Simplemente ve a 'Mi tienda' en el menú de navegación y sigue las instrucciones de configuración. Deberás proporcionar información básica y verificar tu identidad.",
       "q4": "¿Mis pagos son seguros?",
-      "a4": "Sí, todos los pagos se procesan a través de pasarelas seguras y cifradas como Paystack. Nunca almacenamos los detalles completos de tu tarjeta en nuestros servidores."
+       "a4": "Sí, todos los pagos se procesan a través de pasarelas seguras y cifradas como ITEC Pay. Nunca almacenamos los detalles completos de tu tarjeta en nuestros servidores."
     },
     "report": {
       "title": "Reportar un problema",

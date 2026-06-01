@@ -83,7 +83,7 @@ export const itecPayService = {
       //     reference: string,
       //   }
       // }
-      // We'll map it to the Paystack-compatible format.
+       // We'll map it to the ITEC Pay-compatible format.
       const { status, message, data: responseData } = response.data;
       
       return {
@@ -129,7 +129,7 @@ export const itecPayService = {
 
   /**
    * Handle successful ITEC Pay payment — routes to subscription or order logic based on ID prefix.
-   * Similar to Paystack's handleSuccessfulPayment method
+   * Similar to ITEC Pay's handleSuccessfulPayment method
    */
   async handleSuccessfulPayment(orderIdsString: string, transID: string, amount: string) {
     try {

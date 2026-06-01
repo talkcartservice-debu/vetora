@@ -528,7 +528,7 @@
     "safeSecurePaystack": "Salama na ITEC Pay",
     "mobileMoneyProviders": "Airtel, MTN, n.k.",
     "securePaymentGuarantee": "Dhamana ya malipo salama",
-    "securePaymentDesc": "Miamala yote inafanywa kupitia miundombinu salama ya ITEC Pay. Aicon X haihifadhi maelezo ya malipo yako.",,
+     "securePaymentDesc": "Miamala yote inafanywa kupitia miundombinu salama ya ITEC Pay. Aicon X haihifadhi maelezo ya malipo yako.",
     "itemsCount_one": "bidhaa {{count}}",
     "itemsCount_other": "bidhaa {{count}}",
     "qty": "Idadi: {{qty}} × {{price}}",

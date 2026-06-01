@@ -1,7 +1,7 @@
 import { paymentAPI } from '@/api/apiClient';
 
 /**
- * Initializes and opens Paystack checkout
+ * Initializes and opens ITEC Pay checkout
  * @param {Object} options - Payment options
  * @param {number} options.amount - Amount in kobo
  * @param {string} options.email - Customer email
@@ -11,10 +11,10 @@ import { paymentAPI } from '@/api/apiClient';
  * @param {Function} options.onSuccess - Callback on success
  * @param {Function} options.onClose - Callback on close
  */
-export const initializePaystackPayment = async ({ amount, email, phone, order_id, channels, onSuccess, onClose }) => {
+export const initializeITECPayPayment = async ({ amount, email, phone, order_id, channels, onSuccess, onClose }) => {
   try {
     // 1. Initialize on backend to get authorization URL or reference
-    const response = await paymentAPI.paystack.initialize({
+    const response = await paymentAPI.itecpay.initialize({
       amount,
       email,
       phone,
@@ -26,24 +26,24 @@ export const initializePaystackPayment = async ({ amount, email, phone, order_id
       // Redirect to authorization URL or use inline if possible
       window.location.href = response.data.authorization_url;
     } else {
-      throw new Error('Failed to initialize Paystack payment');
+      throw new Error('Failed to initialize ITEC Pay payment');
     }
   } catch (error) {
-    console.error('Paystack initialization error:', error);
+    console.error('ITEC Pay initialization error:', error);
     throw error;
   }
 };
 
 /**
  * Verifies a payment after redirect back
- * @param {string} reference - Paystack reference
+ * @param {string} reference - ITEC Pay reference
  * @returns {Promise<Object>} - Verification status
  */
-export const verifyPayment = async (reference) => {
+export const verifyITECPayPayment = async (reference) => {
   try {
-    return await paymentAPI.paystack.verify(reference);
+    return await paymentAPI.itecpay.verify(reference);
   } catch (error) {
-    console.error('Paystack verification error:', error);
+    console.error('ITEC Pay verification error:', error);
     throw error;
   }
 };

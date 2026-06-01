@@ -9,7 +9,7 @@ const initializePaymentSchema = z.object({
   phone: z.string().optional(),
   order_id: z.string(),
   currency: z.string().optional(),
-  // Note: ITEC Pay might not need channels like Paystack does
+  // Note: ITEC Pay might not need channels
 });
 
 export async function paymentRoutes(fastify: FastifyInstance) {
@@ -56,7 +56,7 @@ export async function paymentRoutes(fastify: FastifyInstance) {
       // You need to replace this with the actual ITEC Pay payment URL format
       const paymentUrl = `https://itecpay.com/pay?amount=${totalAmount}&reference=${reference}&email=${email}`;
       
-      // Return similar structure to Paystack for frontend compatibility
+      // Return similar structure for frontend compatibility
       return {
         status: true,
         message: "Payment initialized",

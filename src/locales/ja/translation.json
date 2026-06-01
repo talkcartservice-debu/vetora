@@ -468,7 +468,7 @@
     "safeSecurePaystack": "ITEC Payで安全に決済",
     "mobileMoneyProviders": "Airtel、MTNなど",
     "securePaymentGuarantee": "安全なお支払い",
-    "securePaymentDesc": "すべての取引はITEC Payの安全なインフラで処理されます。Aicon Xはお支払い情報を保存しません。",,
+     "securePaymentDesc": "すべての取引はITEC Payの安全なインフラで処理されます。Aicon Xはお支払い情報を保存しません。",
     "itemsCount_one": "{{count}}点",
     "itemsCount_other": "{{count}}点",
     "qty": "数量: {{qty}} × {{price}}",

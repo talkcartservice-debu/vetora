@@ -524,11 +524,11 @@
     "selectOrAddAddress": "Bitte Lieferadresse auswählen oder hinzufügen",
     "payingVia": "Zahlung per",
     "creditDebitCard": "Kredit-/Debitkarte",
-    "mobileMoney": "Mobile Payment",
-    "safeSecurePaystack": "Sicher mit Paystack",
+     "mobileMoney": "Mobile Payment (ITEC Pay)",
+     "safeSecurePaystack": "Sicher mit ITEC Pay",
     "mobileMoneyProviders": "Airtel, MTN, usw.",
     "securePaymentGuarantee": "Sichere Zahlungsgarantie",
-    "securePaymentDesc": "Alle Transaktionen werden über die sichere Infrastruktur von Paystack abgewickelt. Aicon X speichert keine Zahlungsdaten.",
+     "securePaymentDesc": "Alle Transaktionen werden über die sichere Infrastruktur von ITEC Pay abgewickelt. Aicon X speichert keine Zahlungsdaten.",
     "itemsCount_one": "{{count}} Artikel",
     "itemsCount_other": "{{count}} Artikel",
     "qty": "Menge: {{qty}} × {{price}}",
@@ -825,7 +825,7 @@
     "category": "Kategorie",
     "configureEarnings": "Konfiguriere, wie du deine Einnahmen erhalten möchtest.",
     "bankTransfer": "Banküberweisung",
-    "mobileMoney": "Mobile Money (Paystack)",
+     "mobileMoney": "Mobile Money (ITEC Pay)",
     "defaultPayoutMethod": "Standard-Auszahlungsmethode",
     "bankName": "Bankname",
     "bankNamePlaceholder": "z.B. Deutsche Bank, Sparkasse",
@@ -1361,7 +1361,7 @@
       "q3": "Wie werde ich Verkäufer?",
       "a3": "Gehen Sie einfach zu 'Mein Shop' im Navigationsmenü und folgen Sie den Einrichtungsanweisungen. Sie müssen einige grundlegende Informationen angeben und Ihre Identität verifizieren.",
       "q4": "Sind meine Zahlungen sicher?",
-      "a4": "Ja, alle Zahlungen werden über sichere, verschlüsselte Zahlungsgateways wie Paystack abgewickelt. Wir speichern niemals Ihre vollständigen Kartendetails auf unseren Servern."
+       "a4": "Ja, alle Zahlungen werden über sichere, verschlüsselte Zahlungsgateways wie ITEC Pay abgewickelt. Wir speichern niemals Ihre vollständigen Kartendetails auf unseren Servern."
     },
     "report": {
       "title": "Problem melden",

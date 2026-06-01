@@ -529,7 +529,7 @@
     "safeSecurePaystack": "Bikingirwa na ITEC Pay",
     "mobileMoneyProviders": "Airtel, MTN, n.k.",
     "securePaymentGuarantee": "Ubwitambire bwo kwishyura bwikingirwa",
-    "securePaymentDesc": "Ibikorwa byose bikorwa binyuze mu rwego rwa ITEC Pay rikingirwa. Aicon X ntibika amakuru yawe yo kwishyura.",,
+     "securePaymentDesc": "Ibikorwa byose bikorwa binyuze mu rwego rwa ITEC Pay rikingirwa. Aicon X ntibika amakuru yawe yo kwishyura.",
     "itemsCount_one": "ibicuruzwa {{count}}",
     "itemsCount_other": "ibicuruzwa {{count}}",
     "qty": "Umubare: {{qty}} × {{price}}",

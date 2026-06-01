@@ -350,7 +350,7 @@ export default function VendorFinance() {
                 </div>
               </div>
 
-              {(withdrawForm.payment_method === "bank_transfer" || withdrawForm.payment_method === "paystack") && (
+               {(withdrawForm.payment_method === "bank_transfer" || withdrawForm.payment_method === "itecpay") && (
                 <div className="space-y-4">
                   <div>
                     <label className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">Bank Name *</label>
@@ -398,7 +398,7 @@ export default function VendorFinance() {
                 disabled={
                   withdrawMutation.isPending ||
                   !withdrawForm.amount || 
-                  ((withdrawForm.payment_method === "bank_transfer" || withdrawForm.payment_method === "paystack") && (!withdrawForm.bank_name || !withdrawForm.bank_account_name || !withdrawForm.bank_account_number)) ||
+                   ((withdrawForm.payment_method === "bank_transfer" || withdrawForm.payment_method === "itecpay") && (!withdrawForm.bank_name || !withdrawForm.bank_account_name || !withdrawForm.bank_account_number)) ||
                   (withdrawForm.payment_method === "paypal" && !withdrawForm.paypal_email) ||
                   (withdrawForm.payment_method === "mobile_money" && !withdrawForm.mobile_money_number) ||
                   parseFloat(withdrawForm.amount) < 20 ||
