@@ -21,11 +21,30 @@ export async function callRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     try {
       const user = request.user as any;
+      
+      // Validate user is authenticated
+      if (!user?.userId || !user?.username) {
+        return reply.code(401).send({ error: 'Unauthorized - user not properly authenticated' });
+      }
+      
       const body = createCallSchema.parse(request.body);
 
+      // Validate callee exists
+      const calleeExists = await User.findOne({ username: body.callee_username.toLowerCase() }).maxTimeMS(5000);
+      if (!calleeExists) {
+        return reply.code(404).send({ error: 'Callee user not found' });
+      }
+
       // Get caller's display_name from DB
-      const caller = await User.findById(user.userId).select('display_name username');
-      const callerDisplayName = caller?.display_name || user.username;
+      let callerDisplayName = user.username;
+      try {
+        const caller = await User.findById(user.userId).select('display_name username').maxTimeMS(5000);
+        if (caller) {
+          callerDisplayName = caller.display_name || caller.username || user.username;
+        }
+      } catch (dbError: any) {
+        fastify.log.warn('Could not fetch caller display name, using username:', dbError?.message || dbError);
+      }
 
       const call = new Call({
         ...body,
@@ -36,13 +55,23 @@ export async function callRoutes(fastify: FastifyInstance) {
       await call.save();
 
       // Emit real-time event to callee
-      fastify.io?.to(`user:${body.callee_username}`).emit('call:incoming', {
-        call: call.toObject(),
-      });
+      try {
+        fastify.io?.to(`user:${body.callee_username}`).emit('call:incoming', {
+          call: call.toObject(),
+        });
+      } catch (socketError: any) {
+        fastify.log.warn('Socket emit failed (non-fatal):', socketError?.message || socketError);
+      }
 
       return call;
     } catch (error: any) {
       fastify.log.error('Call creation error:', error);
+      if (error.name === 'MongooseServerSelectionError' || error.name === 'MongoError' || error.message?.includes('buffering timed out') || error.message?.includes('ECONNREFUSED')) {
+        return reply.code(503).send({
+          error: 'Database unavailable',
+          message: 'Unable to connect to database. Please try again later.'
+        });
+      }
       if (error instanceof z.ZodError) {
         return reply.code(400).send({ error: 'Invalid request data', details: error.errors });
       }
