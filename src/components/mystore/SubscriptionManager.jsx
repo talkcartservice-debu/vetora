@@ -284,21 +284,23 @@ export default function SubscriptionManager({ store, vendorUsername }) {
 
         setShowConfirm(null);
         queryClient.invalidateQueries({ queryKey: ["vendorSubscription"] });
-        try {
-          await initializePaystackPayment({
-            amount: price,
-            email: user.email,
-            order_id: `SUB-${data.sub.id || data.sub._id}`,
-            onSuccess: (res) => {
-              verifyPayment({ 
-                id: data.sub.id || data.sub._id, 
-                reference: res.reference 
-              });
-            }
-          });
-        } catch (err) {
-          toast.error(err.message || t("subscription.paymentInitFailed"));
-        }
+try {
+           await initializeITECPayPayment({
+             amount: price,
+             email: user.email,
+             phone: user.phone_number,
+             order_id: `SUB-${data.sub.id || data.sub._id}`,
+             payment_method: 'mtn',
+             onSuccess: (res) => {
+               verifyPayment({ 
+                 id: data.sub.id || data.sub._id, 
+                 reference: res.reference 
+               });
+             }
+           });
+         } catch (err) {
+           toast.error(err.message || t("subscription.paymentInitFailed"));
+         }
       }
     },
   });
@@ -381,17 +383,19 @@ export default function SubscriptionManager({ store, vendorUsername }) {
                 if (!plan) return;
                 const price = targetBillingCycle === "annual" ? plan.priceAnnual * 12 : plan.price;
                 try {
-                  await initializeITECPayPayment({
-                    amount: price,
-                    email: user.email,
-                    order_id: `SUB-${subscription.id || subscription._id}`,
-                    onSuccess: (res) => {
-                      verifyPayment({ 
-                        id: subscription.id || subscription._id, 
-                        reference: res.reference 
-                      });
-                    }
-                  });
+await initializeITECPayPayment({
+                     amount: price,
+                     email: user.email,
+                     phone: user.phone_number,
+                     order_id: `SUB-${subscription.id || subscription._id}`,
+                     payment_method: 'mtn',
+                     onSuccess: (res) => {
+                       verifyPayment({ 
+                         id: subscription.id || subscription._id, 
+                         reference: res.reference 
+                       });
+                     }
+                   });
                 } catch (err) {
                   toast.error(err.message || t("subscription.paymentInitFailed"));
                 }

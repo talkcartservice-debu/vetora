@@ -17,24 +17,28 @@ export default function PaymentSuccess() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  useEffect(() => {
+useEffect(() => {
     const verify = async () => {
       if (!reference) {
         setStatus('error');
         return;
       }
 
-       try {
-         const response = await verifyITECPayPayment(reference);
-        if (response.status && response.data.status === 'success') {
-          // Clear cart and affiliate ref on success
-          await cartAPI.clear();
-          localStorage.removeItem('iqon_ref');
-          localStorage.removeItem('iqon_ref_time');
-          queryClient.invalidateQueries({ queryKey: ['cart'] });
-          
-          setStatus('success');
-          toast.success('Payment verified successfully!');
+      try {
+        const response = await verifyITECPayPayment(reference);
+        if (response.status === 200 && response.data?.status) {
+          const paymentStatus = response.data.status.toUpperCase();
+          if (paymentStatus === 'SUCCESS' || paymentStatus === 'PAID' || paymentStatus === 'COMPLETED') {
+            await cartAPI.clear();
+            localStorage.removeItem('iqon_ref');
+            localStorage.removeItem('iqon_ref_time');
+            queryClient.invalidateQueries({ queryKey: ['cart'] });
+            setStatus('success');
+            toast.success('Payment verified successfully!');
+          } else {
+            setStatus('error');
+            toast.error('Payment verification failed');
+          }
         } else {
           setStatus('error');
           toast.error('Payment verification failed');

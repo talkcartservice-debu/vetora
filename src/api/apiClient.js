@@ -760,8 +760,8 @@ export const filesAPI = {
 export const paymentAPI = {
    itecpay: {
      initialize: (data) => apiClient.post('/payments/itecpay/initialize', data),
-     verify: (reference) => apiClient.get(`/payments/itecpay/verify/${reference}`),
-  }
+     verify: (data) => apiClient.post('/payments/itecpay/verify', data),
+   }
 };
 
 export const affiliateLinksAPI = {

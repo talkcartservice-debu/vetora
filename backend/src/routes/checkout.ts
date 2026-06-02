@@ -23,7 +23,7 @@ const checkoutSchema = z.object({
     country: z.string().default('NG'),
     phone: z.string(),
   }).optional(),
-    payment_method: z.enum(['card', 'itecpay', 'mobile_money', 'bank_transfer']).default('itecpay'),
+    payment_method: z.enum(['card', 'itecpay', 'mobile_money', 'mtn', 'airtel', 'spenn', 'bank_transfer']).default('itecpay'),
   order_note: z.string().optional(),
   coupon_code: z.string().optional(),
   affiliate_ref: z.string().optional(),
@@ -351,17 +351,30 @@ export async function checkoutRoutes(fastify: FastifyInstance) {
         await Coupon.findByIdAndUpdate(coupon._id, { $inc: { uses_count: 1 } }, { session });
       }
 
-       // 6. Initialize Payment if ITEC Pay or other methods
+// 6. Initialize Payment if ITEC Pay or other methods
        let paymentData = null;
-       if (['card', 'itecpay', 'mobile_money'].includes(body.payment_method)) {
+       const itecPayPayments = ['itecpay', 'card', 'mobile_money', 'mtn', 'airtel', 'spenn'];
+       if (itecPayPayments.includes(body.payment_method)) {
          const orderIds = orders.map(o => o._id.toString()).join(',');
-         // For ITEC Pay, we use our initialize endpoint which returns a payment URL
+
+         // Determine provider for ITEC Pay
+         let provider: string;
+         if (body.payment_method === 'card' || body.payment_method === 'itecpay') {
+           provider = 'card';
+         } else if (body.payment_method === 'mtn' || body.payment_method === 'mobile_money') {
+           provider = 'mtn';
+         } else if (body.payment_method === 'airtel') {
+           provider = 'airtel';
+         } else {
+           provider = 'spenn';
+         }
+
          paymentData = await itecPayService.initializeTransaction(
            user.email,
            totalAmount,
            orderIds,
            undefined,
-           body.payment_method === 'mobile_money' ? ['mobile_money'] : ['card'],
+           [provider],
            body.shipping_address?.phone || user.phone_number || ''
          );
        }

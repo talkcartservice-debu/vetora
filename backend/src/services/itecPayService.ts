@@ -4,106 +4,266 @@ import { PLAN_PRIORITY, PLAN_LIMITS } from '../middleware/subscription';
 import { Product } from '../models/Product';
 import axios from 'axios';
 
-export interface ITECPayCallbackData {
-  PCODE: string;   // the unique payment code (match to your order)
-  amount: string;  // the amount paid
-  transID: string; // the unique transaction ID
+export interface ITECPayPaymentResponse {
+  status: number;
+  data: {
+    financial_transaction_id?: string;
+    transaction_id: string;
+    amount: string;
+    currency: string;
+    status: string;
+  };
 }
 
-export interface ITECPayInitializeResponse {
-  status: boolean;
-  message: string;
+export interface ITECPayCardResponse {
+  status: number;
+  PCODE: string;
+  amount: number;
+  link: string;
+  valid_until: string;
+}
+
+export interface ITECPayVerifyResponse {
+  status: number;
   data: {
-    authorization_url: string;
-    access_code: string;
-    reference: string;
+    transaction_id: string;
+    amount: string;
+    status: string;
   };
+}
+
+export interface ITECPayCallbackData {
+  transaction_id?: string;
+  amount?: string;
+  status?: string;
 }
 
 export const itecPayService = {
   /**
-   * Initialize an ITEC Pay transaction
-   * Uses the actual ITEC Pay API with the provided API keys.
+   * Initialize a mobile money payment via ITEC Pay (api2/pay)
+   * Supports MTN Mobile Money, Airtel Money, and Spenn
    */
-  async initializeTransaction(email: string, amount: number, orderId: string, currency: string = 'RWF', channels: string[] = [], phone?: string): Promise<ITECPayInitializeResponse> {
+  async initializeMobileMoneyPayment(
+    amount: number,
+    phone: string,
+    provider: 'mtn' | 'airtel' | 'spenn' = 'mtn',
+    reqRef?: string,
+    note?: string,
+    message?: string
+  ): Promise<ITECPayPaymentResponse> {
     try {
-      // Determine payment method from channels array (first element) or default to 'card'
-      const paymentMethod = channels.length > 0 ? channels[0] : 'card';
-      
-      // Map payment method to the corresponding API key from environment variables
       const apiKeyMap: Record<string, string> = {
-        card: process.env.ITEC_PAY_API_KEY_PAYMENT_CARD || '',
-        mobile_money: process.env.ITEC_PAY_API_KEY_MTN_MOBILE_MONEY || '', // Defaulting to MTN for mobile_money
-        // Note: We don't have a separate key for Airtel Money in the environment for mobile_money.
-        // This is a limitation; ideally, the frontend would specify the mobile money provider.
+        mtn: process.env.ITECPAY_API_KEY_MOBILE_MONEY || '',
+        airtel: process.env.ITECPAY_API_KEY_AIRTEL_MONEY || '',
+        spenn: process.env.ITECPAY_API_KEY_MOBILE_MONEY || '', // Using MTN key for Spenn if not provided
       };
-      
-      const apiKey = apiKeyMap[paymentMethod];
-      
+
+      const apiKey = apiKeyMap[provider];
+
       if (!apiKey) {
-        throw new Error(`ITEC Pay API key not configured for payment method: ${paymentMethod}`);
+        throw new Error(`ITEC Pay API key not configured for provider: ${provider}`);
       }
-      
-      // Prepare the request data for ITEC Pay API
-      // Note: We assume the ITEC Pay API expects the amount in the same unit (RWF) as provided.
-      // If the API expects the amount in a different unit (e.g., cents), we would need to convert.
+
       const data: any = {
         amount,
-        email,
-        reference: orderId, // Using orderId as the reference for the transaction
+        phone,
+        key: apiKey,
       };
-      
-      if (currency) {
-        data.currency = currency;
+
+      if (reqRef) {
+        data.req_ref = reqRef;
       }
-      
-      if (phone) {
-        data.phone_number = phone; // Assuming the API expects 'phone_number' field
+
+      if (note) {
+        data.note = note;
       }
-      
-      // Make the request to ITEC Pay API
-      // Note: The endpoint is assumed; replace with the actual ITEC Pay endpoint.
+
+      if (message) {
+        data.message = message;
+      }
+
       const response = await axios.post(
-        'https://api.itecpay.com/v1/transaction/initialize', // TODO: Replace with actual endpoint
+        'https://pay.itecpay.rw/api2/pay',
         data,
         {
           headers: {
-            Authorization: `Bearer ${apiKey}`,
             'Content-Type': 'application/json',
           },
         }
       );
-      
-      // Assuming the ITEC Pay API returns a response with the following structure:
-      // {
-      //   status: boolean,
-      //   message: string,
-      //   data: {
-      //     authorization_url: string,
-      //     reference: string,
-      //   }
-      // }
-       // We'll map it to the ITEC Pay-compatible format.
-      const { status, message, data: responseData } = response.data;
-      
-      return {
-        status: status || false,
-        message: message || 'Payment initialized',
-        data: {
-          authorization_url: responseData.authorization_url || '',
-          access_code: responseData.access_code || '', // ITEC Pay might not use this
-          reference: responseData.reference || orderId,
-        }
+
+      return response.data;
+    } catch (error: any) {
+      console.error('ITEC Pay Mobile Money Error:', error.response?.data || error.message);
+
+      let errorMessage = error.response?.data?.message || error.message || 'Failed to initialize ITEC Pay mobile money payment';
+
+      if (error.response?.status === 400) {
+        errorMessage = error.response?.data?.data?.message || 'ITEC Pay authentication failed. Please check your API key.';
+      }
+
+      const newError: any = new Error(errorMessage);
+      newError.statusCode = error.response?.status || 500;
+      throw newError;
+    }
+  },
+
+  /**
+   * Initialize a card payment via ITEC Pay (pesapal/generatecode)
+   */
+  async initializeCardPayment(
+    amount: number,
+    email: string,
+    reqRef?: string
+  ): Promise<ITECPayCardResponse> {
+    try {
+      const apiKey = process.env.ITECPAY_API_KEY_CARD;
+
+      if (!apiKey) {
+        throw new Error('ITEC Pay card API key not configured');
+      }
+
+      const data: any = {
+        amount,
+        email,
+        key: apiKey,
       };
+
+      const response = await axios.post(
+        'https://pay.itecpay.rw/api/pay/apis/pesapal/generatecode',
+        data,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      return response.data;
+    } catch (error: any) {
+      console.error('ITEC Pay Card Payment Error:', error.response?.data || error.message);
+
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to initialize ITEC Pay card payment';
+      const newError: any = new Error(errorMessage);
+      newError.statusCode = error.response?.status || 500;
+      throw newError;
+    }
+  },
+
+  /**
+   * Verify payment status via ITEC Pay
+   */
+  async verifyPayment(reqRef: string, provider: 'mtn' | 'airtel' | 'spenn' | 'card' = 'mtn'): Promise<ITECPayVerifyResponse> {
+    try {
+      const apiKeyMap: Record<string, string> = {
+        mtn: process.env.ITECPAY_API_KEY_MOBILE_MONEY || '',
+        airtel: process.env.ITECPAY_API_KEY_AIRTEL_MONEY || '',
+        spenn: process.env.ITECPAY_API_KEY_MOBILE_MONEY || '',
+        card: process.env.ITECPAY_API_KEY_CARD || '',
+      };
+
+      const apiKey = apiKeyMap[provider];
+
+      if (!apiKey) {
+        throw new Error(`ITEC Pay API key not configured for provider: ${provider}`);
+      }
+
+      const response = await axios.post(
+        'https://pay.itecpay.rw/api2/verify',
+        {
+          action: 'status_check',
+          req_ref: reqRef,
+          key: apiKey,
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      return response.data;
+    } catch (error: any) {
+      console.error('ITEC Pay Verify Error:', error.response?.data || error.message);
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to verify ITEC Pay payment';
+      const newError: any = new Error(errorMessage);
+      newError.statusCode = error.response?.status || 500;
+      throw newError;
+    }
+  },
+
+  /**
+   * Initialize an ITEC Pay transaction (unified interface for checkout)
+   */
+  async initializeTransaction(
+    email: string,
+    amount: number,
+    orderId: string,
+    currency: string = 'RWF',
+    channels: string[] = ['card'],
+    phone?: string
+  ): Promise<{
+    status: boolean;
+    message: string;
+    data: {
+      authorization_url: string;
+      reference: string;
+    };
+  }> {
+    try {
+      const paymentMethod = channels.length > 0 ? channels[0] : 'card';
+      const reqRef = orderId;
+
+      if (paymentMethod === 'card') {
+        const response = await this.initializeCardPayment(amount, email, reqRef);
+
+        if (response.status !== 200 || !response.PCODE) {
+          throw new Error('Failed to generate card payment link');
+        }
+
+        return {
+          status: true,
+          message: 'Card payment initialized',
+          data: {
+            authorization_url: response.link,
+            reference: reqRef,
+          },
+        };
+      } else {
+        // Mobile money (MTN, Airtel, or Spenn)
+        const provider = paymentMethod === 'mobile_money' ? 'mtn' : paymentMethod as 'mtn' | 'airtel' | 'spenn';
+
+        if (!phone) {
+          throw new Error('Phone number is required for mobile money payments');
+        }
+
+        const response = await this.initializeMobileMoneyPayment(
+          amount,
+          phone,
+          provider,
+          reqRef,
+          `Order: ${orderId}`,
+          `Payment for order ${orderId}`
+        );
+
+        if (response.status !== 200) {
+          throw new Error('Failed to initialize mobile money payment');
+        }
+
+        // For mobile money, the authorization_url can be a prompt or status check URL
+        return {
+          status: true,
+          message: 'Mobile money payment initialized',
+          data: {
+            authorization_url: `https://pay.itecpay.rw/api2/verify?req_ref=${response.data.transaction_id}`,
+            reference: reqRef,
+          },
+        };
+      }
     } catch (error: any) {
       console.error('ITEC Pay Initialization Error:', error.response?.data || error.message);
-      
-      let errorMessage = error.response?.data?.message || error.message || 'Failed to initialize ITEC Pay transaction';
-      
-      if (error.response?.status === 401) {
-        errorMessage = 'ITEC Pay authentication failed. Please check your API key.';
-      }
-      
+
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to initialize ITEC Pay transaction';
       const newError: any = new Error(errorMessage);
       newError.statusCode = error.response?.status || 500;
       throw newError;
@@ -112,24 +272,16 @@ export const itecPayService = {
 
   /**
    * Verify ITEC Pay callback data
-   * @param callbackData The data received from ITEC Pay callback
-   * @param secretKey The secret key for verification (should match what's in callback URL)
-   * @returns True if verification passes
    */
   verifyCallback(callbackData: ITECPayCallbackData, secretKey: string): boolean {
-    // Basic verification: check that all required fields are present
-    if (!callbackData.PCODE || !callbackData.amount || !callbackData.transID) {
+    if (!callbackData.transaction_id || !callbackData.amount || !callbackData.status) {
       return false;
     }
-
-    // Additional verification could be done here based on ITEC Pay's security recommendations
-    // For now, we'll just check that the fields exist and are non-empty
     return true;
   },
 
   /**
-   * Handle successful ITEC Pay payment — routes to subscription or order logic based on ID prefix.
-   * Similar to ITEC Pay's handleSuccessfulPayment method
+   * Handle successful ITEC Pay payment
    */
   async handleSuccessfulPayment(orderIdsString: string, transID: string, amount: string) {
     try {
@@ -144,17 +296,15 @@ export const itecPayService = {
         try {
           const subscription = await VendorSubscription.findById(subscriptionId);
           if (!subscription) {
-            console.warn(`⚠️ ITEC Pay Webhook: Subscription ${subscriptionId} not found`);
+            console.warn(`ITEC Pay Webhook: Subscription ${subscriptionId} not found`);
             continue;
           }
 
-          // Already active with same reference — idempotent guard
           if (subscription.status === 'active' && subscription.payment_reference === transID && !subscription.pending_plan) {
-            console.log(`ℹ️ ITEC Pay Webhook: Subscription ${subscriptionId} already active with ref ${transID}`);
+            console.log(`ITEC Pay Webhook: Subscription ${subscriptionId} already active`);
             continue;
           }
 
-          // Promote pending upgrade (active paid → higher tier) or activate pending subscription
           if (subscription.pending_plan) {
             subscription.plan = subscription.pending_plan;
             subscription.billing_cycle = (subscription.pending_billing_cycle || subscription.billing_cycle) as 'monthly' | 'annual';
@@ -173,7 +323,6 @@ export const itecPayService = {
 
           await subscription.save();
 
-          // Sync products to the newly active plan
           await Product.updateMany(
             { vendor_username: subscription.vendor_username },
             {
@@ -181,10 +330,8 @@ export const itecPayService = {
               plan_priority: PLAN_PRIORITY[subscription.plan as keyof typeof PLAN_PRIORITY] || 0,
             }
           );
-
-          console.log(`✅ ITEC Pay Webhook: Subscription ${subscriptionId} activated → plan=${subscription.plan} (Ref: ${transID})`);
         } catch (subErr) {
-          console.error(`❌ ITEC Pay Webhook: Failed to activate subscription ${subscriptionId}:`, subErr);
+          console.error(`ITEC Pay Webhook: Failed to activate subscription ${subscriptionId}:`, subErr);
         }
       }
 
@@ -192,8 +339,8 @@ export const itecPayService = {
       if (orderIds.length > 0) {
         const result = await Order.updateMany(
           { _id: { $in: orderIds }, payment_status: { $ne: 'paid' } },
-          { 
-            $set: { 
+          {
+            $set: {
               payment_status: 'paid',
               payment_reference: transID,
               status: 'confirmed',
@@ -203,7 +350,7 @@ export const itecPayService = {
         );
 
         if (result.modifiedCount > 0) {
-          console.log(`✅ ${result.modifiedCount} Order(s) [${orderIds.join(', ')}] marked as PAID via ITEC Pay (Ref: ${transID})`);
+          console.log(`ITEC Pay: ${result.modifiedCount} order(s) marked as paid (Ref: ${transID})`);
         }
       }
     } catch (error) {
