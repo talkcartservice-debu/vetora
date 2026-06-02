@@ -312,26 +312,32 @@ export async function checkoutRoutes(fastify: FastifyInstance) {
         });
 
         // Inventory check and reduction
-        for (const item of groupItems) {
-          const updatedProduct = await Product.findOneAndUpdate(
-            { 
-              _id: item.product_id, 
-              status: 'active',
-              inventory_count: { $gte: item.quantity } 
-            },
-            {
-              $inc: { 
-                sales_count: item.quantity,
-                inventory_count: -item.quantity
-              }
-            },
-            { new: true, session }
-          );
+         for (const item of groupItems) {
+           const product = productMap.get(item.product_id)!;
+           // Only check inventory if product has inventory_count > 0 (0 means unlimited/no tracking)
+           const inventoryFilter: any = { 
+             _id: item.product_id, 
+             status: 'active'
+           };
+           if (product.inventory_count > 0) {
+             inventoryFilter.inventory_count = { $gte: item.quantity };
+           }
 
-          if (!updatedProduct) {
-            throw new Error(`Insufficient stock for product: ${item.product.title}`);
-          }
-        }
+           const updatedProduct = await Product.findOneAndUpdate(
+             inventoryFilter,
+             {
+               $inc: { 
+                 sales_count: item.quantity,
+                 ...(product.inventory_count > 0 && { inventory_count: -item.quantity })
+               }
+             },
+             { new: true, session }
+           );
+
+           if (!updatedProduct) {
+             throw new Error(`Insufficient stock for product: ${item.product.title}`);
+           }
+         }
 
         await order.save({ session });
         orders.push(order);

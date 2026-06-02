@@ -303,16 +303,21 @@ export async function orderRoutes(fastify: FastifyInstance) {
         await session.withTransaction(async () => {
           // Update product sales count and inventory BEFORE saving order
           for (const [productId, quantity] of inventoryChecks.entries()) {
+            const dbProduct = productMap.get(productId)!;
+            const inventoryFilter: any = {
+              _id: productId,
+              status: 'active'
+            };
+            if (dbProduct.inventory_count > 0) {
+              inventoryFilter.inventory_count = { $gte: quantity };
+            }
+
             const updatedProduct = await Product.findOneAndUpdate(
-              { 
-                _id: productId, 
-                status: 'active',
-                inventory_count: { $gte: quantity } 
-              },
+              inventoryFilter,
               {
-                $inc: { 
+                $inc: {
                   sales_count: quantity,
-                  inventory_count: -quantity
+                  ...(dbProduct.inventory_count > 0 && { inventory_count: -quantity })
                 }
               },
               { new: true, session }
