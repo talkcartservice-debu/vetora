@@ -4,8 +4,14 @@ import { Server as SocketIOServer } from 'socket.io';
 let io: SocketIOServer;
 
 export function setupWebSocket(fastify: FastifyInstance) {
+  // Get the underlying HTTP server (available after fastify.ready() or listen())
+  const server = fastify.server;
+  
+  if (!server) {
+    throw new Error('HTTP server not available. Call setupWebSocket after fastify.listen()');
+  }
   // Create Socket.IO server
-  io = new SocketIOServer(fastify.server, {
+  io = new SocketIOServer(server, {
     cors: {
       origin: (origin, callback) => {
         const extraOrigins = (process.env.CORS_ORIGINS || '')

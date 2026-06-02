@@ -118,12 +118,6 @@ fastify.decorate('authenticateOptional', authenticateOptional);
 // Add Socket.IO decorator
 fastify.decorate('io', null);
 
-// Setup WebSocket
-setupWebSocket(fastify);
-
-// Set the io instance on fastify
-fastify.io = io;
-
 // Attach request ID to every response for tracing
 fastify.addHook('onSend', async (request, reply) => {
   reply.header('X-Request-ID', request.id);
@@ -222,6 +216,11 @@ const start = async () => {
     
     await fastify.listen({ port: PORT, host: '0.0.0.0' });
     console.log(`🚀 Server running on http://localhost:${PORT}`);
+    
+    // Setup WebSocket after server is listening
+    setupWebSocket(fastify);
+    fastify.io = io;
+    console.log('✅ WebSocket server initialized');
   } catch (err) {
     fastify.log.error(err);
     process.exit(1);

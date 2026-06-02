@@ -1,5 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { Call, ICall } from '../models/Call';
+import { User } from '../models/User';
 import { z } from 'zod';
 
 const createCallSchema = z.object({
@@ -22,10 +23,14 @@ export async function callRoutes(fastify: FastifyInstance) {
       const user = request.user as any;
       const body = createCallSchema.parse(request.body);
 
+      // Get caller's display_name from DB
+      const caller = await User.findById(user.userId).select('display_name username');
+      const callerDisplayName = caller?.display_name || user.username;
+
       const call = new Call({
         ...body,
         caller_username: user.username,
-        caller_name: user.display_name || user.username,
+        caller_name: callerDisplayName,
       });
 
       await call.save();
