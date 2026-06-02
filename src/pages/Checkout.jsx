@@ -370,7 +370,14 @@ export default function Checkout() {
         navigate(createPageUrl("orders"));
     },
     onError: (err) => {
-        toast.error(err.message || t("checkout.failedToPlaceOrder"));
+        let errorMsg = err.message || t("checkout.failedToPlaceOrder");
+        // Provide user-friendly messages for common errors
+        if (err.message?.includes("Insufficient stock")) {
+          errorMsg = t("checkout.insufficientStock");
+        } else if (err.message?.includes("Inventory")) {
+          errorMsg = t("checkout.outOfStock");
+        }
+        toast.error(errorMsg);
     }
   });
 

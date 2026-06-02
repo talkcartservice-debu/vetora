@@ -1112,6 +1112,8 @@
     "selectDeliveryAddress": "Please select a delivery address",
     "orderPlaced": "Order placed successfully!",
     "failedToPlaceOrder": "Failed to place order",
+    "insufficientStock": "Not enough items in stock. Please reduce quantity or contact the vendor.",
+    "outOfStock": "One or more items are out of stock. Please check product availability.",
     "cartEmpty": "Your cart is empty",
     "selectOrAddAddress": "Please select or add a delivery address",
     "payingVia": "Paying via",
