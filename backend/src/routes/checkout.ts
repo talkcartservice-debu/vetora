@@ -24,6 +24,7 @@ const checkoutSchema = z.object({
     phone: z.string(),
   }).optional(),
     payment_method: z.enum(['card', 'itecpay', 'mobile_money', 'mtn', 'airtel', 'spenn', 'bank_transfer']).default('itecpay'),
+  mobile_money_phone: z.string().optional(),
   order_note: z.string().optional(),
   coupon_code: z.string().optional(),
   affiliate_ref: z.string().optional(),
@@ -375,14 +376,14 @@ export async function checkoutRoutes(fastify: FastifyInstance) {
            provider = 'spenn';
          }
 
-         paymentData = await itecPayService.initializeTransaction(
-           user.email,
-           totalAmount,
-           orderIds,
-           undefined,
-           [provider],
-           body.shipping_address?.phone || user.phone_number || ''
-         );
+paymentData = await itecPayService.initializeTransaction(
+            user.email,
+            totalAmount,
+            orderIds,
+            undefined,
+            [provider],
+            body.mobile_money_phone || body.shipping_address?.phone || user.phone_number || ''
+          );
        }
 
       // 7. Clear Cart

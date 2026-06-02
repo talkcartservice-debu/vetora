@@ -141,6 +141,7 @@ export default function Checkout() {
   const [isAddingAddress, setIsAddingAddress] = useState(false);
   const [newAddress, setNewAddress] = useState({ street: "", city: "", state: "", zip: "", phone: "", country: "NG", label: "Home" });
   const [paymentMethod, setPaymentMethod] = useState("card");
+  const [mobileMoneyPhone, setMobileMoneyPhone] = useState("");
   const [orderNote, setOrderNote] = useState("");
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState(null);
@@ -335,6 +336,11 @@ export default function Checkout() {
     mutationFn: async () => {
         if (needsAddress && !selectedAddress) throw new Error(t("checkout.selectDeliveryAddress"));
         
+        // Validate mobile money phone when mobile_money is selected
+        if (paymentMethod === "mobile_money" && !mobileMoneyPhone) {
+          throw new Error(t("checkout.mobileMoneyPhoneRequired"));
+        }
+        
         const payload = {
             payment_method: paymentMethod,
             order_note: orderNote,
@@ -353,6 +359,11 @@ export default function Checkout() {
                 country: selectedAddress.country,
                 phone: selectedAddress.phone || currentUser.phone_number || "",
             };
+        }
+
+        // Add mobile money phone to payload if provided
+        if (paymentMethod === "mobile_money" && mobileMoneyPhone) {
+          payload.mobile_money_phone = mobileMoneyPhone;
         }
 
         return await checkoutAPI.process(payload);
@@ -613,35 +624,49 @@ export default function Checkout() {
             completed={false}
           >
             <div className="space-y-6">
-              {/* Payment Method */}
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3">{t("checkout.paymentMethod")}</p>
-                <div className="space-y-3">
-                  {[
-                    { id: "card", name: t("checkout.creditDebitCard"), icon: CreditCard, desc: t("checkout.safeSecurePaystack") },
-                    { id: "mobile_money", name: t("checkout.mobileMoney"), icon: Wallet, desc: t("checkout.mobileMoneyProviders") }
-                  ].map(method => (
-                    <button
-                      key={method.id}
-                      onClick={() => setPaymentMethod(method.id)}
-                      className={`w-full flex items-center justify-between p-4 rounded-2xl border-2 transition-all ${
-                        paymentMethod === method.id ? "border-indigo-600 bg-indigo-50/50 dark:bg-indigo-900/20" : "border-slate-100 dark:border-slate-700 hover:border-slate-200 dark:hover:border-slate-600"
-                      }`}
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${paymentMethod === method.id ? "bg-indigo-600 text-white" : "bg-slate-50 dark:bg-slate-700 text-slate-500 dark:text-slate-400"}`}>
-                          <method.icon className="w-5 h-5" />
-                        </div>
-                        <div className="text-left">
-                          <p className={`font-black text-sm ${paymentMethod === method.id ? "text-indigo-900 dark:text-indigo-300" : "text-slate-900 dark:text-white"}`}>{method.name}</p>
-                          <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">{method.desc}</p>
-                        </div>
-                      </div>
-                      {paymentMethod === method.id && <div className="w-5 h-5 rounded-full bg-indigo-600 flex items-center justify-center"><CheckCircle2 className="w-3.5 h-3.5 text-white" /></div>}
-                    </button>
-                  ))}
-                </div>
-              </div>
+{/* Payment Method */}
+               <div>
+                 <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3">{t("checkout.paymentMethod")}</p>
+                 <div className="space-y-3">
+                   {[
+                     { id: "card", name: t("checkout.creditDebitCard"), icon: CreditCard, desc: t("checkout.safeSecureITEC") },
+                     { id: "mobile_money", name: t("checkout.mobileMoney"), icon: Wallet, desc: t("checkout.mobileMoneyProviders") }
+                   ].map(method => (
+                     <button
+                       key={method.id}
+                       onClick={() => setPaymentMethod(method.id)}
+                       className={`w-full flex items-center justify-between p-4 rounded-2xl border-2 transition-all ${
+                         paymentMethod === method.id ? "border-indigo-600 bg-indigo-50/50 dark:bg-indigo-900/20" : "border-slate-100 dark:border-slate-700 hover:border-slate-200 dark:hover:border-slate-600"
+                       }`}
+                     >
+                       <div className="flex items-center gap-4">
+                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${paymentMethod === method.id ? "bg-indigo-600 text-white" : "bg-slate-50 dark:bg-slate-700 text-slate-500 dark:text-slate-400"}`}>
+                           <method.icon className="w-5 h-5" />
+                         </div>
+                         <div className="text-left">
+                           <p className={`font-black text-sm ${paymentMethod === method.id ? "text-indigo-900 dark:text-indigo-300" : "text-slate-900 dark:text-white"}`}>{method.name}</p>
+                           <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">{method.desc}</p>
+                         </div>
+                       </div>
+                       {paymentMethod === method.id && <div className="w-5 h-5 rounded-full bg-indigo-600 flex items-center justify-center"><CheckCircle2 className="w-3.5 h-3.5 text-white" /></div>}
+                     </button>
+                   ))}
+                 </div>
+
+                 {paymentMethod === "mobile_money" && (
+                   <div className="mt-4 p-4 bg-slate-50/50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-700">
+                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 block">{t("checkout.mobileMoneyPhone")}</label>
+                     <Input
+                       type="tel"
+                       value={mobileMoneyPhone}
+                       onChange={(e) => setMobileMoneyPhone(e.target.value)}
+                       placeholder={t("checkout.mobileMoneyPhonePlaceholder")}
+                       className="rounded-xl h-11 border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-white"
+                     />
+                     <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-2">{t("checkout.mobileMoneyPhoneDesc")}</p>
+                   </div>
+                 )}
+               </div>
 
               {/* Order Items Review */}
               <div className="pt-6 border-t-2 border-slate-100 dark:border-slate-700">
