@@ -15,6 +15,7 @@ const TYPE_CONFIG = {
   follow:       { icon: UserPlus,      color: "bg-purple-100 text-purple-600", label: "Follow" },
   comment:      { icon: MessageCircle, color: "bg-blue-100 text-blue-600",     label: "Comment" },
   product_added: { icon: Package,      color: "bg-emerald-100 text-emerald-600", label: "Product" },
+  mention:      { icon: MessageCircle, color: "bg-amber-100 text-amber-600",   label: "Mention" },
 };
 
 export default function NotificationBell({ userEmail }) {
@@ -141,8 +142,10 @@ export default function NotificationBell({ userEmail }) {
                     <button
                       key={notif.id || notif._id}
                       onClick={() => {
-                        if (!notif.is_read) markOneMutation.mutate(notif.id || notif._id);
+                        const id = notif.id || notif._id;
+                        if (!notif.is_read && id) markOneMutation.mutate(id);
                         if (notif.link && notif.link.startsWith("/")) navigate(notif.link);
+                        else if (notif.metadata?.link && typeof notif.metadata.link === "string" && notif.metadata.link.startsWith("/")) navigate(notif.metadata.link);
                         setOpen(false);
                       }}
                       className={`w-full flex items-start gap-3 px-4 py-3 hover:bg-slate-50 transition-colors text-left border-b border-slate-50 last:border-0 ${!notif.is_read ? "bg-indigo-50/40" : ""}`}

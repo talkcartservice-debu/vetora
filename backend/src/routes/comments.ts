@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import { Comment, IComment } from '../models/Comment';
 import { User } from '../models/User';
 import { Post } from '../models/Post';
+import { Notification } from '../models/Notification';
 import { likeTarget, unlikeTarget, getLikesForTargets } from '../services/likeService';
 
 export async function commentRoutes(fastify: FastifyInstance) {
@@ -139,6 +140,59 @@ export async function commentRoutes(fastify: FastifyInstance) {
         comment: comment.toObject(),
         post_id: body.post_id
       });
+
+      try {
+        const post = await Post.findById(body.post_id).select('author_username').lean();
+        const postAuthor = post?.author_username;
+
+        if (postAuthor && postAuthor !== userData.username) {
+          const postAuthorUser = await User.findOne({ username: postAuthor }).select('display_name').lean();
+          const displayName = postAuthorUser?.display_name || postAuthor;
+          const commentNotification = new Notification({
+            recipient_username: postAuthor,
+            type: 'comment',
+            title: `${displayName}, ${userData.display_name || userData.username} commented on your post`,
+            body: comment.content?.substring(0, 100) || '',
+            link: `/PostDetail?id=${body.post_id}`,
+            sender_username: userData.username,
+            sender_name: userData.display_name || userData.username,
+            metadata: {
+              post_id: body.post_id,
+              comment_id: comment._id,
+              parent_comment_id: body.parent_comment_id || null
+            }
+          });
+          await commentNotification.save();
+          fastify.io?.to(`user:${postAuthor}`).emit('notification:new', commentNotification);
+        }
+
+        if (body.parent_comment_id) {
+          const parentComment = await Comment.findById(body.parent_comment_id).select('author_username').lean();
+          const parentAuthor = parentComment?.author_username;
+          if (parentAuthor && parentAuthor !== userData.username && parentAuthor !== postAuthor) {
+            const parentAuthorUser = await User.findOne({ username: parentAuthor }).select('display_name').lean();
+            const parentDisplayName = parentAuthorUser?.display_name || parentAuthor;
+            const replyNotification = new Notification({
+              recipient_username: parentAuthor,
+              type: 'comment',
+              title: `${parentDisplayName}, ${userData.display_name || userData.username} replied to your comment`,
+              body: comment.content?.substring(0, 100) || '',
+              link: `/PostDetail?id=${body.post_id}`,
+              sender_username: userData.username,
+              sender_name: userData.display_name || userData.username,
+              metadata: {
+                post_id: body.post_id,
+                comment_id: comment._id,
+                parent_comment_id: body.parent_comment_id
+              }
+            });
+            await replyNotification.save();
+            fastify.io?.to(`user:${parentAuthor}`).emit('notification:new', replyNotification);
+          }
+        }
+      } catch (notifErr) {
+        fastify.log.error(notifErr, 'Failed to create comment notification');
+      }
 
       reply.code(201).send(comment);
     } catch (error) {

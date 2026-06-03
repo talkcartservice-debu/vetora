@@ -1,6 +1,13 @@
 import { FastifyInstance } from 'fastify';
 import { Like } from '../models/Like';
 import { likeTarget, unlikeTarget } from '../services/likeService';
+import { User } from '../models/User';
+import { Post } from '../models/Post';
+import { Comment } from '../models/Comment';
+import { Story } from '../models/Story';
+import { Product } from '../models/Product';
+import { Review } from '../models/Review';
+import { Notification } from '../models/Notification';
 
 export async function likeRoutes(fastify: FastifyInstance) {
   // Get likes for a specific target
@@ -93,6 +100,55 @@ export async function likeRoutes(fastify: FastifyInstance) {
       const { target_type, target_id } = body;
 
       const result = await likeTarget(user.username, target_type, target_id);
+
+      let targetOwnerUsername: string | null = null;
+      switch (target_type) {
+        case 'post': {
+          const post = await Post.findById(target_id).select('author_username');
+          targetOwnerUsername = post?.author_username || null;
+          break;
+        }
+        case 'comment': {
+          const commentDoc = await Comment.findById(target_id).select('author_username');
+          targetOwnerUsername = commentDoc?.author_username || null;
+          break;
+        }
+        case 'story': {
+          const story = await Story.findById(target_id).select('author_username');
+          targetOwnerUsername = story?.author_username || null;
+          break;
+        }
+        case 'product': {
+          const productDoc = await Product.findById(target_id).select('vendor_username store_name');
+          targetOwnerUsername = productDoc?.vendor_username || null;
+          break;
+        }
+        case 'review': {
+          const review = await Review.findById(target_id).select('reviewer_username');
+          targetOwnerUsername = review?.reviewer_username || null;
+          break;
+        }
+      }
+
+      if (targetOwnerUsername && targetOwnerUsername !== user.username) {
+        try {
+          const ownerUser = await User.findOne({ username: targetOwnerUsername }).select('display_name').lean();
+          const senderName = user.display_name || user.username;
+          const notification = new Notification({
+            recipient_username: targetOwnerUsername,
+            type: 'like',
+            title: `${senderName} liked your ${target_type.replace('_', ' ')}`,
+            body: `${senderName} liked your ${target_type}`,
+            sender_username: user.username,
+            sender_name: senderName,
+            metadata: { target_type, target_id }
+          });
+          await notification.save();
+          fastify.io?.to(`user:${targetOwnerUsername}`).emit('notification:new', notification);
+        } catch (notifErr) {
+          fastify.log.error(notifErr, 'Failed to create like notification');
+        }
+      }
 
       // Emit generic real-time event
       fastify.io?.emit('like:created', {

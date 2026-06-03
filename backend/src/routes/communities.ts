@@ -366,7 +366,7 @@ export async function communityRoutes(fastify: FastifyInstance) {
           }
         });
         await notification.save();
-        fastify.io?.to(community.owner_username).emit('notification:new', notification);
+        fastify.io?.to(`user:${community.owner_username}`).emit('notification:new', notification);
       }
 
       // Emit real-time event

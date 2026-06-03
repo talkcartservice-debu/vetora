@@ -2,7 +2,7 @@
   "name": "Notification",
   "type": "object",
   "properties": {
-    "recipient_email": {
+    "recipient_username": {
       "type": "string"
     },
     "type": {
@@ -15,7 +15,10 @@
         "message",
         "mention",
         "community",
-        "promotion"
+        "promotion",
+        "offer",
+        "subscription_limit",
+        "product_added"
       ]
     },
     "title": {
@@ -28,7 +31,7 @@
       "type": "string",
       "description": "Deep link to relevant page"
     },
-    "sender_email": {
+    "sender_username": {
       "type": "string"
     },
     "sender_name": {
@@ -44,7 +47,7 @@
     }
   },
   "required": [
-    "recipient_email",
+    "recipient_username",
     "type",
     "title"
   ]

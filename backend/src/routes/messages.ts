@@ -1,6 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { Message, IMessage } from '../models/Message';
 import { User } from '../models/User';
+import { Notification } from '../models/Notification';
 import { z } from 'zod';
 
 const sendMessageSchema = z.object({
@@ -221,6 +222,31 @@ export async function messageRoutes(fastify: FastifyInstance) {
       if (body.recipient_username) {
         fastify.io?.to(`user:${body.recipient_username}`).emit('new-message', message.toObject());
         fastify.io?.to(`user:${body.recipient_username}`).emit('chat:new', message.toObject());
+      }
+
+      try {
+        if (body.recipient_username && body.recipient_username !== user.username) {
+          const recipientUser = await User.findOne({ username: body.recipient_username }).lean();
+          const senderName = recipientUser?.display_name || user.username;
+          const newMessage = new Notification({
+            recipient_username: body.recipient_username,
+            type: body.message_type === 'offer' ? 'offer' : 'message',
+            title: body.message_type === 'offer' ? 'New Offer Received' : `New message from ${senderName}`,
+            body: message.content?.substring(0, 100) || '',
+            link: `/Chat`,
+            sender_username: user.username,
+            sender_name: senderName,
+            metadata: {
+              conversation_id: conversationId,
+              message_id: message._id,
+              message_type: body.message_type
+            }
+          });
+          await newMessage.save();
+          fastify.io?.to(`user:${body.recipient_username}`).emit('notification:new', newMessage);
+        }
+      } catch (notifErr: any) {
+        fastify.log.error(notifErr, 'Failed to create message notification');
       }
 
       // Invalidate conversation cache for both parties

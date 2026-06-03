@@ -2,6 +2,38 @@ import { FastifyInstance } from 'fastify';
 import { User } from '../models/User';
 import { INotification } from '../models/Notification';
 
+function typeToPreference(type: string): keyof NonNullable<User['notifications']> | null {
+  switch (type) {
+    case 'follow':
+      return 'notif_follow';
+    case 'message':
+    case 'offer':
+      return 'notif_msg';
+    case 'order_update':
+      return 'notif_sales';
+    case 'live':
+      return 'notif_live';
+    default:
+      return null;
+  }
+}
+
+export async function shouldSendNotification(username: string, type: string): Promise<boolean> {
+  const preferenceKey = typeToPreference(type);
+  if (!preferenceKey) {
+    return true;
+  }
+
+  const user = await User.findOne({ username }).select('notifications');
+  const preferences = user?.notifications;
+
+  if (!preferences) {
+    return true;
+  }
+
+  return preferences[preferenceKey] !== false;
+}
+
 export class NotificationService {
   /**
    * Send a push notification to a user's registered devices.
@@ -9,6 +41,10 @@ export class NotificationService {
    */
   static async sendPushNotification(recipientUsername: string, notification: INotification, fastify: FastifyInstance) {
     try {
+      if (!(await shouldSendNotification(recipientUsername, notification.type))) {
+        return;
+      }
+
       const user = await User.findOne({ username: recipientUsername.toLowerCase() }).select('push_tokens');
       
       if (!user || !user.push_tokens || user.push_tokens.length === 0) {
