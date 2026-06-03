@@ -14,6 +14,11 @@ const updateCallSchema = z.object({
   duration: z.number().min(0).optional(),
 });
 
+const signalingSchema = z.object({
+  sdp: z.any().optional(),
+  iceCandidate: z.any().optional(),
+});
+
 export async function callRoutes(fastify: FastifyInstance) {
   // Create/initiate a call
   fastify.post('/', {
@@ -21,21 +26,18 @@ export async function callRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     try {
       const user = request.user as any;
-      
-      // Validate user is authenticated
+
       if (!user?.userId || !user?.username) {
         return reply.code(401).send({ error: 'Unauthorized - user not properly authenticated' });
       }
-      
+
       const body = createCallSchema.parse(request.body);
 
-      // Validate callee exists
       const calleeExists = await User.findOne({ username: body.callee_username.toLowerCase() }).maxTimeMS(5000);
       if (!calleeExists) {
         return reply.code(404).send({ error: 'Callee user not found' });
       }
 
-      // Get caller's display_name from DB
       let callerDisplayName = user.username;
       try {
         const caller = await User.findById(user.userId).select('display_name username').maxTimeMS(5000);
@@ -48,13 +50,13 @@ export async function callRoutes(fastify: FastifyInstance) {
 
       const call = new Call({
         ...body,
+        conversation_id: body.conversation_id || `chat_${[user.username, body.callee_username].sort().join("_")}`,
         caller_username: user.username,
         caller_name: callerDisplayName,
       });
 
       await call.save();
 
-      // Emit real-time event to callee
       try {
         fastify.io?.to(`user:${body.callee_username}`).emit('call:incoming', {
           call: call.toObject(),
@@ -88,19 +90,19 @@ export async function callRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     try {
       const user = request.user as any;
-      
+
       const calls = await Call.find({
         callee_username: user.username,
         status: 'ringing',
-        created_at: { $gt: new Date(Date.now() - 60000) }, // Last minute
+        created_at: { $gt: new Date(Date.now() - 60000) },
       }).sort({ created_at: -1 }).limit(10);
 
       return calls;
     } catch (error: any) {
       fastify.log.error(error);
-      return reply.code(500).send({ 
-        error: 'Internal server error', 
-        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      return reply.code(500).send({
+        error: 'Internal server error',
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined
       });
     }
   });
@@ -129,9 +131,9 @@ export async function callRoutes(fastify: FastifyInstance) {
       return call;
     } catch (error: any) {
       fastify.log.error(error);
-      return reply.code(500).send({ 
-        error: 'Internal server error', 
-        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      return reply.code(500).send({
+        error: 'Internal server error',
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined
       });
     }
   });
@@ -160,9 +162,9 @@ export async function callRoutes(fastify: FastifyInstance) {
       return call;
     } catch (error: any) {
       fastify.log.error(error);
-      return reply.code(500).send({ 
-        error: 'Internal server error', 
-        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      return reply.code(500).send({
+        error: 'Internal server error',
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined
       });
     }
   });
@@ -197,7 +199,6 @@ export async function callRoutes(fastify: FastifyInstance) {
       }
       await call.save();
 
-      // Notify both parties
       fastify.io?.to(`user:${call.caller_username}`).emit('call:ended', {
         call: call.toObject(),
       });
@@ -211,9 +212,9 @@ export async function callRoutes(fastify: FastifyInstance) {
         return reply.code(400).send({ error: 'Invalid request data', details: error.errors });
       }
       fastify.log.error(error);
-      return reply.code(500).send({ 
-        error: 'Internal server error', 
-        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      return reply.code(500).send({
+        error: 'Internal server error',
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined
       });
     }
   });
@@ -251,9 +252,9 @@ export async function callRoutes(fastify: FastifyInstance) {
       };
     } catch (error: any) {
       fastify.log.error(error);
-      return reply.code(500).send({ 
-        error: 'Internal server error', 
-        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      return reply.code(500).send({
+        error: 'Internal server error',
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined
       });
     }
   });
@@ -273,9 +274,9 @@ export async function callRoutes(fastify: FastifyInstance) {
       return { success: true, count: result.modifiedCount };
     } catch (error: any) {
       fastify.log.error(error);
-      return reply.code(500).send({ 
-        error: 'Internal server error', 
-        message: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      return reply.code(500).send({
+        error: 'Internal server error',
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined
       });
     }
   });

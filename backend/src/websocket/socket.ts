@@ -1,5 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { Server as SocketIOServer } from 'socket.io';
+import { Call } from '../models/Call';
 
 let io: SocketIOServer;
 
@@ -86,6 +87,40 @@ export function setupWebSocket(fastify: FastifyInstance) {
     // Example: Leave conversation room
     socket.on('leave-conversation', (conversationId: string) => {
       socket.leave(`conversation:${conversationId}`);
+    });
+
+    // WebRTC signaling relay for calls
+    socket.on('call:offer', async (data: { callId: string; sdp: any }) => {
+      try {
+        const call = await Call.findById(data.callId).lean();
+        if (!call) return;
+        const targetUsername = call.caller_username === socket.data.user.username ? call.callee_username : call.caller_username;
+        io?.to(`user:${targetUsername}`).emit('call:offer', { callId: data.callId, sdp: data.sdp });
+      } catch (err) {
+        console.error('call:offer relay error:', err);
+      }
+    });
+
+    socket.on('call:answer', async (data: { callId: string; sdp: any }) => {
+      try {
+        const call = await Call.findById(data.callId).lean();
+        if (!call) return;
+        const targetUsername = call.caller_username === socket.data.user.username ? call.callee_username : call.caller_username;
+        io?.to(`user:${targetUsername}`).emit('call:answer', { callId: data.callId, sdp: data.sdp });
+      } catch (err) {
+        console.error('call:answer relay error:', err);
+      }
+    });
+
+    socket.on('call:ice-candidate', async (data: { callId: string; candidate: any }) => {
+      try {
+        const call = await Call.findById(data.callId).lean();
+        if (!call) return;
+        const targetUsername = call.caller_username === socket.data.user.username ? call.callee_username : call.caller_username;
+        io?.to(`user:${targetUsername}`).emit('call:ice-candidate', { callId: data.callId, candidate: data.candidate });
+      } catch (err) {
+        console.error('call:ice-candidate relay error:', err);
+      }
     });
 
     // Example: Join live session room

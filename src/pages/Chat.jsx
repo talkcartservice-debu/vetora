@@ -5,7 +5,8 @@ import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Search, Send, ArrowLeft, MoreVertical, X, Phone, Video,
-  ShoppingBag, Star, Package, Loader2, Reply, Smile, PenSquare, CheckCheck
+  ShoppingBag, Star, Package, Loader2, Reply, Smile, PenSquare, CheckCheck,
+  History
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import MessageBubble from "@/components/chat/MessageBubble";
 import ChatImageUpload from "@/components/chat/ChatImageUpload";
+import IncomingCallOverlay from "@/components/chat/IncomingCallOverlay";
+import ActiveCallScreen from "@/components/chat/ActiveCallScreen";
 import { authAPI, productsAPI, messagesAPI, ordersAPI, usersAPI, callsAPI } from "@/api/apiClient";
 import { useSocket } from "@/lib/SocketContext";
 
@@ -148,6 +151,10 @@ export default function Chat() {
   const [composing, setComposing] = useState(false);
   const [userSearch, setUserSearch] = useState("");
   const [callStatus, setCallStatus] = useState(null);
+  const [incomingCall, setIncomingCall] = useState(null);
+  const [activeCall, setActiveCall] = useState(null);
+  const [isCaller, setIsCaller] = useState(false);
+  const [showCallHistory, setShowCallHistory] = useState(false);
   const messagesEndRef = useRef(null);
   const queryClient = useQueryClient();
   const { on } = useSocket();
@@ -184,6 +191,12 @@ export default function Chat() {
     staleTime: 10000,
   });
 
+  const { data: callHistory = [] } = useQuery({
+    queryKey: ["callHistory"],
+    queryFn: () => callsAPI.getHistory({ limit: 50 }),
+    enabled: !!currentUser?.username,
+  });
+
   const markAsRead = useCallback(async () => {
     if (!selectedConvo || !currentUser?.username) return;
     const parts = [currentUser.username, selectedConvo].sort();
@@ -207,6 +220,40 @@ export default function Chat() {
     });
     return unsubscribe;
   }, [on, queryClient, selectedConvo, markAsRead, conversationId]);
+
+  useEffect(() => {
+    const unsubIncoming = on("call:incoming", (data) => {
+      setIncomingCall(data.call);
+    });
+    const unsubAnswered = on("call:answered", (data) => {
+      if (activeCall && data.call?._id === activeCall._id) {
+        setActiveCall(prev => ({ ...prev, ...data.call }));
+      }
+    });
+    const unsubEnded = on("call:ended", (data) => {
+      if (activeCall && data.call?._id === activeCall._id) {
+        setCallStatus(null);
+        setActiveCall(null);
+        setIsCaller(false);
+        setIncomingCall(null);
+        queryClient.invalidateQueries({ queryKey: ["callHistory"] });
+      }
+    });
+    const unsubRejected = on("call:rejected", (data) => {
+      if (activeCall && data.call?._id === activeCall._id) {
+        setCallStatus(null);
+        setActiveCall(null);
+        setIsCaller(false);
+        toast.error(t("chat.callRejected"));
+      }
+    });
+    return () => {
+      unsubIncoming?.();
+      unsubAnswered?.();
+      unsubEnded?.();
+      unsubRejected?.();
+    };
+  }, [on, activeCall, queryClient, toast, t]);
 
   // Real-time subscription replaced by refetchInterval
 
@@ -333,6 +380,31 @@ export default function Chat() {
     }
   };
 
+  const handleAnswerCall = async (callId) => {
+    try {
+      await callsAPI.answer(callId);
+      const call = incomingCall;
+      setActiveCall(call);
+      setIsCaller(false);
+      setIncomingCall(null);
+      setCallStatus("active");
+    } catch (error) {
+      console.error("Failed to answer call:", error);
+      toast.error(error.message || t("chat.failedToAnswerCall"));
+    }
+  };
+
+  const handleRejectCall = async (callId) => {
+    try {
+      await callsAPI.reject(callId);
+      setIncomingCall(null);
+      toast.success(t("chat.callRejected"));
+    } catch (error) {
+      console.error("Failed to reject call:", error);
+      toast.error(error.message || t("chat.failedToRejectCall"));
+    }
+  };
+
   const handleVoiceCall = async () => {
     if (!selectedConvo || !currentUser?.username) return;
     try {
@@ -341,10 +413,14 @@ export default function Chat() {
         callee_username: selectedConvo,
         call_type: "voice",
       });
+      setActiveCall(response);
+      setIsCaller(true);
       setCallStatus("active");
       toast.success(t("chat.callInitiated"));
     } catch (error) {
       setCallStatus(null);
+      setActiveCall(null);
+      setIsCaller(false);
       toast.error(error.message || t("chat.failedToInitiateCall"));
     }
   };
@@ -357,13 +433,25 @@ export default function Chat() {
         callee_username: selectedConvo,
         call_type: "video",
       });
+      setActiveCall(response);
+      setIsCaller(true);
       setCallStatus("active");
       toast.success(t("chat.callInitiated"));
     } catch (error) {
       setCallStatus(null);
+      setActiveCall(null);
+      setIsCaller(false);
       toast.error(error.message || t("chat.failedToInitiateCall"));
     }
   };
+
+  const handleCallEnded = useCallback(() => {
+    setCallStatus(null);
+    setActiveCall(null);
+    setIsCaller(false);
+    setIncomingCall(null);
+    queryClient.invalidateQueries({ queryKey: ["callHistory"] });
+  }, [queryClient]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -521,12 +609,35 @@ export default function Chat() {
                 </div>
               </div>
               <div className="flex items-center gap-1">
-<button onClick={handleVoiceCall} disabled={callStatus === "initiating"} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors" title={t("chat.voiceCall")}>
-                   <Phone className="w-4 h-4 text-slate-500 dark:text-slate-400" />
-                 </button>
-                 <button onClick={handleVideoCall} disabled={callStatus === "initiating"} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors" title={t("chat.videoCall")}>
-                   <Video className="w-4 h-4 text-slate-500 dark:text-slate-400" />
-                 </button>
+                <Button
+                  onClick={handleVoiceCall}
+                  disabled={callStatus === "initiating" || !!activeCall || !!incomingCall}
+                  size="icon"
+                  variant="ghost"
+                  className="h-8 w-8 rounded-full"
+                  title={t("chat.voiceCall")}
+                >
+                  <Phone className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+                </Button>
+                <Button
+                  onClick={handleVideoCall}
+                  disabled={callStatus === "initiating" || !!activeCall || !!incomingCall}
+                  size="icon"
+                  variant="ghost"
+                  className="h-8 w-8 rounded-full"
+                  title={t("chat.videoCall")}
+                >
+                  <Video className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+                </Button>
+                <Button
+                  onClick={() => setShowCallHistory(v => !v)}
+                  size="icon"
+                  variant="ghost"
+                  className="h-8 w-8 rounded-full"
+                  title={t("chat.callHistory")}
+                >
+                  <History className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+                </Button>
                 <button className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors" onClick={() => setShowActionMenu(v => !v)}>
                   <MoreVertical className="w-5 h-5 text-slate-400" />
                 </button>
@@ -735,6 +846,29 @@ export default function Chat() {
           </div>
         )}
       </div>
+
+      {/* Call Overlays */}
+      <AnimatePresence>
+        {incomingCall && (
+          <IncomingCallOverlay
+            call={incomingCall}
+            currentUser={currentUser}
+            onAnswer={handleAnswerCall}
+            onReject={handleRejectCall}
+          />
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {activeCall && (
+          <ActiveCallScreen
+            call={activeCall}
+            currentUser={currentUser}
+            isIncoming={!isCaller}
+            onEndCall={handleCallEnded}
+            onCallEnded={handleCallEnded}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
