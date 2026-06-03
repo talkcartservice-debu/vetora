@@ -68,6 +68,17 @@ export async function callRoutes(fastify: FastifyInstance) {
       return call;
     } catch (error: any) {
       fastify.log.error('Call creation error:', error);
+
+      // Handle Mongoose validation errors
+      if (error.name === 'ValidationError') {
+        return reply.code(400).send({ error: 'Validation failed', details: error.message });
+      }
+
+      // Handle MongoDB cast errors (invalid ObjectId format)
+      if (error.name === 'CastError') {
+        return reply.code(400).send({ error: 'Invalid ID format', details: error.message });
+      }
+
       if (error.name === 'MongooseServerSelectionError' || error.name === 'MongoError' || error.message?.includes('buffering timed out') || error.message?.includes('ECONNREFUSED')) {
         return reply.code(503).send({
           error: 'Database unavailable',
@@ -100,6 +111,15 @@ export async function callRoutes(fastify: FastifyInstance) {
       return calls;
     } catch (error: any) {
       fastify.log.error(error);
+      if (error.name === 'ValidationError') {
+        return reply.code(400).send({ error: 'Validation failed', details: error.message });
+      }
+      if (error.name === 'MongooseServerSelectionError' || error.name === 'MongoError' || error.message?.includes('buffering timed out') || error.message?.includes('ECONNREFUSED')) {
+        return reply.code(503).send({
+          error: 'Database unavailable',
+          message: 'Unable to connect to database. Please try again later.'
+        });
+      }
       return reply.code(500).send({
         error: 'Internal server error',
         message: process.env.NODE_ENV === 'development' ? error.message : undefined
@@ -115,7 +135,7 @@ export async function callRoutes(fastify: FastifyInstance) {
       const { id } = request.params as { id: string };
       const user = request.user as any;
 
-      const call = await Call.findOne({ _id: id, callee_username: user.username });
+      const call = await Call.findOne({ _id: id, callee_username: user.username, status: 'ringing' });
       if (!call) {
         return reply.code(404).send({ error: 'Call not found or unauthorized' });
       }
@@ -131,6 +151,18 @@ export async function callRoutes(fastify: FastifyInstance) {
       return call;
     } catch (error: any) {
       fastify.log.error(error);
+      if (error.name === 'ValidationError') {
+        return reply.code(400).send({ error: 'Validation failed', details: error.message });
+      }
+      if (error.name === 'CastError') {
+        return reply.code(400).send({ error: 'Invalid ID format', details: error.message });
+      }
+      if (error.name === 'MongooseServerSelectionError' || error.name === 'MongoError' || error.message?.includes('buffering timed out') || error.message?.includes('ECONNREFUSED')) {
+        return reply.code(503).send({
+          error: 'Database unavailable',
+          message: 'Unable to connect to database. Please try again later.'
+        });
+      }
       return reply.code(500).send({
         error: 'Internal server error',
         message: process.env.NODE_ENV === 'development' ? error.message : undefined
@@ -162,6 +194,18 @@ export async function callRoutes(fastify: FastifyInstance) {
       return call;
     } catch (error: any) {
       fastify.log.error(error);
+      if (error.name === 'ValidationError') {
+        return reply.code(400).send({ error: 'Validation failed', details: error.message });
+      }
+      if (error.name === 'CastError') {
+        return reply.code(400).send({ error: 'Invalid ID format', details: error.message });
+      }
+      if (error.name === 'MongooseServerSelectionError' || error.name === 'MongoError' || error.message?.includes('buffering timed out') || error.message?.includes('ECONNREFUSED')) {
+        return reply.code(503).send({
+          error: 'Database unavailable',
+          message: 'Unable to connect to database. Please try again later.'
+        });
+      }
       return reply.code(500).send({
         error: 'Internal server error',
         message: process.env.NODE_ENV === 'development' ? error.message : undefined
@@ -211,6 +255,12 @@ export async function callRoutes(fastify: FastifyInstance) {
       if (error instanceof z.ZodError) {
         return reply.code(400).send({ error: 'Invalid request data', details: error.errors });
       }
+      if (error.name === 'ValidationError') {
+        return reply.code(400).send({ error: 'Validation failed', details: error.message });
+      }
+      if (error.name === 'CastError') {
+        return reply.code(400).send({ error: 'Invalid ID format', details: error.message });
+      }
       fastify.log.error(error);
       return reply.code(500).send({
         error: 'Internal server error',
@@ -225,6 +275,11 @@ export async function callRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     try {
       const user = request.user as any;
+
+      if (!user?.username) {
+        return reply.code(401).send({ error: 'Unauthorized - invalid user data' });
+      }
+
       const { limit = 50, skip = 0 } = request.query as any;
 
       const calls = await Call.find({
@@ -252,6 +307,15 @@ export async function callRoutes(fastify: FastifyInstance) {
       };
     } catch (error: any) {
       fastify.log.error(error);
+      if (error.name === 'ValidationError') {
+        return reply.code(400).send({ error: 'Validation failed', details: error.message });
+      }
+      if (error.name === 'MongooseServerSelectionError' || error.name === 'MongoError' || error.message?.includes('buffering timed out') || error.message?.includes('ECONNREFUSED')) {
+        return reply.code(503).send({
+          error: 'Database unavailable',
+          message: 'Unable to connect to database. Please try again later.'
+        });
+      }
       return reply.code(500).send({
         error: 'Internal server error',
         message: process.env.NODE_ENV === 'development' ? error.message : undefined
@@ -274,6 +338,15 @@ export async function callRoutes(fastify: FastifyInstance) {
       return { success: true, count: result.modifiedCount };
     } catch (error: any) {
       fastify.log.error(error);
+      if (error.name === 'ValidationError') {
+        return reply.code(400).send({ error: 'Validation failed', details: error.message });
+      }
+      if (error.name === 'MongooseServerSelectionError' || error.name === 'MongoError' || error.message?.includes('buffering timed out') || error.message?.includes('ECONNREFUSED')) {
+        return reply.code(503).send({
+          error: 'Database unavailable',
+          message: 'Unable to connect to database. Please try again later.'
+        });
+      }
       return reply.code(500).send({
         error: 'Internal server error',
         message: process.env.NODE_ENV === 'development' ? error.message : undefined
