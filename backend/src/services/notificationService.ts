@@ -2,7 +2,9 @@ import { FastifyInstance } from 'fastify';
 import { User } from '../models/User';
 import { INotification } from '../models/Notification';
 
-function typeToPreference(type: string): keyof NonNullable<User['notifications']> | null {
+type NotificationPreference = 'notif_sales' | 'notif_msg' | 'notif_follow' | 'notif_live';
+
+function typeToPreference(type: string): NotificationPreference | null {
   switch (type) {
     case 'follow':
       return 'notif_follow';
@@ -31,7 +33,7 @@ export async function shouldSendNotification(username: string, type: string): Pr
     return true;
   }
 
-  return preferences[preferenceKey] !== false;
+  return (preferences as Record<string, boolean> | undefined)?.[preferenceKey] !== false;
 }
 
 export class NotificationService {
