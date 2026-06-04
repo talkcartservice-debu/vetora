@@ -377,11 +377,17 @@ export default function Checkout() {
                 return;
             }
             
-            // Check if URL contains error indicators
-            const urlParams = new URLSearchParams(data.payment_url.split('?')[1]);
-            if (urlParams.get('error') || data.payment_url.includes('invalid')) {
-                console.error('Payment URL contains error:', data.payment_url);
-                toast.error('Payment gateway returned an invalid link. Please try again.');
+            // Check if URL contains error indicators (ITEC Pay returns /invalid for bad PCODE)
+            if (data.payment_url.includes('/invalid') || data.payment_url.includes('invalid purchase')) {
+                console.error('Payment URL indicates invalid PCODE:', data.payment_url);
+                toast.error('Invalid purchase code - please contact support');
+                return;
+            }
+            
+            // Check if PCODE parameter exists in URL
+            if (!data.payment_url.includes('PCODE=')) {
+                console.error('Payment URL missing PCODE:', data.payment_url);
+                toast.error('Invalid payment link received');
                 return;
             }
             
