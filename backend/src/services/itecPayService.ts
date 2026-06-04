@@ -142,7 +142,8 @@ export const itecPayService = {
       );
 
       // Log full response for debugging
-      console.log('ITEC Pay Card Response:', JSON.stringify(response.data));
+      console.log('ITEC Pay Card Raw Response:', JSON.stringify(response.data, null, 2));
+      console.log('ITEC Pay Response Status:', response.status);
 
       // Check for error in response - ITEC Pay returns status as number
       const responseStatus = response.data?.status;
@@ -150,11 +151,15 @@ export const itecPayService = {
       // Convert status to number for comparison (could be string or number)
       const statusNum = Number(responseStatus);
       
-      if (statusNum !== 200) {
+      // Consider both HTTP status and response body status
+      const isSuccess = response.status === 200 && statusNum === 200;
+      
+      if (!isSuccess) {
         // Check if we got an error response
         const errorMsg = response.data?.error || response.data?.message || `Payment gateway returned status ${responseStatus}`;
         console.error('ITEC Pay Error Response Details:', {
-          status: responseStatus,
+          httpStatus: response.status,
+          bodyStatus: responseStatus,
           PCODE: response.data?.PCODE,
           amount: response.data?.amount,
           error: errorMsg
@@ -162,20 +167,38 @@ export const itecPayService = {
         throw new Error(errorMsg);
       }
 
-      // Validate PCODE exists and is not null
-      if (!response.data?.PCODE || response.data.PCODE === null || response.data.PCODE === 'null') {
-        throw new Error('No valid payment code (PCODE) returned from ITEC Pay - check API credentials');
+      // Validate PCODE exists and is valid
+      const pcode = response.data?.PCODE;
+      if (!pcode || pcode === null || pcode === 'null' || pcode === '') {
+        // This is the root cause - API returned success but no PCODE
+        // Usually means invalid API key or account not configured for this payment type
+        const apiKeyValue = process.env.ITECPAY_API_KEY_CARD ? 'configured' : 'missing';
+        console.error('ITEC Pay returned null PCODE - API key status:', apiKeyValue, '- Full response:', response.data);
+        throw new Error('Card payment not available - please verify ITEC Pay card API key is valid and account is configured for card payments');
+      }
+
+      // Validate link exists
+      if (!response.data?.link) {
+        console.error('ITEC Pay returned no link - Full response:', response.data);
+        throw new Error('Invalid response from payment gateway - no payment link provided');
       }
 
       // Log the generated payment details
       console.log('ITEC Pay Payment Initialized:', {
-        pcode: response.data.PCODE,
+        pcode: pcode,
         link: response.data.link,
         amount: response.data.amount,
         valid_until: response.data.valid_until
       });
 
-      return response.data;
+      // Construct the correct payment URL from ITEC Pay documentation
+      // The API returns: "link": "https://pay.itecpay.rw/api/pay/apis/pesapal/index?PCODE=..."
+      const paymentUrl = response.data.link || `https://pay.itecpay.rw/api/pay/apis/pesapal/index?PCODE=${pcode}`;
+      
+      return {
+        ...response.data,
+        link: paymentUrl
+      };
     } catch (error: any) {
       console.error('ITEC Pay Card Payment Error:', error.response?.data || error.message);
 
