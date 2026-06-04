@@ -104,5 +104,6 @@ PostSchema.index({ is_sponsored: 1, created_at: -1 });
 PostSchema.index({ tagged_products: 1 });
 PostSchema.index({ likes_count: -1 });
 PostSchema.index({ created_at: -1 });
+PostSchema.index({ content: 'text' }); // For text search
 
 export const Post = mongoose.model<IPost>('Post', PostSchema);

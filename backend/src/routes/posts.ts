@@ -1,11 +1,11 @@
 import { FastifyInstance } from 'fastify';
-import { escapeRegex } from '../utils/sanitize';
 import mongoose from 'mongoose';
 import { Post, IPost } from '../models/Post';
 import { User } from '../models/User';
 import { Follow } from '../models/Follow';
 import { z } from 'zod';
 import { likeTarget, unlikeTarget, getLikesForTargets, checkIfLiked } from '../services/likeService';
+import { escapeRegex } from '../utils/sanitize';
 
 const createPostSchema = z.object({
   content: z.string().default(''),

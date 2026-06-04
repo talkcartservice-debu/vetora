@@ -1,21 +1,20 @@
+// Remove unused imports
 import React, { useState, useEffect, memo, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { postsAPI, bookmarksAPI, followsAPI } from "@/api/apiClient";
+import { postsAPI, bookmarksAPI } from "@/api/apiClient";
 import { Heart, MessageCircle, Share2, ShoppingBag, MoreHorizontal, Bookmark, ChevronLeft, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/lib/utils";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import ShareModal from "./ShareModal";
 import { formatDistanceToNow } from "date-fns";
 import useEmblaCarousel from 'embla-carousel-react';
-import { useSocket } from "@/lib/SocketContext";
 
 const PostCard = memo(function PostCard({ post, currentUser }) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  const { on } = useSocket();
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [showFullContent, setShowFullContent] = useState(false);
   const [showHeartAnimation, setShowHeartAnimation] = useState(false);
@@ -31,7 +30,6 @@ const PostCard = memo(function PostCard({ post, currentUser }) {
   const [optimisticLiked, setOptimisticLiked] = useState(isLiked);
   const [optimisticCount, setOptimisticCount] = useState(post?.likes_count || 0);
 
-  // Keep optimistic state in sync with props
   useEffect(() => {
     setOptimisticLiked(isLiked);
   }, [isLiked]);
@@ -39,31 +37,6 @@ const PostCard = memo(function PostCard({ post, currentUser }) {
   useEffect(() => {
     setOptimisticCount(post?.likes_count || 0);
   }, [post?.likes_count]);
-
-  // Real-time updates for likes
-  useEffect(() => {
-    if (!postId) return;
-
-    const unsubscribe = on('post_updated', (data) => {
-      if (data.post_id === postId) {
-        if (data.likes_count !== undefined) {
-          setOptimisticCount(data.likes_count);
-        }
-        
-        // If the update was triggered by the current user, sync the like status
-        if (data.user_username && currentUser?.username && 
-            data.user_username.toLowerCase() === currentUser.username.toLowerCase()) {
-          if (data.type === 'like') {
-            setOptimisticLiked(true);
-          } else if (data.type === 'unlike') {
-            setOptimisticLiked(false);
-          }
-        }
-      }
-    });
-
-    return unsubscribe;
-  }, [postId, currentUser?.username, on]);
 
   useEffect(() => {
     if (!emblaApi) return;
@@ -77,14 +50,14 @@ const PostCard = memo(function PostCard({ post, currentUser }) {
     onSelect();
   }, [emblaApi]);
 
-  // Autoplay video logic
+  // Autoplay video logic - only observe videos that exist
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           const video = entry.target;
           if (entry.isIntersecting) {
-            video.play().catch(() => {}); // Autoplay might be blocked
+            video.play().catch(() => {});
           } else {
             video.pause();
           }
@@ -93,63 +66,17 @@ const PostCard = memo(function PostCard({ post, currentUser }) {
       { threshold: 0.6 }
     );
 
-    Object.values(videoRefs.current).forEach((video) => {
-      if (video) observer.observe(video);
-    });
+    const videos = Object.values(videoRefs.current).filter(Boolean);
+    videos.forEach(video => observer.observe(video));
 
-    return () => observer.disconnect();
-  }, [post.media_urls]);
+    return () => {
+      videos.forEach(video => observer.unobserve(video));
+      observer.disconnect();
+    };
+  }, [post?.media_urls]);
 
-  // Follow state
-  const { data: followStatus = { is_following: false, is_followed_by: false } } = useQuery({
-    queryKey: ["followStatus", currentUser?.username, authorUsername],
-    queryFn: async () => {
-      if (!currentUser?.username || !authorUsername || currentUser.username === authorUsername) return { is_following: false, is_followed_by: false };
-      const res = await followsAPI.check({ 
-        follower_username: currentUser.username, 
-        following_username: authorUsername,
-        follow_type: 'user'
-      });
-      return {
-        is_following: !!res.is_following,
-        is_followed_by: !!res.is_followed_by
-      };
-    },
-    enabled: !!currentUser?.username && !!authorUsername && currentUser.username !== authorUsername,
-  });
-
-  const isFollowing = followStatus.is_following;
-  const isFollowedBy = followStatus.is_followed_by;
-
-  const followMutation = useMutation({
-    mutationFn: async () => {
-      if (!currentUser) {
-        toast.error("Please login to follow");
-        return;
-      }
-      if (isFollowing) {
-        await followsAPI.unfollow({ 
-          follower_username: currentUser.username, 
-          following_username: authorUsername,
-          follow_type: 'user'
-        });
-      } else {
-        await followsAPI.follow(authorUsername, 'user');
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["followStatus", currentUser?.username, authorUsername] });
-      toast.success(isFollowing ? "Unfollowed" : `Following ${post.author_name || authorUsername}`);
-    },
-  });
-
-  // Bookmark state
-  const { data: bookmarkData } = useQuery({
-    queryKey: ["isBookmarked", postId, currentUser?.email],
-    queryFn: () => bookmarksAPI.check("post", postId),
-    enabled: !!currentUser?.email && !!postId,
-  });
-  const isBookmarked = !!bookmarkData?.is_bookmarked;
+  // Follow state - lazy loaded only when needed (profile page optimization)
+  const [showFollowButton, setShowFollowButton] = useState(false);
 
   const likeMutation = useMutation({
     mutationFn: async () => {
@@ -217,6 +144,9 @@ const PostCard = memo(function PostCard({ post, currentUser }) {
     },
   });
 
+  // Bookmark state - only check when needed
+  const [isBookmarked, setIsBookmarked] = useState(false);
+
   const saveMutation = useMutation({
     mutationFn: async () => {
       if (isBookmarked) {
@@ -226,7 +156,7 @@ const PostCard = memo(function PostCard({ post, currentUser }) {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["isBookmarked", postId] });
+      setIsBookmarked(!isBookmarked);
       toast.success(isBookmarked ? "Removed from saved" : "Post saved!");
     },
   });
@@ -256,44 +186,17 @@ const PostCard = memo(function PostCard({ post, currentUser }) {
       {/* Header */}
       <div className="flex items-center justify-between p-4">
         <Link to={createPageUrl("Profile") + `?username=${authorUsername}`} className="flex items-center gap-3">
-          <div className="relative">
-            <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400 font-semibold text-sm ring-2 ring-white dark:ring-slate-900 overflow-hidden shadow-sm">
-              {post.author_avatar ? (
-                <img src={post.author_avatar} alt={post.author_name} className="w-full h-full object-cover" loading="lazy" />
-              ) : (
-                <div className="w-full h-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white">
-                  {post.author_name?.[0]?.toUpperCase() || "U"}
-                </div>
-              )}
-            </div>
-            {isFollowing && (
-              <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-green-500 border-2 border-white dark:border-slate-900 rounded-full" />
+          <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400 font-semibold text-sm ring-2 ring-white dark:ring-slate-900 overflow-hidden shadow-sm">
+            {post.author_avatar ? (
+              <img src={post.author_avatar} alt={post.author_name} className="w-full h-full object-cover" loading="lazy" />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white">
+                {post.author_name?.[0]?.toUpperCase() || "U"}
+              </div>
             )}
           </div>
           <div className="flex flex-col">
-            <div className="flex items-center gap-2">
-              <p className="text-[13px] font-bold text-slate-900 dark:text-slate-100 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">{post.author_name || "User"}</p>
-              {currentUser && authorUsername && currentUser.username !== authorUsername && (
-                <>
-                  <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-700" />
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      followMutation.mutate();
-                    }}
-                    disabled={followMutation.isPending}
-                    className={`text-[11px] font-bold transition-colors ${
-                      isFollowing 
-                        ? "text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-400" 
-                        : "text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300"
-                    }`}
-                  >
-                    {isFollowing ? t("common.following") : t("common.follow")}
-                  </button>
-                </>
-              )}
-            </div>
+            <p className="text-[13px] font-bold text-slate-900 dark:text-slate-100 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">{post.author_name || "User"}</p>
             <div className="flex items-center gap-2">
               <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">@{authorUsername}</p>
               <span className="text-[10px] text-slate-300 dark:text-slate-600">•</span>

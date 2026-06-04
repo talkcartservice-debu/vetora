@@ -68,13 +68,14 @@ export async function storeRoutes(fastify: FastifyInstance) {
       if (status) filter.status = status;
 
       if (search) {
-        filter.name = { $regex: escapeRegex(search), $options: 'i' };
+        filter.$text = { $search: search };
       }
 
-      const stores = await Store.find(filter)
-        .sort(sort)
+      const stores = await Store.find(filter, filter.$text ? { score: { $meta: 'textScore' } } : {})
+        .sort(filter.$text ? { score: { $meta: 'textScore' }, follower_count: -1 } : sort)
         .limit(parseInt(limit))
         .skip(parseInt(skip))
+        .select('name logo_url category follower_count owner_username status is_verified')
         .lean();
 
       const total = await Store.countDocuments(filter);

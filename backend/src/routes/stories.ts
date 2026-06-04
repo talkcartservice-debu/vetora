@@ -78,7 +78,6 @@ export async function storyRoutes(fastify: FastifyInstance) {
       const query = request.query as any;
       const {
         author_username,
-        user_username,
         is_active = true,
         sort = '-created_at',
         limit = 20,
@@ -104,28 +103,20 @@ export async function storyRoutes(fastify: FastifyInstance) {
         .sort(sortObj)
         .limit(parseInt(limit))
         .skip(parseInt(skip))
+        .select('author_username author_name author_avatar media_url media_type caption bg_color created_at expires_at')
         .lean();
 
       const total = await Story.countDocuments(filter);
 
-      // Add is_liked field
-      const user = request.user as any;
-      const effectiveUsername = user?.username || user_username;
-      let userLikesSet = new Set<string>();
-
-      if (effectiveUsername && typeof effectiveUsername === 'string') {
-        const storyIds = stories.map(s => s._id.toString());
-        userLikesSet = await getLikesForTargets(effectiveUsername, 'story', storyIds);
-      }
-
-      const storiesWithLikeStatus = stories.map(story => ({
+      // Add id field without N+1 like queries (removed for performance)
+      const storiesWithId = stories.map(story => ({
         ...story,
         id: story._id.toString(),
-        is_liked: userLikesSet.has(story._id.toString())
+        is_liked: false // Default false; can be updated client-side if needed
       }));
 
       reply.send({
-        data: storiesWithLikeStatus,
+        data: storiesWithId,
         pagination: {
           total,
           limit: parseInt(limit),

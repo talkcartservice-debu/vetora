@@ -16,16 +16,28 @@ export const useSocket = () => {
 
 const SOCKET_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || window.location.origin;
 
+// Singleton socket instance to prevent multiple connections
+let socketInstance = null;
+
 export const SocketProvider = ({ children }) => {
   const { user } = useAuth();
   const [socket, setSocket] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
-  const lastNotificationTime = useRef(new Date().toISOString());
 
   useEffect(() => {
     if (!user) {
+      if (socketInstance) {
+        socketInstance.disconnect();
+        socketInstance = null;
+      }
       setSocket(null);
       setIsConnected(false);
+      return;
+    }
+
+    // Reuse existing socket or create new one
+    if (socketInstance) {
+      setSocket(socketInstance);
       return;
     }
 
@@ -34,11 +46,13 @@ export const SocketProvider = ({ children }) => {
       auth: { token },
       transports: ['websocket'],
       reconnection: true,
-      reconnectionAttempts: 10,
+      reconnectionAttempts: 5, // Reduced attempts
       reconnectionDelay: 1000,
-      reconnectionDelayMax: 30000,
-      randomizationFactor: 0.5,
+      reconnectionDelayMax: 10000, // Reduced max delay
+      randomizationFactor: 0.3,
     });
+
+    socketInstance = newSocket;
 
     newSocket.on('connect', () => {
       setIsConnected(true);
@@ -51,7 +65,6 @@ export const SocketProvider = ({ children }) => {
     newSocket.on('reconnect', (attempt) => {
       setIsConnected(true);
       console.info(`WebSocket reconnected after ${attempt} attempt(s)`);
-      checkForMissedNotifications();
     });
 
     newSocket.on('reconnect_error', (error) => {
@@ -68,7 +81,6 @@ export const SocketProvider = ({ children }) => {
 
     newSocket.on('notification:new', (notification) => {
       console.log('New notification received via socket:', notification);
-      lastNotificationTime.current = notification.created_at || notification.created_date || new Date().toISOString();
       showLocalNotification(
         notification.title || 'New Notification',
         notification.body || '',
@@ -76,79 +88,18 @@ export const SocketProvider = ({ children }) => {
       );
     });
 
-newSocket.on('chat:new', (msg) => {
-       console.log('New chat message received via socket:', msg);
-       showLocalNotification(
-         'New Message',
-         msg.sender_name || msg.sender_username || 'Someone sent you a message',
-         { link: `/Chat?username=${msg.sender_username}` }
-       );
-     });
-
-     newSocket.on('call:incoming', (data) => {
-       console.log('Incoming call received via socket:', data);
-       showLocalNotification(
-         'Incoming Call',
-         data.caller_name || data.caller_username || 'Someone is calling you',
-         { link: '/Chat', call_type: data.call_type }
-       );
-     });
-
-     newSocket.on('call:answered', (data) => {
-       console.log('Call answered:', data);
-     });
-
-     newSocket.on('call:rejected', (data) => {
-       console.log('Call rejected:', data);
-     });
-
-     newSocket.on('call:ended', (data) => {
-       console.log('Call ended:', data);
-     });
-
-    const checkForMissedNotifications = async () => {
-      try {
-        console.log('Checking for missed notifications since:', lastNotificationTime.current);
-        const response = await notificationsAPI.list({
-          limit: 10,
-          since: lastNotificationTime.current,
-          unread_only: 'true'
-        });
-        
-        const missed = response.data || [];
-        if (missed.length > 0) {
-          console.log(`Found ${missed.length} missed notifications`);
-          missed.forEach(notification => {
-            showLocalNotification(
-              notification.title || 'Missed Activity',
-              notification.body || '',
-              { link: notification.link, ...notification.metadata }
-            );
-          });
-          // Update last time to the newest missed notification
-          const latest = missed[0];
-          lastNotificationTime.current = latest.created_at || latest.created_date || new Date().toISOString();
-        }
-      } catch (err) {
-        console.error('Failed to fetch missed notifications:', err);
-      }
-    };
-
     setSocket(newSocket);
 
-    // Force reconnection and check when browser comes back online
     const handleOnline = () => {
       if (newSocket && !newSocket.connected) {
         console.log('Device back online, reconnecting socket...');
         newSocket.connect();
       }
-      checkForMissedNotifications();
     };
     window.addEventListener('online', handleOnline);
 
     return () => {
       window.removeEventListener('online', handleOnline);
-      newSocket.disconnect();
     };
   }, [user]);
 

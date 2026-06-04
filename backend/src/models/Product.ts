@@ -160,6 +160,7 @@ ProductSchema.index({ status: 1, sales_count: -1 });
 ProductSchema.index({ status: 1, rating_avg: -1 });
 ProductSchema.index({ tags: 1 });
 ProductSchema.index({ created_at: -1 });
+ProductSchema.index({ title: 'text', description: 'text' }); // For text search
 
 // Virtual for id
 ProductSchema.virtual('id').get(function() {

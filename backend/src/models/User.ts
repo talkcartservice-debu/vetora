@@ -223,5 +223,7 @@ const UserSchema = new Schema<IUser>({
 // Indexes for performance
 UserSchema.index({ created_at: -1 });
 UserSchema.index({ push_tokens: 1 });
+UserSchema.index({ email: 1 }); // Already unique but explicit index helps
+UserSchema.index({ google_id: 1 }); // For Google login lookup
 
 export const User = mongoose.model<IUser>('User', UserSchema);

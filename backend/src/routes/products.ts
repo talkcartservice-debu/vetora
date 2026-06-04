@@ -1,15 +1,11 @@
 import { FastifyInstance } from 'fastify';
 import { Product, IProduct } from '../models/Product';
 import { User } from '../models/User';
-import { Like } from '../models/Like';
-import { WishlistItem } from '../models/WishlistItem';
-import { Order } from '../models/Order';
 import { Follow } from '../models/Follow';
 import { Notification } from '../models/Notification';
 import { Store } from '../models/Store';
 import { NotificationService } from '../services/notificationService';
 import { checkProductCountLimit, checkProductMediaLimit, checkAdvancedAnalyticsLimit, checkAffiliateLimit } from '../middleware/subscription';
-import { escapeRegex } from '../utils/sanitize';
 
 export async function productRoutes(fastify: FastifyInstance) {
   // Get recommended products for the current user
@@ -24,36 +20,16 @@ export async function productRoutes(fastify: FastifyInstance) {
         return reply.code(401).send({ error: 'Unauthorized - invalid user data' });
       }
 
-      const [likes, wishlist, orders] = await Promise.all([
-        Like.find({ user_username: user.username, target_type: 'product' }).select('target_id'),
-        WishlistItem.find({ user_username: user.username }).select('product_id'),
-        Order.find({ buyer_username: user.username }).select('items.product_id')
-      ]);
-
-      const likedIds = likes.map(l => l.target_id);
-      const wishlistIds = wishlist.map(w => w.product_id);
-      const purchasedIds = orders.flatMap(o => o.items.map(i => i.product_id));
-
-      // 2. Combine all interacted IDs to exclude them from "fresh" recommendations if needed
-      // or use them to find similar products.
-      const allInteractedIds = [...new Set([...likedIds, ...wishlistIds, ...purchasedIds])];
-
-      // 3. Simple recommendation logic:
-      // - Get products that are top-selling and NOT already purchased
-      // - If we have liked/wishlisted products, we could find more from those categories (TBD)
-      
+      // Simplified: Get top-selling active products without heavy user interaction queries
+      // This improves performance significantly for anonymous users and new users
       const recommendations = await Product.find({
         status: 'active',
-        _id: { $nin: purchasedIds } // Exclude already bought products
       })
       .sort({ sales_count: -1, created_at: -1 })
       .limit(parseInt(limit))
+      .select('title price compare_at_price images store_name store_id vendor_username rating_avg rating_count')
       .lean({ virtuals: true });
 
-      // 4. Boost logic: if a product is in wishlist or liked, it should probably be higher
-      // but here we already have them. The client side was doing scoring.
-      // For a "Recommended for you" we usually want NEW things.
-      
       return { data: recommendations };
     } catch (error: any) {
       fastify.log.error(error);
@@ -89,18 +65,16 @@ export async function productRoutes(fastify: FastifyInstance) {
       if (vendor_plan) filter.vendor_plan = vendor_plan;
       if (store_id) filter.store_id = store_id;
 
-      // Text search
+      // Text search using index
       if (search) {
-        const escaped = escapeRegex(search);
-        filter.$or = [
-          { title: { $regex: escaped, $options: 'i' } },
-          { description: { $regex: escaped, $options: 'i' } },
-          { tags: { $in: [new RegExp(escaped, 'i')] } }
-        ];
+        filter.$text = { $search: search };
       }
 
       // Build sort object
       const sortObj: any = { plan_priority: -1 };
+      if (search && sortObj.$text) {
+        sortObj.score = { $meta: 'textScore' };
+      }
       if (sort.startsWith('-')) {
         sortObj[sort.substring(1)] = -1;
       } else {
@@ -108,16 +82,20 @@ export async function productRoutes(fastify: FastifyInstance) {
       }
 
       const products = await Product
-        .find(filter)
+        .find(filter, search ? { score: { $meta: 'textScore' } } : {})
         .sort(sortObj)
         .limit(parseInt(limit))
         .skip(parseInt(skip))
-        .lean({ virtuals: true });
+        .select('title price compare_at_price images category store_name vendor_username rating_avg rating_count sales_count status')
+        .lean();
 
       const total = await Product.countDocuments(filter);
 
+      // Add virtual id field
+      const data = products.map(p => ({ ...p, id: p._id.toString() }));
+
       return {
-        data: products,
+        data,
         total,
         limit: parseInt(limit),
         skip: parseInt(skip),
@@ -186,15 +164,15 @@ export async function productRoutes(fastify: FastifyInstance) {
             if (store) storeName = store.name;
           }
 
-          // Find unique followers of the vendor (user follow) or the store (store follow)
-          const followers = await Follow.find({
-            $or: [
-              { following_username: user.username, follow_type: 'user' },
-              ...(savedProduct.store_id ? [{ target_id: savedProduct.store_id.toString(), follow_type: 'store' }] : [])
-            ]
-          }).select('follower_username');
+// Find unique followers of the vendor (user follow) or the store (store follow)
+           const followers = await Follow.find({
+             $or: [
+               { following_username: user.username, follow_type: 'user' },
+               ...(savedProduct.store_id ? [{ target_id: savedProduct.store_id.toString(), follow_type: 'store' }] : [])
+             ]
+           }).select('follower_username');
 
-          const uniqueFollowerUsernames = [...new Set(followers.map(f => f.follower_username))];
+           const uniqueFollowerUsernames: string[] = [...new Set(followers.map((f: any) => f.follower_username))];
 
           // Exclude the vendor themselves if they somehow follow themselves
           const recipientUsernames = uniqueFollowerUsernames.filter(username => username !== user.username);

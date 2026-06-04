@@ -7,13 +7,14 @@ import StoryViewer from "./StoryViewer";
 import CreateStoryModal from "./CreateStoryModal";
 
 export default function StoriesRow({ currentUser }) {
-  const [viewingGroup, setViewingGroup] = useState(null); // { stories, startIndex, groupIndex }
+  const [viewingGroup, setViewingGroup] = useState(null);
   const [showCreate, setShowCreate] = useState(false);
 
   const { data: response } = useQuery({
     queryKey: ["stories"],
-    queryFn: () => storiesAPI.list({ is_active: true, sort: "-created_at", limit: 50 }),
-    refetchInterval: 30000,
+    queryFn: () => storiesAPI.list({ is_active: true, sort: "-created_at", limit: 30 }),
+    refetchInterval: 60000, // Reduced from 30s to 60s to decrease server load
+    staleTime: 30000,
   });
 
   const rawStories = response?.data || response?.stories || [];

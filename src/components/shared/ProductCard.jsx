@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { createPageUrl, formatCurrency } from "@/lib/utils";
 import { Star, Heart, Share2 } from "lucide-react";
 import { motion } from "framer-motion";
-import { authAPI, wishlistAPI } from "@/api/apiClient";
+import { wishlistAPI } from "@/api/apiClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import ShareModal from "./ShareModal";
@@ -15,28 +15,26 @@ export default function ProductCard({ product, compact = false }) {
   const [isShareModalOpen, setIsShareModalOpen] = React.useState(false);
   const productId = product?.id || product?._id;
 
-  const { data: currentUser } = useQuery({
-    queryKey: ["currentUser"],
-    queryFn: () => authAPI.me(),
-    retry: false,
-    staleTime: 60000,
-  });
-
+  // Only fetch wishlist for authenticated users
+  const hasToken = !!localStorage.getItem('iqon_token');
+  
   const { data: wishlistItems = [] } = useQuery({
-    queryKey: ["wishlist", currentUser?.username],
+    queryKey: ["wishlist"],
     queryFn: async () => {
-      const res = await wishlistAPI.list({ user_username: currentUser?.username, sort: "-created_date", limit: 200 });
+      const res = await wishlistAPI.list({ sort: "-created_date", limit: 200 });
       return res.items || res.data || (Array.isArray(res) ? res : []);
     },
-    enabled: !!currentUser?.username,
-    staleTime: 30000,
+    staleTime: 60000,
+    enabled: hasToken, // Only run query when user is authenticated
   });
 
-  const isWishlisted = wishlistItems.some(w => (w.product_id === productId || w.product_id === product?.id || w.product_id === product?._id));
+  const isWishlisted = hasToken && wishlistItems.some(w => (w.product_id === productId || w.product_id === product?.id || w.product_id === product?._id));
 
   const wishlistMutation = useMutation({
     mutationFn: async () => {
-      if (!currentUser) {
+      // Check if user is authenticated via token
+      const token = localStorage.getItem('iqon_token');
+      if (!token) {
         toast.error("Sign in to save items");
         return;
       }
@@ -52,7 +50,6 @@ export default function ProductCard({ product, compact = false }) {
         }
 
         await wishlistAPI.add({
-          user_username: currentUser.username,
           product_id: productId,
           product_title: product.title,
           product_image: product.images?.[0],

@@ -164,5 +164,6 @@ StoreSchema.index({ status: 1 });
 StoreSchema.index({ category: 1, status: 1 });
 StoreSchema.index({ follower_count: -1 });
 StoreSchema.index({ rating_avg: -1 });
+StoreSchema.index({ name: 'text' }); // For text search
 
 export const Store = mongoose.model<IStore>('Store', StoreSchema);

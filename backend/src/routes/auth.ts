@@ -14,7 +14,9 @@ import {
 import { User } from '../models/User';
 import { sendVerificationCode, sendWhatsAppVerification } from '../services/mailService';
 
-const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const googleClient = new OAuth2Client({
+  clientId: process.env.GOOGLE_CLIENT_ID,
+});
 
 const AUTH_RATE_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
 const AUTH_RATE_MAX = 20; // max attempts per window per IP
@@ -104,93 +106,82 @@ export async function authRoutes(fastify: FastifyInstance) {
 
       const { email, name, picture, sub: googleId } = payload;
 
-      // Find user by email
-      let user = await User.findOne({ email: email.toLowerCase() });
+      // Find existing user first with projection
+      let user = await User.findOne({ email: email.toLowerCase() }).select('username email display_name avatar_url banner_url role is_blocked is_verified google_id');
 
       if (!user) {
-        // Create new user if not exists
+        // Create new user with optimized username generation
         const baseUsername = email.split('@')[0].toLowerCase().replace(/[^a-z0-9_]/g, '');
-        let finalUser = null;
-        let attempts = 0;
         
-        while (!finalUser && attempts < 5) {
-          const suffix = attempts === 0 ? '' : randomInt(1000, 9999).toString();
-          const candidate = `${baseUsername}${suffix}`;
-          
+        // Try base username, then with random suffixes
+        const candidates = [
+          baseUsername,
+          `${baseUsername}${Math.floor(1000 + Math.random() * 9000)}`,
+          `${baseUsername}${Math.floor(1000 + Math.random() * 9000)}`,
+        ];
+        
+        for (const candidate of candidates) {
           try {
             const newUser = new User({
               email: email.toLowerCase(),
               username: candidate,
-              display_name: name || baseUsername,
-              avatar_url: picture,
-              is_verified: true, // Google accounts are usually verified
+              display_name: name || '',
+              avatar_url: picture || '',
               google_id: googleId,
+              is_verified: true,
             });
-            await newUser.save();
-            finalUser = newUser;
+            user = await newUser.save();
+            break;
           } catch (err: any) {
-            if (err.code === 11000 && (err.message.includes('username') || JSON.stringify(err.keyPattern).includes('username'))) {
-              attempts++;
-            } else {
-              throw err;
-            }
+            if (err.code !== 11000) throw err;
+            // Try next candidate
           }
         }
-
-        if (!finalUser) {
-          return reply.code(500).send({ error: 'Could not generate a unique username' });
+        
+        if (!user) {
+          return reply.code(500).send({ error: 'Could not create account' });
         }
-        user = finalUser;
-      } else {
-        // Account already exists — auto-link Google if not already linked
-        if (!user.google_id) {
-          user.google_id = googleId;
-          if (!user.avatar_url && picture) {
-            user.avatar_url = picture;
-          }
-          if (!user.is_verified) {
-            user.is_verified = true;
-          }
-          await user.save();
-        } else {
-          // Already linked, update avatar if missing
-          if (!user.avatar_url && picture) {
-            user.avatar_url = picture;
-            await user.save();
-          }
-        }
+      } else if (!user.google_id) {
+        // Link Google to existing account
+        user = await User.findByIdAndUpdate(
+          user._id,
+          { $set: { google_id: googleId, is_verified: true } },
+          { new: true, select: 'username email display_name avatar_url banner_url role is_blocked is_verified' }
+        );
       }
 
-      if (user.is_blocked) {
+      if (user?.is_blocked) {
         return reply.code(403).send({ error: 'Your account has been suspended' });
       }
 
+      // Ensure user exists after all updates
+      const finalUser = user!;
+      
       // Generate JWT token
       const token = fastify.jwt.sign({
-        userId: user._id.toString(),
-        email: user.email,
-        username: user.username,
-        role: user.role,
+        userId: finalUser._id.toString(),
+        email: finalUser.email,
+        username: finalUser.username,
+        role: finalUser.role,
       }, { expiresIn: '7d' });
 
       return {
         user: {
-          id: user._id,
-          username: user.username,
-          email: user.email,
-          display_name: user.display_name,
-          avatar_url: user.avatar_url,
-          banner_url: user.banner_url,
-          role: user.role,
-          is_blocked: user.is_blocked,
-          is_verified: user.is_verified,
-          is_2fa_enabled: user.is_2fa_enabled,
-          phone_number: user.phone_number,
-          is_phone_verified: user.is_phone_verified,
-          notifications: user.notifications,
-          preferences: user.preferences,
-          unread_messages_count: user.unread_messages_count || 0,
-          authenticators: user.authenticators,
+          id: finalUser._id,
+          username: finalUser.username,
+          email: finalUser.email,
+          display_name: finalUser.display_name,
+          avatar_url: finalUser.avatar_url,
+          banner_url: finalUser.banner_url,
+          role: finalUser.role,
+          is_blocked: finalUser.is_blocked,
+          is_verified: finalUser.is_verified,
+          is_2fa_enabled: finalUser.is_2fa_enabled || false,
+          phone_number: finalUser.phone_number || '',
+          is_phone_verified: finalUser.is_phone_verified || false,
+          notifications: finalUser.notifications || { notif_sales: true, notif_msg: true, notif_follow: true, notif_live: false },
+          preferences: finalUser.preferences || { theme: 'light', language: 'en' },
+          unread_messages_count: finalUser.unread_messages_count || 0,
         },
         token,
       };
@@ -208,13 +199,13 @@ export async function authRoutes(fastify: FastifyInstance) {
     try {
       const { email: identifier, password, rememberMe } = loginSchema.parse(request.body);
 
-      // Support login by email OR username
+      // Support login by email OR username - use projection for efficiency
       const user = await User.findOne({ 
         $or: [
           { email: identifier.toLowerCase() }, 
           { username: identifier.toLowerCase() }
         ] 
-      }).select('+password +two_factor_secret');
+      }).select('+password +two_factor_secret username email display_name avatar_url banner_url role is_blocked is_verified is_2fa_enabled phone_number is_phone_verified notifications preferences unread_messages_count');
 
       if (!user) {
         return reply.code(401).send({ error: 'Invalid credentials' });
@@ -269,7 +260,6 @@ export async function authRoutes(fastify: FastifyInstance) {
           notifications: user.notifications,
           preferences: user.preferences,
           unread_messages_count: user.unread_messages_count || 0,
-          authenticators: user.authenticators,
         },
         token,
       };
@@ -282,13 +272,13 @@ export async function authRoutes(fastify: FastifyInstance) {
       fastify.log.error(err);
       
       const errorMessage = process.env.NODE_ENV === 'development' 
-        ? err.message || err.errmsg || String(err) || 'Internal server error'
-        : 'Internal server error';
+        ? (err?.message || err?.errmsg || String(err))
+        : 'Authentication failed';
       
       return reply.code(500).send({ 
         error: errorMessage,
-        message: errorMessage, // Support both formats
-        details: process.env.NODE_ENV === 'development' ? err.stack : undefined
+        message: errorMessage,
+        details: process.env.NODE_ENV === 'development' ? err?.stack : undefined
       });
     }
   });
@@ -828,7 +818,8 @@ export async function authRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     try {
       const { userId } = request.user as { userId: string };
-      const user = await User.findById(userId);
+      // Use projection to only fetch needed fields
+      const user = await User.findById(userId).select('username email display_name bio avatar_url banner_url is_verified is_2fa_enabled phone_number is_phone_verified role is_blocked notifications preferences unread_messages_count created_at updated_at');
 
       if (!user) {
         return reply.code(404).send({ error: 'User not found' });
@@ -851,7 +842,6 @@ export async function authRoutes(fastify: FastifyInstance) {
         notifications: user.notifications,
         preferences: user.preferences,
         unread_messages_count: user.unread_messages_count || 0,
-        authenticators: user.authenticators,
         created_at: user.created_at,
         updated_at: user.updated_at,
       };

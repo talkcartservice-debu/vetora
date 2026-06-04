@@ -87,7 +87,7 @@ const StorySchema = new Schema<IStory>({
 StorySchema.index({ author_email: 1, created_at: -1 });
 StorySchema.index({ author_username: 1, created_at: -1 });
 StorySchema.index({ expires_at: 1 });
-StorySchema.index({ is_active: 1, expires_at: 1 });
+StorySchema.index({ is_active: 1, expires_at: 1, created_at: -1 }); // Compound index for listing
 StorySchema.index({ created_at: -1 });
 
 // Pre-save middleware to set expiration
