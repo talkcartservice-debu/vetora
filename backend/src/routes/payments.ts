@@ -81,63 +81,69 @@ export async function paymentRoutes(fastify: FastifyInstance) {
     }
   });
 
-  // ITEC Pay Callback Handler
-  // For mobile money (api2/pay) and card payments (pesapal)
-  fastify.post('/itecpay/callback', async (request, reply) => {
-    // Extract secret key from query parameters for security
-    const { secret } = request.query as { secret?: string };
+// ITEC Pay Callback Handler
+   // For mobile money (api2/pay) and card payments (pesapal)
+   fastify.post('/itecpay/callback', async (request, reply) => {
+     // Extract secret key from query parameters for security
+     const { secret } = request.query as { secret?: string };
 
-    // Get your secret key from environment variables
-    const EXPECTED_SECRET_KEY = process.env.ITECPAY_CALLBACK_SECRET || '';
+     // Get your secret key from environment variables
+     const EXPECTED_SECRET_KEY = process.env.ITECPAY_CALLBACK_SECRET || '';
 
-    if (!secret || secret !== EXPECTED_SECRET_KEY) {
-      return reply.code(401).send({ error: 'Invalid or missing secret key' });
-    }
+     if (!secret || secret !== EXPECTED_SECRET_KEY) {
+       return reply.code(401).send({ error: 'Invalid or missing secret key' });
+     }
 
-    // Extract callback data from request body
-    // Mobile money callback format (from api2/pay):
-    // { transaction_id, amount, status }
-    // Card callback format (from pesapal):
-    // { PCODE, amount, transID }
-    const body = request.body as any;
+     // Extract callback data from request body
+     // Mobile money callback format (from api2/pay):
+     // { transaction_id, amount, status }
+     // Card callback format (from pesapal):
+     // { PCODE, amount, transID }
+     const body = request.body as any;
 
-    // Handle both callback formats
-    const transactionId = body.transaction_id || body.transID;
-    const amount = body.amount;
-    const status = body.status;
+     // Handle both callback formats
+     const transactionId = body.transaction_id || body.transID;
+     const amount = body.amount;
+     const status = body.status;
+     
+     // For Pesapal card payments, we also receive the order reference
+     const orderReference = body.reference || body.order_id;
 
-    if (!transactionId || !amount) {
-      return reply.code(400).send({
-        error: 'Invalid callback data',
-        details: 'Missing required fields: transaction_id/amount'
-      });
-    }
+     if (!transactionId || !amount) {
+       return reply.code(400).send({
+         error: 'Invalid callback data',
+         details: 'Missing required fields: transaction_id/amount'
+       });
+     }
 
-    const callbackData = {
-      transaction_id: transactionId,
-      amount: String(amount),
-      status: status || 'completed'
-    };
+     const callbackData = {
+       transaction_id: transactionId,
+       amount: String(amount),
+       status: status || 'completed'
+     };
 
-    // Verify the callback data
-    const isValid = itecPayService.verifyCallback(callbackData, EXPECTED_SECRET_KEY);
+     // Verify the callback data
+     const isValid = itecPayService.verifyCallback(callbackData, EXPECTED_SECRET_KEY);
 
-    if (!isValid) {
-      return reply.code(400).send({ error: 'Invalid callback data format' });
-    }
+     if (!isValid) {
+       return reply.code(400).send({ error: 'Invalid callback data format' });
+     }
 
-    try {
-      // Process successful payment
-      await itecPayService.handleSuccessfulPayment(transactionId, transactionId, String(amount));
+     try {
+       // Use order reference if available, otherwise use transaction ID
+       const orderRefForUpdate = orderReference || transactionId;
+       
+       // Process successful payment
+       await itecPayService.handleSuccessfulPayment(orderRefForUpdate, transactionId, String(amount));
 
-      console.log(`ITEC Pay Callback: Payment processed - transaction_id: ${transactionId}, amount: ${amount}`);
+       console.log(`ITEC Pay Callback: Payment processed - transaction_id: ${transactionId}, amount: ${amount}`);
 
-      return reply.code(200).send({ status: 'success' });
-    } catch (error: any) {
-      fastify.log.error(error);
-      return reply.code(500).send({ error: 'Callback processing failed', message: error.message });
-    }
-  });
+       return reply.code(200).send({ status: 'success' });
+     } catch (error: any) {
+       fastify.log.error(error);
+       return reply.code(500).send({ error: 'Callback processing failed', message: error.message });
+     }
+   });
 
   // Verify payment status endpoint
   fastify.post('/itecpay/verify', {

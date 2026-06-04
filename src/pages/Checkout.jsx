@@ -370,6 +370,22 @@ export default function Checkout() {
     },
     onSuccess: async (data) => {
         if (data.payment_url) {
+            // Validate payment URL before redirecting
+            if (!data.payment_url.startsWith('http://') && !data.payment_url.startsWith('https://')) {
+                console.error('Invalid payment URL received:', data.payment_url);
+                toast.error('Payment gateway setup error. Please try again.');
+                return;
+            }
+            
+            // Check if URL contains error indicators
+            const urlParams = new URLSearchParams(data.payment_url.split('?')[1]);
+            if (urlParams.get('error') || data.payment_url.includes('invalid')) {
+                console.error('Payment URL contains error:', data.payment_url);
+                toast.error('Payment gateway returned an invalid link. Please try again.');
+                return;
+            }
+            
+            console.log('Redirecting to payment gateway:', data.payment_url);
             window.location.href = data.payment_url;
             return;
         }

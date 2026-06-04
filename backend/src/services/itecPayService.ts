@@ -124,10 +124,15 @@ export const itecPayService = {
       }
 
       const data: any = {
-        amount,
+        amount: Number(amount), // Amount in RWF
         email,
         key: apiKey,
+        currency: 'RWF',
       };
+
+      if (reqRef) {
+        data.req_ref = reqRef;
+      }
 
       const response = await axios.post(
         'https://pay.itecpay.rw/api/pay/apis/pesapal/generatecode',
@@ -139,11 +144,42 @@ export const itecPayService = {
         }
       );
 
+      // Log full response for debugging
+      console.log('ITEC Pay Card Response:', JSON.stringify(response.data));
+
+      // Check for error in response even if HTTP status is 200
+      // ITEC Pay may return status as string or number
+      const responseStatus = response.data?.status;
+      const isSuccess = responseStatus === 200 || responseStatus === '200';
+      
+      if (!isSuccess) {
+        console.error('ITEC Pay Error Response Details:', {
+          status: responseStatus,
+          message: response.data?.message,
+          error: response.data?.error,
+          data: response.data
+        });
+        throw new Error(response.data?.message || response.data?.error || `Payment gateway returned error: ${responseStatus}`);
+      }
+
+      // Validate PCODE exists
+      if (!response.data?.PCODE) {
+        throw new Error('No payment code (PCODE) returned from ITEC Pay');
+      }
+
+      // Log the generated payment details
+      console.log('ITEC Pay Payment Initialized:', {
+        pcode: response.data.PCODE,
+        link: response.data.link,
+        amount: response.data.amount,
+        valid_until: response.data.valid_until
+      });
+
       return response.data;
     } catch (error: any) {
       console.error('ITEC Pay Card Payment Error:', error.response?.data || error.message);
 
-      const errorMessage = error.response?.data?.message || error.message || 'Failed to initialize ITEC Pay card payment';
+      const errorMessage = error.response?.data?.message || error.response?.data?.error || error.message || 'Failed to initialize ITEC Pay card payment';
       const newError: any = new Error(errorMessage);
       newError.statusCode = error.response?.status || 500;
       throw newError;
@@ -212,20 +248,57 @@ export const itecPayService = {
   }> {
     try {
       const paymentMethod = channels.length > 0 ? channels[0] : 'card';
-      const reqRef = orderId;
+      // Use a properly formatted reference that ITEC Pay can recognize
+      const reqRef = orderId.startsWith('SUB-') ? orderId : `ORD-${orderId}`;
 
       if (paymentMethod === 'card') {
         const response = await this.initializeCardPayment(amount, email, reqRef);
 
-        if (response.status !== 200 || !response.PCODE) {
-          throw new Error('Failed to generate card payment link');
+        // Check response status - handle both number and string status codes
+        const responseStatus = response.status;
+        const isValidResponse = responseStatus === 200 || String(responseStatus) === '200';
+        
+        if (!isValidResponse) {
+          console.error('ITEC Pay card response validation failed:', response);
+          throw new Error('Failed to generate card payment link - invalid response from gateway');
+        }
+
+        // Ensure we have a valid link
+        let paymentUrl = response.link;
+        const pcode = response.PCODE;
+
+        console.log('Processing ITEC Pay card response:', { paymentUrl, pcode });
+
+        // Ensure payment URL exists and is valid
+        if (!paymentUrl || paymentUrl === 'undefined' || paymentUrl === 'null') {
+          // ITEC Pay Pesapal redirect format - PCODE is the purchase code
+          paymentUrl = `https://pay.itecpay.rw/pesapal/pay?PCODE=${encodeURIComponent(pcode)}&reference=${encodeURIComponent(reqRef)}`;
+        }
+
+        // Additional validation - ensure URL is properly formatted
+        try {
+          const urlObj = new URL(paymentUrl);
+          // Check if URL points to ITEC Pay domain
+          if (!urlObj.hostname.includes('itecpay')) {
+            console.warn('Payment URL does not point to ITEC Pay domain, reconstructing...');
+            paymentUrl = `https://pay.itecpay.rw/pesapal/pay?PCODE=${encodeURIComponent(pcode)}&reference=${encodeURIComponent(reqRef)}`;
+          }
+        } catch {
+          // URL is malformed, reconstruct it
+          console.warn('Malformed payment URL received, reconstructing...');
+          paymentUrl = `https://pay.itecpay.rw/pesapal/pay?PCODE=${encodeURIComponent(pcode)}&reference=${encodeURIComponent(reqRef)}`;
+        }
+
+        // Validate the URL before returning
+        if (!paymentUrl || (!paymentUrl.startsWith('http://') && !paymentUrl.startsWith('https://'))) {
+          throw new Error('Invalid payment redirection URL received from gateway');
         }
 
         return {
           status: true,
           message: 'Card payment initialized',
           data: {
-            authorization_url: response.link,
+            authorization_url: paymentUrl,
             reference: reqRef,
           },
         };
@@ -285,14 +358,14 @@ export const itecPayService = {
    */
   async handleSuccessfulPayment(orderIdsString: string, transID: string, amount: string) {
     try {
-      const allIds = orderIdsString.split(',').filter(id => id.trim() !== '');
+      const allIds = orderIdsString.split(',').map(id => id.trim()).filter(id => id !== '');
 
-      const subIds = allIds.filter(id => id.trim().startsWith('SUB-'));
-      const orderIds = allIds.filter(id => !id.trim().startsWith('SUB-'));
+      const subIds = allIds.filter(id => id.startsWith('SUB-'));
+      const orderIds = allIds.filter(id => !id.startsWith('SUB-'));
 
       // --- Activate subscriptions ---
       for (const subEntry of subIds) {
-        const subscriptionId = subEntry.trim().replace(/^SUB-/, '');
+        const subscriptionId = subEntry.replace(/^SUB-/, '');
         try {
           const subscription = await VendorSubscription.findById(subscriptionId);
           if (!subscription) {
@@ -336,9 +409,12 @@ export const itecPayService = {
       }
 
       // --- Mark orders as paid ---
-      if (orderIds.length > 0) {
+      // Strip ORD- prefix from order IDs if present (we add it when creating transaction)
+      const cleanOrderIds = orderIds.map(id => id.startsWith('ORD-') ? id.substring(4) : id);
+      
+      if (cleanOrderIds.length > 0) {
         const result = await Order.updateMany(
-          { _id: { $in: orderIds }, payment_status: { $ne: 'paid' } },
+          { _id: { $in: cleanOrderIds }, payment_status: { $ne: 'paid' } },
           {
             $set: {
               payment_status: 'paid',
