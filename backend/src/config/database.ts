@@ -29,6 +29,20 @@ export const connectDB = async () => {
           }
         }
 
+        // Drop orders collection stale index
+        const orderCollections = await db.listCollections({ name: 'orders' }).toArray();
+        if (orderCollections.length > 0) {
+          const ordersCollection = db.collection('orders');
+          const orderIndexes = await ordersCollection.indexes();
+          const hasOrderNumberIndex = orderIndexes.some(idx => idx.name === 'orderNumber_1');
+          
+          if (hasOrderNumberIndex) {
+            console.log('⚠️  Found stale orderNumber_1 index on orders collection, dropping...');
+            await ordersCollection.dropIndex('orderNumber_1');
+            console.log('✅ Successfully dropped orderNumber_1 index');
+          }
+        }
+
         // Drop follows collection stale index
         const followCollections = await db.listCollections({ name: 'follows' }).toArray();
         if (followCollections.length > 0) {
