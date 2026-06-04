@@ -145,11 +145,11 @@ export default function Home() {
                     ? Array(4).fill(0).map((_, i) => (
                         <div key={`trending-skeleton-${i}`} className="w-44 shrink-0"><ProductSkeleton /></div>
                       ))
-                    : trendingProducts.slice(0, 8).map((product, idx) => (
-                        <div key={product._id || product.id || `trending-${idx}`} className="w-44 shrink-0">
-                          <ProductCard product={product} compact />
-                        </div>
-                      ))}
+: trendingProducts.slice(0, 8).map((product, idx) => (
+                         <div key={product._id || product.id || `trending-${idx}`} className="w-44 shrink-0">
+                           <ProductCard product={product} compact currentUser={currentUser} />
+                         </div>
+                       ))}
                 </div>
               </div>
             </div>

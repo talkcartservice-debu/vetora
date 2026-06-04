@@ -9,37 +9,27 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import ShareModal from "./ShareModal";
 
-export default function ProductCard({ product, compact = false }) {
+export default function ProductCard({ product, compact = false, currentUser }) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [isShareModalOpen, setIsShareModalOpen] = React.useState(false);
   const productId = product?.id || product?._id;
 
-  // Only fetch wishlist for authenticated users
-  const hasToken = !!localStorage.getItem('iqon_token');
-  
+  // Only fetch wishlist for authenticated users with username
   const { data: wishlistItems = [] } = useQuery({
-    queryKey: ["wishlist"],
+    queryKey: ["wishlist", currentUser?.username],
     queryFn: async () => {
       const res = await wishlistAPI.list({ sort: "-created_date", limit: 200 });
       return res.items || res.data || (Array.isArray(res) ? res : []);
     },
     staleTime: 60000,
-    enabled: hasToken, // Only run query when user is authenticated
+    enabled: !!currentUser?.username, // Only run query when user is authenticated
   });
 
-  const isWishlisted = hasToken && wishlistItems.some(w => (w.product_id === productId || w.product_id === product?.id || w.product_id === product?._id));
+  const isWishlisted = wishlistItems.some(w => (w.product_id === productId || w.product_id === product?.id || w.product_id === product?._id));
 
   const wishlistMutation = useMutation({
     mutationFn: async () => {
-      // Check if user is authenticated via token
-      const token = localStorage.getItem('iqon_token');
-      if (!token) {
-        toast.error("Sign in to save items");
-        return;
-      }
-      
-      // Double check state to avoid race conditions
       if (isWishlisted) {
         await wishlistAPI.remove(productId);
       } else {
@@ -62,7 +52,7 @@ export default function ProductCard({ product, compact = false }) {
         toast.success("Saved to wishlist!");
       }
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["wishlist"] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["wishlist", currentUser?.username] }),
   });
 
   const discount = product.compare_at_price

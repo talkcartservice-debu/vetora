@@ -8,6 +8,7 @@ import { createPageUrl } from "@/lib/utils";
 import { Search, TrendingUp, Sparkles, X, User } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { productsAPI, communitiesAPI, usersAPI } from "@/api/apiClient";
+import { useAuth } from "@/lib/AuthContext";
 import { useDebounce } from "@/hooks/useDebounce";
 
 const CATEGORIES = [
@@ -28,6 +29,7 @@ export default function Explore() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
   const debouncedSearch = useDebounce(search, 500);
+  const { user: currentUser } = useAuth();
 
   const { data: productsResponse, isLoading: productsLoading } = useQuery({
     queryKey: ["exploreProducts", category, debouncedSearch],

@@ -86,7 +86,7 @@ export default function ShareModal({ isOpen, onOpenChange, post, product, curren
   };
 
   const recipients = [
-    ...(usersData?.data || usersData || []).filter(u => u.username !== currentUser?.username).map(u => ({ ...u, type: 'user' })),
+    ...(usersData?.data || usersData || []).filter(u => !currentUser?.username || u.username !== currentUser?.username).map(u => ({ ...u, type: 'user' })),
     ...(storesData?.data || storesData || []).map(s => ({ ...s, type: 'vendor' }))
   ].slice(0, 10);
 

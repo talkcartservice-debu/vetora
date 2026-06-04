@@ -109,11 +109,11 @@ export default function Bookmarks() {
                   exit={{ opacity: 0, scale: 0.95 }}
                   className="relative group"
                 >
-                  {activeTab === "posts" ? (
-                    <PostCard post={item} currentUser={currentUser} />
-                  ) : (
-                    <ProductCard product={item} />
-                  )}
+{activeTab === "posts" ? (
+                     <PostCard post={item} currentUser={currentUser} />
+                   ) : (
+                     <ProductCard product={item} currentUser={currentUser} />
+                   )}
                   
                   <button
                     onClick={() => handleRemove(item.id || item._id)}

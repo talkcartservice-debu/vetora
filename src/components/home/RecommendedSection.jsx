@@ -34,13 +34,13 @@ export default function RecommendedSection({ currentUser }) {
       </div>
       <div className="overflow-x-auto -mx-4 px-4 hide-scrollbar">
         <div className="flex gap-3 pb-2" style={{ width: "max-content" }}>
-          {isLoading
-            ? Array(4).fill(0).map((_, i) => <div key={`rec-skeleton-${i}`} className="w-44 shrink-0"><ProductSkeleton /></div>)
-            : products.slice(0, 8).map((product, idx) => (
-              <div key={product.id || product._id || `rec-${idx}`} className="w-44 shrink-0">
-                <ProductCard product={product} compact />
-              </div>
-            ))}
+{isLoading
+             ? Array(4).fill(0).map((_, i) => <div key={`rec-skeleton-${i}`} className="w-44 shrink-0"><ProductSkeleton /></div>)
+             : products.slice(0, 8).map((product, idx) => (
+               <div key={product.id || product._id || `rec-${idx}`} className="w-44 shrink-0">
+                 <ProductCard product={product} compact currentUser={currentUser} />
+               </div>
+             ))}
         </div>
       </div>
     </div>
