@@ -94,17 +94,17 @@ export async function paymentRoutes(fastify: FastifyInstance) {
        return reply.code(401).send({ error: 'Invalid or missing secret key' });
      }
 
-     // Extract callback data from request body
-     // Mobile money callback format (from api2/pay):
-     // { transaction_id, amount, status }
-     // Card callback format (from pesapal):
-     // { PCODE, amount, transID }
-     const body = request.body as any;
+// Extract callback data from request body
+      // Mobile money callback format (from api2/pay):
+      // { transaction_id, amount, status }
+      // Card callback format (from pesapal):
+      // { PCODE, amount, transID }
+      const body = request.body as any;
 
-     // Handle both callback formats
-     const transactionId = body.transaction_id || body.transID;
-     const amount = body.amount;
-     const status = body.status;
+      // Handle both callback formats
+      const transactionId = body.transaction_id || body.transID || body.PCODE;
+      const amount = body.amount;
+      const status = body.status;
      
      // For Pesapal card payments, we also receive the order reference
      const orderReference = body.reference || body.order_id;

@@ -124,15 +124,12 @@ export const itecPayService = {
       }
 
       const data: any = {
-        amount: Number(amount), // Amount in RWF
-        email,
-        key: apiKey,
-        currency: 'RWF',
+        amount: Number(amount), // Amount in RWF - required
+        email, // Customer email - required
+        key: apiKey, // API key - required
       };
-
-      if (reqRef) {
-        data.req_ref = reqRef;
-      }
+      // Note: According to ITEC Pay documentation, req_ref and currency are NOT sent for card payments
+      // The API only returns link with PCODE in the response
 
       const response = await axios.post(
         'https://pay.itecpay.rw/api/pay/apis/pesapal/generatecode',
@@ -147,24 +144,27 @@ export const itecPayService = {
       // Log full response for debugging
       console.log('ITEC Pay Card Response:', JSON.stringify(response.data));
 
-      // Check for error in response even if HTTP status is 200
-      // ITEC Pay may return status as string or number
+      // Check for error in response - ITEC Pay returns status as number
       const responseStatus = response.data?.status;
-      const isSuccess = responseStatus === 200 || responseStatus === '200';
       
-      if (!isSuccess) {
+      // Convert status to number for comparison (could be string or number)
+      const statusNum = Number(responseStatus);
+      
+      if (statusNum !== 200) {
+        // Check if we got an error response
+        const errorMsg = response.data?.error || response.data?.message || `Payment gateway returned status ${responseStatus}`;
         console.error('ITEC Pay Error Response Details:', {
           status: responseStatus,
-          message: response.data?.message,
-          error: response.data?.error,
-          data: response.data
+          PCODE: response.data?.PCODE,
+          amount: response.data?.amount,
+          error: errorMsg
         });
-        throw new Error(response.data?.message || response.data?.error || `Payment gateway returned error: ${responseStatus}`);
+        throw new Error(errorMsg);
       }
 
-      // Validate PCODE exists
-      if (!response.data?.PCODE) {
-        throw new Error('No payment code (PCODE) returned from ITEC Pay');
+      // Validate PCODE exists and is not null
+      if (!response.data?.PCODE || response.data.PCODE === null || response.data.PCODE === 'null') {
+        throw new Error('No valid payment code (PCODE) returned from ITEC Pay - check API credentials');
       }
 
       // Log the generated payment details
@@ -253,15 +253,8 @@ export const itecPayService = {
 
       if (paymentMethod === 'card') {
         const response = await this.initializeCardPayment(amount, email, reqRef);
-
-        // Check response status - handle both number and string status codes
-        const responseStatus = response.status;
-        const isValidResponse = responseStatus === 200 || String(responseStatus) === '200';
         
-        if (!isValidResponse) {
-          console.error('ITEC Pay card response validation failed:', response);
-          throw new Error('Failed to generate card payment link - invalid response from gateway');
-        }
+        // Note: initializeCardPayment already validates the response and throws if invalid
 
         // Ensure we have a valid link
         let paymentUrl = response.link;
@@ -269,28 +262,31 @@ export const itecPayService = {
 
         console.log('Processing ITEC Pay card response:', { paymentUrl, pcode });
 
-        // Ensure payment URL exists and is valid
-        if (!paymentUrl || paymentUrl === 'undefined' || paymentUrl === 'null') {
-          // ITEC Pay Pesapal redirect format - PCODE is the purchase code
-          paymentUrl = `https://pay.itecpay.rw/pesapal/pay?PCODE=${encodeURIComponent(pcode)}&reference=${encodeURIComponent(reqRef)}`;
+        // Use the exact link from ITEC Pay if available
+        // The API returns: "link": "https://pay.itecpay.rw/api/pay/apis/pesapal/index?PCODE=..."
+        let finalPaymentUrl = paymentUrl;
+        
+        // If link is not provided or malformed, construct it using the correct format from docs
+        if (!finalPaymentUrl || !finalPaymentUrl.includes('PCODE')) {
+          finalPaymentUrl = `https://pay.itecpay.rw/api/pay/apis/pesapal/index?PCODE=${pcode}`;
         }
-
+        
         // Additional validation - ensure URL is properly formatted
         try {
-          const urlObj = new URL(paymentUrl);
+          const urlObj = new URL(finalPaymentUrl);
           // Check if URL points to ITEC Pay domain
           if (!urlObj.hostname.includes('itecpay')) {
             console.warn('Payment URL does not point to ITEC Pay domain, reconstructing...');
-            paymentUrl = `https://pay.itecpay.rw/pesapal/pay?PCODE=${encodeURIComponent(pcode)}&reference=${encodeURIComponent(reqRef)}`;
+            finalPaymentUrl = `https://pay.itecpay.rw/api/pay/apis/pesapal/index?PCODE=${pcode}`;
           }
         } catch {
           // URL is malformed, reconstruct it
           console.warn('Malformed payment URL received, reconstructing...');
-          paymentUrl = `https://pay.itecpay.rw/pesapal/pay?PCODE=${encodeURIComponent(pcode)}&reference=${encodeURIComponent(reqRef)}`;
+          finalPaymentUrl = `https://pay.itecpay.rw/api/pay/apis/pesapal/index?PCODE=${pcode}`;
         }
 
         // Validate the URL before returning
-        if (!paymentUrl || (!paymentUrl.startsWith('http://') && !paymentUrl.startsWith('https://'))) {
+        if (!finalPaymentUrl || (!finalPaymentUrl.startsWith('http://') && !finalPaymentUrl.startsWith('https://'))) {
           throw new Error('Invalid payment redirection URL received from gateway');
         }
 
@@ -298,7 +294,7 @@ export const itecPayService = {
           status: true,
           message: 'Card payment initialized',
           data: {
-            authorization_url: paymentUrl,
+            authorization_url: finalPaymentUrl,
             reference: reqRef,
           },
         };
